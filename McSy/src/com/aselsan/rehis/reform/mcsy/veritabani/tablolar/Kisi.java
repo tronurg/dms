@@ -40,7 +40,7 @@ public class Kisi {
 	private Double boylam;
 
 	@ManyToMany
-	@JoinTable(name = "kisi_grup", joinColumns = { @JoinColumn(name = "kisi_id") }, inverseJoinColumns = {
+	@JoinTable(name = "kisi_gruplar", joinColumns = { @JoinColumn(name = "kisi_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "grup_id") })
 	private Set<Grup> gruplar = new HashSet<Grup>();
 

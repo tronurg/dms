@@ -23,16 +23,8 @@ Bundle-ClassPath: lib/veritabani/antlr-2.7.7.jar,
  lib/veritabani/stax-ex-1.8.jar,
  lib/veritabani/txw2-2.3.1.jar,
  .
-Export-Package: com.aselsan.rehis.reform.mcsy.arayuz,
- com.aselsan.rehis.reform.mcsy.fabrika,
- com.aselsan.rehis.reform.mcsy.kontrol,
- com.aselsan.rehis.reform.mcsy.main,
- com.aselsan.rehis.reform.mcsy.model,
- com.aselsan.rehis.reform.mcsy.ortak,
- com.aselsan.rehis.reform.mcsy.sunum,
- com.aselsan.rehis.reform.mcsy.veritabani,
- com.aselsan.rehis.reform.mcsy.veritabani.tablolar
+Export-Package: com.aselsan.rehis.reform.mcsy.arayuz
 Automatic-Module-Name: McSy
-Import-Package: org.osgi.service.component.annotations;version="1.3.0"
+Import-Package: org.osgi.service.component.annotations
 Service-Component: OSGI-INF/com.aselsan.rehis.reform.mcsy.main.Mcsy.xml
 Bundle-ActivationPolicy: lazy

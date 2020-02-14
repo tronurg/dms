@@ -4,3 +4,7 @@ Bundle-Name: TestMcsy
 Bundle-SymbolicName: TestMcsy
 Bundle-Version: 1.0.0.qualifier
 Automatic-Module-Name: TestMcsy
+Import-Package: org.osgi.service.component.annotations
+Service-Component: OSGI-INF/com.aselsan.rehis.reform.mcsy.test.TestMcsy.xml
+Bundle-ActivationPolicy: lazy
+Require-Bundle: McSy;bundle-version="1.0.0"

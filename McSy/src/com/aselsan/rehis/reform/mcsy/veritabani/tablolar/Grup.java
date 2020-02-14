@@ -28,7 +28,7 @@ public class Grup {
 	@Column(name = "aciklama")
 	private String aciklama;
 
-	@ManyToMany(mappedBy = "grup")
+	@ManyToMany(mappedBy = "gruplar")
 	private Set<Kisi> kisiler = new HashSet<Kisi>();
 
 }
