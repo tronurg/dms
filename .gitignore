@@ -1,7 +1,7 @@
-/.metadata
+/.metadata/
+.settings
+bin
 
-**/.settings
-**/bin
-**/.classpath
-**/.project
-**/build.properties
+.classpath
+.project
+build.properties
