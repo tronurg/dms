@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="com.aselsan.rehis.reform.mcsy.main.Mcsy">
+   <service>
+      <provide interface="com.aselsan.rehis.reform.mcsy.arayuz.McServisi"/>
+   </service>
+   <implementation class="com.aselsan.rehis.reform.mcsy.main.Mcsy"/>
+</scr:component>
