@@ -5,6 +5,7 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
 import com.aselsan.rehis.reform.mcsy.arayuz.McServisi;
+import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 
 @Component(immediate = true)
 public class TestMcsy {
@@ -14,7 +15,12 @@ public class TestMcsy {
 	@Activate
 	protected void activate() {
 
-		mcServisi.getMcPanel("onur");
+		try {
+			mcServisi.getMcPanel("onur");
+		} catch (VeritabaniHatasi e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 

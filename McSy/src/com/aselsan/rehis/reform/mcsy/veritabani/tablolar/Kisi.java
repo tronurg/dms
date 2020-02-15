@@ -21,16 +21,16 @@ public class Kisi {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "uuid", nullable = false, updatable = false)
+	@Column(name = "uuid", unique = true, nullable = false, updatable = false)
 	private String uuid;
 
-	@Column(name = "isim")
+	@Column(name = "isim", nullable = false, updatable = false)
 	private String isim;
 
 	@Column(name = "aciklama")
 	private String aciklama;
 
-	@Column(name = "durum")
+	@Column(name = "durum", nullable = false)
 	private Integer durum;
 
 	@Column(name = "enlem")

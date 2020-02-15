@@ -1,10 +1,9 @@
-package com.onurg.mc.istemci;
+package com.aselsan.rehis.reform.mcsy.mcistemci;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.Consumer;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -15,14 +14,14 @@ import com.google.gson.JsonSyntaxException;
 
 public class McIstemci {
 
-	private final String id;
+	private final String uuid;
 
 	private final ZContext context = new ZContext();
 
 	private final int dealerPort;
 	private final int subPort;
 
-	private final Consumer<MesajNesnesi> dinleyici;
+	private final McIstemciDinleyici dinleyici;
 
 	private final LinkedBlockingQueue<String> dealerQueue = new LinkedBlockingQueue<String>();
 
@@ -43,9 +42,9 @@ public class McIstemci {
 
 	});
 
-	public McIstemci(String id, int comPort, Consumer<MesajNesnesi> dinleyici) {
+	public McIstemci(String uuid, int comPort, McIstemciDinleyici dinleyici) {
 
-		this.id = id;
+		this.uuid = uuid;
 
 		this.dealerPort = comPort;
 		this.subPort = comPort + 1;
@@ -68,23 +67,17 @@ public class McIstemci {
 
 	}
 
-	public void mesajGonder(byte[] mesaj, String gonderenIp, String aliciIp) {
+	public void beaconGonder(String mesaj) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, gonderenIp, id, aliciIp)));
-
-	}
-
-	public void mesajGonder(byte[] mesaj, String gonderenIp, String aliciIp, String aliciId) {
-
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, gonderenIp, id, aliciIp, aliciId)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, "BCON")));
 
 	}
 
-	private void dinleyiciyeMesajAlindi(MesajNesnesi mesajNesnesi) {
+	private void dinleyiciyeBeaconAlindi(String mesaj) {
 
 		out.execute(() -> {
 
-			dinleyici.accept(mesajNesnesi);
+			dinleyici.beaconAlindi(mesaj);
 
 		});
 
@@ -94,7 +87,7 @@ public class McIstemci {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER)) {
 
-			dealerSocket.setIdentity(id.getBytes(ZMQ.CHARSET));
+			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
 			dealerSocket.setImmediate(false);
 			dealerSocket.connect("tcp://localhost:" + dealerPort);
 
@@ -122,7 +115,7 @@ public class McIstemci {
 
 			subSocket.connect("tcp://localhost:" + subPort);
 			subSocket.subscribe("\n");
-			subSocket.subscribe(id + "\n");
+			subSocket.subscribe(uuid + "\n");
 
 			while (!Thread.currentThread().isInterrupted()) {
 
@@ -133,7 +126,17 @@ public class McIstemci {
 
 					MesajNesnesi mesajNesnesi = gson.fromJson(receiveStr, MesajNesnesi.class);
 
-					dinleyiciyeMesajAlindi(mesajNesnesi);
+					switch (mesajNesnesi.tip) {
+
+					case "BCON":
+
+						dinleyiciyeBeaconAlindi(mesajNesnesi.mesaj);
+
+						break;
+
+					default:
+
+					}
 
 				} catch (JsonSyntaxException e) {
 
