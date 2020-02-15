@@ -1,10 +1,8 @@
 package com.aselsan.rehis.reform.mcsy.mcsunucu.kontrol;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -35,7 +33,7 @@ public class Kontrol {
 
 	private final Gson gson = new Gson();
 
-	private final Map<String, SimpleEntry<Integer, AtomicInteger>> dealerMapForMulticast = new HashMap<String, SimpleEntry<Integer, AtomicInteger>>();
+	private final Map<String, String> beaconMap = new HashMap<String, String>();
 
 	private Kontrol() {
 
@@ -105,15 +103,18 @@ public class Kontrol {
 
 					case "BCON":
 
-						dealerMapForMulticast.putIfAbsent(dealerId, new SimpleEntry<Integer, AtomicInteger>(
-								dealerMapForMulticast.size(), new AtomicInteger(0)));
-
-						SimpleEntry<Integer, AtomicInteger> dealerStats = dealerMapForMulticast.get(dealerId);
-
 						try {
 
-							getMulticastYonetici().gonder(mesajNesnesi.mesaj, dealerStats.getKey(),
-									dealerStats.getValue().getAndIncrement());
+							// uuid'ye ait kimlik degismisse yeni kimligi kaydet ve diger islemleri yap
+							if (!mesajNesnesiStr.equals(beaconMap.get(dealerId))) {
+
+								beaconMap.put(dealerId, mesajNesnesiStr);
+
+								// TODO
+
+							}
+
+							getMulticastYonetici().gonder(dealerId);
 
 						} catch (JsonSyntaxException e) {
 

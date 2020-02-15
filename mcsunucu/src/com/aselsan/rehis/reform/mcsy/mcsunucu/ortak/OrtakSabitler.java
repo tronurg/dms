@@ -7,6 +7,6 @@ public class OrtakSabitler {
 	public static final int MULTICAST_PORT = OrtakMetotlar.getMulticastPort();
 	public static final int COM_PORT = OrtakMetotlar.getComPort();
 
-	public static final int ENCRYPTION_OVERHEAD = 33;
+	public static final int BAGLANTI_DENEME_ARALIGI_MS = 5000;
 
 }

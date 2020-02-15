@@ -6,12 +6,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,9 +20,7 @@ import com.aselsan.rehis.reform.mcsy.mcsunucu.ortak.Sifreleme;
 
 public class MulticastYonetici {
 
-	private static final int PACKET_SIZE = 512;
-	private static final int PACKET_OVERHEAD = 4;
-	private static final int PACKET_DATA_SIZE = PACKET_SIZE - PACKET_OVERHEAD - OrtakSabitler.ENCRYPTION_OVERHEAD;
+	private static final int PACKET_SIZE = 128;
 	private static final int SNDBUF_SIZE = (int) Math.pow(2, 13);
 	private static final int RCVBUF_SIZE = (int) Math.pow(2, 21);
 
@@ -38,12 +32,7 @@ public class MulticastYonetici {
 
 	private MulticastSocket multicastSocket;
 
-	private final ByteBuffer sendBuffer = ByteBuffer.allocate(PACKET_SIZE);
-
 	private final BlockingQueue<DatagramPacket> receiveQueue = new LinkedBlockingQueue<DatagramPacket>();
-
-	private final Map<InetAddress, Map<Integer, UdpMesaj>> mesajMap = Collections
-			.synchronizedMap(new HashMap<InetAddress, Map<Integer, UdpMesaj>>());
 
 	private final ExecutorService out = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -74,36 +63,18 @@ public class MulticastYonetici {
 
 	}
 
-	public void gonder(final String dataStr, final int gonderenId, final int paketId) {
+	public void gonder(final String dataStr) {
 
 		out.execute(() -> {
 
 			try {
 
 				byte[] data = dataStr.getBytes("UTF-8");
+				byte[] encryptedData = Sifreleme.encrypt(data);
 
-				int parcaSayisi = (data.length + PACKET_DATA_SIZE - 1) / PACKET_DATA_SIZE;
+				DatagramPacket sendPacket = new DatagramPacket(encryptedData, encryptedData.length, multicastAddress);
 
-				for (int parcaNo = 0; parcaNo < parcaSayisi; parcaNo++) {
-
-					int dataLength = Math.min(PACKET_DATA_SIZE, data.length - parcaNo * PACKET_DATA_SIZE);
-
-					sendBuffer.clear();
-					sendBuffer.put((byte) gonderenId);
-					sendBuffer.put((byte) paketId);
-					sendBuffer.put((byte) parcaSayisi);
-					sendBuffer.put((byte) parcaNo);
-					sendBuffer.put(data, parcaNo * PACKET_DATA_SIZE, dataLength);
-					sendBuffer.flip();
-
-					byte[] encryptedData = Sifreleme.encrypt(Arrays.copyOf(sendBuffer.array(), sendBuffer.limit()));
-
-					DatagramPacket sendPacket = new DatagramPacket(encryptedData, encryptedData.length,
-							multicastAddress);
-
-					getMulticastSocket().send(sendPacket);
-
-				}
+				getMulticastSocket().send(sendPacket);
 
 			} catch (UnsupportedEncodingException e) {
 
@@ -144,8 +115,6 @@ public class MulticastYonetici {
 
 			multicastSocket = null;
 
-			mesajMap.clear();
-
 		}
 
 	}
@@ -168,7 +137,7 @@ public class MulticastYonetici {
 
 				try {
 
-					Thread.sleep(5000);
+					Thread.sleep(OrtakSabitler.BAGLANTI_DENEME_ARALIGI_MS);
 
 				} catch (InterruptedException e1) {
 
@@ -189,37 +158,9 @@ public class MulticastYonetici {
 				DatagramPacket receivePacket = receiveQueue.take();
 
 				InetAddress remoteAddress = receivePacket.getAddress();
-				byte[] receivedData = Sifreleme
-						.decrypt(Arrays.copyOf(receivePacket.getData(), receivePacket.getLength()));
-				ByteBuffer receiveBuffer = ByteBuffer.wrap(receivedData);
+				byte[] data = Sifreleme.decrypt(Arrays.copyOf(receivePacket.getData(), receivePacket.getLength()));
 
-				int gonderenId = receiveBuffer.get() & 0xFF;
-				int mesajId = receiveBuffer.get() & 0xFF;
-				int parcaSayisi = receiveBuffer.get() & 0xFF;
-				int parcaNo = receiveBuffer.get() & 0xFF;
-				byte[] mesaj = new byte[receiveBuffer.remaining()];
-				receiveBuffer.get(mesaj);
-
-				if (!mesajMap.containsKey(remoteAddress))
-					mesajMap.put(remoteAddress, new HashMap<Integer, UdpMesaj>());
-				UdpMesaj udpMesaj = mesajMap.get(remoteAddress).get(gonderenId);
-				if (udpMesaj == null || !udpMesaj.karsilastir(mesajId, parcaSayisi)) {
-					udpMesaj = new UdpMesaj(mesajId, parcaSayisi);
-					mesajMap.get(remoteAddress).put(gonderenId, udpMesaj);
-				}
-
-				boolean tamamlandi = udpMesaj.mesajAlindi(parcaNo, mesaj);
-
-				if (tamamlandi) {
-
-					messageConsumer.accept(remoteAddress.getHostAddress(), new String(udpMesaj.mesajiAl(), "UTF-8"));
-
-					mesajMap.get(remoteAddress).remove(gonderenId);
-
-					if (mesajMap.get(remoteAddress).isEmpty())
-						mesajMap.remove(remoteAddress);
-
-				}
+				messageConsumer.accept(remoteAddress.getHostAddress(), new String(data, "UTF-8"));
 
 			} catch (InterruptedException e) {
 
