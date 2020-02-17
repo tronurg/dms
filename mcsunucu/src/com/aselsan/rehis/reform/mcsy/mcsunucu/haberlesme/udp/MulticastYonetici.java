@@ -1,4 +1,4 @@
-package com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme;
+package com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.udp;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;

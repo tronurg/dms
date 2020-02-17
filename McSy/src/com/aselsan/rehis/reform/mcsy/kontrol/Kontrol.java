@@ -8,10 +8,11 @@ import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemciDinleyici;
 import com.aselsan.rehis.reform.mcsy.model.Model;
+import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
-public class Kontrol implements McIstemciDinleyici {
+public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
 	private static final Map<String, Kontrol> INSTANCES = Collections.synchronizedMap(new HashMap<String, Kontrol>());
 
@@ -28,6 +29,8 @@ public class Kontrol implements McIstemciDinleyici {
 		Kimlik kimlik = veritabaniYonetici.getKimlik();
 
 		model = new Model(kimlik);
+
+		model.dinleyiciEkle(this);
 
 		mcIstemci = new McIstemci(kimlik.getUuid(), 5446, this);
 
@@ -49,7 +52,9 @@ public class Kontrol implements McIstemciDinleyici {
 
 			while (true) {
 
-				mcIstemci.beaconGonder(model.getBeaconMesaji());
+				boolean sunucuBagli = mcIstemci.beaconGonder(model.getBeaconMesaji());
+
+				model.setSunucuBagli(sunucuBagli);
 
 				try {
 					Thread.sleep(1000);
@@ -68,6 +73,16 @@ public class Kontrol implements McIstemciDinleyici {
 	public void beaconAlindi(String mesaj) {
 
 		System.out.println(mesaj);
+
+	}
+
+	@Override
+	public void sunucuBaglantiDurumuGuncellendi(boolean arg0) {
+
+		if (arg0)
+			System.out.println("Sunucu baglandi.");
+		else
+			System.out.println("Sunucu koptu.");
 
 	}
 

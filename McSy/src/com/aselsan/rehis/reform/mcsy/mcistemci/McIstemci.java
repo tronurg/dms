@@ -25,6 +25,8 @@ public class McIstemci {
 
 	private final LinkedBlockingQueue<String> dealerQueue = new LinkedBlockingQueue<String>();
 
+	private final LinkedBlockingQueue<Boolean> responseQueue = new LinkedBlockingQueue<Boolean>();
+
 	private final Gson gson = new Gson();
 
 	private final ExecutorService out = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -67,9 +69,9 @@ public class McIstemci {
 
 	}
 
-	public void beaconGonder(String mesaj) {
+	public boolean beaconGonder(String mesaj) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, "BCON")));
+		return sendToRouter(gson.toJson(new MesajNesnesi(mesaj, "BCON")));
 
 	}
 
@@ -80,6 +82,22 @@ public class McIstemci {
 			dinleyici.beaconAlindi(mesaj);
 
 		});
+
+	}
+
+	private synchronized boolean sendToRouter(String message) {
+
+		dealerQueue.offer(message);
+
+		boolean response = false;
+
+		try {
+			response = responseQueue.take();
+		} catch (InterruptedException e) {
+
+		}
+
+		return response;
 
 	}
 
@@ -97,7 +115,9 @@ public class McIstemci {
 
 					String mesaj = dealerQueue.take();
 
-					dealerSocket.send(mesaj, ZMQ.DONTWAIT);
+					boolean response = dealerSocket.send(mesaj, ZMQ.DONTWAIT);
+
+					responseQueue.offer(response);
 
 				} catch (InterruptedException e) {
 

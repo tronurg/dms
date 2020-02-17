@@ -8,7 +8,7 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.MulticastYonetici;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.udp.MulticastYonetici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajNesnesi;
 import com.google.gson.Gson;
@@ -168,6 +168,10 @@ public class Kontrol {
 			System.out.println(pubPort + " portu kullaniliyor. Istemcilere veri gonderilemeyecek!");
 
 		}
+
+	}
+
+	private void cevrimiciKullanicilaraGonder() {
 
 	}
 
