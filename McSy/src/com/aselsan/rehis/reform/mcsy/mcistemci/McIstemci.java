@@ -18,6 +18,7 @@ public class McIstemci {
 
 	private final ZContext context = new ZContext();
 
+	private final String serverIp;
 	private final int dealerPort;
 	private final int subPort;
 
@@ -44,10 +45,11 @@ public class McIstemci {
 
 	});
 
-	public McIstemci(String uuid, int comPort, McIstemciDinleyici dinleyici) {
+	public McIstemci(String uuid, String comIp, int comPort, McIstemciDinleyici dinleyici) {
 
 		this.uuid = uuid;
 
+		this.serverIp = comIp;
 		this.dealerPort = comPort;
 		this.subPort = comPort + 1;
 
@@ -107,7 +109,7 @@ public class McIstemci {
 
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
 			dealerSocket.setImmediate(false);
-			dealerSocket.connect("tcp://localhost:" + dealerPort);
+			dealerSocket.connect("tcp://" + serverIp + ":" + dealerPort);
 
 			while (!Thread.currentThread().isInterrupted()) {
 
@@ -133,7 +135,7 @@ public class McIstemci {
 
 		try (ZMQ.Socket subSocket = context.createSocket(SocketType.SUB)) {
 
-			subSocket.connect("tcp://localhost:" + subPort);
+			subSocket.connect("tcp://" + serverIp + ":" + subPort);
 			subSocket.subscribe("\n");
 			subSocket.subscribe(uuid + "\n");
 

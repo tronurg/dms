@@ -1,5 +1,6 @@
 package com.aselsan.rehis.reform.mcsy.mcsunucu.kontrol;
 
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -70,7 +71,7 @@ public class Kontrol {
 
 	}
 
-	private void receiveUdpMessage(String gonderenIp, String mesaj) {
+	private void receiveUdpMessage(InetAddress gonderenAdres, String mesaj) {
 
 		try {
 

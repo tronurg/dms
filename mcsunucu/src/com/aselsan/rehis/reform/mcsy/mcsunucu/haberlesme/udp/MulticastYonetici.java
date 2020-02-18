@@ -28,7 +28,7 @@ public class MulticastYonetici {
 	private final int multicastPort;
 	private final InetSocketAddress multicastAddress;
 
-	private final BiConsumer<String, String> messageConsumer;
+	private final BiConsumer<InetAddress, String> messageConsumer;
 
 	private MulticastSocket multicastSocket;
 
@@ -49,7 +49,8 @@ public class MulticastYonetici {
 
 	});
 
-	public MulticastYonetici(String multicastGroup, int multicastPort, BiConsumer<String, String> messageConsumer) {
+	public MulticastYonetici(String multicastGroup, int multicastPort,
+			BiConsumer<InetAddress, String> messageConsumer) {
 
 		this.multicastGroup = multicastGroup;
 		this.multicastPort = multicastPort;
@@ -160,7 +161,7 @@ public class MulticastYonetici {
 				InetAddress remoteAddress = receivePacket.getAddress();
 				byte[] data = Sifreleme.decrypt(Arrays.copyOf(receivePacket.getData(), receivePacket.getLength()));
 
-				messageConsumer.accept(remoteAddress.getHostAddress(), new String(data, "UTF-8"));
+				messageConsumer.accept(remoteAddress, new String(data, "UTF-8"));
 
 			} catch (InterruptedException e) {
 

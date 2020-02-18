@@ -9,6 +9,7 @@ import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemciDinleyici;
 import com.aselsan.rehis.reform.mcsy.model.Model;
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
+import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
@@ -32,7 +33,7 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
 		model.dinleyiciEkle(this);
 
-		mcIstemci = new McIstemci(kimlik.getUuid(), 5446, this);
+		mcIstemci = new McIstemci(kimlik.getUuid(), OrtakSabitler.SUNUCU_IP, OrtakSabitler.SUNUCU_PORT, this);
 
 		ilklendir();
 

@@ -2,6 +2,9 @@ package com.aselsan.rehis.reform.mcsy.ortak;
 
 public class OrtakSabitler {
 
+	public static final String SUNUCU_IP = OrtakMetotlar.getSunucuIp();
+	public static final int SUNUCU_PORT = OrtakMetotlar.getSunucuPort();
+
 	public static final Integer DURUM_MUSAIT = 0;
 	public static final Integer DURUM_UZAKTA = 1;
 	public static final Integer DURUM_MESGUL = 2;
