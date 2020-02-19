@@ -5,14 +5,13 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
-import com.onurg.haberlesme.tcp.TcpIstemci;
-import com.onurg.haberlesme.tcp.TcpIstemciDinleyici;
 import com.onurg.haberlesme.tcp.TcpSunucu;
 import com.onurg.haberlesme.tcp.TcpSunucuDinleyici;
 
@@ -24,15 +23,30 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	private final TcpSunucu tcpSunucu;
 
-	private final Map<InetAddress, TcpIstemci> adresIstemci = Collections
-			.synchronizedMap(new HashMap<InetAddress, TcpIstemci>());
-	private final Map<String, List<TcpIstemci>> uuidIstemciler = Collections
-			.synchronizedMap(new HashMap<String, List<TcpIstemci>>());
-	private final Map<InetAddress, Set<String>> adresUuidler = Collections
-			.synchronizedMap(new HashMap<InetAddress, Set<String>>());
+	private final List<Integer> sunucuIdler = Collections.synchronizedList(new ArrayList<Integer>());
+
+	private final Map<String, SunucuBaglantisi> mcUuidBaglanti = Collections
+			.synchronizedMap(new HashMap<String, SunucuBaglantisi>());
+	private final Map<String, SunucuBaglantisi> uuidBaglanti = Collections
+			.synchronizedMap(new HashMap<String, SunucuBaglantisi>());
 
 	private final List<TcpYoneticiDinleyici> dinleyiciler = Collections
 			.synchronizedList(new ArrayList<TcpYoneticiDinleyici>());
+
+	private final ExecutorService sunucuIslemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
+
+		@Override
+		public Thread newThread(Runnable arg0) {
+
+			Thread thread = new Thread(arg0);
+
+			thread.setDaemon(true);
+
+			return thread;
+
+		}
+
+	});
 
 	public TcpYonetici(int sunucuPort, int istemciPortBasl, int istemciPortBits) throws IOException {
 
@@ -54,52 +68,81 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	}
 
-	public void baglantiEkle(final String uuid, InetAddress adres) {
+	public void baglantiEkle(final String mcUuid, final String uuid, final InetAddress adres) {
 
-		adresUuidler.putIfAbsent(adres, new HashSet<String>());
-		adresUuidler.get(adres).add(uuid);
+		sunucuIslemKuyrugu.execute(() -> {
 
-		if (!adresIstemci.containsKey(adres)) {
+			if (!mcUuidBaglanti.containsKey(mcUuid)) {
 
-			final TcpIstemci istemci = new TcpIstemci(adres, sunucuPort, null, 0); // !!!!!!!! yerel port degisecek !!!
+				final SunucuBaglantisi baglanti = new SunucuBaglantisi();
 
-			istemci.dinleyiciEkle(new TcpIstemciDinleyici() {
+				mcUuidBaglanti.put(mcUuid, baglanti);
 
-				@Override
-				public void yeniMesajAlindi(String arg0) {
+				baglanti.dinleyiciEkle(new SunucuBaglantisiDinleyici() {
 
-					dinleyiciler.forEach(e -> e.mesajAlindi(arg0));
+					@Override
+					public void mesajAlindi(String mesaj) {
 
-				}
+						dinleyicilereMesajAlindi(mesaj);
 
-				@Override
-				public void baglantiKuruldu() {
+					}
 
-//					adresUuidler.get(adres).for
+					@Override
+					public void sunucuBaglantisiKoptu() {
 
-				}
+						sunucuIslemKuyrugu.execute(() -> {
 
-				@Override
-				public void baglantiKurulamadi() {
-					// TODO Auto-generated method stub
+							mcUuidBaglanti.remove(mcUuid);
 
-				}
+							baglanti.getUuidler().forEach(e -> {
 
-				@Override
-				public void baglantiKoptu() {
-					// TODO Auto-generated method stub
+								uuidBaglanti.remove(e);
 
-				}
+								dinleyicilereUuidKoptu(e);
 
-			});
+							});
 
-		}
+						});
 
-//		istemci.baglan();
+					}
+
+				});
+
+			}
+
+			SunucuBaglantisi baglanti = mcUuidBaglanti.get(mcUuid);
+
+			if (!uuidBaglanti.containsKey(uuid)) {
+
+				baglanti.uuidEkle(uuid);
+
+				uuidBaglanti.put(uuid, baglanti);
+
+			} else if (!uuidBaglanti.get(uuid).equals(baglanti)) {
+
+				uuidBaglanti.get(uuid).uuidCikar(uuid);
+
+				baglanti.uuidEkle(uuid);
+
+				uuidBaglanti.put(uuid, baglanti);
+
+			}
+
+			if (!baglanti.tcpBaglantisiVarMi(adres))
+				baglanti.tcpBaglantisiEkle(adres, sunucuPort, null, 0); // TODO
+
+		});
 
 	}
 
 	public void mesajGonder(String uuid, String mesaj) {
+
+		SunucuBaglantisi baglanti = uuidBaglanti.get(uuid);
+
+		if (baglanti == null)
+			return;
+
+		baglanti.mesajGonder(mesaj);
 
 	}
 
@@ -109,15 +152,43 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	}
 
-	@Override
-	public void baglantiKoptu(int arg0) {
+	public void sunucudanTumBaglantilaraGonder(String mesaj) {
+
+		sunucuIdler.forEach(id -> tcpSunucu.mesajGonder(id, mesaj));
+
+	}
+
+	private void dinleyicilereBaglantiKuruldu(final int id) {
+
+		dinleyiciler.forEach(e -> e.baglantiKuruldu(id));
+
+	}
+
+	private void dinleyicilereUuidKoptu(String uuid) {
+
+		dinleyiciler.forEach(e -> e.uuidKoptu(uuid));
+
+	}
+
+	private void dinleyicilereMesajAlindi(String mesaj) {
+
+		dinleyiciler.forEach(e -> e.mesajAlindi(mesaj));
 
 	}
 
 	@Override
-	public void baglantiKuruldu(final int arg0) {
+	public void baglantiKoptu(int id) {
 
-		dinleyiciler.forEach(e -> e.baglantiKuruldu(arg0));
+		sunucuIdler.remove(Integer.valueOf(id));
+
+	}
+
+	@Override
+	public void baglantiKuruldu(final int id) {
+
+		sunucuIdler.add(id);
+
+		dinleyicilereBaglantiKuruldu(id);
 
 		tcpSunucu.baglantiKabulEt();
 
@@ -126,7 +197,7 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 	@Override
 	public void yeniMesajAlindi(int arg0, String arg1) {
 
-		dinleyiciler.forEach(e -> e.mesajAlindi(arg1));
+		dinleyicilereMesajAlindi(arg1);
 
 	}
 

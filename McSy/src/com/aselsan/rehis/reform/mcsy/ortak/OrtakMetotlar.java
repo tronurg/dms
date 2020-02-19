@@ -52,6 +52,8 @@ public class OrtakMetotlar {
 
 		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
 
+			e.printStackTrace();
+
 		}
 
 		return sunucuPort;
@@ -62,7 +64,7 @@ public class OrtakMetotlar {
 
 		if (confDoc == null) {
 
-			try (InputStream is = Files.newInputStream(Paths.get("./conf/mcsy.xml"))) {
+			try (InputStream is = Files.newInputStream(Paths.get("./plugins/mcsy/conf/mcsy.xml"))) {
 
 				confDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(is));
 

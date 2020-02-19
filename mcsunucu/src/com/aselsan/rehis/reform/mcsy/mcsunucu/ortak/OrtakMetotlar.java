@@ -77,13 +77,32 @@ public class OrtakMetotlar {
 
 	}
 
-	static int getComPort() {
+	static int getComPortIlk() {
 
 		int comPort = -1;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/MC_SUNUCU/COM_PORT")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/MC_SUNUCU/COM_PORT_ILK")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			comPort = Integer.parseInt(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return comPort;
+
+	}
+
+	static int getComPortSon() {
+
+		int comPort = -1;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/MC_SUNUCU/COM_PORT_SON")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
 			comPort = Integer.parseInt(node.getTextContent());

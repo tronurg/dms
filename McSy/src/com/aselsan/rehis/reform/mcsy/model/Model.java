@@ -19,8 +19,6 @@ public class Model {
 
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
-//	private final Map<>
-
 	public Model(Kimlik kimlik) {
 
 		this.kimlik = kimlik;
