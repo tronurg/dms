@@ -9,6 +9,8 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajNesnesi;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -73,7 +75,13 @@ public class McIstemci {
 
 	public boolean beaconGonder(String mesaj) {
 
-		return sendToRouter(gson.toJson(new MesajNesnesi(mesaj, "BCON")));
+		return sendToRouter(gson.toJson(new MesajNesnesi(mesaj, uuid, "BCON")));
+
+	}
+
+	public boolean tumBeaconlariIste() {
+
+		return sendToRouter(gson.toJson(new MesajNesnesi("", uuid, "BCON?")));
 
 	}
 
@@ -82,6 +90,16 @@ public class McIstemci {
 		out.execute(() -> {
 
 			dinleyici.beaconAlindi(mesaj);
+
+		});
+
+	}
+
+	private void dinleyiciyeUuidKoptu(String uuid) {
+
+		out.execute(() -> {
+
+			dinleyici.uuidKoptu(uuid);
 
 		});
 
@@ -144,27 +162,39 @@ public class McIstemci {
 				subSocket.recvStr();
 				String receiveStr = subSocket.recvStr();
 
-				try {
-
-					MesajNesnesi mesajNesnesi = gson.fromJson(receiveStr, MesajNesnesi.class);
-
-					switch (mesajNesnesi.tip) {
-
-					case "BCON":
-
-						dinleyiciyeBeaconAlindi(mesajNesnesi.mesaj);
-
-						break;
-
-					default:
-
-					}
-
-				} catch (JsonSyntaxException e) {
-
-				}
+				gelenMesajiIsle(receiveStr);
 
 			}
+
+		}
+
+	}
+
+	private void gelenMesajiIsle(String mesaj) {
+
+		try {
+
+			MesajNesnesi mesajNesnesi = gson.fromJson(mesaj, MesajNesnesi.class);
+
+			switch (mesajNesnesi.tip) {
+
+			case "BCON":
+
+				dinleyiciyeBeaconAlindi(mesajNesnesi.mesaj);
+
+				break;
+
+			case "UUID_KOPTU":
+
+				dinleyiciyeUuidKoptu(mesajNesnesi.mesaj);
+
+				break;
+
+			default:
+
+			}
+
+		} catch (JsonSyntaxException e) {
 
 		}
 

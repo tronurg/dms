@@ -4,7 +4,7 @@ public interface TcpYoneticiDinleyici {
 
 	void baglantiKuruldu(int id);
 
-	void uuidKoptu(String uuid);
+	void uzakUuidKoptu(String uuid);
 
 	void mesajAlindi(String mesaj);
 

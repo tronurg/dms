@@ -2,6 +2,8 @@ package com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.tcp;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.ortak.Sifreleme;
 import com.onurg.haberlesme.tcp.TcpSunucu;
 import com.onurg.haberlesme.tcp.TcpSunucuDinleyici;
 
@@ -32,6 +35,8 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	private final List<TcpYoneticiDinleyici> dinleyiciler = Collections
 			.synchronizedList(new ArrayList<TcpYoneticiDinleyici>());
+
+	private final Charset sifrelemeCharset = Charset.forName("UTF-8");
 
 	private final ExecutorService sunucuIslemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -142,19 +147,43 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 		if (baglanti == null)
 			return;
 
-		baglanti.mesajGonder(mesaj);
+		try {
+
+			String mesajEncrypted = new String(Sifreleme.encrypt(mesaj.getBytes(sifrelemeCharset)), sifrelemeCharset);
+
+			baglanti.mesajGonder(mesajEncrypted);
+
+		} catch (GeneralSecurityException | IOException e1) {
+
+		}
 
 	}
 
 	public void sunucudanMesajGonder(int id, String mesaj) {
 
-		tcpSunucu.mesajGonder(id, mesaj);
+		try {
+
+			String mesajEncrypted = new String(Sifreleme.encrypt(mesaj.getBytes(sifrelemeCharset)), sifrelemeCharset);
+
+			tcpSunucu.mesajGonder(id, mesajEncrypted);
+
+		} catch (GeneralSecurityException | IOException e1) {
+
+		}
 
 	}
 
 	public void sunucudanTumBaglantilaraGonder(String mesaj) {
 
-		sunucuIdler.forEach(id -> tcpSunucu.mesajGonder(id, mesaj));
+		try {
+
+			String mesajEncrypted = new String(Sifreleme.encrypt(mesaj.getBytes(sifrelemeCharset)), sifrelemeCharset);
+
+			sunucuIdler.forEach(id -> tcpSunucu.mesajGonder(id, mesajEncrypted));
+
+		} catch (GeneralSecurityException | IOException e1) {
+
+		}
 
 	}
 
@@ -166,13 +195,21 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	private void dinleyicilereUuidKoptu(String uuid) {
 
-		dinleyiciler.forEach(e -> e.uuidKoptu(uuid));
+		dinleyiciler.forEach(e -> e.uzakUuidKoptu(uuid));
 
 	}
 
 	private void dinleyicilereMesajAlindi(String mesaj) {
 
-		dinleyiciler.forEach(e -> e.mesajAlindi(mesaj));
+		try {
+
+			String mesajDecrypted = new String(Sifreleme.decrypt(mesaj.getBytes(sifrelemeCharset)), sifrelemeCharset);
+
+			dinleyiciler.forEach(e -> e.mesajAlindi(mesajDecrypted));
+
+		} catch (GeneralSecurityException | IOException e1) {
+
+		}
 
 	}
 

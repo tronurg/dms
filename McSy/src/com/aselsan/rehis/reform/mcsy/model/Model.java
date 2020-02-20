@@ -39,13 +39,19 @@ public class Model {
 
 	}
 
-	public void setSunucuBagli(boolean arg0) {
+	public void setSunucuBaglantiDurumu(boolean arg0) {
 
 		if (sunucuBagli.getAndSet(arg0) != arg0) {
 
 			dinleyicilereSunucuBaglantiDurumuGuncellendi(arg0);
 
 		}
+
+	}
+
+	public void uuidKoptu(String uuid) {
+
+		// TODO
 
 	}
 

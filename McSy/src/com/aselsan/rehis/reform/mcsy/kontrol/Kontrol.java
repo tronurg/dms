@@ -6,7 +6,7 @@ import java.util.Map;
 
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
-import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemciDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
 import com.aselsan.rehis.reform.mcsy.model.Model;
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
@@ -53,9 +53,9 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
 			while (true) {
 
-				boolean sunucuBagli = mcIstemci.beaconGonder(model.getBeaconMesaji());
+				boolean sunucuBaglantiDurumu = mcIstemci.beaconGonder(model.getBeaconMesaji());
 
-				model.setSunucuBagli(sunucuBagli);
+				model.setSunucuBaglantiDurumu(sunucuBaglantiDurumu);
 
 				try {
 					Thread.sleep(1000);
@@ -71,6 +71,23 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 	}
 
 	@Override
+	public void sunucuBaglantiDurumuGuncellendi(boolean arg0) {
+
+		if (arg0) {
+
+			System.out.println("Sunucu baglandi.");
+
+			mcIstemci.tumBeaconlariIste();
+
+		} else {
+
+			System.out.println("Sunucu koptu.");
+
+		}
+
+	}
+
+	@Override
 	public void beaconAlindi(String mesaj) {
 
 		System.out.println(mesaj);
@@ -78,12 +95,9 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 	}
 
 	@Override
-	public void sunucuBaglantiDurumuGuncellendi(boolean arg0) {
+	public void uuidKoptu(String uuid) {
 
-		if (arg0)
-			System.out.println("Sunucu baglandi.");
-		else
-			System.out.println("Sunucu koptu.");
+		model.uuidKoptu(uuid);
 
 	}
 

@@ -2,10 +2,12 @@ package com.aselsan.rehis.reform.mcsy.mcsunucu.kontrol;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -14,16 +16,17 @@ import org.zeromq.ZMQ;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.tcp.TcpYonetici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.udp.MulticastYonetici;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.model.Model;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.ortak.OrtakSabitler;
-import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajNesnesi;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 
-public class Kontrol implements TcpYoneticiDinleyici {
+public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 	private static final String MC_UUID = UUID.randomUUID().toString();
 
 	private static Kontrol instance;
+
+	private final Model model = new Model(this);
 
 	private final int routerPort = OrtakSabitler.INTERCOM_PORT;
 	private final int pubPort = OrtakSabitler.INTERCOM_PORT + 1;
@@ -39,11 +42,22 @@ public class Kontrol implements TcpYoneticiDinleyici {
 
 	private final ZContext context = new ZContext();
 
-	private final LinkedBlockingQueue<MesajNesnesi> pubQueue = new LinkedBlockingQueue<MesajNesnesi>();
+	private final LinkedBlockingQueue<SimpleEntry<String, String>> pubQueue = new LinkedBlockingQueue<SimpleEntry<String, String>>();
 
-	private final Gson gson = new Gson();
+	private final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
-	private final Map<String, String> dealerBeacon = new HashMap<String, String>();
+		@Override
+		public Thread newThread(Runnable arg0) {
+
+			Thread thread = new Thread(arg0);
+
+			thread.setDaemon(true);
+
+			return thread;
+
+		}
+
+	});
 
 	private Kontrol() {
 
@@ -106,45 +120,10 @@ public class Kontrol implements TcpYoneticiDinleyici {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				String dealerId = routerSocket.recvStr();
+				routerSocket.recvStr();
 				String mesajNesnesiStr = routerSocket.recvStr();
 
-				try {
-
-					MesajNesnesi mesajNesnesi = gson.fromJson(mesajNesnesiStr, MesajNesnesi.class);
-
-					switch (mesajNesnesi.tip) {
-
-					case "BCON":
-
-						// uuid'ye ait kimlik degismisse yeni kimligi kaydet ve diger islemleri yap
-						if (!mesajNesnesiStr.equals(dealerBeacon.get(dealerId))) {
-
-							dealerBeacon.put(dealerId, mesajNesnesiStr);
-
-							pubQueue.offer(mesajNesnesi);
-
-							try {
-
-								getTcpYonetici().sunucudanTumBaglantilaraGonder(mesajNesnesiStr);
-
-							} catch (IOException e) {
-
-							}
-
-						}
-
-						multicastYonetici.gonder(MC_UUID + " " + dealerId);
-
-						break;
-
-					default:
-
-					}
-
-				} catch (JsonSyntaxException e) {
-
-				}
+				islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
 
 			}
 
@@ -164,18 +143,10 @@ public class Kontrol implements TcpYoneticiDinleyici {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				try {
+				SimpleEntry<String, String> aliciMesaj = pubQueue.take();
 
-					MesajNesnesi mesajNesnesi = pubQueue.take();
-
-					String mesaj = gson.toJson(mesajNesnesi);
-
-					pubSocket.sendMore(mesajNesnesi.aliciUuid + "\n");
-					pubSocket.send(mesaj);
-
-				} catch (InterruptedException e) {
-
-				}
+				pubSocket.sendMore(aliciMesaj.getKey() + "\n");
+				pubSocket.send(aliciMesaj.getValue());
 
 			}
 
@@ -190,39 +161,62 @@ public class Kontrol implements TcpYoneticiDinleyici {
 	@Override
 	public void baglantiKuruldu(final int id) {
 
-		dealerBeacon.forEach((dealer, beacon) -> {
+		islemKuyrugu.execute(() -> {
 
-			try {
+			model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
 
-				getTcpYonetici().sunucudanMesajGonder(id, beacon);
+				try {
 
-			} catch (IOException e) {
+					getTcpYonetici().sunucudanMesajGonder(id, beacon);
 
-			}
+				} catch (IOException e) {
+
+				}
+
+			});
 
 		});
 
 	}
 
 	@Override
-	public void uuidKoptu(String uuid) {
+	public void uzakUuidKoptu(final String uuid) {
 
-		// TODO
+		islemKuyrugu.execute(() -> model.uzakUuidKoptu(uuid));
 
 	}
 
 	@Override
 	public void mesajAlindi(String mesaj) {
 
+		islemKuyrugu.execute(() -> model.uzakMesajAlindi(mesaj));
+
+	}
+
+	@Override
+	public void yerelKullanicilaraGonder(String aliciUuid, String mesaj) {
+
+		pubQueue.offer(new SimpleEntry<String, String>(aliciUuid, mesaj));
+
+	}
+
+	@Override
+	public void tumUzakKullanicilaraGonder(String mesaj) {
+
 		try {
 
-			MesajNesnesi mesajNesnesi = gson.fromJson(mesaj, MesajNesnesi.class);
+			getTcpYonetici().sunucudanTumBaglantilaraGonder(mesaj);
 
-			pubQueue.offer(mesajNesnesi);
-
-		} catch (JsonSyntaxException e) {
+		} catch (IOException e) {
 
 		}
+
+	}
+
+	@Override
+	public void uuidYayinla(String uuid) {
+
+		multicastYonetici.gonder(MC_UUID + " " + uuid);
 
 	}
 

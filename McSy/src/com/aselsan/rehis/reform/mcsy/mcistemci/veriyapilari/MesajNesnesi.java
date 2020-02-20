@@ -1,4 +1,4 @@
-package com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari;
+package com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari;
 
 public class MesajNesnesi {
 
