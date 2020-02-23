@@ -205,7 +205,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		try {
 
-			getTcpYonetici().sunucudanTumBaglantilaraGonder(mesaj);
+			getTcpYonetici().sunucudanTumSunucularaGonder(mesaj);
 
 		} catch (IOException e) {
 
