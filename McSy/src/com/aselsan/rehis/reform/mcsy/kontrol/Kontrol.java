@@ -95,7 +95,7 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 	}
 
 	@Override
-	public void uuidKoptu(String uuid) {
+	public void kullaniciKoptu(String uuid) {
 
 		model.uuidKoptu(uuid);
 

@@ -14,6 +14,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.tcp.TcpBaglantiTipi;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.tcp.TcpYonetici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.udp.MulticastYonetici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.model.Model;
@@ -104,7 +105,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		try {
 
-			getTcpYonetici().baglantiEkle(uuids[0], uuids[1], gonderenAdres);
+			getTcpYonetici().baglantiEkle(uuids[0], uuids[1], gonderenAdres,
+					uuids[0].compareTo(MC_UUID) < 0 ? TcpBaglantiTipi.SUNUCU : TcpBaglantiTipi.ISTEMCI);
 
 		} catch (IOException e) {
 
@@ -159,30 +161,26 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	}
 
 	@Override
-	public void baglantiKuruldu(final int id) {
+	public void uzakSunucuyaBaglanildi(final String mcUuid) {
 
-		islemKuyrugu.execute(() -> {
+		model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
 
-			model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+			try {
 
-				try {
+				getTcpYonetici().sunucuyaMesajGonder(mcUuid, beacon);
 
-					getTcpYonetici().sunucudanMesajGonder(id, beacon);
+			} catch (IOException e) {
 
-				} catch (IOException e) {
-
-				}
-
-			});
+			}
 
 		});
 
 	}
 
 	@Override
-	public void uzakUuidKoptu(final String uuid) {
+	public void uzakKullaniciKoptu(String uuid) {
 
-		islemKuyrugu.execute(() -> model.uzakUuidKoptu(uuid));
+		islemKuyrugu.execute(() -> model.uzakKullaniciKoptu(uuid));
 
 	}
 
@@ -205,7 +203,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		try {
 
-			getTcpYonetici().sunucudanTumSunucularaGonder(mesaj);
+			getTcpYonetici().tumSunucularaMesajGonder(mesaj);
 
 		} catch (IOException e) {
 

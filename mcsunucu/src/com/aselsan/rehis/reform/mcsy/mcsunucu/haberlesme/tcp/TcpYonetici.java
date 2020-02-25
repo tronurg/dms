@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.ortak.Sifreleme;
@@ -45,7 +46,7 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	private final Charset sifrelemeCharset = Charset.forName("UTF-8");
 
-	private final ExecutorService sunucuIslemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
+	private final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
 		@Override
 		public Thread newThread(Runnable arg0) {
@@ -80,115 +81,178 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	}
 
-	public void baglantiEkle(final String mcUuid, final String uuid, final InetAddress adres) {
+	public void baglantiEkle(final String mcUuid, final String uuid, final InetAddress adres,
+			TcpBaglantiTipi baglantiTipi) {
 
-		kullanicilar.putIfAbsent(uuid, new Kullanici());
-		mcSunucular.putIfAbsent(mcUuid, new McSunucu());
-		baglantilar.putIfAbsent(adres, new Baglanti(adres));
+		islemKuyrugu.execute(() -> {
 
-		final Kullanici kullanici = kullanicilar.get(uuid);
-		final McSunucu mcSunucu = mcSunucular.get(mcUuid);
-		final Baglanti baglanti = baglantilar.get(adres);
+			kullanicilar.putIfAbsent(uuid, new Kullanici(uuid));
+			mcSunucular.putIfAbsent(mcUuid, new McSunucu(mcUuid));
 
-		if (kullanici.mcSunucu == null) {
-			// Kullanici yeni katildi
-			// Iliskiler guncellenecek
+			final Kullanici kullanici = kullanicilar.get(uuid);
+			final McSunucu mcSunucu = mcSunucular.get(mcUuid);
 
-			kullanici.mcSunucu = mcSunucu;
-			mcSunucu.kullanicilar.add(kullanici);
+			if (kullanici.mcSunucu == null) {
+				// Kullanici yeni katildi
+				// Iliskiler guncellenecek
 
-		} else if (kullanici.mcSunucu != mcSunucu) {
-			// Kullanicinin bagli oldugu sunucu degisti
-			// Iliskiler guncellenecek
+				kullanici.mcSunucu = mcSunucu;
+				mcSunucu.kullanicilar.add(kullanici);
 
-			kullanici.mcSunucu.kullanicilar.remove(kullanici);
-			kullanici.mcSunucu = mcSunucu;
-			mcSunucu.kullanicilar.add(kullanici);
+			} else if (kullanici.mcSunucu != mcSunucu) {
+				// Kullanicinin bagli oldugu sunucu degisti
+				// Iliskiler guncellenecek
 
-		}
-
-		if (baglanti.mcSunucu == null) {
-			// Baglanti yeni olustu
-			// Iliskiler guncellenecek
-
-			baglanti.mcSunucu = mcSunucu;
-
-		} else if (baglanti.mcSunucu != mcSunucu) {
-			// Baglantinin arkasindaki sunucu degisti
-			// Iliskiler guncellenecek
-
-			if (baglanti.mcSunucu.baglantilar.contains(baglanti)) {
-				// eski sunucuya bu baglanti eklenmisse kaldir ve kontrol et
-
-				baglanti.mcSunucu.baglantilar.remove(baglanti);
-
-				sunucuyuKontrolEt(baglanti.mcSunucu);
+				kullanici.mcSunucu.kullanicilar.remove(kullanici);
+				kullanici.mcSunucu = mcSunucu;
+				mcSunucu.kullanicilar.add(kullanici);
 
 			}
 
-			baglanti.mcSunucu = mcSunucu;
+			if (!baglantilar.containsKey(adres)) {
 
-		}
+				Baglanti baglanti = new Baglanti();
+				baglanti.mcSunucu = mcSunucu;
 
-		if (baglanti.tcpIstemci == null) {
+				baglantilar.put(adres, baglanti);
 
-			baglanti.tcpIstemci = new TcpIstemci(adres, sunucuPort, null, 0); // TODO
+				if (baglantiTipi.equals(TcpBaglantiTipi.ISTEMCI)) {
 
-			baglanti.tcpIstemci.setBlocking(true);
+					TcpIstemci tcpIstemci = new TcpIstemci(adres, sunucuPort, null, bosPortIste());
 
-			baglanti.tcpIstemci.dinleyiciEkle(new TcpIstemciDinleyici() {
+					tcpIstemci.setBlocking(true);
 
-				@Override
-				public void yeniMesajAlindi(String arg0) {
+					tcpIstemci.dinleyiciEkle(new TcpIstemciDinleyici() {
 
-					dinleyicilereMesajAlindi(arg0);
+						@Override
+						public void yeniMesajAlindi(String arg0) {
+
+							islemKuyrugu.execute(() -> {
+
+								dinleyicilereMesajAlindi(arg0);
+
+							});
+
+						}
+
+						@Override
+						public void baglantiKuruldu() {
+
+							islemKuyrugu.execute(() -> {
+
+								baglanti.gondermeMetodu = tcpIstemci::mesajGonder;
+								mcSunucu.baglantilar.add(baglanti);
+
+								sunucuyuKontrolEt(mcSunucu);
+
+							});
+
+						}
+
+						@Override
+						public void baglantiKurulamadi() {
+
+							islemKuyrugu.execute(() -> {
+
+								baglantilar.remove(adres);
+
+							});
+
+						}
+
+						@Override
+						public void baglantiKoptu() {
+
+							islemKuyrugu.execute(() -> {
+
+								baglantilar.remove(adres);
+								mcSunucu.baglantilar.remove(baglanti);
+
+								sunucuyuKontrolEt(mcSunucu);
+
+							});
+
+						}
+
+					});
+
+					tcpIstemci.baglan();
 
 				}
 
-				@Override
-				public void baglantiKuruldu() {
+			}
 
-					baglantiyiKontrolEt(baglanti);
+			final Baglanti baglanti = baglantilar.get(adres);
 
-				}
+			if (baglanti.mcSunucu == null) {
+				// Baglanti sunucu tarafindan olusturulmus
+				// Iliskiler guncellenecek
 
-				@Override
-				public void baglantiKurulamadi() {
+				baglanti.mcSunucu = mcSunucu;
+				mcSunucu.baglantilar.add(baglanti);
 
-					baglanti.tcpIstemci = null;
+				sunucuyuKontrolEt(mcSunucu);
 
-					baglantiyiKontrolEt(baglanti);
+			}
 
-				}
-
-				@Override
-				public void baglantiKoptu() {
-
-					baglanti.tcpIstemci = null;
-
-					baglantiyiKontrolEt(baglanti);
-
-				}
-
-			});
-
-			baglanti.tcpIstemci.baglan();
-
-		}
+		});
 
 	}
 
-	public void mesajGonder(String uuid, String mesaj) {
+	public void kullaniciyaMesajGonder(String uuid, String mesaj) {
 
-		Kullanici kullanici = kullanicilar.get(uuid);
+		islemKuyrugu.execute(() -> {
 
-		if (kullanici == null)
-			return;
+			Kullanici kullanici = kullanicilar.get(uuid);
 
-		McSunucu mcSunucu = kullanici.mcSunucu;
+			if (kullanici == null)
+				return;
 
-		if (mcSunucu == null)
-			return;
+			McSunucu mcSunucu = kullanici.mcSunucu;
+
+			if (mcSunucu == null)
+				return;
+
+			sunucuyaMesajGonder(mcSunucu, mesaj);
+
+		});
+
+	}
+
+	public void sunucuyaMesajGonder(String mcUuid, String mesaj) {
+
+		islemKuyrugu.execute(() -> {
+
+			McSunucu mcSunucu = mcSunucular.get(mcUuid);
+
+			if (mcSunucu == null)
+				return;
+
+			sunucuyaMesajGonder(mcSunucu, mesaj);
+
+		});
+
+	}
+
+	public void tumSunucularaMesajGonder(final String mesaj) {
+
+		islemKuyrugu.execute(() -> {
+
+			mcSunucular.forEach((mcUuid, mcSunucu) -> sunucuyaMesajGonder(mcSunucu, mesaj));
+
+		});
+
+	}
+
+	private int bosPortIste() {
+
+		// TODO
+
+		return 0;
+
+	}
+
+	private void sunucuyaMesajGonder(McSunucu mcSunucu, String mesaj) {
 
 		try {
 
@@ -200,12 +264,10 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 					for (Baglanti baglanti : mcSunucu.baglantilar) {
 
-						TcpIstemci tcpIstemci = baglanti.tcpIstemci;
-
-						if (tcpIstemci == null)
+						if (baglanti.gondermeMetodu == null)
 							continue;
 
-						boolean gonderildi = tcpIstemci.mesajGonder(mesajEncrypted);
+						boolean gonderildi = baglanti.gondermeMetodu.apply(mesajEncrypted);
 
 						if (gonderildi)
 							break;
@@ -222,124 +284,49 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	}
 
-	public void sunucudanMesajGonder(int id, String mesaj) {
+	private void sunucuyuKontrolEt(McSunucu mcSunucu) {
 
-		try {
-
-			String mesajEncrypted = new String(Sifreleme.encrypt(mesaj.getBytes(sifrelemeCharset)), sifrelemeCharset);
-
-			tcpSunucu.mesajGonder(id, mesajEncrypted);
-
-		} catch (GeneralSecurityException | IOException e1) {
-
-		}
-
-	}
-
-	public void sunucudanTumSunucularaGonder(String mesaj) {
-
-		try {
-
-			String mesajEncrypted = new String(Sifreleme.encrypt(mesaj.getBytes(sifrelemeCharset)), sifrelemeCharset);
-
-			for (McSunucu mcSunucu : mcSunucular.values()) {
-
-				mcSunucu.islemKuyrugu.execute(() -> {
-
-					synchronized (mcSunucu.baglantilar) {
-
-						for (Baglanti baglanti : mcSunucu.baglantilar) {
-
-							Integer tcpSunucuId = baglanti.tcpSunucuId;
-
-							if (tcpSunucuId == null)
-								continue;
-
-							boolean gonderildi = tcpSunucu.mesajGonder(tcpSunucuId, mesajEncrypted);
-
-							if (gonderildi)
-								break;
-
-						}
-
-					}
-
-				});
-
-			}
-
-		} catch (GeneralSecurityException | IOException e1) {
-
-		}
-
-	}
-
-	private void baglantiyiKontrolEt(Baglanti baglanti) {
-
-		McSunucu mcSunucu = baglanti.mcSunucu;
-
-		if (!(baglanti.tcpSunucuId == null || baglanti.tcpIstemci == null) && baglanti.tcpIstemci.bagliMi()) {
-			// cift tarafli baglanti kuruldu
-
-			if (!(mcSunucu == null || mcSunucu.baglantilar.contains(baglanti))) {
-				// mcSunucu varsa ve baglantiyi icermiyorsa baglantiyi ekle
-
-				mcSunucu.baglantilar.add(baglanti);
-
-				sunucuyuKontrolEt(mcSunucu);
-
-			}
-
-		} else {
-			// cift tarafli baglanti bozuldu
-
-			if (mcSunucu != null && mcSunucu.baglantilar.contains(baglanti)) {
-				// mcSunucu varsa ve baglantiyi iceriyorsa baglantiyi cikar
-
-				mcSunucu.baglantilar.remove(baglanti);
-
-				sunucuyuKontrolEt(mcSunucu);
-
-			}
-
-		}
-
-		if (baglanti.tcpSunucuId == null && baglanti.tcpIstemci == null) {
-			// baglanti tamamen koptu
-
-			baglantilar.remove(baglanti.adres);
-
-			if (mcSunucu != null && mcSunucu.baglantilar.contains(baglanti)) {
-				// mcSunucu varsa ve baglantiyi iceriyorsa baglantiyi cikar
-
-				mcSunucu.baglantilar.remove(baglanti);
-
-				sunucuyuKontrolEt(mcSunucu);
-
-			}
-		}
-
-	}
-
-	private void sunucuyuKontrolEt(McSunucu sunucu) {
-
-		// TODO
-		// sunucu bagli degilken baglantilarinin sifirdan buyukse durumu bagliya cekilir
+		// sunucu bagli degilken baglanti eklenirse durumu bagliya cekilir
 		// ve dinleyicilere haber verilir
-		// sunucu bagliyken baglantilarinin sayisi sifira dusmusse bagli degile cekilir
+		// sunucu bagliyken baglantilarinin sayisi sifira duserse bagli degile cekilir
 		// ve dinleyicilere haber verilir
 
+		if (!mcSunucu.bagliMi.get() && mcSunucu.baglantilar.size() > 0) {
+
+			mcSunucu.bagliMi.set(true);
+
+			dinleyicilereUzakSunucuyaBaglanildi(mcSunucu.mcUuid);
+
+		} else if (mcSunucu.bagliMi.get() && mcSunucu.baglantilar.size() == 0) {
+			// sunucu koptu
+			// sunucuyu listelerden cikar
+			// tum uuid'lerin koptugunu bildir
+
+			mcSunucu.bagliMi.set(false);
+
+			mcSunucu.kullanicilar.forEach(kullanici -> {
+
+				dinleyicilereUzakKullaniciKoptu(kullanici.uuid);
+
+				kullanicilar.remove(kullanici.uuid);
+
+			});
+
+			mcSunucular.remove(mcSunucu.mcUuid);
+
+		}
+
 	}
 
-	private void dinleyicilereBaglantiKuruldu(final int id) {
+	private void dinleyicilereUzakKullaniciKoptu(final String uuid) {
 
-		dinleyiciler.forEach(e -> e.baglantiKuruldu(id));
+		dinleyiciler.forEach(e -> e.uzakKullaniciKoptu(uuid));
 
 	}
 
-	private void dinleyicilereUuidKoptu(String uuid) {
+	private void dinleyicilereUzakSunucuyaBaglanildi(final String mcUuid) {
 
-		dinleyiciler.forEach(e -> e.uzakUuidKoptu(uuid));
+		dinleyiciler.forEach(e -> e.uzakSunucuyaBaglanildi(mcUuid));
 
 	}
 
@@ -360,36 +347,63 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 	@Override
 	public void baglantiKoptu(int id) {
 
-		InetAddress adres = sunucuIdAdres.remove(id);
+		islemKuyrugu.execute(() -> {
 
-		if (adres == null)
-			return;
+			InetAddress adres = sunucuIdAdres.remove(id);
 
-		Baglanti baglanti = baglantilar.get(adres);
+			if (adres == null)
+				return;
 
-		if (baglanti == null)
-			return;
+			Baglanti baglanti = baglantilar.get(adres);
 
-		baglanti.tcpSunucuId = null;
+			if (baglanti == null)
+				return;
 
-		baglantiyiKontrolEt(baglanti);
+			McSunucu mcSunucu = baglanti.mcSunucu;
+
+			if (mcSunucu == null)
+				return;
+
+			if (mcSunucu.baglantilar.contains(baglanti)) {
+
+				mcSunucu.baglantilar.remove(baglanti);
+
+				sunucuyuKontrolEt(mcSunucu);
+
+			}
+
+		});
 
 	}
 
 	@Override
 	public void baglantiKuruldu(final int id) {
 
-		InetAddress adres = tcpSunucu.getUzakAdres(id);
+		islemKuyrugu.execute(() -> {
 
-		sunucuIdAdres.put(id, adres);
+			InetAddress adres = tcpSunucu.getUzakAdres(id);
 
-		baglantilar.putIfAbsent(adres, new Baglanti(adres));
+			sunucuIdAdres.put(id, adres);
 
-		Baglanti baglanti = baglantilar.get(adres);
+			baglantilar.putIfAbsent(adres, new Baglanti());
 
-		baglanti.tcpSunucuId = id;
+			Baglanti baglanti = baglantilar.get(adres);
 
-		baglantiyiKontrolEt(baglanti);
+			baglanti.gondermeMetodu = mesaj -> tcpSunucu.mesajGonder(id, mesaj);
+
+			McSunucu mcSunucu = baglanti.mcSunucu;
+
+			if (mcSunucu != null) {
+				// baglanti alinan bir uuid ile olusturulmus
+				// baglantilari guncelleyip kontrol et
+
+				mcSunucu.baglantilar.add(baglanti);
+
+				sunucuyuKontrolEt(mcSunucu);
+
+			}
+
+		});
 
 		tcpSunucu.baglantiKabulEt();
 
@@ -398,35 +412,32 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 	@Override
 	public void yeniMesajAlindi(int arg0, String arg1) {
 
-		dinleyicilereMesajAlindi(arg1);
+		islemKuyrugu.execute(() -> {
+
+			dinleyicilereMesajAlindi(arg1);
+
+		});
 
 	}
 
 	private class Baglanti {
 
-		private final InetAddress adres;
-
-		Integer tcpSunucuId;
-		TcpIstemci tcpIstemci;
 		McSunucu mcSunucu;
 
-		Baglanti(InetAddress adres) {
-
-			this.adres = adres;
-
-		}
+		Function<String, Boolean> gondermeMetodu;
 
 	}
 
 	private class McSunucu {
 
+		final String mcUuid;
+
 		final List<Kullanici> kullanicilar = Collections.synchronizedList(new ArrayList<Kullanici>());
 		final List<Baglanti> baglantilar = Collections.synchronizedList(new ArrayList<Baglanti>());
-		// sadece cift tarafli kurulmus baglantilari icerir
 
-		private final AtomicBoolean bagliMi = new AtomicBoolean(false);
+		final AtomicBoolean bagliMi = new AtomicBoolean(false);
 
-		private final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
+		protected final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
 			@Override
 			public Thread newThread(Runnable arg0) {
@@ -441,11 +452,21 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 		});
 
+		McSunucu(String mcUuid) {
+			this.mcUuid = mcUuid;
+		}
+
 	}
 
 	private class Kullanici {
 
+		final String uuid;
+
 		McSunucu mcSunucu;
+
+		Kullanici(String uuid) {
+			this.uuid = uuid;
+		}
 
 	}
 

@@ -95,11 +95,11 @@ public class McIstemci {
 
 	}
 
-	private void dinleyiciyeUuidKoptu(String uuid) {
+	private void dinleyiciyeKullaniciKoptu(String uuid) {
 
 		out.execute(() -> {
 
-			dinleyici.uuidKoptu(uuid);
+			dinleyici.kullaniciKoptu(uuid);
 
 		});
 
@@ -186,7 +186,7 @@ public class McIstemci {
 
 			case "UUID_KOPTU":
 
-				dinleyiciyeUuidKoptu(mesajNesnesi.mesaj);
+				dinleyiciyeKullaniciKoptu(mesajNesnesi.mesaj);
 
 				break;
 

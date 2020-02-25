@@ -15,8 +15,8 @@ public class Model {
 
 	private final Gson gson = new Gson();
 
-	private final Map<String, String> yerelUuidBeacon = Collections.synchronizedMap(new HashMap<String, String>());
-	private final Map<String, String> uzakUuidBeacon = Collections.synchronizedMap(new HashMap<String, String>());
+	private final Map<String, String> yerelKullaniciBeacon = Collections.synchronizedMap(new HashMap<String, String>());
+	private final Map<String, String> uzakKullaniciBeacon = Collections.synchronizedMap(new HashMap<String, String>());
 
 	public Model(ModelDinleyici dinleyici) {
 
@@ -36,13 +36,13 @@ public class Model {
 
 			case "BCON":
 
-				if (!mesajNesnesiStr.equals(yerelUuidBeacon.get(gonderenUuid))) {
+				if (!mesajNesnesiStr.equals(yerelKullaniciBeacon.get(gonderenUuid))) {
 
 					// Yerel uuid yeni eklendi veya guncellendi.
 					// Beacon, yerel beacon'lara eklenecek.
 					// Yeni beacon tum yerel ve uzak kullanicilara dagitilacak.
 
-					yerelUuidBeacon.put(gonderenUuid, mesajNesnesiStr);
+					yerelKullaniciBeacon.put(gonderenUuid, mesajNesnesiStr);
 					dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
 					dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
 
@@ -56,7 +56,7 @@ public class Model {
 
 			case "BCON?":
 
-				yerelUuidBeacon.forEach((uuid, beacon) -> {
+				yerelKullaniciBeacon.forEach((uuid, beacon) -> {
 
 					if (gonderenUuid.equals(uuid))
 						return;
@@ -65,7 +65,7 @@ public class Model {
 
 				});
 
-				uzakUuidBeacon.forEach((uuid, beacon) -> {
+				uzakKullaniciBeacon.forEach((uuid, beacon) -> {
 
 					dinleyici.yerelKullanicilaraGonder(gonderenUuid, beacon);
 
@@ -95,13 +95,13 @@ public class Model {
 
 			case "BCON":
 
-				if (!mesajNesnesiStr.equals(uzakUuidBeacon.get(gonderenUuid))) {
+				if (!mesajNesnesiStr.equals(uzakKullaniciBeacon.get(gonderenUuid))) {
 
 					// Uzak uuid yeni eklendi veya guncellendi.
 					// Beacon, uzak beacon'larda guncellenecek.
 					// Yeni beacon tum yerel kullanicilara dagitilacak.
 
-					uzakUuidBeacon.put(gonderenUuid, mesajNesnesiStr);
+					uzakKullaniciBeacon.put(gonderenUuid, mesajNesnesiStr);
 					dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
 
 				}
@@ -110,7 +110,7 @@ public class Model {
 
 			case "UUID_KOPTU":
 
-				uzakUuidKoptu(mesajNesnesi.mesaj);
+				uzakKullaniciKoptu(mesajNesnesi.mesaj);
 
 				break;
 
@@ -126,25 +126,27 @@ public class Model {
 
 	public Map<String, String> tumYerelBeaconlariAl() {
 
-		return yerelUuidBeacon;
+		return yerelKullaniciBeacon;
 
 	}
 
-	public void uzakUuidKoptu(String uuid) {
+	public void uzakKullaniciKoptu(String uuid) {
 
 		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", "UUID_KOPTU"));
 
-		uzakUuidBeacon.remove(uuid);
+		uzakKullaniciBeacon.remove(uuid);
 
 		dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
 
 	}
 
-	public void yerelUuidKoptu(String uuid) {
+	public void yerelKullaniciKoptu(String uuid) {
+
+		// TODO: kontrolde bu metodu cagiracak metot yazilacak
 
 		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", "UUID_KOPTU"));
 
-		yerelUuidBeacon.remove(uuid);
+		yerelKullaniciBeacon.remove(uuid);
 
 		dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
 
