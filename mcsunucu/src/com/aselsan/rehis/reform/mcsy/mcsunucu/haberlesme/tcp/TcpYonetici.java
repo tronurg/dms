@@ -69,6 +69,8 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 		tcpSunucu = new TcpSunucu(sunucuPort);
 
+		tcpSunucu.setBlocking(true);
+
 		tcpSunucu.dinleyiciEkle(this);
 
 		tcpSunucu.baglantiKabulEt();
