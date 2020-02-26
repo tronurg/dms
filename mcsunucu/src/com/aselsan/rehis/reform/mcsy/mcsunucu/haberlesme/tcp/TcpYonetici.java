@@ -2,6 +2,8 @@ package com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.tcp;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -13,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
@@ -27,6 +30,8 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 	private final int sunucuPort;
 	private final int istemciPortBasl;
 	private final int istemciPortBits;
+
+	private final AtomicInteger siradakiPort = new AtomicInteger(0);
 
 	private final TcpSunucu tcpSunucu;
 
@@ -66,6 +71,8 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 		this.sunucuPort = sunucuPort;
 		this.istemciPortBasl = istemciPortBasl;
 		this.istemciPortBits = istemciPortBits;
+
+		siradakiPort.set(istemciPortBasl);
 
 		tcpSunucu = new TcpSunucu(sunucuPort);
 
@@ -120,65 +127,75 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 				if (baglantiTipi.equals(TcpBaglantiTipi.ISTEMCI)) {
 
-					TcpIstemci tcpIstemci = new TcpIstemci(adres, sunucuPort, null, bosPortIste());
+					try {
 
-					tcpIstemci.setBlocking(true);
+						int port = bosPortIste();
 
-					tcpIstemci.dinleyiciEkle(new TcpIstemciDinleyici() {
+						TcpIstemci tcpIstemci = new TcpIstemci(adres, sunucuPort, null, port);
 
-						@Override
-						public void yeniMesajAlindi(String arg0) {
+						tcpIstemci.setBlocking(true);
 
-							islemKuyrugu.execute(() -> {
+						tcpIstemci.dinleyiciEkle(new TcpIstemciDinleyici() {
 
-								dinleyicilereMesajAlindi(arg0);
+							@Override
+							public void yeniMesajAlindi(String arg0) {
 
-							});
+								islemKuyrugu.execute(() -> {
 
-						}
+									dinleyicilereMesajAlindi(arg0);
 
-						@Override
-						public void baglantiKuruldu() {
+								});
 
-							islemKuyrugu.execute(() -> {
+							}
 
-								baglanti.gondermeMetodu = tcpIstemci::mesajGonder;
-								mcSunucu.baglantilar.add(baglanti);
+							@Override
+							public void baglantiKuruldu() {
 
-								sunucuyuKontrolEt(mcSunucu);
+								islemKuyrugu.execute(() -> {
 
-							});
+									baglanti.gondermeMetodu = tcpIstemci::mesajGonder;
+									mcSunucu.baglantilar.add(baglanti);
 
-						}
+									sunucuyuKontrolEt(mcSunucu);
 
-						@Override
-						public void baglantiKurulamadi() {
+								});
 
-							islemKuyrugu.execute(() -> {
+							}
 
-								baglantilar.remove(adres);
+							@Override
+							public void baglantiKurulamadi() {
 
-							});
+								islemKuyrugu.execute(() -> {
 
-						}
+									baglantilar.remove(adres);
 
-						@Override
-						public void baglantiKoptu() {
+								});
 
-							islemKuyrugu.execute(() -> {
+							}
 
-								baglantilar.remove(adres);
-								mcSunucu.baglantilar.remove(baglanti);
+							@Override
+							public void baglantiKoptu() {
 
-								sunucuyuKontrolEt(mcSunucu);
+								islemKuyrugu.execute(() -> {
 
-							});
+									baglantilar.remove(adres);
+									mcSunucu.baglantilar.remove(baglanti);
 
-						}
+									sunucuyuKontrolEt(mcSunucu);
 
-					});
+								});
 
-					tcpIstemci.baglan();
+							}
+
+						});
+
+						tcpIstemci.baglan();
+
+					} catch (BosPortException e) {
+
+						baglantilar.remove(adres);
+
+					}
 
 				}
 
@@ -246,11 +263,35 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 	}
 
-	private int bosPortIste() {
+	private int bosPortIste() throws BosPortException {
 
-		// TODO
+		int port = siradakiPort.get();
+		boolean portBulundu = false;
 
-		return 0;
+		for (int i = 0; i < (istemciPortBits - istemciPortBasl + 1); ++i) {
+
+			try (Socket testSoket = new Socket()) {
+				testSoket.bind(new InetSocketAddress(port));
+				portBulundu = true;
+				break;
+			} catch (IOException e) {
+
+			}
+
+			++port;
+			if (port > istemciPortBits)
+				port = istemciPortBasl;
+
+		}
+
+		if (!portBulundu)
+			throw new BosPortException();
+
+		int bulunanPort = port;
+
+		siradakiPort.set(++port > istemciPortBits ? istemciPortBasl : port);
+
+		return bulunanPort;
 
 	}
 
@@ -468,6 +509,19 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 
 		Kullanici(String uuid) {
 			this.uuid = uuid;
+		}
+
+	}
+
+	private class BosPortException extends Exception {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+
+		public BosPortException() {
+			super("Bos port bulunamadi");
 		}
 
 	}
