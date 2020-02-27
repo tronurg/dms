@@ -28,8 +28,6 @@ public class McIstemci {
 
 	private final LinkedBlockingQueue<String> dealerQueue = new LinkedBlockingQueue<String>();
 
-	private final LinkedBlockingQueue<Boolean> responseQueue = new LinkedBlockingQueue<Boolean>();
-
 	private final Gson gson = new Gson();
 
 	private final ExecutorService out = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -71,21 +69,25 @@ public class McIstemci {
 		subThread.setDaemon(true);
 		subThread.start();
 
-	}
-
-	public boolean beaconGonder(String mesaj) {
-
-		return sendToRouter(gson.toJson(new MesajNesnesi(mesaj, uuid, "BCON")));
+		Thread monitorThread = new Thread(this::monitor);
+		monitorThread.setDaemon(true);
+		monitorThread.start();
 
 	}
 
-	public boolean tumBeaconlariIste() {
+	public void beaconGonder(String mesaj) {
 
-		return sendToRouter(gson.toJson(new MesajNesnesi("", uuid, "BCON?")));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, "BCON")));
 
 	}
 
-	private void dinleyiciyeBeaconAlindi(String mesaj) {
+	public void tumBeaconlariIste() {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi("", uuid, "BCON?")));
+
+	}
+
+	private void dinleyiciyeBeaconAlindi(final String mesaj) {
 
 		out.execute(() -> {
 
@@ -95,7 +97,7 @@ public class McIstemci {
 
 	}
 
-	private void dinleyiciyeKullaniciKoptu(String uuid) {
+	private void dinleyiciyeKullaniciKoptu(final String uuid) {
 
 		out.execute(() -> {
 
@@ -105,25 +107,21 @@ public class McIstemci {
 
 	}
 
-	private synchronized boolean sendToRouter(String message) {
+	private void dinleyiciyeSunucuBaglantiDurumuGuncellendi(final boolean baglantiDurumu) {
 
-		dealerQueue.offer(message);
+		out.execute(() -> {
 
-		boolean response = false;
+			dinleyici.sunucuBaglantiDurumuGuncellendi(baglantiDurumu);
 
-		try {
-			response = responseQueue.take();
-		} catch (InterruptedException e) {
-
-		}
-
-		return response;
+		});
 
 	}
 
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER)) {
+
+			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_CONNECTED | ZMQ.EVENT_DISCONNECTED);
 
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
 			dealerSocket.setImmediate(false);
@@ -135,9 +133,7 @@ public class McIstemci {
 
 					String mesaj = dealerQueue.take();
 
-					boolean response = dealerSocket.send(mesaj, ZMQ.DONTWAIT);
-
-					responseQueue.offer(response);
+					dealerSocket.send(mesaj, ZMQ.DONTWAIT);
 
 				} catch (InterruptedException e) {
 
@@ -170,11 +166,38 @@ public class McIstemci {
 
 	}
 
+	private void monitor() {
+
+		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+
+			monitorSocket.connect("inproc://monitor");
+
+			while (!Thread.currentThread().isInterrupted()) {
+
+				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
+				switch (event.getEvent()) {
+				case ZMQ.EVENT_CONNECTED:
+					dinleyiciyeSunucuBaglantiDurumuGuncellendi(true);
+					break;
+				case ZMQ.EVENT_DISCONNECTED:
+					dinleyiciyeSunucuBaglantiDurumuGuncellendi(false);
+					break;
+				}
+
+			}
+
+		}
+
+	}
+
 	private void gelenMesajiIsle(String mesaj) {
 
 		try {
 
 			MesajNesnesi mesajNesnesi = gson.fromJson(mesaj, MesajNesnesi.class);
+
+			if (uuid.equals(mesajNesnesi.gonderenUuid))
+				return;
 
 			switch (mesajNesnesi.tip) {
 

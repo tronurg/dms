@@ -53,9 +53,8 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
 			while (true) {
 
-				boolean sunucuBaglantiDurumu = mcIstemci.beaconGonder(model.getBeaconMesaji());
-
-				model.setSunucuBaglantiDurumu(sunucuBaglantiDurumu);
+				if (model.isSunucuBagli())
+					mcIstemci.beaconGonder(model.getBeaconMesaji());
 
 				try {
 					Thread.sleep(1000);
@@ -72,6 +71,8 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
 	@Override
 	public void sunucuBaglantiDurumuGuncellendi(boolean arg0) {
+
+		model.setSunucuBaglantiDurumu(arg0);
 
 		if (arg0) {
 

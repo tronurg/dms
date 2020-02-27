@@ -6,4 +6,6 @@ public interface McIstemciDinleyici {
 
 	void kullaniciKoptu(String uuid);
 
+	void sunucuBaglantiDurumuGuncellendi(boolean baglantiDurumu);
+
 }

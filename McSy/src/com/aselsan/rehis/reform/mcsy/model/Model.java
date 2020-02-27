@@ -39,25 +39,21 @@ public class Model {
 
 	}
 
+	public boolean isSunucuBagli() {
+
+		return sunucuBagli.get();
+
+	}
+
 	public void setSunucuBaglantiDurumu(boolean arg0) {
 
-		if (sunucuBagli.getAndSet(arg0) != arg0) {
-
-			dinleyicilereSunucuBaglantiDurumuGuncellendi(arg0);
-
-		}
+		sunucuBagli.set(arg0);
 
 	}
 
 	public void uuidKoptu(String uuid) {
 
 		// TODO
-
-	}
-
-	private void dinleyicilereSunucuBaglantiDurumuGuncellendi(final boolean arg0) {
-
-		dinleyiciler.forEach(e -> e.sunucuBaglantiDurumuGuncellendi(arg0));
 
 	}
 

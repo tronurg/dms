@@ -80,6 +80,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		new Thread(this::router).start();
 		new Thread(this::pub).start();
+		new Thread(this::monitor).start();
 
 	}
 
@@ -118,6 +119,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		try (ZMQ.Socket routerSocket = context.createSocket(SocketType.ROUTER)) {
 
+			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_ACCEPTED | ZMQ.EVENT_DISCONNECTED);
+
 			routerSocket.bind("tcp://*:" + routerPort);
 
 			while (!Thread.currentThread().isInterrupted()) {
@@ -149,6 +152,34 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 				pubSocket.sendMore(aliciMesaj.getKey() + "\n");
 				pubSocket.send(aliciMesaj.getValue());
+
+			}
+
+		} catch (Exception e) {
+
+			System.out.println(pubPort + " portu kullaniliyor. Istemcilere veri gonderilemeyecek!");
+
+		}
+
+	}
+
+	private void monitor() {
+
+		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+
+			monitorSocket.connect("inproc://monitor");
+
+			while (!Thread.currentThread().isInterrupted()) {
+
+				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
+				switch (event.getEvent()) {
+				case ZMQ.EVENT_ACCEPTED:
+					System.out.println("baglandi"); // TODO
+					break;
+				case ZMQ.EVENT_DISCONNECTED:
+					System.out.println("koptu"); // TODO
+					break;
+				}
 
 			}
 
