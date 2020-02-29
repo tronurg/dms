@@ -12,6 +12,7 @@ import java.util.concurrent.ThreadFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.intf.TcpYoneticiDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.haberlesme.tcp.TcpBaglantiTipi;
@@ -119,16 +120,38 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		try (ZMQ.Socket routerSocket = context.createSocket(SocketType.ROUTER)) {
 
-			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_ACCEPTED | ZMQ.EVENT_DISCONNECTED);
+			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_DISCONNECTED);
 
+			routerSocket.setRouterMandatory(true);
 			routerSocket.bind("tcp://*:" + routerPort);
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				routerSocket.recvStr();
+				String dealerId = routerSocket.recvStr();
 				String mesajNesnesiStr = routerSocket.recvStr();
 
-				islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
+				if (MC_UUID.equals(dealerId)) {
+
+					model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+
+						try {
+
+							routerSocket.sendMore(uuid);
+							routerSocket.send("");
+
+						} catch (ZMQException e) {
+
+							islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
+
+						}
+
+					});
+
+				} else {
+
+					islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
+
+				}
 
 			}
 
@@ -165,7 +188,12 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 	private void monitor() {
 
-		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR);
+				ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER)) {
+
+			dealerSocket.setIdentity(MC_UUID.getBytes(ZMQ.CHARSET));
+			dealerSocket.setImmediate(false);
+			dealerSocket.connect("tcp://localhost:" + routerPort);
 
 			monitorSocket.connect("inproc://monitor");
 
@@ -173,11 +201,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
 				switch (event.getEvent()) {
-				case ZMQ.EVENT_ACCEPTED:
-					System.out.println("baglandi"); // TODO
-					break;
 				case ZMQ.EVENT_DISCONNECTED:
-					System.out.println("koptu"); // TODO
+					dealerSocket.send("", ZMQ.DONTWAIT);
 					break;
 				}
 

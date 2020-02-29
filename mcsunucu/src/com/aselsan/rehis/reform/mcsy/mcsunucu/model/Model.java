@@ -142,8 +142,6 @@ public class Model {
 
 	public void yerelKullaniciKoptu(String uuid) {
 
-		// TODO: kontrolde bu metodu cagiracak metot yazilacak
-
 		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", "UUID_KOPTU"));
 
 		yerelKullaniciBeacon.remove(uuid);
