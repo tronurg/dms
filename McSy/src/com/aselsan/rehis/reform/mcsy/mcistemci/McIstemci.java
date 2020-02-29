@@ -87,36 +87,6 @@ public class McIstemci {
 
 	}
 
-	private void dinleyiciyeBeaconAlindi(final String mesaj) {
-
-		out.execute(() -> {
-
-			dinleyici.beaconAlindi(mesaj);
-
-		});
-
-	}
-
-	private void dinleyiciyeKullaniciKoptu(final String uuid) {
-
-		out.execute(() -> {
-
-			dinleyici.kullaniciKoptu(uuid);
-
-		});
-
-	}
-
-	private void dinleyiciyeSunucuBaglantiDurumuGuncellendi(final boolean baglantiDurumu) {
-
-		out.execute(() -> {
-
-			dinleyici.sunucuBaglantiDurumuGuncellendi(baglantiDurumu);
-
-		});
-
-	}
-
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER)) {
@@ -221,6 +191,36 @@ public class McIstemci {
 		} catch (JsonSyntaxException e) {
 
 		}
+
+	}
+
+	private void dinleyiciyeBeaconAlindi(final String mesaj) {
+
+		out.execute(() -> {
+
+			dinleyici.beaconAlindi(mesaj);
+
+		});
+
+	}
+
+	private void dinleyiciyeKullaniciKoptu(final String uuid) {
+
+		out.execute(() -> {
+
+			dinleyici.kullaniciKoptu(uuid);
+
+		});
+
+	}
+
+	private void dinleyiciyeSunucuBaglantiDurumuGuncellendi(final boolean baglantiDurumu) {
+
+		out.execute(() -> {
+
+			dinleyici.sunucuBaglantiDurumuGuncellendi(baglantiDurumu);
+
+		});
 
 	}
 
