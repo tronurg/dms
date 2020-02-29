@@ -4,14 +4,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
+
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
 import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
 import com.aselsan.rehis.reform.mcsy.model.Model;
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
+import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
+
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
 
 public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
@@ -20,6 +27,8 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 	private final VeritabaniYonetici veritabaniYonetici;
 
 	private final Model model;
+	private final McPanel mcPanel;
+	private final JFXPanel mcPanelSwing;
 
 	private final McIstemci mcIstemci;
 
@@ -28,6 +37,10 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi);
 
 		Kimlik kimlik = veritabaniYonetici.getKimlik();
+
+		mcPanel = new McPanel();
+		mcPanelSwing = new JFXPanel();
+		SwingUtilities.invokeLater(() -> mcPanelSwing.setScene(new Scene(mcPanel)));
 
 		model = new Model(kimlik);
 
@@ -66,6 +79,12 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 			}
 
 		}).start();
+
+	}
+
+	public JComponent getPanel() {
+
+		return mcPanelSwing;
 
 	}
 

@@ -1,6 +1,6 @@
 package com.aselsan.rehis.reform.mcsy.main;
 
-import javax.swing.JPanel;
+import javax.swing.JComponent;
 
 import org.osgi.service.component.annotations.Component;
 
@@ -12,11 +12,9 @@ import com.aselsan.rehis.reform.mcsy.kontrol.Kontrol;
 public class Mcsy implements McServisi {
 
 	@Override
-	public JPanel getMcPanel(String kullaniciAdi) throws VeritabaniHatasi {
+	public JComponent getMcPanel(String kullaniciAdi) throws VeritabaniHatasi {
 
-		Kontrol.getInstance(kullaniciAdi);
-
-		return null;
+		return Kontrol.getInstance(kullaniciAdi).getPanel();
 
 	}
 

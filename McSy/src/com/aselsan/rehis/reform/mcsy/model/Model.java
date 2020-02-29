@@ -7,7 +7,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 public class Model {
 
@@ -48,6 +50,18 @@ public class Model {
 	public void setSunucuBaglantiDurumu(boolean arg0) {
 
 		sunucuBagli.set(arg0);
+
+	}
+
+	public void beaconAlindi(String mesaj) {
+
+		try {
+
+			Kisi kisi = gson.fromJson(mesaj, Kisi.class);
+
+		} catch (JsonSyntaxException e) {
+
+		}
 
 	}
 

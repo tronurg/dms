@@ -101,11 +101,11 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void kisiEkle(Kisi kisi) {
+	public void kisiEkleGuncelle(Kisi kisi) {
 
 	}
 
-	public void grupEkle(Grup grup) {
+	public void grupEkleGuncelle(Grup grup) {
 
 	}
 

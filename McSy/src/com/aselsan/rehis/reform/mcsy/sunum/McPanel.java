@@ -1,5 +1,13 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
-public class McPanel {
+import javafx.scene.layout.VBox;
+
+public class McPanel extends VBox {
+
+	public McPanel() {
+
+		super();
+
+	}
 
 }

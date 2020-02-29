@@ -1,5 +1,10 @@
 package com.aselsan.rehis.reform.mcsy.test;
 
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -16,7 +21,20 @@ public class TestMcsy {
 	protected void activate() {
 
 		try {
-			mcServisi.getMcPanel("onur");
+			JComponent mcPanel = mcServisi.getMcPanel("onur");
+
+			JFrame frame = new JFrame();
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+			JPanel panel = new JPanel();
+			panel.add(mcPanel);
+
+			frame.setContentPane(panel);
+			frame.setSize(300, 500);
+			frame.setLocationRelativeTo(null);
+
+			SwingUtilities.invokeLater(() -> frame.setVisible(true));
+
 		} catch (VeritabaniHatasi e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
