@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.swing.JComponent;
-import javax.swing.SwingUtilities;
 
+import com.aselsan.rehis.reform.mcsy.arayuz.McHandle;
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
 import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
@@ -20,15 +20,16 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
-public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
+public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 	private static final Map<String, Kontrol> INSTANCES = Collections.synchronizedMap(new HashMap<String, Kontrol>());
 
 	private final VeritabaniYonetici veritabaniYonetici;
 
 	private final Model model;
-	private final McPanel mcPanel;
-	private final JFXPanel mcPanelSwing;
+
+	private McPanel mcPanel;
+	private JFXPanel mcPanelSwing;
 
 	private final McIstemci mcIstemci;
 
@@ -37,10 +38,6 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi);
 
 		Kimlik kimlik = veritabaniYonetici.getKimlik();
-
-		mcPanel = new McPanel();
-		mcPanelSwing = new JFXPanel();
-		SwingUtilities.invokeLater(() -> mcPanelSwing.setScene(new Scene(mcPanel)));
 
 		model = new Model(kimlik);
 
@@ -82,9 +79,9 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 
 	}
 
-	public JComponent getPanel() {
+	private void initGUI() {
 
-		return mcPanelSwing;
+		// TODO
 
 	}
 
@@ -118,6 +115,23 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici {
 	public void kullaniciKoptu(String uuid) {
 
 		model.uuidKoptu(uuid);
+
+	}
+
+	@Override
+	public JComponent getMcPanel() {
+
+		if (mcPanelSwing == null) {
+
+			mcPanelSwing = new JFXPanel();
+			mcPanel = new McPanel();
+			mcPanelSwing.setScene(new Scene(mcPanel));
+
+			initGUI();
+
+		}
+
+		return mcPanelSwing;
 
 	}
 

@@ -2,8 +2,12 @@ package com.aselsan.rehis.reform.mcsy.ortak;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Locale;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -19,6 +23,8 @@ import org.xml.sax.SAXException;
 public class OrtakMetotlar {
 
 	private static Document confDoc;
+
+	private static ResourceBundle dilDosyasi;
 
 	static String getSunucuIp() {
 
@@ -60,6 +66,20 @@ public class OrtakMetotlar {
 
 	}
 
+	public static String cevir(String arg0) {
+
+		try {
+
+			return getDilDosyasi().getString(arg0);
+
+		} catch (Exception e) {
+
+		}
+
+		return arg0;
+
+	}
+
 	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
 
 		if (confDoc == null) {
@@ -73,6 +93,23 @@ public class OrtakMetotlar {
 		}
 
 		return confDoc;
+
+	}
+
+	private static ResourceBundle getDilDosyasi() throws IOException {
+
+		if (dilDosyasi == null) {
+
+			try (Reader reader = Files.newBufferedReader(Paths.get(
+					"./plugins/mcsy/lang/mcsy_" + Locale.getDefault().getLanguage().toUpperCase() + ".properties"))) {
+
+				dilDosyasi = new PropertyResourceBundle(reader);
+
+			}
+
+		}
+
+		return dilDosyasi;
 
 	}
 

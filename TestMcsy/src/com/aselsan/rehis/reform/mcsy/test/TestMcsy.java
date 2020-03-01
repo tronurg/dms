@@ -1,5 +1,9 @@
 package com.aselsan.rehis.reform.mcsy.test;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+
+import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -21,16 +25,18 @@ public class TestMcsy {
 	protected void activate() {
 
 		try {
-			JComponent mcPanel = mcServisi.getMcPanel("onur");
+			JComponent mcPanel = mcServisi.login("onur").getMcPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-			JPanel panel = new JPanel();
-			panel.add(mcPanel);
+			JPanel panel = new JPanel(new BorderLayout());
+			panel.add(mcPanel, BorderLayout.CENTER);
+
+			mcPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
 
 			frame.setContentPane(panel);
-			frame.setSize(300, 500);
+			frame.setSize(400, 600);
 			frame.setLocationRelativeTo(null);
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));

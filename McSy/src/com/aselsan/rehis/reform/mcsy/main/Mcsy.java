@@ -1,9 +1,8 @@
 package com.aselsan.rehis.reform.mcsy.main;
 
-import javax.swing.JComponent;
-
 import org.osgi.service.component.annotations.Component;
 
+import com.aselsan.rehis.reform.mcsy.arayuz.McHandle;
 import com.aselsan.rehis.reform.mcsy.arayuz.McServisi;
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.kontrol.Kontrol;
@@ -12,9 +11,9 @@ import com.aselsan.rehis.reform.mcsy.kontrol.Kontrol;
 public class Mcsy implements McServisi {
 
 	@Override
-	public JComponent getMcPanel(String kullaniciAdi) throws VeritabaniHatasi {
+	public McHandle login(String kullaniciAdi) throws VeritabaniHatasi {
 
-		return Kontrol.getInstance(kullaniciAdi).getPanel();
+		return Kontrol.getInstance(kullaniciAdi);
 
 	}
 
