@@ -1,29 +1,37 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
+import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
-import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Border;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 class KimlikPane extends GridPane {
 
 	private Group profilResmi;
 	private Circle durumCemberi;
 	private Circle profilDairesi;
+	private Label profilLabel;
 
 	private Label isimLabel;
-	private TextField aciklamaTextField;
+	private TextArea aciklamaTextArea;
 	private Label konumLabel;
 
 	KimlikPane() {
@@ -39,13 +47,26 @@ class KimlikPane extends GridPane {
 		Separator sep = new Separator(Orientation.VERTICAL);
 		setMargin(sep, new Insets(0, 5, 0, 5));
 
-		setHgrow(getAciklamaTextField(), Priority.ALWAYS);
+		setValignment(getProfilResmi(), VPos.TOP);
+		setHgrow(getAciklamaTextArea(), Priority.ALWAYS);
 
 		add(getProfilResmi(), 0, 0, 1, 3);
 		add(sep, 1, 0, 1, 3);
 		add(getIsimLabel(), 2, 0, 1, 1);
-		add(getAciklamaTextField(), 2, 1, 1, 1);
+		add(getAciklamaTextArea(), 2, 1, 1, 1);
 		add(getKonumLabel(), 2, 2, 1, 1);
+
+	}
+
+	void kimlikGuncelle(Kimlik kimlik) {
+
+		getDurumCemberi().setStroke(OrtakSabitler.DURUM_RENKLERI[kimlik.getDurum()]);
+		getProfilLabel().setText(kimlik.getIsim().substring(0, 1).toUpperCase());
+
+		getIsimLabel().setText(kimlik.getIsim());
+		getAciklamaTextArea().setText(kimlik.getAciklama());
+		getKonumLabel().setText(kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
+				: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")");
 
 	}
 
@@ -71,7 +92,7 @@ class KimlikPane extends GridPane {
 
 			profilResmi = new Group();
 
-			profilResmi.getChildren().addAll(getDurumCemberi(), getProfilDairesi());
+			profilResmi.getChildren().addAll(getDurumCemberi(), getProfilDairesi(), getProfilLabel());
 
 		}
 
@@ -85,7 +106,7 @@ class KimlikPane extends GridPane {
 
 			durumCemberi = new Circle(36);
 			durumCemberi.setStrokeWidth(5);
-			durumCemberi.setStroke(Color.GREEN);
+			durumCemberi.setStroke(Color.LIMEGREEN);
 			durumCemberi.setFill(Color.TRANSPARENT);
 
 		}
@@ -107,11 +128,32 @@ class KimlikPane extends GridPane {
 
 	}
 
+	private Label getProfilLabel() {
+
+		if (profilLabel == null) {
+
+			profilLabel = new Label();
+
+			profilLabel.setFont(Font.font(null, FontWeight.BOLD, 36.0));
+
+			profilLabel.translateXProperty().bind(Bindings
+					.createDoubleBinding(() -> -profilLabel.widthProperty().get() / 2, profilLabel.widthProperty()));
+			profilLabel.translateYProperty().bind(Bindings
+					.createDoubleBinding(() -> -profilLabel.heightProperty().get() / 2, profilLabel.heightProperty()));
+
+		}
+
+		return profilLabel;
+
+	}
+
 	private Label getIsimLabel() {
 
 		if (isimLabel == null) {
 
 			isimLabel = new Label();
+
+			isimLabel.setFont(Font.font(null, FontWeight.BOLD, 24.0));
 
 		}
 
@@ -119,31 +161,38 @@ class KimlikPane extends GridPane {
 
 	}
 
-	private TextField getAciklamaTextField() {
+	private TextArea getAciklamaTextArea() {
 
-		if (aciklamaTextField == null) {
+		if (aciklamaTextArea == null) {
 
-			aciklamaTextField = new TextField();
+			aciklamaTextArea = new TextArea();
 
-			aciklamaTextField.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
+			aciklamaTextArea.setTextFormatter(
+					new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
-			aciklamaTextField.setEditable(false);
+			aciklamaTextArea.setPrefRowCount(1);
 
-			aciklamaTextField.setOnMouseClicked(e -> aciklamaTextField.setEditable(true));
-			aciklamaTextField.setOnKeyPressed(e -> {
+			aciklamaTextArea.setWrapText(true);
+			aciklamaTextArea.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
+			aciklamaTextArea.setFocusTraversable(false);
+			aciklamaTextArea.setEditable(false);
+
+			aciklamaTextArea.setOnMouseClicked(e -> aciklamaTextArea.setEditable(true));
+			aciklamaTextArea.setOnKeyPressed(e -> {
 				if (!e.getCode().equals(KeyCode.ENTER))
 					return;
-				aciklamaTextField.setEditable(false);
+				aciklamaTextArea.setEditable(false);
+				requestFocus();
 				// TODO
 			});
 
-			// TODO
-			aciklamaTextField.disableProperty().bind(Bindings.not(aciklamaTextField.hoverProperty()));
-			aciklamaTextField.setOnMouseDragEntered(e -> System.out.println("entered"));
+			// TODO: border
+
+			aciklamaTextArea.setBorder(Border.EMPTY);
 
 		}
 
-		return aciklamaTextField;
+		return aciklamaTextArea;
 
 	}
 

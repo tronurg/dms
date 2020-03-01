@@ -35,6 +35,12 @@ public class Model {
 
 	}
 
+	public Kimlik getKimlik() {
+
+		return kimlik;
+
+	}
+
 	public String getBeaconMesaji() {
 
 		return gson.toJson(kimlik);

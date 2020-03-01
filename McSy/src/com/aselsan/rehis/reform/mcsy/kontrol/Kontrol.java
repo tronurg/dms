@@ -17,6 +17,7 @@ import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
+import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
@@ -81,6 +82,8 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 	private void initGUI() {
 
+		mcPanel.kimlikGuncelle(model.getKimlik());
+
 		// TODO
 
 	}
@@ -127,7 +130,7 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 			mcPanel = new McPanel();
 			mcPanelSwing.setScene(new Scene(mcPanel));
 
-			initGUI();
+			Platform.runLater(() -> initGUI());
 
 		}
 

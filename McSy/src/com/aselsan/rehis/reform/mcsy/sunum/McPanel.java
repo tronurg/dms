@@ -1,5 +1,7 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
+
 import javafx.geometry.Insets;
 import javafx.scene.control.Accordion;
 import javafx.scene.layout.VBox;
@@ -26,6 +28,12 @@ public class McPanel extends VBox {
 		kisilerGruplarPane.getPanes().addAll(kisilerPane, gruplarPane);
 
 		getChildren().addAll(kimlikPane, kisilerGruplarPane);
+
+	}
+
+	public void kimlikGuncelle(Kimlik kimlik) {
+
+		kimlikPane.kimlikGuncelle(kimlik);
 
 	}
 
