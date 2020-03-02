@@ -82,6 +82,8 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 	private void initGUI() {
 
+		mcPanelSwing.setScene(new Scene(mcPanel));
+
 		mcPanel.kimlikGuncelle(model.getKimlik());
 
 		// TODO
@@ -128,7 +130,6 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 			mcPanelSwing = new JFXPanel();
 			mcPanel = new McPanel();
-			mcPanelSwing.setScene(new Scene(mcPanel));
 
 			Platform.runLater(() -> initGUI());
 

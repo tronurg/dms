@@ -44,4 +44,68 @@ public class Kisi {
 			@JoinColumn(name = "grup_id") })
 	private Set<Grup> gruplar = new HashSet<Grup>();
 
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getIsim() {
+		return isim;
+	}
+
+	public void setIsim(String isim) {
+		this.isim = isim;
+	}
+
+	public String getAciklama() {
+		return aciklama;
+	}
+
+	public void setAciklama(String aciklama) {
+		this.aciklama = aciklama;
+	}
+
+	public Integer getDurum() {
+		return durum;
+	}
+
+	public void setDurum(Integer durum) {
+		this.durum = durum;
+	}
+
+	public Double getEnlem() {
+		return enlem;
+	}
+
+	public void setEnlem(Double enlem) {
+		this.enlem = enlem;
+	}
+
+	public Double getBoylam() {
+		return boylam;
+	}
+
+	public void setBoylam(Double boylam) {
+		this.boylam = boylam;
+	}
+
+	public Set<Grup> getGruplar() {
+		return gruplar;
+	}
+
+	public void setGruplar(Set<Grup> gruplar) {
+		this.gruplar = gruplar;
+	}
+
 }

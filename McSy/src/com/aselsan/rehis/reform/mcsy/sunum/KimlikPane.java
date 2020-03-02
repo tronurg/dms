@@ -1,5 +1,7 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
@@ -14,7 +16,9 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
-import javafx.scene.layout.Border;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
@@ -104,7 +108,7 @@ class KimlikPane extends GridPane {
 
 		if (durumCemberi == null) {
 
-			durumCemberi = new Circle(36);
+			durumCemberi = new Circle(35);
 			durumCemberi.setStrokeWidth(5);
 			durumCemberi.setStroke(Color.LIMEGREEN);
 			durumCemberi.setFill(Color.TRANSPARENT);
@@ -134,7 +138,7 @@ class KimlikPane extends GridPane {
 
 			profilLabel = new Label();
 
-			profilLabel.setFont(Font.font(null, FontWeight.BOLD, 36.0));
+			profilLabel.setFont(Font.font(null, FontWeight.BOLD, 35.0));
 
 			profilLabel.translateXProperty().bind(Bindings
 					.createDoubleBinding(() -> -profilLabel.widthProperty().get() / 2, profilLabel.widthProperty()));
@@ -153,7 +157,7 @@ class KimlikPane extends GridPane {
 
 			isimLabel = new Label();
 
-			isimLabel.setFont(Font.font(null, FontWeight.BOLD, 24.0));
+			isimLabel.setFont(Font.font(null, FontWeight.BOLD, 25.0));
 
 		}
 
@@ -167,6 +171,8 @@ class KimlikPane extends GridPane {
 
 			aciklamaTextArea = new TextArea();
 
+			final AtomicReference<String> sonAciklama = new AtomicReference<String>();
+
 			aciklamaTextArea.setTextFormatter(
 					new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
@@ -177,18 +183,28 @@ class KimlikPane extends GridPane {
 			aciklamaTextArea.setFocusTraversable(false);
 			aciklamaTextArea.setEditable(false);
 
-			aciklamaTextArea.setOnMouseClicked(e -> aciklamaTextArea.setEditable(true));
+			aciklamaTextArea.setOnMouseClicked(e -> {
+				sonAciklama.set(aciklamaTextArea.getText());
+				aciklamaTextArea.setEditable(true);
+			});
 			aciklamaTextArea.setOnKeyPressed(e -> {
-				if (!e.getCode().equals(KeyCode.ENTER))
+				KeyCode code = e.getCode();
+				if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
 					return;
+
+				if (e.getCode().equals(KeyCode.ESCAPE))
+					aciklamaTextArea.setText(sonAciklama.get());
+
 				aciklamaTextArea.setEditable(false);
 				requestFocus();
 				// TODO
+
 			});
 
 			// TODO: border
 
-			aciklamaTextArea.setBorder(Border.EMPTY);
+			aciklamaTextArea.setBackground(
+					new Background(new BackgroundFill(Color.GREENYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		}
 
