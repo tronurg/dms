@@ -195,6 +195,7 @@ class KimlikPane extends GridPane {
 				if (e.getCode().equals(KeyCode.ESCAPE))
 					aciklamaTextArea.setText(sonAciklama.get());
 
+				e.consume();
 				aciklamaTextArea.setEditable(false);
 				requestFocus();
 				// TODO
