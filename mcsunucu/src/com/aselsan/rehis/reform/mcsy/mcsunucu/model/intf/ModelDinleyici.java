@@ -4,6 +4,8 @@ public interface ModelDinleyici {
 
 	void yerelKullanicilaraGonder(String aliciUuid, String mesaj);
 
+	void uzakKullanicilaraGonder(String aliciUuid, String mesaj);
+
 	void tumUzakKullanicilaraGonder(String mesaj);
 
 	void uuidYayinla(String uuid);

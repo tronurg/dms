@@ -30,18 +30,68 @@ public class Grup {
 	@Column(name = "aciklama")
 	private String aciklama;
 
-	@Column(name = "uuid_kurucu")
+	@Column(name = "uuid_kurucu", nullable = false, updatable = false)
 	private String uuidKurucu;
 
 	@ManyToMany(mappedBy = "gruplar")
 	private Set<Kisi> kisiler = new HashSet<Kisi>();
 
+	public Grup(Long id, String uuid, String isim, String aciklama, String uuidKurucu, Set<Kisi> kisiler) {
+		this.isim = isim;
+		this.uuidKurucu = uuidKurucu;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getUuid() {
+		return uuid;
+	}
+
+	public void setUuid(String uuid) {
+		this.uuid = uuid;
+	}
+
+	public String getIsim() {
+		return isim;
+	}
+
+	public void setIsim(String isim) {
+		this.isim = isim;
+	}
+
+	public String getAciklama() {
+		return aciklama;
+	}
+
+	public void setAciklama(String aciklama) {
+		this.aciklama = aciklama;
+	}
+
+	public String getUuidKurucu() {
+		return uuidKurucu;
+	}
+
+	public void setUuidKurucu(String uuidKurucu) {
+		this.uuidKurucu = uuidKurucu;
+	}
+
+	public Set<Kisi> getKisiler() {
+		return kisiler;
+	}
+
+	public void setKisiler(Set<Kisi> kisiler) {
+		this.kisiler = kisiler;
+	}
+
 	@PrePersist
 	private void onCreate() {
-
-		if (uuid == null)
-			uuid = UUID.randomUUID().toString();
-
+		this.uuid = UUID.randomUUID().toString();
 	}
 
 }

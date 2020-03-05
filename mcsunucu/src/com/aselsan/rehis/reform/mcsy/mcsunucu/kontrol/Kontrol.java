@@ -255,6 +255,19 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	}
 
 	@Override
+	public void uzakKullanicilaraGonder(String aliciUuid, String mesaj) {
+
+		try {
+
+			getTcpYonetici().kullaniciyaMesajGonder(aliciUuid, mesaj);
+
+		} catch (IOException e) {
+
+		}
+
+	}
+
+	@Override
 	public void tumUzakKullanicilaraGonder(String mesaj) {
 
 		try {

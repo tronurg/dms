@@ -11,6 +11,7 @@ import org.zeromq.ZMQ;
 
 import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajNesnesi;
+import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -77,13 +78,19 @@ public class McIstemci {
 
 	public void beaconGonder(String mesaj) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, "BCON")));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, MesajTipi.BCON)));
 
 	}
 
 	public void tumBeaconlariIste() {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi("", uuid, "BCON?")));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi("", uuid, MesajTipi.REQ_BCON)));
+
+	}
+
+	public void mesajGonder(String mesaj, String aliciUuid) {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.MESAJ)));
 
 	}
 
@@ -170,15 +177,21 @@ public class McIstemci {
 			if (uuid.equals(mesajNesnesi.gonderenUuid))
 				return;
 
-			switch (mesajNesnesi.tip) {
+			switch (mesajNesnesi.mesajTipi) {
 
-			case "BCON":
+			case BCON:
 
 				dinleyiciyeBeaconAlindi(mesajNesnesi.mesaj);
 
 				break;
 
-			case "UUID_KOPTU":
+			case MESAJ:
+
+				dinleyiciyeMesajAlindi(mesajNesnesi.mesaj);
+
+				break;
+
+			case UUID_KOPTU:
 
 				dinleyiciyeKullaniciKoptu(mesajNesnesi.mesaj);
 
@@ -199,6 +212,16 @@ public class McIstemci {
 		out.execute(() -> {
 
 			dinleyici.beaconAlindi(mesaj);
+
+		});
+
+	}
+
+	private void dinleyiciyeMesajAlindi(final String mesaj) {
+
+		out.execute(() -> {
+
+			dinleyici.mesajAlindi(mesaj);
 
 		});
 

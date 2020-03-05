@@ -5,20 +5,20 @@ public class MesajNesnesi {
 	public final String mesaj;
 	public final String gonderenUuid;
 	public final String aliciUuid;
-	public final String tip;
+	public final MesajTipi mesajTipi;
 
-	public MesajNesnesi(String mesaj, String gonderenUuid, String tip) {
+	public MesajNesnesi(String mesaj, String gonderenUuid, MesajTipi mesajTipi) {
 
-		this(mesaj, gonderenUuid, "", tip);
+		this(mesaj, gonderenUuid, "", mesajTipi);
 
 	}
 
-	public MesajNesnesi(String mesaj, String gonderenUuid, String aliciUuid, String tip) {
+	public MesajNesnesi(String mesaj, String gonderenUuid, String aliciUuid, MesajTipi mesajTipi) {
 
 		this.mesaj = mesaj;
 		this.gonderenUuid = gonderenUuid;
 		this.aliciUuid = aliciUuid;
-		this.tip = tip;
+		this.mesajTipi = mesajTipi;
 
 	}
 

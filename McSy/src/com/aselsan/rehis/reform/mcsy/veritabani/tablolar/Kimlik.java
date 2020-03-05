@@ -38,10 +38,6 @@ public class Kimlik {
 	@Column(name = "boylam")
 	private Double boylam;
 
-	public Kimlik() {
-
-	}
-
 	public Kimlik(String isim) {
 
 		this.isim = isim;
@@ -106,11 +102,8 @@ public class Kimlik {
 
 	@PrePersist
 	private void onCreate() {
-
 		this.uuid = UUID.randomUUID().toString();
-
 		this.durum = OrtakSabitler.DURUM_MUSAIT;
-
 	}
 
 }

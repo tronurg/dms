@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajNesnesi;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajTipi;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -32,9 +33,9 @@ public class Model {
 
 			String gonderenUuid = mesajNesnesi.gonderenUuid;
 
-			switch (mesajNesnesi.tip) {
+			switch (mesajNesnesi.mesajTipi) {
 
-			case "BCON":
+			case BCON:
 
 				if (!mesajNesnesiStr.equals(yerelKullaniciBeacon.get(gonderenUuid))) {
 
@@ -54,7 +55,7 @@ public class Model {
 
 				break;
 
-			case "BCON?":
+			case REQ_BCON:
 
 				yerelKullaniciBeacon.forEach((uuid, beacon) -> {
 
@@ -70,6 +71,12 @@ public class Model {
 					dinleyici.yerelKullanicilaraGonder(gonderenUuid, beacon);
 
 				});
+
+				break;
+
+			case MESAJ:
+
+				dinleyici.uzakKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 
 				break;
 
@@ -91,9 +98,9 @@ public class Model {
 
 			String gonderenUuid = mesajNesnesi.gonderenUuid;
 
-			switch (mesajNesnesi.tip) {
+			switch (mesajNesnesi.mesajTipi) {
 
-			case "BCON":
+			case BCON:
 
 				if (!mesajNesnesiStr.equals(uzakKullaniciBeacon.get(gonderenUuid))) {
 
@@ -108,9 +115,15 @@ public class Model {
 
 				break;
 
-			case "UUID_KOPTU":
+			case UUID_KOPTU:
 
 				uzakKullaniciKoptu(mesajNesnesi.mesaj);
+
+				break;
+
+			case MESAJ:
+
+				dinleyici.yerelKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 
 				break;
 
@@ -132,7 +145,7 @@ public class Model {
 
 	public void uzakKullaniciKoptu(String uuid) {
 
-		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", "UUID_KOPTU"));
+		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", MesajTipi.UUID_KOPTU));
 
 		uzakKullaniciBeacon.remove(uuid);
 
@@ -142,7 +155,7 @@ public class Model {
 
 	public void yerelKullaniciKoptu(String uuid) {
 
-		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", "UUID_KOPTU"));
+		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", MesajTipi.UUID_KOPTU));
 
 		yerelKullaniciBeacon.remove(uuid);
 

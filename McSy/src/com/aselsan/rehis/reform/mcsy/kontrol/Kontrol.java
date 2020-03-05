@@ -112,7 +112,15 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 	@Override
 	public void beaconAlindi(String mesaj) {
 
+		// TODO
+
 		System.out.println(mesaj);
+
+	}
+
+	@Override
+	public void mesajAlindi(String mesaj) {
+		// TODO Auto-generated method stub
 
 	}
 
