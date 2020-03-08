@@ -74,22 +74,6 @@ class KimlikPane extends GridPane {
 
 	}
 
-	void setIsim(String isim) {
-
-	}
-
-	void setAciklama(String aciklama) {
-
-	}
-
-	void setKonum(double enlem, double boylam) {
-
-	}
-
-	void setDurum(int durum) {
-
-	}
-
 	private Group getProfilResmi() {
 
 		if (profilResmi == null) {

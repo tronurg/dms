@@ -9,6 +9,8 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
@@ -33,7 +35,9 @@ public class Grup {
 	@Column(name = "uuid_kurucu", nullable = false, updatable = false)
 	private String uuidKurucu;
 
-	@ManyToMany(mappedBy = "gruplar")
+	@ManyToMany
+	@JoinTable(name = "grup_kisiler", joinColumns = { @JoinColumn(name = "grup_id") }, inverseJoinColumns = {
+			@JoinColumn(name = "kisi_id") })
 	private Set<Kisi> kisiler = new HashSet<Kisi>();
 
 	public Grup(Long id, String uuid, String isim, String aciklama, String uuidKurucu, Set<Kisi> kisiler) {

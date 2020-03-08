@@ -2,30 +2,37 @@ package com.aselsan.rehis.reform.mcsy.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
 
 public class Model {
 
 	private final Kimlik kimlik;
 
-	private final Gson gson = new Gson();
-
 	private final AtomicBoolean sunucuBagli = new AtomicBoolean(false);
+
+	private final ObservableMap<String, Kisi> kisiler = FXCollections.observableMap(new LinkedHashMap<String, Kisi>());
+	private final Map<String, Grup> gruplar = Collections.synchronizedMap(new HashMap<String, Grup>());
+	private final Map<String, Map<Long, Mesaj>> mesajlar = Collections
+			.synchronizedMap(new HashMap<String, Map<Long, Mesaj>>());
 
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
 	public Model(Kimlik kimlik) {
 
 		this.kimlik = kimlik;
-
-		kimlik.setId(null);
 
 	}
 
@@ -41,12 +48,6 @@ public class Model {
 
 	}
 
-	public String getBeaconMesaji() {
-
-		return gson.toJson(kimlik);
-
-	}
-
 	public boolean isSunucuBagli() {
 
 		return sunucuBagli.get();
@@ -59,15 +60,35 @@ public class Model {
 
 	}
 
-	public void beaconAlindi(String mesaj) {
+	public Kisi getKisi(String uuid) {
 
-		try {
+		return kisiler.get(uuid);
 
-			Kisi kisi = gson.fromJson(mesaj, Kisi.class);
+	}
 
-		} catch (JsonSyntaxException e) {
+	public ObservableMap<String, Kisi> getKisiler() {
 
-		}
+		return kisiler;
+
+	}
+
+	public void kisiEkle(Kisi kisi) {
+
+		kisiler.put(kisi.getUuid(), kisi);
+
+	}
+
+	public void grupEkle(Grup grup) {
+
+		gruplar.put(grup.getUuid(), grup);
+
+	}
+
+	public void mesajEkle(Mesaj mesaj) {
+
+		mesajlar.putIfAbsent(mesaj.getGonderenUuid(), new HashMap<Long, Mesaj>());
+
+		mesajlar.get(mesaj.getGonderenUuid()).put(mesaj.getMesajId(), mesaj);
 
 	}
 

@@ -66,6 +66,27 @@ public class OrtakMetotlar {
 
 	}
 
+	static int getBeaconAralikMs() {
+
+		int beaconAralikMs = 2000;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/MCSY/BEACON_ARALIK_MS")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			beaconAralikMs = Integer.parseInt(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return beaconAralikMs;
+
+	}
+
 	public static String cevir(String arg0) {
 
 		try {

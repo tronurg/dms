@@ -6,6 +6,8 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 
+import org.hibernate.HibernateException;
+
 import com.aselsan.rehis.reform.mcsy.arayuz.McHandle;
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
@@ -16,8 +18,12 @@ import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 import javafx.application.Platform;
+import javafx.collections.MapChangeListener;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
@@ -34,6 +40,8 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 	private final McIstemci mcIstemci;
 
+	private final Gson gson = new Gson();
+
 	private Kontrol(String kullaniciAdi) throws VeritabaniHatasi {
 
 		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi);
@@ -43,6 +51,10 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 		model = new Model(kimlik);
 
 		model.dinleyiciEkle(this);
+
+		veritabaniYonetici.tumKisileriAl().forEach(kisi -> model.kisiEkle(kisi));
+		veritabaniYonetici.tumGruplariAl().forEach(grup -> model.grupEkle(grup));
+		veritabaniYonetici.tumMesajlariAl().forEach(mesaj -> model.mesajEkle(mesaj));
 
 		mcIstemci = new McIstemci(kimlik.getUuid(), OrtakSabitler.SUNUCU_IP, OrtakSabitler.SUNUCU_PORT, this);
 
@@ -60,23 +72,9 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 	private void ilklendir() {
 
-		new Thread(() -> {
-
-			while (true) {
-
-				if (model.isSunucuBagli())
-					mcIstemci.beaconGonder(model.getBeaconMesaji());
-
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-			}
-
-		}).start();
+		Thread beaconYayinlaThread = new Thread(this::beaconYayinla);
+		beaconYayinlaThread.setDaemon(true);
+		beaconYayinlaThread.start();
 
 	}
 
@@ -86,7 +84,40 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 		mcPanel.kimlikGuncelle(model.getKimlik());
 
-		// TODO
+		model.getKisiler().forEach((uuid, kisi) -> Platform.runLater(() -> mcPanel.kisiGuncelle(kisi)));
+
+		model.getKisiler().addListener(new MapChangeListener<String, Kisi>() {
+
+			@Override
+			public void onChanged(Change<? extends String, ? extends Kisi> arg0) {
+
+				Platform.runLater(() -> mcPanel.kisiGuncelle(arg0.getValueAdded()));
+			}
+
+		});
+
+	}
+
+	private void beaconYayinla() {
+
+		while (true) {
+
+			if (model.isSunucuBagli()) {
+
+				Kimlik kimlik = model.getKimlik();
+				kimlik.setId(null);
+
+				mcIstemci.beaconGonder(gson.toJson(kimlik));
+
+			}
+
+			try {
+				Thread.sleep(OrtakSabitler.BEACON_ARALIK_MS);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
+		}
 
 	}
 
@@ -95,26 +126,42 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 		model.setSunucuBaglantiDurumu(arg0);
 
-		if (arg0) {
-
-			System.out.println("Sunucu baglandi.");
-
+		if (arg0)
 			mcIstemci.tumBeaconlariIste();
-
-		} else {
-
-			System.out.println("Sunucu koptu.");
-
-		}
 
 	}
 
 	@Override
 	public void beaconAlindi(String mesaj) {
 
+		try {
+
+			Kisi yeniKisi = gson.fromJson(mesaj, Kisi.class);
+
+			Kisi eskiKisi = model.getKisi(yeniKisi.getUuid());
+
+			if (eskiKisi == null) {
+
+				veritabaniYonetici.kisiEkle(yeniKisi);
+
+			} else {
+
+				yeniKisi.setId(eskiKisi.getId());
+				veritabaniYonetici.kisiGuncelle(yeniKisi);
+
+			}
+
+			model.kisiEkle(yeniKisi);
+
+		} catch (JsonSyntaxException | HibernateException | VeritabaniHatasi e) {
+
+			e.printStackTrace();
+
+		}
+
 		// TODO
 
-		System.out.println(mesaj);
+		System.out.println(model.getKimlik().getIsim() + ": " + mesaj);
 
 	}
 

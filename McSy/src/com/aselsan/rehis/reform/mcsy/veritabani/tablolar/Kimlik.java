@@ -38,6 +38,10 @@ public class Kimlik {
 	@Column(name = "boylam")
 	private Double boylam;
 
+	public Kimlik() {
+
+	}
+
 	public Kimlik(String isim) {
 
 		this.isim = isim;

@@ -48,7 +48,7 @@ public class VeritabaniYonetici {
 
 		Query<Kimlik> queryKimlik = session.createQuery("from Kimlik where isim='" + isim + "'", Kimlik.class);
 
-		if (queryKimlik.getResultList().size() == 0) {
+		if (queryKimlik.list().size() == 0) {
 
 			session.beginTransaction();
 
@@ -58,7 +58,7 @@ public class VeritabaniYonetici {
 
 		}
 
-		Kimlik kimlik = queryKimlik.getResultList().get(0);
+		Kimlik kimlik = queryKimlik.list().get(0);
 
 		session.close();
 
@@ -108,7 +108,7 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void kisiEkleGuncelle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
+	public void kisiEkle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();
 
@@ -122,7 +122,21 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void grupEkleGuncelle(Grup grup) throws HibernateException, VeritabaniHatasi {
+	public void kisiGuncelle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
+
+		Session session = getFactory().openSession();
+
+		session.beginTransaction();
+
+		session.merge(kisi);
+
+		session.getTransaction().commit();
+
+		session.close();
+
+	}
+
+	public void grupEkle(Grup grup) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();
 
@@ -136,13 +150,41 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void mesajEkleGuncelle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
+	public void grupGuncelle(Grup grup) throws HibernateException, VeritabaniHatasi {
+
+		Session session = getFactory().openSession();
+
+		session.beginTransaction();
+
+		session.merge(grup);
+
+		session.getTransaction().commit();
+
+		session.close();
+
+	}
+
+	public void mesajEkle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();
 
 		session.beginTransaction();
 
 		session.persist(mesaj);
+
+		session.getTransaction().commit();
+
+		session.close();
+
+	}
+
+	public void mesajGuncelle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
+
+		Session session = getFactory().openSession();
+
+		session.beginTransaction();
+
+		session.merge(mesaj);
 
 		session.getTransaction().commit();
 
