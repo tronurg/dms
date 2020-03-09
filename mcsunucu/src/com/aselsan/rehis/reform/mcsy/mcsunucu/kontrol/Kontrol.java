@@ -112,6 +112,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		} catch (IOException e) {
 
+			e.printStackTrace();
+
 		}
 
 	}
@@ -210,8 +212,6 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		} catch (Exception e) {
 
-			System.out.println(pubPort + " portu kullaniliyor. Istemcilere veri gonderilemeyecek!");
-
 		}
 
 	}
@@ -226,6 +226,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 				getTcpYonetici().sunucuyaMesajGonder(mcUuid, beacon);
 
 			} catch (IOException e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -263,6 +265,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		} catch (IOException e) {
 
+			e.printStackTrace();
+
 		}
 
 	}
@@ -275,6 +279,8 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 			getTcpYonetici().tumSunucularaMesajGonder(mesaj);
 
 		} catch (IOException e) {
+
+			e.printStackTrace();
 
 		}
 

@@ -1,6 +1,5 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
-import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 
 import javafx.beans.binding.Bindings;
@@ -55,7 +54,7 @@ class KisiPane extends GridPane {
 
 	void kisiGuncelle(Kisi kisi) {
 
-		getDurumCemberi().setStroke(OrtakSabitler.DURUM_RENKLERI[kisi.getDurum()]);
+		getDurumCemberi().setStroke(kisi.getDurum().getDurumRengi());
 		getProfilLabel().setText(kisi.getIsim().substring(0, 1).toUpperCase());
 
 		getIsimLabel().setText(kisi.getIsim());

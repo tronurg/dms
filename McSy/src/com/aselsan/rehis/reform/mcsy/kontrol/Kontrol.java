@@ -19,6 +19,7 @@ import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.KisiDurumu;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -52,7 +53,10 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 		model.dinleyiciEkle(this);
 
-		veritabaniYonetici.tumKisileriAl().forEach(kisi -> model.kisiEkle(kisi));
+		veritabaniYonetici.tumKisileriAl().forEach(kisi -> {
+			kisi.setDurum(KisiDurumu.CEVRIMDISI);
+			model.kisiEkle(kisi);
+		});
 		veritabaniYonetici.tumGruplariAl().forEach(grup -> model.grupEkle(grup));
 		veritabaniYonetici.tumMesajlariAl().forEach(mesaj -> model.mesajEkle(mesaj));
 
@@ -92,6 +96,7 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 			public void onChanged(Change<? extends String, ? extends Kisi> arg0) {
 
 				Platform.runLater(() -> mcPanel.kisiGuncelle(arg0.getValueAdded()));
+
 			}
 
 		});
@@ -121,13 +126,42 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 	}
 
+	private void kisiKoptu(Kisi kisi) {
+
+		kisi.setDurum(KisiDurumu.CEVRIMDISI);
+
+		try {
+
+			Kisi yeniKisi = veritabaniYonetici.kisiGuncelle(kisi);
+
+			model.kisiEkle(yeniKisi);
+
+		} catch (HibernateException | VeritabaniHatasi e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
 	@Override
 	public void sunucuBaglantiDurumuGuncellendi(boolean arg0) {
 
 		model.setSunucuBaglantiDurumu(arg0);
 
-		if (arg0)
+		if (arg0) {
+
 			mcIstemci.tumBeaconlariIste();
+
+		} else {
+
+			model.getKisiler().forEach((uuid, kisi) -> {
+
+				kisiKoptu(kisi);
+
+			});
+
+		}
 
 	}
 
@@ -147,7 +181,7 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 			} else {
 
 				yeniKisi.setId(eskiKisi.getId());
-				veritabaniYonetici.kisiGuncelle(yeniKisi);
+				yeniKisi = veritabaniYonetici.kisiGuncelle(yeniKisi);
 
 			}
 
@@ -161,8 +195,6 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 
 		// TODO
 
-		System.out.println(model.getKimlik().getIsim() + ": " + mesaj);
-
 	}
 
 	@Override
@@ -174,7 +206,12 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 	@Override
 	public void kullaniciKoptu(String uuid) {
 
-		model.uuidKoptu(uuid);
+		Kisi kisi = model.getKisi(uuid);
+
+		if (kisi == null)
+			return;
+
+		kisiKoptu(kisi);
 
 	}
 

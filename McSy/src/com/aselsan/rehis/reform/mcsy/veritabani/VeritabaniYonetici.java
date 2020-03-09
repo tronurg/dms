@@ -122,17 +122,19 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void kisiGuncelle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
+	public Kisi kisiGuncelle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();
 
 		session.beginTransaction();
 
-		session.merge(kisi);
+		Kisi yeniKisi = (Kisi) session.merge(kisi);
 
 		session.getTransaction().commit();
 
 		session.close();
+
+		return yeniKisi;
 
 	}
 
@@ -150,17 +152,19 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void grupGuncelle(Grup grup) throws HibernateException, VeritabaniHatasi {
+	public Grup grupGuncelle(Grup grup) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();
 
 		session.beginTransaction();
 
-		session.merge(grup);
+		Grup yeniGrup = (Grup) session.merge(grup);
 
 		session.getTransaction().commit();
 
 		session.close();
+
+		return yeniGrup;
 
 	}
 
@@ -178,17 +182,19 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void mesajGuncelle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
+	public Mesaj mesajGuncelle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();
 
 		session.beginTransaction();
 
-		session.merge(mesaj);
+		Mesaj yeniMesaj = (Mesaj) session.merge(mesaj);
 
 		session.getTransaction().commit();
 
 		session.close();
+
+		return yeniMesaj;
 
 	}
 

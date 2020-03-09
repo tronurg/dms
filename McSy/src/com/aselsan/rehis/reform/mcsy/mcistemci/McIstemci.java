@@ -101,11 +101,12 @@ public class McIstemci {
 			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_CONNECTED | ZMQ.EVENT_DISCONNECTED);
 
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
-			dealerSocket.setRcvHWM(1);
 			dealerSocket.setImmediate(false);
 			dealerSocket.connect("tcp://" + serverIp + ":" + dealerPort);
 
 			while (!Thread.currentThread().isInterrupted()) {
+
+				dealerSocket.recvStr(ZMQ.DONTWAIT);
 
 				try {
 
@@ -114,6 +115,8 @@ public class McIstemci {
 					dealerSocket.send(mesaj, ZMQ.DONTWAIT);
 
 				} catch (InterruptedException e) {
+
+					e.printStackTrace();
 
 				}
 
@@ -202,6 +205,8 @@ public class McIstemci {
 			}
 
 		} catch (JsonSyntaxException e) {
+
+			e.printStackTrace();
 
 		}
 

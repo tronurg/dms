@@ -92,10 +92,4 @@ public class Model {
 
 	}
 
-	public void uuidKoptu(String uuid) {
-
-		// TODO
-
-	}
-
 }

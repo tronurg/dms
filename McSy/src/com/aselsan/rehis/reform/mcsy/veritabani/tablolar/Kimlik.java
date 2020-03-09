@@ -4,13 +4,15 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
-import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.KisiDurumu;
 
 @Entity
 @Table(name = "kimlik")
@@ -30,7 +32,8 @@ public class Kimlik {
 	private String aciklama;
 
 	@Column(name = "durum", nullable = false)
-	private Integer durum;
+	@Enumerated(EnumType.STRING)
+	private KisiDurumu durum;
 
 	@Column(name = "enlem")
 	private Double enlem;
@@ -80,11 +83,11 @@ public class Kimlik {
 		this.aciklama = aciklama;
 	}
 
-	public Integer getDurum() {
+	public KisiDurumu getDurum() {
 		return durum;
 	}
 
-	public void setDurum(Integer durum) {
+	public void setDurum(KisiDurumu durum) {
 		this.durum = durum;
 	}
 
@@ -107,7 +110,7 @@ public class Kimlik {
 	@PrePersist
 	private void onCreate() {
 		this.uuid = UUID.randomUUID().toString();
-		this.durum = OrtakSabitler.DURUM_MUSAIT;
+		this.durum = KisiDurumu.MUSAIT;
 	}
 
 }

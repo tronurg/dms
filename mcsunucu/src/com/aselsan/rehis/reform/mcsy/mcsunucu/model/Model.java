@@ -86,6 +86,8 @@ public class Model {
 
 		} catch (JsonSyntaxException e) {
 
+			e.printStackTrace();
+
 		}
 
 	}
@@ -132,6 +134,8 @@ public class Model {
 			}
 
 		} catch (JsonSyntaxException e) {
+
+			e.printStackTrace();
 
 		}
 

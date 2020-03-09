@@ -1,18 +1,10 @@
 package com.aselsan.rehis.reform.mcsy.ortak;
 
-import javafx.scene.paint.Color;
-
 public class OrtakSabitler {
 
 	public static final String SUNUCU_IP = OrtakMetotlar.getSunucuIp();
 	public static final int SUNUCU_PORT = OrtakMetotlar.getSunucuPort();
 	public static final int BEACON_ARALIK_MS = OrtakMetotlar.getBeaconAralikMs();
-
-	public static final Integer DURUM_MUSAIT = 0;
-	public static final Integer DURUM_UZAKTA = 1;
-	public static final Integer DURUM_MESGUL = 2;
-	public static final Integer DURUM_KISITLI = 3;
-	public static final Color[] DURUM_RENKLERI = new Color[] { Color.LIMEGREEN, Color.ORANGE, Color.RED, Color.BLUE };
 
 	public static final Integer OZEL_MESAJ_KODU_METIN = 0;
 	public static final Integer OZEL_MESAJ_KODU_NESNE = 1;

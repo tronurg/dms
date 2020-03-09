@@ -3,7 +3,6 @@ package com.aselsan.rehis.reform.mcsy.sunum;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
-import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
 import javafx.beans.binding.Bindings;
@@ -64,7 +63,7 @@ class KimlikPane extends GridPane {
 
 	void kimlikGuncelle(Kimlik kimlik) {
 
-		getDurumCemberi().setStroke(OrtakSabitler.DURUM_RENKLERI[kimlik.getDurum()]);
+		getDurumCemberi().setStroke(kimlik.getDurum().getDurumRengi());
 		getProfilLabel().setText(kimlik.getIsim().substring(0, 1).toUpperCase());
 
 		getIsimLabel().setText(kimlik.getIsim());

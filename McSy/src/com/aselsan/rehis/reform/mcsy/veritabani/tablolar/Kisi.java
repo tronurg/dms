@@ -5,11 +5,15 @@ import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
+
+import com.aselsan.rehis.reform.mcsy.veriyapilari.KisiDurumu;
 
 @Entity
 @Table(name = "kisi")
@@ -29,7 +33,8 @@ public class Kisi {
 	private String aciklama;
 
 	@Column(name = "durum", nullable = false)
-	private Integer durum;
+	@Enumerated(EnumType.STRING)
+	private KisiDurumu durum;
 
 	@Column(name = "enlem")
 	private Double enlem;
@@ -72,11 +77,11 @@ public class Kisi {
 		this.aciklama = aciklama;
 	}
 
-	public Integer getDurum() {
+	public KisiDurumu getDurum() {
 		return durum;
 	}
 
-	public void setDurum(Integer durum) {
+	public void setDurum(KisiDurumu durum) {
 		this.durum = durum;
 	}
 
