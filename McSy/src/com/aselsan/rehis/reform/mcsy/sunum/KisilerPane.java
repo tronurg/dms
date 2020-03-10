@@ -1,7 +1,9 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
@@ -16,6 +18,8 @@ class KisilerPane extends TitledPane {
 	private final VBox kisiler = new VBox();
 
 	private final Map<String, KisiPane> uuidler = Collections.synchronizedMap(new HashMap<String, KisiPane>());
+
+	private final List<IKisilerPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IKisilerPane>());
 
 	KisilerPane() {
 
@@ -34,20 +38,52 @@ class KisilerPane extends TitledPane {
 
 	}
 
+	void dinleyiciEkle(IKisilerPane dinleyici) {
+
+		dinleyiciler.add(dinleyici);
+
+	}
+
 	void kisiGuncelle(Kisi kisi) {
 
-		if (!uuidler.containsKey(kisi.getUuid())) {
+		final String uuid = kisi.getUuid();
+
+		if (!uuidler.containsKey(uuid)) {
 			// Kisi karti ilk defa eklenecek
 
-			uuidler.put(kisi.getUuid(), new KisiPane());
+			KisiPane kisiPane = new KisiPane();
 
-			kisiler.getChildren().add(0, uuidler.get(kisi.getUuid()));
+			kisiPane.setOnMesajGonderAction(mesaj -> {
+
+				dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
+
+			});
+
+			kisiPane.setOnMesajPaneGoster(mesajPane -> {
+
+				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane));
+
+			});
+
+			uuidler.put(uuid, kisiPane);
+
+			kisiler.getChildren().add(0, kisiPane);
+
+			setExpanded(true);
 
 		}
 
 		// Kisi guncellenecek
-		uuidler.get(kisi.getUuid()).kisiGuncelle(kisi);
+		uuidler.get(uuid).kisiGuncelle(kisi);
 
 	}
+
+}
+
+interface IKisilerPane {
+
+	void mesajPaneGoster(MesajPane mesajPane);
+
+	void mesajGonderTiklandi(String mesaj, String uuid);
 
 }

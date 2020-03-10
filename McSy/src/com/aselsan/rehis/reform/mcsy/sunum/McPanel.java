@@ -1,5 +1,10 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import com.aselsan.rehis.reform.mcsy.sunum.intf.UygulamaDinleyici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
@@ -7,14 +12,19 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Accordion;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class McPanel extends VBox {
+public class McPanel extends StackPane implements IKisilerPane {
 
+	private final VBox anaPane = new VBox();
 	private final KimlikPane kimlikPane = new KimlikPane();
 	private final KisilerPane kisilerPane = new KisilerPane();
 	private final GruplarPane gruplarPane = new GruplarPane();
 	private final Accordion kisilerGruplarPane = new Accordion();
+
+	private final List<UygulamaDinleyici> dinleyiciler = Collections
+			.synchronizedList(new ArrayList<UygulamaDinleyici>());
 
 	public McPanel() {
 
@@ -26,11 +36,21 @@ public class McPanel extends VBox {
 
 	private void init() {
 
-		setMargin(kimlikPane, new Insets(10));
+		VBox.setMargin(kimlikPane, new Insets(10));
+
+		kisilerPane.dinleyiciEkle(this);
 
 		kisilerGruplarPane.getPanes().addAll(kisilerPane, gruplarPane);
 
-		getChildren().addAll(kimlikPane, kisilerGruplarPane);
+		anaPane.getChildren().addAll(kimlikPane, kisilerGruplarPane);
+
+		getChildren().add(anaPane);
+
+	}
+
+	public void dinleyiciEkle(UygulamaDinleyici dinleyici) {
+
+		dinleyiciler.add(dinleyici);
 
 	}
 
@@ -55,6 +75,22 @@ public class McPanel extends VBox {
 	public void mesajGuncelle(Mesaj mesaj) {
 
 		// TODO
+
+	}
+
+	@Override
+	public void mesajPaneGoster(final MesajPane mesajPane) {
+
+		mesajPane.setOnGeriAction(() -> getChildren().remove(mesajPane));
+
+		getChildren().add(mesajPane);
+
+	}
+
+	@Override
+	public void mesajGonderTiklandi(String mesaj, String uuid) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
 
 	}
 

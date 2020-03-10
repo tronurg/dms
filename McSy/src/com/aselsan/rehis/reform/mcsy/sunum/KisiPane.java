@@ -9,6 +9,7 @@ import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
@@ -16,6 +17,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import zmq.util.function.Consumer;
 
 class KisiPane extends GridPane {
 
@@ -27,6 +29,8 @@ class KisiPane extends GridPane {
 	private Label isimLabel;
 	private Label aciklamaLabel;
 	private Label konumLabel;
+
+	private final MesajPane mesajPane = new MesajPane();
 
 	KisiPane() {
 
@@ -52,6 +56,25 @@ class KisiPane extends GridPane {
 
 	}
 
+	void setOnMesajPaneGoster(Consumer<MesajPane> consumer) {
+
+		setOnMouseClicked(e -> {
+
+			if (!(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2 && e.isStillSincePress()))
+				return;
+
+			consumer.accept(mesajPane);
+
+		});
+
+	}
+
+	void setOnMesajGonderAction(Consumer<String> consumer) {
+
+		mesajPane.setOnMesajGonderAction(mesaj -> consumer.accept(mesaj));
+
+	}
+
 	void kisiGuncelle(Kisi kisi) {
 
 		getDurumCemberi().setStroke(kisi.getDurum().getDurumRengi());
@@ -61,6 +84,12 @@ class KisiPane extends GridPane {
 		getAciklamaLabel().setText(kisi.getAciklama());
 		getKonumLabel().setText(kisi.getEnlem() == null || kisi.getBoylam() == null ? ""
 				: "(" + String.format("%.2f", kisi.getEnlem()) + String.format("%.2f", kisi.getEnlem()) + ")");
+
+	}
+
+	void mesajAlindi(String mesaj) {
+
+		mesajPane.gelenMesajEkle(mesaj);
 
 	}
 

@@ -1,81 +1,185 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
-import javafx.scene.layout.Pane;
+import java.util.function.Consumer;
 
-class MesajPane extends Pane {
+import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
+
+import javafx.beans.binding.Bindings;
+import javafx.geometry.Insets;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.input.KeyCode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+
+class MesajPane extends BorderPane {
+
+	private final HBox ustPane = new HBox(5);
+	private final VBox ortaPane = new VBox(5);
+	private final HBox altPane = new HBox(5);
+
+	private final ScrollPane scrollPane = new ScrollPane(ortaPane);
+	private final Button geriBtn = SunumFabrika.newGeriBtn();
+	private final TextArea mesajArea = new TextArea();
+	private final Button gonderBtn = SunumFabrika.newGonderBtn();
 
 	MesajPane() {
 
 		super();
 
+		init();
+
 	}
 
-//	BorderPane pane = new BorderPane();
-//
-//	VBox vb = new VBox(5);
-//	HBox hb = new HBox(5);
-//
-//	vb.setPadding(new Insets(5));
-//	hb.setPadding(new Insets(5));
-//
-//	ScrollPane sp = new ScrollPane(vb);
-//	sp.setFitToWidth(true);
-//
-//	TextArea ta = new TextArea();
-//	ta.setPrefRowCount(1);
-//	ta.setWrapText(true);
-//	HBox.setHgrow(ta, Priority.ALWAYS);
-//	Button btn = new Button("send");
-//	ta.setOnKeyPressed(e -> {
-//
-//		if (e.getCode().equals(KeyCode.ENTER)) {
-//
-//			btn.fire();
-//
-//			e.consume();
-//
-//		}
-//
-//	});
-//	final AtomicInteger sira = new AtomicInteger(0);
-//	btn.setOnAction(e -> {
-//
-//		HBox hbb = new HBox();
-//		Label lbl = new Label(ta.getText());
-//		lbl.setWrapText(true);
-//		lbl.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(5),
-//				new BorderWidths(1))));
-//		Region r = new Region();
-//		HBox.setHgrow(r, Priority.ALWAYS);
-//		lbl.setPadding(new Insets(5, 10, 5, 10));
-//		if (sira.getAndIncrement() % 2 == 0) {
-//			lbl.setBackground(new Background(new BackgroundFill(Color.SEAGREEN, null, null)));
-//			hbb.getChildren().addAll(r, lbl);
-//		} else {
-//			lbl.setBackground(new Background(new BackgroundFill(Color.LIGHTSLATEGRAY, null, null)));
-//			hbb.getChildren().addAll(lbl, r);
-//		}
-//		lbl.maxWidthProperty().bind(Bindings.createDoubleBinding(() -> hbb.getWidth() * 0.80, hbb.widthProperty()));
-//		vb.getChildren().add(hbb);
-//		vb.layout();
-//
-//		ta.setText("");
-//
-//		System.out.println(
-//				btn.getMinWidth() + "\t" + btn.getPrefWidth() + "\t" + btn.getMaxWidth() + "\t" + btn.getWidth());
-//
-//	});
-//	sp.vvalueProperty().bind(vb.heightProperty());
-//
-//	hb.getChildren().addAll(ta, btn);
-//
-//	pane.setCenter(sp);
-//	pane.setBottom(hb);
-//
-//	Scene scene = new Scene(pane, 400, 300);
-//
-//	arg0.setScene(scene);
-//
-//	arg0.show();
+	private void init() {
+
+		ustPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+		altPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+
+		ustPane.setPadding(new Insets(5));
+		ortaPane.setPadding(new Insets(5));
+		altPane.setPadding(new Insets(5));
+
+		scrollPane.setFitToWidth(true);
+
+		mesajArea.setPrefRowCount(1);
+		mesajArea.setWrapText(true);
+
+		HBox.setHgrow(mesajArea, Priority.ALWAYS);
+
+		mesajArea.setOnKeyPressed(e -> {
+
+			if (e.getCode().equals(KeyCode.ENTER)) {
+
+				gonderBtn.fire();
+
+				e.consume();
+
+			}
+
+		});
+
+		scrollPane.vvalueProperty().bind(ortaPane.heightProperty());
+
+		ustPane.getChildren().add(geriBtn);
+		altPane.getChildren().addAll(mesajArea, gonderBtn);
+
+		setTop(ustPane);
+		setCenter(scrollPane);
+		setBottom(altPane);
+
+	}
+
+	void gelenMesajEkle(String mesaj) {
+
+		MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj, MesajTipi.GELEN);
+
+		ortaPane.getChildren().add(gelenMesajBalonu);
+		ortaPane.layout();
+
+	}
+
+	void setOnGeriAction(Runnable runnable) {
+
+		geriBtn.setOnAction(e -> runnable.run());
+
+	}
+
+	void setOnMesajGonderAction(Consumer<String> consumer) {
+
+		gonderBtn.setOnAction(e -> {
+
+			final String mesaj = mesajArea.getText().trim();
+
+			mesajArea.setText("");
+
+			if (mesaj.isEmpty())
+				return;
+
+			gidenMesajEkle(mesaj);
+
+			consumer.accept(mesaj);
+
+		});
+
+	}
+
+	private void gidenMesajEkle(String mesaj) {
+
+		MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj, MesajTipi.GIDEN);
+
+		ortaPane.getChildren().add(gidenMesajBalonu);
+		ortaPane.layout();
+
+	}
+
+	private class MesajBalonu extends HBox {
+
+		private final MesajTipi mesajTipi;
+
+		private final Label mesajLbl;
+		private final Region bosluk = new Region();
+
+		MesajBalonu(String mesaj, MesajTipi mesajTipi) {
+
+			super();
+
+			this.mesajTipi = mesajTipi;
+
+			mesajLbl = new Label(mesaj);
+
+			init();
+
+		}
+
+		private void init() {
+
+			mesajLbl.setWrapText(true);
+			mesajLbl.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(10),
+					new BorderWidths(1))));
+
+			HBox.setHgrow(bosluk, Priority.ALWAYS);
+
+			mesajLbl.setPadding(new Insets(5, 10, 5, 10));
+
+			switch (mesajTipi) {
+
+			case GELEN:
+				mesajLbl.setBackground(
+						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10), Insets.EMPTY)));
+				getChildren().addAll(mesajLbl, bosluk);
+				break;
+			case GIDEN:
+				mesajLbl.setBackground(
+						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10), Insets.EMPTY)));
+				getChildren().addAll(bosluk, mesajLbl);
+				break;
+
+			}
+
+			mesajLbl.maxWidthProperty().bind(Bindings.createDoubleBinding(() -> getWidth() * 0.80, widthProperty()));
+
+		}
+
+	}
+
+	private enum MesajTipi {
+
+		GELEN, GIDEN
+
+	}
 
 }

@@ -16,6 +16,7 @@ import com.aselsan.rehis.reform.mcsy.model.Model;
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
+import com.aselsan.rehis.reform.mcsy.sunum.intf.UygulamaDinleyici;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
@@ -28,7 +29,7 @@ import javafx.collections.MapChangeListener;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
-public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
+public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinleyici, McHandle {
 
 	private static final Map<String, Kontrol> INSTANCES = Collections.synchronizedMap(new HashMap<String, Kontrol>());
 
@@ -223,11 +224,22 @@ public class Kontrol implements ModelDinleyici, McIstemciDinleyici, McHandle {
 			mcPanelSwing = new JFXPanel();
 			mcPanel = new McPanel();
 
+			mcPanel.dinleyiciEkle(this);
+
 			Platform.runLater(() -> initGUI());
 
 		}
 
 		return mcPanelSwing;
+
+	}
+
+	@Override
+	public void mesajGonderTiklandi(String mesaj, String aliciUuid) {
+
+		System.out.println(mesaj + " -> " + aliciUuid);
+
+		// TODO
 
 	}
 
