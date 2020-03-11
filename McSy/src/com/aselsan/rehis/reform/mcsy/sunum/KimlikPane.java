@@ -1,16 +1,19 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
@@ -22,20 +25,23 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 class KimlikPane extends GridPane {
 
-	private Group profilResmi;
-	private Circle durumCemberi;
-	private Circle profilDairesi;
-	private Label profilLabel;
+	private static final double SIZE = 30.0;
 
-	private Label isimLabel;
-	private TextArea aciklamaTextArea;
-	private Label konumLabel;
+	private final Group profilResmi = new Group();
+	private final Circle durumCemberi = new Circle(SIZE);
+	private final Circle profilDairesi = new Circle(SIZE * 0.8);
+	private final Label profilLabel = new Label();
+
+	private final Label isimLabel = new Label();
+	private final TextArea aciklamaTextArea = new TextArea();
+	private final Label konumLabel = new Label();
+
+	private final AtomicReference<Consumer<String>> aciklamaGuncellendiConsumer = new AtomicReference<Consumer<String>>();
 
 	KimlikPane() {
 
@@ -47,164 +53,146 @@ class KimlikPane extends GridPane {
 
 	private void init() {
 
+		initProfilResmi();
+		initDurumCemberi();
+		initProfilDairesi();
+		initProfilLabel();
+		initIsimLabel();
+		initAciklamaTextArea();
+		initKonumLabel();
+
 		Separator sep = new Separator(Orientation.VERTICAL);
 		setMargin(sep, new Insets(0, 5, 0, 5));
 
-		setValignment(getProfilResmi(), VPos.TOP);
-		setHgrow(getAciklamaTextArea(), Priority.ALWAYS);
+		setValignment(profilResmi, VPos.TOP);
+		setHgrow(aciklamaTextArea, Priority.ALWAYS);
 
-		add(getProfilResmi(), 0, 0, 1, 3);
+		add(profilResmi, 0, 0, 1, 3);
 		add(sep, 1, 0, 1, 3);
-		add(getIsimLabel(), 2, 0, 1, 1);
-		add(getAciklamaTextArea(), 2, 1, 1, 1);
-		add(getKonumLabel(), 2, 2, 1, 1);
+		add(isimLabel, 2, 0, 1, 1);
+		add(aciklamaTextArea, 2, 1, 1, 1);
+		add(konumLabel, 2, 2, 1, 1);
 
 	}
 
-	void kimlikGuncelle(Kimlik kimlik) {
+	void setOnAciklamaGuncellendi(Consumer<String> consumer) {
 
-		getDurumCemberi().setStroke(kimlik.getDurum().getDurumRengi());
-		getProfilLabel().setText(kimlik.getIsim().substring(0, 1).toUpperCase());
-
-		getIsimLabel().setText(kimlik.getIsim());
-		getAciklamaTextArea().setText(kimlik.getAciklama());
-		getKonumLabel().setText(kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
-				: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")");
+		aciklamaGuncellendiConsumer.set(consumer);
 
 	}
 
-	private Group getProfilResmi() {
+	void setKimlikProperty(ObjectProperty<Kimlik> kimlikProperty) {
 
-		if (profilResmi == null) {
+		durumCemberi.strokeProperty()
+				.bind(Bindings.createObjectBinding(
+						() -> kimlikProperty.get() == null ? null : kimlikProperty.get().getDurum().getDurumRengi(),
+						kimlikProperty));
+		profilLabel.textProperty()
+				.bind(Bindings
+						.createStringBinding(
+								() -> kimlikProperty.get() == null ? null
+										: kimlikProperty.get().getIsim().substring(0, 1).toUpperCase(),
+								kimlikProperty));
 
-			profilResmi = new Group();
+		isimLabel.textProperty().bind(Bindings.createStringBinding(
+				() -> kimlikProperty.get() == null ? null : kimlikProperty.get().getIsim(), kimlikProperty));
+		aciklamaTextArea.accessibleTextProperty().bind(Bindings.createStringBinding(
+				() -> kimlikProperty.get() == null ? null : kimlikProperty.get().getAciklama(), kimlikProperty));
+		konumLabel.textProperty().bind(Bindings.createStringBinding(() -> {
+			Kimlik kimlik = kimlikProperty.get();
+			if (kimlik == null)
+				return null;
+			return kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
+					: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")";
+		}, kimlikProperty));
 
-			profilResmi.getChildren().addAll(getDurumCemberi(), getProfilDairesi(), getProfilLabel());
-
-		}
-
-		return profilResmi;
-
-	}
-
-	private Shape getDurumCemberi() {
-
-		if (durumCemberi == null) {
-
-			durumCemberi = new Circle(35);
-			durumCemberi.setStrokeWidth(5);
-			durumCemberi.setStroke(Color.LIMEGREEN);
-			durumCemberi.setFill(Color.TRANSPARENT);
-
-		}
-
-		return durumCemberi;
-
-	}
-
-	private Shape getProfilDairesi() {
-
-		if (profilDairesi == null) {
-
-			profilDairesi = new Circle(30);
-			profilDairesi.setFill(Color.DARKGRAY);
-
-		}
-
-		return profilDairesi;
+		// TODO: Aciklamayi guncelle
 
 	}
 
-	private Label getProfilLabel() {
+	private void initProfilResmi() {
 
-		if (profilLabel == null) {
-
-			profilLabel = new Label();
-
-			profilLabel.setFont(Font.font(null, FontWeight.BOLD, 35.0));
-
-			profilLabel.translateXProperty().bind(Bindings
-					.createDoubleBinding(() -> -profilLabel.widthProperty().get() / 2, profilLabel.widthProperty()));
-			profilLabel.translateYProperty().bind(Bindings
-					.createDoubleBinding(() -> -profilLabel.heightProperty().get() / 2, profilLabel.heightProperty()));
-
-		}
-
-		return profilLabel;
+		profilResmi.getChildren().addAll(durumCemberi, profilDairesi, profilLabel);
 
 	}
 
-	private Label getIsimLabel() {
+	private void initDurumCemberi() {
 
-		if (isimLabel == null) {
-
-			isimLabel = new Label();
-
-			isimLabel.setFont(Font.font(null, FontWeight.BOLD, 25.0));
-
-		}
-
-		return isimLabel;
+		durumCemberi.setStrokeWidth(SIZE * 0.2);
+		durumCemberi.setFill(Color.TRANSPARENT);
 
 	}
 
-	private TextArea getAciklamaTextArea() {
+	private void initProfilDairesi() {
 
-		if (aciklamaTextArea == null) {
+		profilDairesi.setFill(Color.DARKGRAY);
 
-			aciklamaTextArea = new TextArea();
+	}
 
-			final AtomicReference<String> sonAciklama = new AtomicReference<String>();
+	private void initProfilLabel() {
 
-			aciklamaTextArea.setTextFormatter(
-					new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
+		profilLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-			aciklamaTextArea.setPrefRowCount(1);
+		profilLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
 
-			aciklamaTextArea.setWrapText(true);
-			aciklamaTextArea.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
-			aciklamaTextArea.setFocusTraversable(false);
+		profilLabel.translateXProperty().bind(Bindings.createDoubleBinding(() -> -profilLabel.widthProperty().get() / 2,
+				profilLabel.widthProperty()));
+		profilLabel.translateYProperty().bind(Bindings
+				.createDoubleBinding(() -> -profilLabel.heightProperty().get() / 2, profilLabel.heightProperty()));
+
+	}
+
+	private void initIsimLabel() {
+
+		isimLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+		isimLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+
+	}
+
+	private void initAciklamaTextArea() {
+
+		final AtomicReference<String> sonAciklama = new AtomicReference<String>();
+
+		aciklamaTextArea.setTextFormatter(
+				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
+
+		aciklamaTextArea.setPrefRowCount(1);
+
+		aciklamaTextArea.setWrapText(true);
+		aciklamaTextArea.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
+		aciklamaTextArea.setFocusTraversable(false);
+		aciklamaTextArea.setEditable(false);
+
+		aciklamaTextArea.setOnMouseClicked(e -> {
+			sonAciklama.set(aciklamaTextArea.getText());
+			aciklamaTextArea.setEditable(true);
+		});
+		aciklamaTextArea.setOnKeyPressed(e -> {
+			KeyCode code = e.getCode();
+			if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
+				return;
+
+			if (e.getCode().equals(KeyCode.ESCAPE))
+				aciklamaTextArea.setText(sonAciklama.get());
+
+			e.consume();
 			aciklamaTextArea.setEditable(false);
+			requestFocus();
 
-			aciklamaTextArea.setOnMouseClicked(e -> {
-				sonAciklama.set(aciklamaTextArea.getText());
-				aciklamaTextArea.setEditable(true);
-			});
-			aciklamaTextArea.setOnKeyPressed(e -> {
-				KeyCode code = e.getCode();
-				if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
-					return;
+			if (aciklamaGuncellendiConsumer.get() != null)
+				aciklamaGuncellendiConsumer.get().accept(aciklamaTextArea.getText());
 
-				if (e.getCode().equals(KeyCode.ESCAPE))
-					aciklamaTextArea.setText(sonAciklama.get());
+		});
 
-				e.consume();
-				aciklamaTextArea.setEditable(false);
-				requestFocus();
-				// TODO
-
-			});
-
-			// TODO: border
-
-			aciklamaTextArea.setBackground(
-					new Background(new BackgroundFill(Color.GREENYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
-
-		}
-
-		return aciklamaTextArea;
+		aciklamaTextArea
+				.setBackground(new Background(new BackgroundFill(Color.GREENYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
 
 	}
 
-	private Label getKonumLabel() {
+	private void initKonumLabel() {
 
-		if (konumLabel == null) {
-
-			konumLabel = new Label();
-
-		}
-
-		return konumLabel;
+		konumLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 

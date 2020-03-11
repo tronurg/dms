@@ -10,6 +10,7 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
+import javafx.beans.property.ObjectProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.Accordion;
 import javafx.scene.layout.StackPane;
@@ -38,6 +39,8 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 		VBox.setMargin(kimlikPane, new Insets(10));
 
+		kimlikPane.setOnAciklamaGuncellendi(aciklama -> dinleyicilereAciklamaGuncellendi(aciklama));
+
 		kisilerPane.dinleyiciEkle(this);
 
 		kisilerGruplarPane.getPanes().addAll(kisilerPane, gruplarPane);
@@ -54,9 +57,9 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 	}
 
-	public void kimlikGuncelle(Kimlik kimlik) {
+	public void setKimlikProperty(ObjectProperty<Kimlik> kimlikProperty) {
 
-		kimlikPane.kimlikGuncelle(kimlik);
+		kimlikPane.setKimlikProperty(kimlikProperty);
 
 	}
 
@@ -78,6 +81,18 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 	}
 
+	private void dinleyicilereMesajGonderTiklandi(final String mesaj, final String uuid) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
+
+	}
+
+	private void dinleyicilereAciklamaGuncellendi(final String aciklama) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
+
+	}
+
 	@Override
 	public void mesajPaneGoster(final MesajPane mesajPane) {
 
@@ -90,7 +105,7 @@ public class McPanel extends StackPane implements IKisilerPane {
 	@Override
 	public void mesajGonderTiklandi(String mesaj, String uuid) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
+		dinleyicilereMesajGonderTiklandi(mesaj, uuid);
 
 	}
 

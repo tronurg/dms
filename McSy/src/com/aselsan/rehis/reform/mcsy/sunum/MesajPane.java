@@ -5,7 +5,10 @@ import java.util.function.Consumer;
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -24,6 +27,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 class MesajPane extends BorderPane {
 
@@ -33,6 +40,8 @@ class MesajPane extends BorderPane {
 
 	private final ScrollPane scrollPane = new ScrollPane(ortaPane);
 	private final Button geriBtn = SunumFabrika.newGeriBtn();
+	private final Circle durumCircle = new Circle(7.0);
+	private final Label isimLabel = new Label();
 	private final TextArea mesajArea = new TextArea();
 	private final Button gonderBtn = SunumFabrika.newGonderBtn();
 
@@ -52,6 +61,8 @@ class MesajPane extends BorderPane {
 		ustPane.setPadding(new Insets(5));
 		ortaPane.setPadding(new Insets(5));
 		altPane.setPadding(new Insets(5));
+
+		ustPane.setAlignment(Pos.CENTER_LEFT);
 
 		scrollPane.setFitToWidth(true);
 
@@ -74,12 +85,29 @@ class MesajPane extends BorderPane {
 
 		scrollPane.vvalueProperty().bind(ortaPane.heightProperty());
 
-		ustPane.getChildren().add(geriBtn);
+		HBox.setMargin(durumCircle, new Insets(5, 5, 5, 15));
+		isimLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
+
+		ustPane.getChildren().addAll(geriBtn, durumCircle, isimLabel);
 		altPane.getChildren().addAll(mesajArea, gonderBtn);
+
+		scrollPane.setMouseTransparent(true);
 
 		setTop(ustPane);
 		setCenter(scrollPane);
 		setBottom(altPane);
+
+	}
+
+	ObjectProperty<Paint> durumColorProperty() {
+
+		return durumCircle.fillProperty();
+
+	}
+
+	StringProperty isimProperty() {
+
+		return isimLabel.textProperty();
 
 	}
 

@@ -108,6 +108,22 @@ public class VeritabaniYonetici {
 
 	}
 
+	public Kimlik kimlikGuncelle(Kimlik kimlik) throws HibernateException, VeritabaniHatasi {
+
+		Session session = getFactory().openSession();
+
+		session.beginTransaction();
+
+		Kimlik yeniKimlik = (Kimlik) session.merge(kimlik);
+
+		session.getTransaction().commit();
+
+		session.close();
+
+		return yeniKimlik;
+
+	}
+
 	public void kisiEkle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
 
 		Session session = getFactory().openSession();

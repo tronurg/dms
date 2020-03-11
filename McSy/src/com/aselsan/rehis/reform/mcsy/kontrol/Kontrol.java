@@ -35,7 +35,7 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	private final VeritabaniYonetici veritabaniYonetici;
 
-	private final Model model;
+	private final Model model = new Model();
 
 	private McPanel mcPanel;
 	private JFXPanel mcPanelSwing;
@@ -44,13 +44,15 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	private final Gson gson = new Gson();
 
+	private final Object beaconSyncObj = new Object();
+
 	private Kontrol(String kullaniciAdi) throws VeritabaniHatasi {
 
 		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi);
 
 		Kimlik kimlik = veritabaniYonetici.getKimlik();
 
-		model = new Model(kimlik);
+		model.setKimlik(kimlik);
 
 		model.dinleyiciEkle(this);
 
@@ -87,7 +89,7 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		mcPanelSwing.setScene(new Scene(mcPanel));
 
-		mcPanel.kimlikGuncelle(model.getKimlik());
+		mcPanel.setKimlikProperty(model.kimlikProperty());
 
 		model.getKisiler().forEach((uuid, kisi) -> Platform.runLater(() -> mcPanel.kisiGuncelle(kisi)));
 
@@ -117,10 +119,16 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 			}
 
-			try {
-				Thread.sleep(OrtakSabitler.BEACON_ARALIK_MS);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			synchronized (beaconSyncObj) {
+
+				try {
+
+					beaconSyncObj.wait(OrtakSabitler.BEACON_ARALIK_MS);
+
+				} catch (InterruptedException e) {
+
+				}
+
 			}
 
 		}
@@ -194,8 +202,6 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		}
 
-		// TODO
-
 	}
 
 	@Override
@@ -240,6 +246,32 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 		System.out.println(mesaj + " -> " + aliciUuid);
 
 		// TODO
+
+	}
+
+	@Override
+	public void aciklamaGuncellendi(String aciklama) {
+
+		try {
+
+			Kimlik kimlik = veritabaniYonetici.getKimlik();
+			kimlik.setAciklama(aciklama);
+
+			Kimlik yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
+
+			model.setKimlik(yeniKimlik);
+
+		} catch (HibernateException | VeritabaniHatasi e) {
+
+			e.printStackTrace();
+
+		}
+
+		synchronized (beaconSyncObj) {
+
+			beaconSyncObj.notify();
+
+		}
 
 	}
 

@@ -14,12 +14,14 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 
 public class Model {
 
-	private final Kimlik kimlik;
+	private final ObjectProperty<Kimlik> kimlikProperty = new SimpleObjectProperty<Kimlik>();
 
 	private final AtomicBoolean sunucuBagli = new AtomicBoolean(false);
 
@@ -30,9 +32,7 @@ public class Model {
 
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
-	public Model(Kimlik kimlik) {
-
-		this.kimlik = kimlik;
+	public Model() {
 
 	}
 
@@ -42,9 +42,21 @@ public class Model {
 
 	}
 
+	public ObjectProperty<Kimlik> kimlikProperty() {
+
+		return kimlikProperty;
+
+	}
+
 	public Kimlik getKimlik() {
 
-		return kimlik;
+		return kimlikProperty.get();
+
+	}
+
+	public void setKimlik(Kimlik kimlik) {
+
+		kimlikProperty.set(kimlik);
 
 	}
 
