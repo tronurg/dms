@@ -1,6 +1,7 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -124,9 +125,9 @@ class KisiPane extends GridPane {
 
 	}
 
-	void mesajAlindi(String mesaj) {
+	void mesajGuncelle(Mesaj mesaj) {
 
-		mesajPane.gelenMesajEkle(mesaj);
+		mesajPane.gelenMesajEkle(mesaj.getIcerik());
 
 	}
 

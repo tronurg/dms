@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
 import javafx.beans.binding.Bindings;
 import javafx.scene.control.TitledPane;
@@ -75,6 +76,17 @@ class KisilerPane extends TitledPane {
 
 		// Kisi guncellenecek
 		uuidler.get(uuid).kisiGuncelle(kisi);
+
+	}
+
+	void mesajGuncelle(Mesaj mesaj) {
+
+		if (!uuidler.containsKey(mesaj.getGonderenUuid()))
+			return;
+
+		uuidler.get(mesaj.getGonderenUuid()).mesajGuncelle(mesaj);
+
+		// TODO
 
 	}
 

@@ -76,7 +76,12 @@ public class Model {
 
 			case MESAJ:
 
-				dinleyici.uzakKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				String aliciUuid = mesajNesnesi.aliciUuid;
+
+				if (yerelKullaniciBeacon.containsKey(aliciUuid))
+					dinleyici.yerelKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				else if (uzakKullaniciBeacon.containsKey(aliciUuid))
+					dinleyici.uzakKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 
 				break;
 

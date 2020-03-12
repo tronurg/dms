@@ -12,19 +12,26 @@ import com.aselsan.rehis.reform.mcsy.arayuz.McHandle;
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
 import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
 import com.aselsan.rehis.reform.mcsy.model.Model;
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
 import com.aselsan.rehis.reform.mcsy.sunum.intf.UygulamaDinleyici;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.KisiDurumu;
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 
 import javafx.application.Platform;
+import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
@@ -42,7 +49,19 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	private final McIstemci mcIstemci;
 
-	private final Gson gson = new Gson();
+	private final Gson gson = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
+
+		@Override
+		public boolean shouldSkipField(FieldAttributes arg0) {
+			return arg0.getName().equals("id");
+		}
+
+		@Override
+		public boolean shouldSkipClass(Class<?> arg0) {
+			return false;
+		}
+
+	}).create();
 
 	private final Object beaconSyncObj = new Object();
 
@@ -91,18 +110,60 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		mcPanel.setKimlikProperty(model.kimlikProperty());
 
-		model.getKisiler().forEach((uuid, kisi) -> Platform.runLater(() -> mcPanel.kisiGuncelle(kisi)));
+		synchronized (model.getKisiler()) {
 
-		model.getKisiler().addListener(new MapChangeListener<String, Kisi>() {
+			model.getKisiler().forEach((uuid, kisi) -> Platform.runLater(() -> mcPanel.kisiGuncelle(kisi)));
 
-			@Override
-			public void onChanged(Change<? extends String, ? extends Kisi> arg0) {
+			model.getKisiler().addListener(new MapChangeListener<String, Kisi>() {
 
-				Platform.runLater(() -> mcPanel.kisiGuncelle(arg0.getValueAdded()));
+				@Override
+				public void onChanged(Change<? extends String, ? extends Kisi> arg0) {
 
-			}
+					Platform.runLater(() -> mcPanel.kisiGuncelle(arg0.getValueAdded()));
 
-		});
+				}
+
+			});
+
+		}
+
+		synchronized (model.getGruplar()) {
+
+			model.getGruplar().forEach((uuid, grup) -> Platform.runLater(() -> mcPanel.grupGuncelle(grup)));
+
+			model.getGruplar().addListener(new MapChangeListener<String, Grup>() {
+
+				@Override
+				public void onChanged(Change<? extends String, ? extends Grup> arg0) {
+
+					Platform.runLater(() -> mcPanel.grupGuncelle(arg0.getValueAdded()));
+
+				}
+
+			});
+
+		}
+
+		synchronized (model.getMesajlar()) {
+
+			model.getMesajlar().forEach(mesaj -> Platform.runLater(() -> mcPanel.mesajGuncelle(mesaj)));
+
+			model.getMesajlar().addListener(new ListChangeListener<Mesaj>() {
+
+				@Override
+				public void onChanged(Change<? extends Mesaj> arg0) {
+
+					while (arg0.next()) {
+
+						arg0.getAddedSubList().forEach(mesaj -> Platform.runLater(() -> mcPanel.mesajGuncelle(mesaj)));
+
+					}
+
+				}
+
+			});
+
+		}
 
 	}
 
@@ -110,14 +171,8 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		while (true) {
 
-			if (model.isSunucuBagli()) {
-
-				Kimlik kimlik = model.getKimlik();
-				kimlik.setId(null);
-
-				mcIstemci.beaconGonder(gson.toJson(kimlik));
-
-			}
+			if (model.isSunucuBagli())
+				mcIstemci.beaconGonder(gson.toJson(model.getKimlik()));
 
 			synchronized (beaconSyncObj) {
 
@@ -145,7 +200,7 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 			model.kisiEkle(yeniKisi);
 
-		} catch (HibernateException | VeritabaniHatasi e) {
+		} catch (HibernateException e) {
 
 			e.printStackTrace();
 
@@ -180,7 +235,6 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 		try {
 
 			Kisi yeniKisi = gson.fromJson(mesaj, Kisi.class);
-
 			Kisi eskiKisi = model.getKisi(yeniKisi.getUuid());
 
 			if (eskiKisi == null) {
@@ -196,7 +250,7 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 			model.kisiEkle(yeniKisi);
 
-		} catch (JsonSyntaxException | HibernateException | VeritabaniHatasi e) {
+		} catch (JsonSyntaxException | HibernateException e) {
 
 			e.printStackTrace();
 
@@ -206,7 +260,20 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	@Override
 	public void mesajAlindi(String mesaj) {
-		// TODO Auto-generated method stub
+
+		// TODO
+
+		try {
+
+			Mesaj alinanMesaj = gson.fromJson(mesaj, Mesaj.class);
+
+			model.mesajEkle(alinanMesaj);
+
+		} catch (JsonSyntaxException | HibernateException e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -243,9 +310,11 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	@Override
 	public void mesajGonderTiklandi(String mesaj, String aliciUuid) {
 
-		System.out.println(mesaj + " -> " + aliciUuid);
-
 		// TODO
+
+		Mesaj gidenMesaj = new Mesaj(model.getKimlik().getUuid(), aliciUuid, MesajTipi.MESAJ, mesaj);
+
+		mcIstemci.mesajGonder(gson.toJson(gidenMesaj), aliciUuid);
 
 	}
 
@@ -254,14 +323,18 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		try {
 
-			Kimlik kimlik = veritabaniYonetici.getKimlik();
+			Kimlik kimlik = model.getKimlik();
+
+			if (aciklama.equals(kimlik.getAciklama()))
+				return;
+
 			kimlik.setAciklama(aciklama);
 
 			Kimlik yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
 
 			model.setKimlik(yeniKimlik);
 
-		} catch (HibernateException | VeritabaniHatasi e) {
+		} catch (HibernateException e) {
 
 			e.printStackTrace();
 

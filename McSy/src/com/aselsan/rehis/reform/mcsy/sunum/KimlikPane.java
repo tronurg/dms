@@ -8,6 +8,8 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
@@ -106,7 +108,20 @@ class KimlikPane extends GridPane {
 					: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")";
 		}, kimlikProperty));
 
-		// TODO: Aciklamayi guncelle
+		// Aciklamayi guncelle
+
+		aciklamaTextArea.setText(kimlikProperty.get().getAciklama());
+
+		kimlikProperty.addListener(new ChangeListener<Kimlik>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Kimlik> arg0, Kimlik arg1, Kimlik arg2) {
+
+				aciklamaTextArea.setText(arg2.getAciklama());
+
+			}
+
+		});
 
 	}
 

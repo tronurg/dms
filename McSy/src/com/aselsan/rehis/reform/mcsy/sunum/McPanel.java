@@ -79,6 +79,8 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 		// TODO
 
+		kisilerPane.mesajGuncelle(mesaj);
+
 	}
 
 	private void dinleyicilereMesajGonderTiklandi(final String mesaj, final String uuid) {

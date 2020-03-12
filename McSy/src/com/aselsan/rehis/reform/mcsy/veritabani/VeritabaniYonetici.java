@@ -21,8 +21,6 @@ public class VeritabaniYonetici {
 
 	private final SessionFactory factory;
 
-	private final VeritabaniHatasi vtKapaliException = new VeritabaniHatasi("Veritabani baglantisi sonlandirilmis.");
-
 	public VeritabaniYonetici(String veritabaniAdi) throws VeritabaniHatasi {
 
 		isim = veritabaniAdi;
@@ -34,6 +32,8 @@ public class VeritabaniYonetici {
 					.addAnnotatedClass(Grup.class).addAnnotatedClass(Kimlik.class).addAnnotatedClass(Kisi.class)
 					.addAnnotatedClass(Mesaj.class).buildSessionFactory();
 
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
+
 		} catch (HibernateException e) {
 
 			throw new VeritabaniHatasi("Veritabanina erisilemiyor. Hesap kullanimda olabilir.");
@@ -42,9 +42,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public Kimlik getKimlik() throws HibernateException, VeritabaniHatasi {
+	public Kimlik getKimlik() throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		Query<Kimlik> queryKimlik = session.createQuery("from Kimlik where isim='" + isim + "'", Kimlik.class);
 
@@ -66,9 +66,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public List<Kisi> tumKisileriAl() throws HibernateException, VeritabaniHatasi {
+	public List<Kisi> tumKisileriAl() throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		Query<Kisi> queryKisi = session.createQuery("from Kisi", Kisi.class);
 
@@ -80,9 +80,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public List<Grup> tumGruplariAl() throws HibernateException, VeritabaniHatasi {
+	public List<Grup> tumGruplariAl() throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		Query<Grup> queryGrup = session.createQuery("from Grup", Grup.class);
 
@@ -94,9 +94,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public List<Mesaj> tumMesajlariAl() throws HibernateException, VeritabaniHatasi {
+	public List<Mesaj> tumMesajlariAl() throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		Query<Mesaj> queryMesaj = session.createQuery("from Mesaj", Mesaj.class);
 
@@ -108,9 +108,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public Kimlik kimlikGuncelle(Kimlik kimlik) throws HibernateException, VeritabaniHatasi {
+	public Kimlik kimlikGuncelle(Kimlik kimlik) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -124,9 +124,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void kisiEkle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
+	public void kisiEkle(Kisi kisi) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -138,9 +138,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public Kisi kisiGuncelle(Kisi kisi) throws HibernateException, VeritabaniHatasi {
+	public Kisi kisiGuncelle(Kisi kisi) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -154,9 +154,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void grupEkle(Grup grup) throws HibernateException, VeritabaniHatasi {
+	public void grupEkle(Grup grup) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -168,9 +168,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public Grup grupGuncelle(Grup grup) throws HibernateException, VeritabaniHatasi {
+	public Grup grupGuncelle(Grup grup) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -184,9 +184,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void mesajEkle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
+	public void mesajEkle(Mesaj mesaj) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -198,9 +198,9 @@ public class VeritabaniYonetici {
 
 	}
 
-	public Mesaj mesajGuncelle(Mesaj mesaj) throws HibernateException, VeritabaniHatasi {
+	public Mesaj mesajGuncelle(Mesaj mesaj) throws HibernateException {
 
-		Session session = getFactory().openSession();
+		Session session = factory.openSession();
 
 		session.beginTransaction();
 
@@ -211,21 +211,6 @@ public class VeritabaniYonetici {
 		session.close();
 
 		return yeniMesaj;
-
-	}
-
-	public void sonlandir() {
-
-		factory.close();
-
-	}
-
-	private SessionFactory getFactory() throws VeritabaniHatasi {
-
-		if (factory.isClosed())
-			throw vtKapaliException;
-
-		return factory;
 
 	}
 
