@@ -171,10 +171,10 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		while (true) {
 
-			if (model.isSunucuBagli())
-				mcIstemci.beaconGonder(gson.toJson(model.getKimlik()));
-
 			synchronized (beaconSyncObj) {
+
+				if (model.isSunucuBagli())
+					mcIstemci.beaconGonder(gson.toJson(model.getKimlik()));
 
 				try {
 
