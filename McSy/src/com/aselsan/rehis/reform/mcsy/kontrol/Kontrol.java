@@ -215,6 +215,12 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		if (arg0) {
 
+			synchronized (beaconSyncObj) {
+
+				beaconSyncObj.notify();
+
+			}
+
 			mcIstemci.tumBeaconlariIste();
 
 		} else {
