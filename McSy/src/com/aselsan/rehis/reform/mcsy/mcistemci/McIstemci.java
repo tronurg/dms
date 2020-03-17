@@ -23,7 +23,6 @@ public class McIstemci {
 
 	private final String serverIp;
 	private final int dealerPort;
-	private final int subPort;
 
 	private final McIstemciDinleyici dinleyici;
 
@@ -52,7 +51,6 @@ public class McIstemci {
 
 		this.serverIp = comIp;
 		this.dealerPort = comPort;
-		this.subPort = comPort + 1;
 
 		this.dinleyici = dinleyici;
 
@@ -66,7 +64,7 @@ public class McIstemci {
 		dealerThread.setDaemon(true);
 		dealerThread.start();
 
-		Thread subThread = new Thread(this::sub);
+		Thread subThread = new Thread(this::inproc);
 		subThread.setDaemon(true);
 		subThread.start();
 
@@ -96,7 +94,10 @@ public class McIstemci {
 
 	private void dealer() {
 
-		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER)) {
+		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
+				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
+
+			inprocSocket.bind("inproc://dealer");
 
 			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_CONNECTED | ZMQ.EVENT_DISCONNECTED);
 
@@ -104,19 +105,21 @@ public class McIstemci {
 			dealerSocket.setImmediate(false);
 			dealerSocket.connect("tcp://" + serverIp + ":" + dealerPort);
 
+			ZMQ.Poller poller = context.createPoller(2);
+			poller.register(dealerSocket, ZMQ.Poller.POLLIN);
+			poller.register(inprocSocket, ZMQ.Poller.POLLIN);
+
 			while (!Thread.currentThread().isInterrupted()) {
 
-				dealerSocket.recvStr(ZMQ.DONTWAIT);
+				poller.poll();
 
-				try {
+				if (poller.pollin(0)) {
 
-					String mesaj = dealerQueue.take();
+					gelenMesajiIsle(dealerSocket.recvStr(ZMQ.DONTWAIT));
 
-					dealerSocket.send(mesaj, ZMQ.DONTWAIT);
+				} else if (poller.pollin(1)) {
 
-				} catch (InterruptedException e) {
-
-					e.printStackTrace();
+					dealerSocket.send(inprocSocket.recvStr(ZMQ.DONTWAIT), ZMQ.DONTWAIT);
 
 				}
 
@@ -126,20 +129,23 @@ public class McIstemci {
 
 	}
 
-	private void sub() {
+	private void inproc() {
 
-		try (ZMQ.Socket subSocket = context.createSocket(SocketType.SUB)) {
+		try (ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
 
-			subSocket.connect("tcp://" + serverIp + ":" + subPort);
-			subSocket.subscribe("\n");
-			subSocket.subscribe(uuid + "\n");
+			inprocSocket.connect("inproc://dealer");
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				subSocket.recvStr();
-				String receiveStr = subSocket.recvStr();
+				try {
 
-				gelenMesajiIsle(receiveStr);
+					inprocSocket.send(dealerQueue.take());
+
+				} catch (InterruptedException e) {
+
+					e.printStackTrace();
+
+				}
 
 			}
 
@@ -172,6 +178,9 @@ public class McIstemci {
 	}
 
 	private void gelenMesajiIsle(String mesaj) {
+
+		if (mesaj.isEmpty())
+			return;
 
 		try {
 

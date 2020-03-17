@@ -31,7 +31,6 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	private final Model model = new Model(this);
 
 	private final int routerPort = OrtakSabitler.INTERCOM_PORT;
-	private final int pubPort = OrtakSabitler.INTERCOM_PORT + 1;
 	private final String multicastGroup = OrtakSabitler.MULTICAST_IP;
 	private final int multicastPort = OrtakSabitler.MULTICAST_PORT;
 	private final int comPortIlk = OrtakSabitler.COM_PORT_ILK;
@@ -44,7 +43,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 	private final ZContext context = new ZContext();
 
-	private final LinkedBlockingQueue<SimpleEntry<String, String>> pubQueue = new LinkedBlockingQueue<SimpleEntry<String, String>>();
+	private final LinkedBlockingQueue<SimpleEntry<String, String>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, String>>();
 
 	private final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -80,7 +79,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	public void start() {
 
 		new Thread(this::router).start();
-		new Thread(this::pub).start();
+		new Thread(this::inproc).start();
 		new Thread(this::monitor).start();
 
 	}
@@ -120,38 +119,80 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 	private void router() {
 
-		try (ZMQ.Socket routerSocket = context.createSocket(SocketType.ROUTER)) {
+		try (ZMQ.Socket routerSocket = context.createSocket(SocketType.ROUTER);
+				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
+
+			inprocSocket.bind("inproc://router");
 
 			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_DISCONNECTED);
 
 			routerSocket.setRouterMandatory(true);
 			routerSocket.bind("tcp://*:" + routerPort);
 
+			ZMQ.Poller poller = context.createPoller(2);
+			poller.register(routerSocket, ZMQ.Poller.POLLIN);
+			poller.register(inprocSocket, ZMQ.Poller.POLLIN);
+
 			while (!Thread.currentThread().isInterrupted()) {
 
-				String dealerId = routerSocket.recvStr();
-				String mesajNesnesiStr = routerSocket.recvStr();
+				poller.poll();
 
-				if (MC_UUID.equals(dealerId)) {
+				if (poller.pollin(0)) {
 
-					model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+					String dealerId = routerSocket.recvStr(ZMQ.DONTWAIT);
+					String mesajNesnesiStr = routerSocket.recvStr(ZMQ.DONTWAIT);
 
-						try {
+					if (MC_UUID.equals(dealerId)) {
 
-							routerSocket.sendMore(uuid);
-							routerSocket.send("");
+						model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
 
-						} catch (ZMQException e) {
+							try {
 
-							islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
+								routerSocket.sendMore(uuid);
+								routerSocket.send("", ZMQ.DONTWAIT);
 
-						}
+							} catch (ZMQException e) {
 
-					});
+								islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
 
-				} else {
+							}
 
-					islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
+						});
+
+					} else {
+
+						islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
+
+					}
+
+				} else if (poller.pollin(1)) {
+
+					String dealerId = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					String mesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
+
+					if (dealerId.isEmpty()) {
+
+						model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+
+							try {
+
+								routerSocket.sendMore(uuid);
+								routerSocket.send(mesaj, ZMQ.DONTWAIT);
+
+							} catch (ZMQException e) {
+
+								e.printStackTrace();
+
+							}
+
+						});
+
+					} else {
+
+						routerSocket.sendMore(dealerId);
+						routerSocket.send(mesaj, ZMQ.DONTWAIT);
+
+					}
 
 				}
 
@@ -159,30 +200,30 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		} catch (Exception e) {
 
-			System.out.println(routerPort + " portu kullaniliyor. Istemcilerden veri alinamayacak!");
+			System.out.println(routerPort + " portu kullaniliyor. Istemcilerle haberlesilemeyecek!");
 
 		}
 
 	}
 
-	private void pub() {
+	private void inproc() {
 
-		try (ZMQ.Socket pubSocket = context.createSocket(SocketType.PUB)) {
+		try (ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
 
-			pubSocket.bind("tcp://*:" + pubPort);
+			inprocSocket.connect("inproc://router");
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				SimpleEntry<String, String> aliciMesaj = pubQueue.take();
+				SimpleEntry<String, String> aliciMesaj = routerQueue.take();
 
-				pubSocket.sendMore(aliciMesaj.getKey() + "\n");
-				pubSocket.send(aliciMesaj.getValue());
+				inprocSocket.sendMore(aliciMesaj.getKey());
+				inprocSocket.send(aliciMesaj.getValue());
 
 			}
 
 		} catch (Exception e) {
 
-			System.out.println(pubPort + " portu kullaniliyor. Istemcilere veri gonderilemeyecek!");
+			e.printStackTrace();
 
 		}
 
@@ -252,7 +293,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	@Override
 	public void yerelKullanicilaraGonder(String aliciUuid, String mesaj) {
 
-		pubQueue.offer(new SimpleEntry<String, String>(aliciUuid, mesaj));
+		routerQueue.offer(new SimpleEntry<String, String>(aliciUuid, mesaj));
 
 	}
 
