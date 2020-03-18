@@ -120,52 +120,33 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	private void router() {
 
 		try (ZMQ.Socket routerSocket = context.createSocket(SocketType.ROUTER);
-				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
-
-			inprocSocket.bind("inproc://router");
+				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR);
+				ZMQ.Socket errorSocket = context.createSocket(SocketType.PULL)) {
 
 			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_DISCONNECTED);
 
 			routerSocket.setRouterMandatory(true);
 			routerSocket.bind("tcp://*:" + routerPort);
+			inprocSocket.bind("inproc://router");
+			errorSocket.bind("inproc://error");
 
-			ZMQ.Poller poller = context.createPoller(2);
-			poller.register(routerSocket, ZMQ.Poller.POLLIN);
-			poller.register(inprocSocket, ZMQ.Poller.POLLIN);
+			ZMQ.Poller poller = context.createPoller(3);
+			int pollRouter = poller.register(routerSocket, ZMQ.Poller.POLLIN);
+			int pollInproc = poller.register(inprocSocket, ZMQ.Poller.POLLIN);
+			int pollError = poller.register(errorSocket, ZMQ.Poller.POLLIN);
 
 			while (!Thread.currentThread().isInterrupted()) {
 
 				poller.poll();
 
-				if (poller.pollin(0)) {
+				if (poller.pollin(pollRouter)) {
 
-					String dealerId = routerSocket.recvStr(ZMQ.DONTWAIT);
+					routerSocket.recvStr(ZMQ.DONTWAIT);
 					String mesajNesnesiStr = routerSocket.recvStr(ZMQ.DONTWAIT);
 
-					if (MC_UUID.equals(dealerId)) {
+					islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
 
-						model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
-
-							try {
-
-								routerSocket.sendMore(uuid);
-								routerSocket.send("", ZMQ.DONTWAIT);
-
-							} catch (ZMQException e) {
-
-								islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
-
-							}
-
-						});
-
-					} else {
-
-						islemKuyrugu.execute(() -> model.yerelMesajAlindi(mesajNesnesiStr));
-
-					}
-
-				} else if (poller.pollin(1)) {
+				} else if (poller.pollin(pollInproc)) {
 
 					String dealerId = inprocSocket.recvStr(ZMQ.DONTWAIT);
 					String mesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
@@ -193,6 +174,27 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 						routerSocket.send(mesaj, ZMQ.DONTWAIT);
 
 					}
+
+				} else if (poller.pollin(pollError)) {
+
+					errorSocket.recvStr(ZMQ.DONTWAIT);
+
+					model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+
+						try {
+
+							routerSocket.sendMore(uuid);
+							routerSocket.send("");
+
+						} catch (ZMQException e) {
+
+							e.printStackTrace();
+
+							islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
+
+						}
+
+					});
 
 				}
 
@@ -232,20 +234,17 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	private void monitor() {
 
 		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR);
-				ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER)) {
-
-			dealerSocket.setIdentity(MC_UUID.getBytes(ZMQ.CHARSET));
-			dealerSocket.setImmediate(false);
-			dealerSocket.connect("tcp://localhost:" + routerPort);
+				ZMQ.Socket errorSocket = context.createSocket(SocketType.PUSH)) {
 
 			monitorSocket.connect("inproc://monitor");
+			errorSocket.connect("inproc://error");
 
 			while (!Thread.currentThread().isInterrupted()) {
 
 				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
 				switch (event.getEvent()) {
 				case ZMQ.EVENT_DISCONNECTED:
-					dealerSocket.send("", ZMQ.DONTWAIT);
+					errorSocket.send("", ZMQ.DONTWAIT);
 					break;
 				}
 

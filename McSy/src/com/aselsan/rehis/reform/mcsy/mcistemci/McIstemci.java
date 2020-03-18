@@ -106,18 +106,18 @@ public class McIstemci {
 			dealerSocket.connect("tcp://" + serverIp + ":" + dealerPort);
 
 			ZMQ.Poller poller = context.createPoller(2);
-			poller.register(dealerSocket, ZMQ.Poller.POLLIN);
-			poller.register(inprocSocket, ZMQ.Poller.POLLIN);
+			int pollDealer = poller.register(dealerSocket, ZMQ.Poller.POLLIN);
+			int pollInproc = poller.register(inprocSocket, ZMQ.Poller.POLLIN);
 
 			while (!Thread.currentThread().isInterrupted()) {
 
 				poller.poll();
 
-				if (poller.pollin(0)) {
+				if (poller.pollin(pollDealer)) {
 
 					gelenMesajiIsle(dealerSocket.recvStr(ZMQ.DONTWAIT));
 
-				} else if (poller.pollin(1)) {
+				} else if (poller.pollin(pollInproc)) {
 
 					dealerSocket.send(inprocSocket.recvStr(ZMQ.DONTWAIT), ZMQ.DONTWAIT);
 
