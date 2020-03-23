@@ -3,6 +3,7 @@ package com.aselsan.rehis.reform.mcsy.mcsunucu.model;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.model.intf.ModelDinleyici;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajNesnesi;
@@ -44,7 +45,8 @@ public class Model {
 					// Yeni beacon tum yerel ve uzak kullanicilara dagitilacak.
 
 					yerelKullaniciBeacon.put(gonderenUuid, mesajNesnesiStr);
-					dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
+					yerelKullaniciBeacon.forEach(
+							(aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr));
 					dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
 
 				}
@@ -62,13 +64,13 @@ public class Model {
 					if (gonderenUuid.equals(uuid))
 						return;
 
-					dinleyici.yerelKullanicilaraGonder(gonderenUuid, beacon);
+					dinleyici.yerelKullaniciyaGonder(gonderenUuid, beacon);
 
 				});
 
 				uzakKullaniciBeacon.forEach((uuid, beacon) -> {
 
-					dinleyici.yerelKullanicilaraGonder(gonderenUuid, beacon);
+					dinleyici.yerelKullaniciyaGonder(gonderenUuid, beacon);
 
 				});
 
@@ -79,9 +81,9 @@ public class Model {
 				String aliciUuid = mesajNesnesi.aliciUuid;
 
 				if (yerelKullaniciBeacon.containsKey(aliciUuid))
-					dinleyici.yerelKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+					dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 				else if (uzakKullaniciBeacon.containsKey(aliciUuid))
-					dinleyici.uzakKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+					dinleyici.uzakKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 
 				break;
 
@@ -116,7 +118,8 @@ public class Model {
 					// Yeni beacon tum yerel kullanicilara dagitilacak.
 
 					uzakKullaniciBeacon.put(gonderenUuid, mesajNesnesiStr);
-					dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
+					yerelKullaniciBeacon.forEach(
+							(aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr));
 
 				}
 
@@ -130,7 +133,7 @@ public class Model {
 
 			case MESAJ:
 
-				dinleyici.yerelKullanicilaraGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 
 				break;
 
@@ -146,9 +149,15 @@ public class Model {
 
 	}
 
-	public Map<String, String> tumYerelBeaconlariAl() {
+	public void tumYerelBeaconlariIsle(Consumer<String> consumer) {
 
-		return yerelKullaniciBeacon;
+		yerelKullaniciBeacon.forEach((aliciUuid, mesaj) -> consumer.accept(mesaj));
+
+	}
+
+	public void tumYerelKullanicilariTestEt() {
+
+		yerelKullaniciBeacon.forEach((aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, ""));
 
 	}
 
@@ -158,7 +167,8 @@ public class Model {
 
 		uzakKullaniciBeacon.remove(uuid);
 
-		dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
+		yerelKullaniciBeacon
+				.forEach((aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr));
 
 	}
 
@@ -168,7 +178,8 @@ public class Model {
 
 		yerelKullaniciBeacon.remove(uuid);
 
-		dinleyici.yerelKullanicilaraGonder("", mesajNesnesiStr);
+		yerelKullaniciBeacon
+				.forEach((aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr));
 
 		dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
 

@@ -68,10 +68,6 @@ public class McIstemci {
 		subThread.setDaemon(true);
 		subThread.start();
 
-//		Thread monitorThread = new Thread(this::monitor);
-//		monitorThread.setDaemon(true);
-//		monitorThread.start();
-
 	}
 
 	public void beaconGonder(String mesaj) {

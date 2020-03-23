@@ -80,7 +80,6 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		new Thread(this::router).start();
 		new Thread(this::inproc).start();
-//		new Thread(this::monitor).start();
 
 	}
 
@@ -148,30 +147,22 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 				} else if (poller.pollin(pollInproc)) {
 
-					String dealerId = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
 					String mesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
 
-					if (dealerId.isEmpty()) {
+					if (mesaj.isEmpty())
+						System.out.println((mesaj.isEmpty() ? "test " : "mesaj ") + uuid);
 
-						model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+					try {
 
-							try {
-
-								routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-								routerSocket.send(mesaj, ZMQ.DONTWAIT);
-
-							} catch (ZMQException e) {
-
-								e.printStackTrace();
-
-							}
-
-						});
-
-					} else {
-
-						routerSocket.send(dealerId, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						routerSocket.send(mesaj, ZMQ.DONTWAIT);
+
+					} catch (ZMQException e) {
+
+						e.printStackTrace();
+
+						islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
 
 					}
 
@@ -183,22 +174,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 					case ZMQ.EVENT_DISCONNECTED:
 
-						model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
-
-							try {
-
-								routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-								routerSocket.send("", ZMQ.DONTWAIT);
-
-							} catch (ZMQException e) {
-
-								e.printStackTrace();
-
-								islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
-
-							}
-
-						});
+						islemKuyrugu.execute(() -> model.tumYerelKullanicilariTestEt());
 						break;
 
 					}
@@ -241,7 +217,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	@Override
 	public void uzakSunucuyaBaglanildi(final String mcUuid) {
 
-		model.tumYerelBeaconlariAl().forEach((uuid, beacon) -> {
+		islemKuyrugu.execute(() -> model.tumYerelBeaconlariIsle(beacon -> {
 
 			try {
 
@@ -253,7 +229,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 			}
 
-		});
+		}));
 
 	}
 
@@ -272,14 +248,14 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	}
 
 	@Override
-	public void yerelKullanicilaraGonder(String aliciUuid, String mesaj) {
+	public void yerelKullaniciyaGonder(String aliciUuid, String mesaj) {
 
 		routerQueue.offer(new SimpleEntry<String, String>(aliciUuid, mesaj));
 
 	}
 
 	@Override
-	public void uzakKullanicilaraGonder(String aliciUuid, String mesaj) {
+	public void uzakKullaniciyaGonder(String aliciUuid, String mesaj) {
 
 		try {
 
