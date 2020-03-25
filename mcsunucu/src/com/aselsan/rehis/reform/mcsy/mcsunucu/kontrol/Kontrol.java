@@ -80,6 +80,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 		new Thread(this::router).start();
 		new Thread(this::inproc).start();
+		new Thread(this::monitor).start();
 
 	}
 
@@ -119,20 +120,17 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 	private void router() {
 
 		try (ZMQ.Socket routerSocket = context.createSocket(SocketType.ROUTER);
-				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR);
-				ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
 
 			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_DISCONNECTED);
 
 			routerSocket.setRouterMandatory(true);
 			routerSocket.bind("tcp://*:" + routerPort);
 			inprocSocket.bind("inproc://router");
-			monitorSocket.connect("inproc://monitor");
 
-			ZMQ.Poller poller = context.createPoller(3);
+			ZMQ.Poller poller = context.createPoller(2);
 			int pollRouter = poller.register(routerSocket, ZMQ.Poller.POLLIN);
 			int pollInproc = poller.register(inprocSocket, ZMQ.Poller.POLLIN);
-			int pollMonitor = poller.register(monitorSocket, ZMQ.Poller.POLLIN);
 
 			while (!Thread.currentThread().isInterrupted()) {
 
@@ -150,13 +148,13 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 					String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
 					String mesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
 
-					if (mesaj.isEmpty())
-						System.out.println((mesaj.isEmpty() ? "test " : "mesaj ") + uuid);
+					System.out.println((mesaj.isEmpty() ? "test " : "mesaj ") + uuid + " \"" + mesaj + "\"");
 
 					try {
 
 						routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						routerSocket.send(mesaj, ZMQ.DONTWAIT);
+						System.out.println("here");
 
 					} catch (ZMQException e) {
 
@@ -166,21 +164,7 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 					}
 
-				} else if (poller.pollin(pollMonitor)) {
-
-					ZMQ.Event event = ZMQ.Event.recv(monitorSocket, ZMQ.DONTWAIT);
-
-					switch (event.getEvent()) {
-
-					case ZMQ.EVENT_DISCONNECTED:
-
-						islemKuyrugu.execute(() -> model.tumYerelKullanicilariTestEt());
-						break;
-
-					}
-
 				}
-
 			}
 
 		} catch (Exception e) {
@@ -203,6 +187,37 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 
 				inprocSocket.sendMore(aliciMesaj.getKey());
 				inprocSocket.send(aliciMesaj.getValue());
+
+			}
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	private void monitor() {
+
+		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+
+			monitorSocket.connect("inproc://monitor");
+
+			while (!Thread.currentThread().isInterrupted()) {
+
+				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
+
+				switch (event.getEvent()) {
+
+				case ZMQ.EVENT_DISCONNECTED:
+
+					Thread.sleep(100);
+
+					islemKuyrugu.execute(() -> model.tumYerelKullanicilariTestEt());
+					break;
+
+				}
 
 			}
 

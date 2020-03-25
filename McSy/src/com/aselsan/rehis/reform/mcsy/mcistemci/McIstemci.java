@@ -64,9 +64,13 @@ public class McIstemci {
 		dealerThread.setDaemon(true);
 		dealerThread.start();
 
-		Thread subThread = new Thread(this::inproc);
-		subThread.setDaemon(true);
-		subThread.start();
+		Thread inprocThread = new Thread(this::inproc);
+		inprocThread.setDaemon(true);
+		inprocThread.start();
+
+		Thread monitorThread = new Thread(this::monitor);
+		monitorThread.setDaemon(true);
+		monitorThread.start();
 
 	}
 
@@ -91,8 +95,7 @@ public class McIstemci {
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
-				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR);
-				ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+				ZMQ.Socket inprocSocket = context.createSocket(SocketType.PAIR)) {
 
 			inprocSocket.bind("inproc://dealer");
 
@@ -101,12 +104,10 @@ public class McIstemci {
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
 			dealerSocket.setImmediate(false);
 			dealerSocket.connect("tcp://" + serverIp + ":" + dealerPort);
-			monitorSocket.connect("inproc://monitor");
 
-			ZMQ.Poller poller = context.createPoller(3);
+			ZMQ.Poller poller = context.createPoller(2);
 			int pollDealer = poller.register(dealerSocket, ZMQ.Poller.POLLIN);
 			int pollInproc = poller.register(inprocSocket, ZMQ.Poller.POLLIN);
-			int pollMonitor = poller.register(monitorSocket, ZMQ.Poller.POLLIN);
 
 			while (!Thread.currentThread().isInterrupted()) {
 
@@ -119,23 +120,6 @@ public class McIstemci {
 				} else if (poller.pollin(pollInproc)) {
 
 					dealerSocket.send(inprocSocket.recvStr(ZMQ.DONTWAIT), ZMQ.DONTWAIT);
-
-				} else if (poller.pollin(pollMonitor)) {
-
-					ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
-
-					switch (event.getEvent()) {
-
-					case ZMQ.EVENT_CONNECTED:
-
-						dinleyiciyeSunucuBaglantiDurumuGuncellendi(true);
-						break;
-
-					case ZMQ.EVENT_DISCONNECTED:
-						dinleyiciyeSunucuBaglantiDurumuGuncellendi(false);
-						break;
-
-					}
 
 				}
 
@@ -160,6 +144,35 @@ public class McIstemci {
 				} catch (InterruptedException e) {
 
 					e.printStackTrace();
+
+				}
+
+			}
+
+		}
+
+	}
+
+	private void monitor() {
+
+		try (ZMQ.Socket monitorSocket = context.createSocket(SocketType.PAIR)) {
+
+			monitorSocket.connect("inproc://monitor");
+
+			while (!Thread.currentThread().isInterrupted()) {
+
+				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
+
+				switch (event.getEvent()) {
+
+				case ZMQ.EVENT_CONNECTED:
+
+					dinleyiciyeSunucuBaglantiDurumuGuncellendi(true);
+					break;
+
+				case ZMQ.EVENT_DISCONNECTED:
+					dinleyiciyeSunucuBaglantiDurumuGuncellendi(false);
+					break;
 
 				}
 
