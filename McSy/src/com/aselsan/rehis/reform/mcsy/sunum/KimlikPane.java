@@ -7,9 +7,6 @@ import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
@@ -83,45 +80,15 @@ class KimlikPane extends GridPane {
 
 	}
 
-	void setKimlikProperty(ObjectProperty<Kimlik> kimlikProperty) {
+	void setKimlik(Kimlik kimlik) {
 
-		durumCemberi.strokeProperty()
-				.bind(Bindings.createObjectBinding(
-						() -> kimlikProperty.get() == null ? null : kimlikProperty.get().getDurum().getDurumRengi(),
-						kimlikProperty));
-		profilLabel.textProperty()
-				.bind(Bindings
-						.createStringBinding(
-								() -> kimlikProperty.get() == null ? null
-										: kimlikProperty.get().getIsim().substring(0, 1).toUpperCase(),
-								kimlikProperty));
+		durumCemberi.setStroke(kimlik.getDurum().getDurumRengi());
+		profilLabel.setText(kimlik.getIsim().substring(0, 1).toUpperCase());
 
-		isimLabel.textProperty().bind(Bindings.createStringBinding(
-				() -> kimlikProperty.get() == null ? null : kimlikProperty.get().getIsim(), kimlikProperty));
-		aciklamaTextArea.accessibleTextProperty().bind(Bindings.createStringBinding(
-				() -> kimlikProperty.get() == null ? null : kimlikProperty.get().getAciklama(), kimlikProperty));
-		konumLabel.textProperty().bind(Bindings.createStringBinding(() -> {
-			Kimlik kimlik = kimlikProperty.get();
-			if (kimlik == null)
-				return null;
-			return kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
-					: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")";
-		}, kimlikProperty));
-
-		// Aciklamayi guncelle
-
-		aciklamaTextArea.setText(kimlikProperty.get().getAciklama());
-
-		kimlikProperty.addListener(new ChangeListener<Kimlik>() {
-
-			@Override
-			public void changed(ObservableValue<? extends Kimlik> arg0, Kimlik arg1, Kimlik arg2) {
-
-				aciklamaTextArea.setText(arg2.getAciklama());
-
-			}
-
-		});
+		isimLabel.setText(kimlik.getIsim());
+		aciklamaTextArea.setText(kimlik.getAciklama());
+		konumLabel.setText(kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
+				: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")");
 
 	}
 

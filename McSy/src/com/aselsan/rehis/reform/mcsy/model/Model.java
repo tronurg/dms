@@ -2,8 +2,9 @@ package com.aselsan.rehis.reform.mcsy.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
@@ -12,28 +13,22 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.ObservableMap;
-
 public class Model {
 
-	private final ObjectProperty<Kimlik> kimlikProperty = new SimpleObjectProperty<Kimlik>();
+	private final Kimlik kimlik;
 
 	private final AtomicBoolean sunucuBagli = new AtomicBoolean(false);
 
-	private final ObservableMap<String, Kisi> kisiler = FXCollections
-			.synchronizedObservableMap(FXCollections.observableMap(new LinkedHashMap<String, Kisi>()));
-	private final ObservableMap<String, Grup> gruplar = FXCollections
-			.synchronizedObservableMap(FXCollections.observableMap(new LinkedHashMap<String, Grup>()));
-	private final ObservableList<Mesaj> mesajlar = FXCollections
-			.synchronizedObservableList(FXCollections.observableList(new ArrayList<Mesaj>()));
+	private final Map<String, Kisi> kisiler = Collections.synchronizedMap(new HashMap<String, Kisi>());
+	private final Map<String, Grup> gruplar = Collections.synchronizedMap(new HashMap<String, Grup>());
+	private final Map<String, Map<Long, Mesaj>> mesajlar = Collections
+			.synchronizedMap(new HashMap<String, Map<Long, Mesaj>>());
 
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
-	public Model() {
+	public Model(Kimlik kimlik) {
+
+		this.kimlik = kimlik;
 
 	}
 
@@ -43,21 +38,15 @@ public class Model {
 
 	}
 
-	public ObjectProperty<Kimlik> kimlikProperty() {
-
-		return kimlikProperty;
-
-	}
-
 	public Kimlik getKimlik() {
 
-		return kimlikProperty.get();
+		return kimlik;
 
 	}
 
-	public void setKimlik(Kimlik kimlik) {
+	public void aciklamaGuncelle(String aciklama) {
 
-		kimlikProperty.set(kimlik);
+		kimlik.setAciklama(aciklama);
 
 	}
 
@@ -73,45 +62,64 @@ public class Model {
 
 	}
 
+	public void addKisi(Kisi kisi) {
+
+		kisiler.put(kisi.getUuid(), kisi);
+
+	}
+
 	public Kisi getKisi(String uuid) {
 
 		return kisiler.get(uuid);
 
 	}
 
-	public ObservableMap<String, Kisi> getKisiler() {
+	public Map<String, Kisi> getKisiler() {
 
 		return kisiler;
 
 	}
 
-	public ObservableMap<String, Grup> getGruplar() {
-
-		return gruplar;
-
-	}
-
-	public ObservableList<Mesaj> getMesajlar() {
-
-		return mesajlar;
-
-	}
-
-	public void kisiEkle(Kisi kisi) {
-
-		kisiler.put(kisi.getUuid(), kisi);
-
-	}
-
-	public void grupEkle(Grup grup) {
+	public void addGrup(Grup grup) {
 
 		gruplar.put(grup.getUuid(), grup);
 
 	}
 
-	public void mesajEkle(Mesaj mesaj) {
+	public Grup getGrup(String uuid) {
 
-		mesajlar.add(mesaj);
+		return gruplar.get(uuid);
+
+	}
+
+	public Map<String, Grup> getGruplar() {
+
+		return gruplar;
+
+	}
+
+	public void addMesaj(Mesaj mesaj) {
+
+		String uuid = kimlik.getUuid().equals(mesaj.getAliciUuid()) ? mesaj.getGonderenUuid() : mesaj.getAliciUuid();
+
+		mesajlar.putIfAbsent(uuid, new HashMap<Long, Mesaj>());
+
+		mesajlar.get(uuid).put(mesaj.getMesajId(), mesaj);
+
+	}
+
+	public Mesaj getMesaj(String uuid, Long mesajId) {
+
+		if (!mesajlar.containsKey(uuid))
+			return null;
+
+		return mesajlar.get(uuid).get(mesajId);
+
+	}
+
+	public Map<String, Map<Long, Mesaj>> getMesajlar() {
+
+		return mesajlar;
 
 	}
 

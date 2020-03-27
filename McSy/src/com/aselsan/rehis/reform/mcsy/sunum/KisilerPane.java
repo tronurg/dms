@@ -79,14 +79,21 @@ class KisilerPane extends TitledPane {
 
 	}
 
-	void mesajGuncelle(Mesaj mesaj) {
+	void gelenMesajGuncelle(Mesaj mesaj) {
 
 		if (!uuidler.containsKey(mesaj.getGonderenUuid()))
 			return;
 
-		uuidler.get(mesaj.getGonderenUuid()).mesajGuncelle(mesaj);
+		uuidler.get(mesaj.getGonderenUuid()).gelenMesajGuncelle(mesaj);
 
-		// TODO
+	}
+
+	void gidenMesajGuncelle(Mesaj mesaj) {
+
+		if (!uuidler.containsKey(mesaj.getAliciUuid()))
+			return;
+
+		uuidler.get(mesaj.getAliciUuid()).gidenMesajGuncelle(mesaj);
 
 	}
 

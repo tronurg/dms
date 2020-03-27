@@ -1,8 +1,12 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -44,6 +48,11 @@ class MesajPane extends BorderPane {
 	private final Label isimLabel = new Label();
 	private final TextArea mesajArea = new TextArea();
 	private final Button gonderBtn = SunumFabrika.newGonderBtn();
+
+	private final Map<Long, MesajBalonu> gelenMesajBalonlari = Collections
+			.synchronizedMap(new HashMap<Long, MesajBalonu>());
+	private final Map<Long, MesajBalonu> gidenMesajBalonlari = Collections
+			.synchronizedMap(new HashMap<Long, MesajBalonu>());
 
 	MesajPane() {
 
@@ -111,12 +120,31 @@ class MesajPane extends BorderPane {
 
 	}
 
-	void gelenMesajEkle(String mesaj) {
+	void gelenMesajGuncelle(Mesaj mesaj) {
 
-		MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj, MesajTipi.GELEN);
+		if (!gelenMesajBalonlari.containsKey(mesaj.getMesajId())) {
 
-		ortaPane.getChildren().add(gelenMesajBalonu);
-		ortaPane.layout();
+			MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), MesajTipi.GELEN);
+			gelenMesajBalonlari.put(mesaj.getMesajId(), gelenMesajBalonu);
+
+			ortaPane.getChildren().add(gelenMesajBalonu);
+			ortaPane.layout();
+
+		}
+
+	}
+
+	void gidenMesajGuncelle(Mesaj mesaj) {
+
+		if (!gidenMesajBalonlari.containsKey(mesaj.getMesajId())) {
+
+			MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), MesajTipi.GIDEN);
+			gidenMesajBalonlari.put(mesaj.getMesajId(), gidenMesajBalonu);
+
+			ortaPane.getChildren().add(gidenMesajBalonu);
+			ortaPane.layout();
+
+		}
 
 	}
 
@@ -137,20 +165,9 @@ class MesajPane extends BorderPane {
 			if (mesaj.isEmpty())
 				return;
 
-			gidenMesajEkle(mesaj);
-
 			consumer.accept(mesaj);
 
 		});
-
-	}
-
-	private void gidenMesajEkle(String mesaj) {
-
-		MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj, MesajTipi.GIDEN);
-
-		ortaPane.getChildren().add(gidenMesajBalonu);
-		ortaPane.layout();
 
 	}
 

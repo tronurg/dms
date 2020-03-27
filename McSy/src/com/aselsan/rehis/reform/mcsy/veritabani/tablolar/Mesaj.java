@@ -8,7 +8,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PostPersist;
-import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
 import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
@@ -44,6 +43,10 @@ public class Mesaj {
 	@Column(name = "mesaj_durumu", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private MesajDurumu mesajDurumu;
+
+	public Mesaj() {
+		super();
+	}
 
 	public Mesaj(String gonderenUuid, String aliciUuid, MesajTipi mesajTipi, String icerik) {
 		this.gonderenUuid = gonderenUuid;
@@ -116,13 +119,10 @@ public class Mesaj {
 		this.mesajDurumu = mesajDurumu;
 	}
 
-	@PrePersist
-	protected void onCreate() {
-		this.mesajDurumu = MesajDurumu.OLUSTURULDU;
-	}
-
 	@PostPersist
 	protected void onPersist() {
+		if (this.mesajId != null)
+			return;
 		this.mesajId = id;
 	}
 

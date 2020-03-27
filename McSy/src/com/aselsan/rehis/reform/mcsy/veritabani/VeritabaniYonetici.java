@@ -46,19 +46,20 @@ public class VeritabaniYonetici {
 
 		Session session = factory.openSession();
 
-		Query<Kimlik> queryKimlik = session.createQuery("from Kimlik where isim='" + isim + "'", Kimlik.class);
+		Kimlik kimlik = session.createQuery("from Kimlik where isim like :isim", Kimlik.class)
+				.setParameter("isim", isim).uniqueResult();
 
-		if (queryKimlik.list().size() == 0) {
+		if (kimlik == null) {
+
+			kimlik = new Kimlik(isim);
 
 			session.beginTransaction();
 
-			session.persist(new Kimlik(isim));
+			session.persist(kimlik);
 
 			session.getTransaction().commit();
 
 		}
-
-		Kimlik kimlik = queryKimlik.list().get(0);
 
 		session.close();
 
@@ -72,7 +73,7 @@ public class VeritabaniYonetici {
 
 		Query<Kisi> queryKisi = session.createQuery("from Kisi", Kisi.class);
 
-		List<Kisi> tumKisiler = queryKisi.getResultList();
+		List<Kisi> tumKisiler = queryKisi.list();
 
 		session.close();
 
@@ -86,7 +87,7 @@ public class VeritabaniYonetici {
 
 		Query<Grup> queryGrup = session.createQuery("from Grup", Grup.class);
 
-		List<Grup> tumGruplar = queryGrup.getResultList();
+		List<Grup> tumGruplar = queryGrup.list();
 
 		session.close();
 
@@ -100,7 +101,7 @@ public class VeritabaniYonetici {
 
 		Query<Mesaj> queryMesaj = session.createQuery("from Mesaj", Mesaj.class);
 
-		List<Mesaj> tumMesajlar = queryMesaj.getResultList();
+		List<Mesaj> tumMesajlar = queryMesaj.list();
 
 		session.close();
 
@@ -124,94 +125,188 @@ public class VeritabaniYonetici {
 
 	}
 
-	public void kisiEkle(Kisi kisi) throws HibernateException {
+	public Kisi kisiEkleGuncelle(Kisi kisi) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		session.beginTransaction();
+		Kisi vtKisi = session.createQuery("from Kisi where uuid like :uuid", Kisi.class)
+				.setParameter("uuid", kisi.getUuid()).uniqueResult();
 
-		session.persist(kisi);
+		if (vtKisi == null) {
 
-		session.getTransaction().commit();
+			vtKisi = kisi;
+
+			session.beginTransaction();
+
+			session.persist(vtKisi);
+
+			session.getTransaction().commit();
+
+		} else {
+
+			kisi.setId(vtKisi.getId());
+
+			session.beginTransaction();
+
+			vtKisi = (Kisi) session.merge(kisi);
+
+			session.getTransaction().commit();
+
+		}
 
 		session.close();
 
+		return vtKisi;
+
 	}
 
-	public Kisi kisiGuncelle(Kisi kisi) throws HibernateException {
+	public Grup grupEkleGuncelle(Grup grup) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		session.beginTransaction();
+		Grup vtGrup = session.createQuery("from Grup where uuid like :uuid", Grup.class)
+				.setParameter("uuid", grup.getUuid()).uniqueResult();
 
-		Kisi yeniKisi = (Kisi) session.merge(kisi);
+		if (vtGrup == null) {
 
-		session.getTransaction().commit();
+			vtGrup = grup;
+
+			session.beginTransaction();
+
+			session.persist(vtGrup);
+
+			session.getTransaction().commit();
+
+		} else {
+
+			grup.setId(vtGrup.getId());
+
+			session.beginTransaction();
+
+			vtGrup = (Grup) session.merge(grup);
+
+			session.getTransaction().commit();
+
+		}
 
 		session.close();
 
-		return yeniKisi;
+		return vtGrup;
 
 	}
 
-	public void grupEkle(Grup grup) throws HibernateException {
+	public Mesaj mesajEkleGuncelle(Mesaj mesaj) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		session.beginTransaction();
+		Mesaj vtMesaj = session.createQuery(
+				"from Mesaj where aliciUuid like :aliciUuid and gonderenUuid like :gonderenUuid and mesajId=:mesajId",
+				Mesaj.class).setParameter("aliciUuid", mesaj.getAliciUuid())
+				.setParameter("gonderenUuid", mesaj.getGonderenUuid()).setParameter("mesajId", mesaj.getMesajId())
+				.uniqueResult();
 
-		session.persist(grup);
+		if (vtMesaj == null) {
 
-		session.getTransaction().commit();
+			vtMesaj = mesaj;
 
-		session.close();
+			session.beginTransaction();
 
-	}
+			session.persist(vtMesaj);
 
-	public Grup grupGuncelle(Grup grup) throws HibernateException {
+			session.getTransaction().commit();
 
-		Session session = factory.openSession();
+		} else {
 
-		session.beginTransaction();
+			mesaj.setId(vtMesaj.getId());
 
-		Grup yeniGrup = (Grup) session.merge(grup);
+			session.beginTransaction();
 
-		session.getTransaction().commit();
+			vtMesaj = (Mesaj) session.merge(mesaj);
 
-		session.close();
+			session.getTransaction().commit();
 
-		return yeniGrup;
-
-	}
-
-	public void mesajEkle(Mesaj mesaj) throws HibernateException {
-
-		Session session = factory.openSession();
-
-		session.beginTransaction();
-
-		session.persist(mesaj);
-
-		session.getTransaction().commit();
+		}
 
 		session.close();
 
-	}
-
-	public Mesaj mesajGuncelle(Mesaj mesaj) throws HibernateException {
-
-		Session session = factory.openSession();
-
-		session.beginTransaction();
-
-		Mesaj yeniMesaj = (Mesaj) session.merge(mesaj);
-
-		session.getTransaction().commit();
-
-		session.close();
-
-		return yeniMesaj;
+		return vtMesaj;
 
 	}
+
+//	public Kisi kisiGuncelle(Kisi kisi) throws HibernateException {
+//
+//		Session session = factory.openSession();
+//
+//		session.beginTransaction();
+//
+//		Kisi yeniKisi = (Kisi) session.merge(kisi);
+//
+//		session.getTransaction().commit();
+//
+//		session.close();
+//
+//		return yeniKisi;
+//
+//	}
+//
+//	public void grupEkle(Grup grup) throws HibernateException {
+//
+//		Session session = factory.openSession();
+//
+//		session.beginTransaction();
+//
+//		session.persist(grup);
+//
+//		session.getTransaction().commit();
+//
+//		session.close();
+//
+//	}
+//
+//	public Grup grupGuncelle(Grup grup) throws HibernateException {
+//
+//		Session session = factory.openSession();
+//
+//		session.beginTransaction();
+//
+//		Grup yeniGrup = (Grup) session.merge(grup);
+//
+//		session.getTransaction().commit();
+//
+//		session.close();
+//
+//		return yeniGrup;
+//
+//	}
+//
+//	public void mesajEkle(Mesaj mesaj) throws HibernateException {
+//
+//		Session session = factory.openSession();
+//
+//		session.beginTransaction();
+//
+//		session.persist(mesaj);
+//
+//		session.getTransaction().commit();
+//
+//		session.close();
+//
+//	}
+//
+//	public Mesaj mesajGuncelle(Mesaj mesaj) throws HibernateException {
+//
+//		Session session = factory.openSession();
+//
+//		session.beginTransaction();
+//
+//		Mesaj yeniMesaj = (Mesaj) session.merge(mesaj);
+//
+//		session.getTransaction().commit();
+//
+//		session.close();
+//
+//		return yeniMesaj;
+//
+//	}
 
 }

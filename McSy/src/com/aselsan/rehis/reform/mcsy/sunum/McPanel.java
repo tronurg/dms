@@ -10,7 +10,6 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
-import javafx.beans.property.ObjectProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.Accordion;
 import javafx.scene.layout.StackPane;
@@ -57,9 +56,9 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 	}
 
-	public void setKimlikProperty(ObjectProperty<Kimlik> kimlikProperty) {
+	public void setKimlik(Kimlik kimlik) {
 
-		kimlikPane.setKimlikProperty(kimlikProperty);
+		kimlikPane.setKimlik(kimlik);
 
 	}
 
@@ -75,11 +74,15 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 	}
 
-	public void mesajGuncelle(Mesaj mesaj) {
+	public void gelenMesajGuncelle(Mesaj mesaj) {
 
-		// TODO
+		kisilerPane.gelenMesajGuncelle(mesaj);
 
-		kisilerPane.mesajGuncelle(mesaj);
+	}
+
+	public void gidenMesajGuncelle(Mesaj mesaj) {
+
+		kisilerPane.gidenMesajGuncelle(mesaj);
 
 	}
 

@@ -23,7 +23,7 @@ public class TestMcsy {
 	protected void activate() {
 
 		try {
-			JComponent mcPanel = mcServisi.login("armut").getMcPanel();
+			JComponent mcPanel = mcServisi.login("elma").getMcPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

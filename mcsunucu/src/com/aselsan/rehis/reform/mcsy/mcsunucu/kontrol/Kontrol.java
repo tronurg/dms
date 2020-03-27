@@ -148,17 +148,12 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 					String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
 					String mesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
 
-					System.out.println((mesaj.isEmpty() ? "test " : "mesaj ") + uuid + " \"" + mesaj + "\"");
-
 					try {
 
 						routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						routerSocket.send(mesaj, ZMQ.DONTWAIT);
-						System.out.println("here");
 
 					} catch (ZMQException e) {
-
-						e.printStackTrace();
 
 						islemKuyrugu.execute(() -> model.yerelKullaniciKoptu(uuid));
 
