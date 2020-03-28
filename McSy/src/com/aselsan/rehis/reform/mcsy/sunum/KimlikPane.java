@@ -14,11 +14,15 @@ import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -37,7 +41,7 @@ class KimlikPane extends GridPane {
 	private final Label profilLabel = new Label();
 
 	private final Label isimLabel = new Label();
-	private final TextArea aciklamaTextArea = new TextArea();
+	private final TextField aciklamaTextField = new TextField();
 	private final Label konumLabel = new Label();
 
 	private final AtomicReference<Consumer<String>> aciklamaGuncellendiConsumer = new AtomicReference<Consumer<String>>();
@@ -64,12 +68,12 @@ class KimlikPane extends GridPane {
 		setMargin(sep, new Insets(0, 5, 0, 5));
 
 		setValignment(profilResmi, VPos.TOP);
-		setHgrow(aciklamaTextArea, Priority.ALWAYS);
+		setHgrow(aciklamaTextField, Priority.ALWAYS);
 
 		add(profilResmi, 0, 0, 1, 3);
 		add(sep, 1, 0, 1, 3);
 		add(isimLabel, 2, 0, 1, 1);
-		add(aciklamaTextArea, 2, 1, 1, 1);
+		add(aciklamaTextField, 2, 1, 1, 1);
 		add(konumLabel, 2, 2, 1, 1);
 
 	}
@@ -86,7 +90,7 @@ class KimlikPane extends GridPane {
 		profilLabel.setText(kimlik.getIsim().substring(0, 1).toUpperCase());
 
 		isimLabel.setText(kimlik.getIsim());
-		aciklamaTextArea.setText(kimlik.getAciklama());
+		aciklamaTextField.setText(kimlik.getAciklama());
 		konumLabel.setText(kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
 				: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")");
 
@@ -136,39 +140,49 @@ class KimlikPane extends GridPane {
 
 		final AtomicReference<String> sonAciklama = new AtomicReference<String>();
 
-		aciklamaTextArea.setTextFormatter(
+		aciklamaTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
-		aciklamaTextArea.setPrefRowCount(1);
+		aciklamaTextField.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
+		aciklamaTextField.setFocusTraversable(false);
+		aciklamaTextField.setEditable(false);
 
-		aciklamaTextArea.setWrapText(true);
-		aciklamaTextArea.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
-		aciklamaTextArea.setFocusTraversable(false);
-		aciklamaTextArea.setEditable(false);
+		aciklamaTextField.setOnMouseClicked(e -> {
 
-		aciklamaTextArea.setOnMouseClicked(e -> {
-			sonAciklama.set(aciklamaTextArea.getText());
-			aciklamaTextArea.setEditable(true);
+			if (aciklamaTextField.isEditable())
+				return;
+
+			if (!e.getButton().equals(MouseButton.PRIMARY))
+				return;
+
+			sonAciklama.set(aciklamaTextField.getText());
+			aciklamaTextField.setEditable(true);
+
 		});
-		aciklamaTextArea.setOnKeyPressed(e -> {
+
+		aciklamaTextField.setOnKeyPressed(e -> {
+
 			KeyCode code = e.getCode();
 			if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
 				return;
 
 			if (e.getCode().equals(KeyCode.ESCAPE))
-				aciklamaTextArea.setText(sonAciklama.get());
+				aciklamaTextField.setText(sonAciklama.get());
 
 			e.consume();
-			aciklamaTextArea.setEditable(false);
+			aciklamaTextField.setEditable(false);
 			requestFocus();
 
-			if (aciklamaGuncellendiConsumer.get() != null)
-				aciklamaGuncellendiConsumer.get().accept(aciklamaTextArea.getText());
+			String aciklama = aciklamaTextField.getText();
+
+			if (!(aciklama.equals(sonAciklama.get()) || aciklamaGuncellendiConsumer.get() == null))
+				aciklamaGuncellendiConsumer.get().accept(aciklama);
 
 		});
 
-		aciklamaTextArea
-				.setBackground(new Background(new BackgroundFill(Color.GREENYELLOW, CornerRadii.EMPTY, Insets.EMPTY)));
+		aciklamaTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
+				BorderStrokeStyle.SOLID, new CornerRadii(15.0), BorderWidths.DEFAULT) }));
+		aciklamaTextField.setBackground(Background.EMPTY);
 
 	}
 

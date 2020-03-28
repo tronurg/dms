@@ -125,15 +125,15 @@ class KisiPane extends GridPane {
 
 	}
 
-	void gelenMesajGuncelle(Mesaj mesaj) {
+	void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
 
-		mesajPane.gelenMesajGuncelle(mesaj);
+		mesajPane.gelenMesajGuncelle(mesajId, mesaj);
 
 	}
 
-	void gidenMesajGuncelle(Mesaj mesaj) {
+	void gidenMesajGuncelle(String mesajId, Mesaj mesaj) {
 
-		mesajPane.gidenMesajGuncelle(mesaj);
+		mesajPane.gidenMesajGuncelle(mesajId, mesaj);
 
 	}
 

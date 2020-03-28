@@ -136,6 +136,8 @@ public class VeritabaniYonetici {
 
 			vtKisi = kisi;
 
+			vtKisi.setId(null);
+
 			session.beginTransaction();
 
 			session.persist(vtKisi);
@@ -170,6 +172,8 @@ public class VeritabaniYonetici {
 		if (vtGrup == null) {
 
 			vtGrup = grup;
+
+			vtGrup.setId(null);
 
 			session.beginTransaction();
 
@@ -208,6 +212,8 @@ public class VeritabaniYonetici {
 		if (vtMesaj == null) {
 
 			vtMesaj = mesaj;
+
+			vtMesaj.setId(null);
 
 			session.beginTransaction();
 

@@ -3,6 +3,9 @@ package com.aselsan.rehis.reform.mcsy.kontrol;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import javax.swing.JComponent;
 
@@ -63,6 +66,17 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	private final Object beaconSyncObj = new Object();
 
+	private final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
+
+		@Override
+		public Thread newThread(Runnable arg0) {
+			Thread thread = new Thread(arg0);
+			thread.setDaemon(true);
+			return thread;
+		}
+
+	});
+
 	private Kontrol(String kullaniciAdi) throws VeritabaniHatasi {
 
 		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi);
@@ -110,7 +124,7 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 			model.addKisi(kisi);
 		});
 		veritabaniYonetici.tumGruplariAl().forEach(grup -> model.addGrup(grup));
-		veritabaniYonetici.tumMesajlariAl().forEach(mesaj -> model.addMesaj(mesaj));
+		veritabaniYonetici.tumMesajlariAl().forEach(mesaj -> model.addMesaj(getMesajId(mesaj), mesaj));
 
 	}
 
@@ -125,19 +139,19 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		model.getGruplar().forEach((uuid, grup) -> Platform.runLater(() -> mcPanel.grupGuncelle(grup)));
 
-		model.getMesajlar().forEach((uuid, mesajMap) -> mesajMap.forEach((mesajId, mesaj) -> {
+		model.getMesajlar().forEach((mesajId, mesaj) -> {
 
 			if (model.getKimlik().getUuid().equals(mesaj.getGonderenUuid())) {
 
-				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesaj));
+				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, mesaj));
 
 			} else if (model.getKimlik().getUuid().equals(mesaj.getAliciUuid())) {
 
-				Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesaj));
+				Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, mesaj));
 
 			}
 
-		}));
+		});
 
 	}
 
@@ -192,9 +206,11 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gidenMesaj);
 
-		model.addMesaj(yeniMesaj);
+		String mesajId = getMesajId(yeniMesaj);
 
-		Platform.runLater(() -> mcPanel.gidenMesajGuncelle(yeniMesaj));
+		model.addMesaj(mesajId, yeniMesaj);
+
+		Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
 
 		return yeniMesaj;
 
@@ -211,9 +227,17 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(mesaj);
 
-		model.addMesaj(yeniMesaj);
+		String mesajId = getMesajId(yeniMesaj);
 
-		Platform.runLater(() -> mcPanel.gidenMesajGuncelle(yeniMesaj));
+		model.addMesaj(mesajId, yeniMesaj);
+
+		Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
+
+	}
+
+	private String getMesajId(Mesaj mesaj) {
+
+		return mesaj.getGonderenUuid() + ":" + mesaj.getMesajId();
 
 	}
 
@@ -277,9 +301,11 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 			final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
 
-			model.addMesaj(yeniMesaj);
+			String mesajId = getMesajId(yeniMesaj);
 
-			Platform.runLater(() -> mcPanel.gelenMesajGuncelle(yeniMesaj));
+			model.addMesaj(mesajId, yeniMesaj);
+
+			Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
 
 		} catch (JsonSyntaxException | HibernateException e) {
 
@@ -311,15 +337,19 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	@Override
 	public void mesajGonderTiklandi(String mesaj, String aliciUuid) {
 
-		try {
+		islemKuyrugu.execute(() -> {
 
-			mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
+			try {
 
-		} catch (HibernateException e) {
+				mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
 
-			e.printStackTrace();
+			} catch (HibernateException e) {
 
-		}
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 

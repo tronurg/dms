@@ -3,6 +3,7 @@ package com.aselsan.rehis.reform.mcsy.model;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,8 +22,7 @@ public class Model {
 
 	private final Map<String, Kisi> kisiler = Collections.synchronizedMap(new HashMap<String, Kisi>());
 	private final Map<String, Grup> gruplar = Collections.synchronizedMap(new HashMap<String, Grup>());
-	private final Map<String, Map<Long, Mesaj>> mesajlar = Collections
-			.synchronizedMap(new HashMap<String, Map<Long, Mesaj>>());
+	private final Map<String, Mesaj> mesajlar = Collections.synchronizedMap(new LinkedHashMap<String, Mesaj>());
 
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
@@ -98,26 +98,13 @@ public class Model {
 
 	}
 
-	public void addMesaj(Mesaj mesaj) {
+	public void addMesaj(String mesajId, Mesaj mesaj) {
 
-		String uuid = kimlik.getUuid().equals(mesaj.getAliciUuid()) ? mesaj.getGonderenUuid() : mesaj.getAliciUuid();
-
-		mesajlar.putIfAbsent(uuid, new HashMap<Long, Mesaj>());
-
-		mesajlar.get(uuid).put(mesaj.getMesajId(), mesaj);
+		mesajlar.put(mesajId, mesaj);
 
 	}
 
-	public Mesaj getMesaj(String uuid, Long mesajId) {
-
-		if (!mesajlar.containsKey(uuid))
-			return null;
-
-		return mesajlar.get(uuid).get(mesajId);
-
-	}
-
-	public Map<String, Map<Long, Mesaj>> getMesajlar() {
+	public Map<String, Mesaj> getMesajlar() {
 
 		return mesajlar;
 

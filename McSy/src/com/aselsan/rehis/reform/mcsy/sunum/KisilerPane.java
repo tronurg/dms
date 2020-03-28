@@ -50,27 +50,9 @@ class KisilerPane extends TitledPane {
 		final String uuid = kisi.getUuid();
 
 		if (!uuidler.containsKey(uuid)) {
+
 			// Kisi karti ilk defa eklenecek
-
-			KisiPane kisiPane = new KisiPane();
-
-			kisiPane.setOnMesajGonderAction(mesaj -> {
-
-				dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
-
-			});
-
-			kisiPane.setOnMesajPaneGoster(mesajPane -> {
-
-				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane));
-
-			});
-
-			uuidler.put(uuid, kisiPane);
-
-			kisiler.getChildren().add(0, kisiPane);
-
-			setExpanded(true);
+			kisiKartiEkle(uuid);
 
 		}
 
@@ -79,21 +61,59 @@ class KisilerPane extends TitledPane {
 
 	}
 
-	void gelenMesajGuncelle(Mesaj mesaj) {
+	void gelenMesajGuncelle(String mesajId, Mesaj gelenMesaj) {
 
-		if (!uuidler.containsKey(mesaj.getGonderenUuid()))
-			return;
+		String uuid = gelenMesaj.getGonderenUuid();
 
-		uuidler.get(mesaj.getGonderenUuid()).gelenMesajGuncelle(mesaj);
+		if (!uuidler.containsKey(uuid)) {
+
+			// Kisi karti ilk defa eklenecek
+			kisiKartiEkle(uuid);
+
+		}
+
+		uuidler.get(uuid).gelenMesajGuncelle(mesajId, gelenMesaj);
 
 	}
 
-	void gidenMesajGuncelle(Mesaj mesaj) {
+	void gidenMesajGuncelle(String mesajId, Mesaj gidenMesaj) {
 
-		if (!uuidler.containsKey(mesaj.getAliciUuid()))
-			return;
+		String uuid = gidenMesaj.getAliciUuid();
 
-		uuidler.get(mesaj.getAliciUuid()).gidenMesajGuncelle(mesaj);
+		if (!uuidler.containsKey(uuid)) {
+
+			// Kisi karti ilk defa eklenecek
+			kisiKartiEkle(uuid);
+
+		}
+
+		uuidler.get(uuid).gidenMesajGuncelle(mesajId, gidenMesaj);
+
+	}
+
+	private void kisiKartiEkle(String uuid) {
+
+		// Kisi karti ilk defa eklenecek
+
+		KisiPane kisiPane = new KisiPane();
+
+		kisiPane.setOnMesajGonderAction(mesaj -> {
+
+			dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
+
+		});
+
+		kisiPane.setOnMesajPaneGoster(mesajPane -> {
+
+			dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane));
+
+		});
+
+		uuidler.put(uuid, kisiPane);
+
+		kisiler.getChildren().add(0, kisiPane);
+
+		setExpanded(true);
 
 	}
 

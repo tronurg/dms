@@ -49,10 +49,10 @@ class MesajPane extends BorderPane {
 	private final TextArea mesajArea = new TextArea();
 	private final Button gonderBtn = SunumFabrika.newGonderBtn();
 
-	private final Map<Long, MesajBalonu> gelenMesajBalonlari = Collections
-			.synchronizedMap(new HashMap<Long, MesajBalonu>());
-	private final Map<Long, MesajBalonu> gidenMesajBalonlari = Collections
-			.synchronizedMap(new HashMap<Long, MesajBalonu>());
+	private final Map<String, MesajBalonu> gelenMesajBalonlari = Collections
+			.synchronizedMap(new HashMap<String, MesajBalonu>());
+	private final Map<String, MesajBalonu> gidenMesajBalonlari = Collections
+			.synchronizedMap(new HashMap<String, MesajBalonu>());
 
 	MesajPane() {
 
@@ -74,6 +74,7 @@ class MesajPane extends BorderPane {
 		ustPane.setAlignment(Pos.CENTER_LEFT);
 
 		scrollPane.setFitToWidth(true);
+		scrollPane.setFitToHeight(true);
 
 		mesajArea.setPrefRowCount(1);
 		mesajArea.setWrapText(true);
@@ -92,15 +93,11 @@ class MesajPane extends BorderPane {
 
 		});
 
-		scrollPane.vvalueProperty().bind(ortaPane.heightProperty());
-
 		HBox.setMargin(durumCircle, new Insets(5, 5, 5, 15));
 		isimLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 		ustPane.getChildren().addAll(geriBtn, durumCircle, isimLabel);
 		altPane.getChildren().addAll(mesajArea, gonderBtn);
-
-		scrollPane.setMouseTransparent(true);
 
 		setTop(ustPane);
 		setCenter(scrollPane);
@@ -120,29 +117,33 @@ class MesajPane extends BorderPane {
 
 	}
 
-	void gelenMesajGuncelle(Mesaj mesaj) {
+	void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
 
-		if (!gelenMesajBalonlari.containsKey(mesaj.getMesajId())) {
+		if (!gelenMesajBalonlari.containsKey(mesajId)) {
 
 			MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), MesajTipi.GELEN);
-			gelenMesajBalonlari.put(mesaj.getMesajId(), gelenMesajBalonu);
+			gelenMesajBalonlari.put(mesajId, gelenMesajBalonu);
 
 			ortaPane.getChildren().add(gelenMesajBalonu);
 			ortaPane.layout();
+
+			scrollPane.setVvalue(1.0);
 
 		}
 
 	}
 
-	void gidenMesajGuncelle(Mesaj mesaj) {
+	void gidenMesajGuncelle(String mesajId, Mesaj mesaj) {
 
-		if (!gidenMesajBalonlari.containsKey(mesaj.getMesajId())) {
+		if (!gidenMesajBalonlari.containsKey(mesajId)) {
 
 			MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), MesajTipi.GIDEN);
-			gidenMesajBalonlari.put(mesaj.getMesajId(), gidenMesajBalonu);
+			gidenMesajBalonlari.put(mesajId, gidenMesajBalonu);
 
 			ortaPane.getChildren().add(gidenMesajBalonu);
 			ortaPane.layout();
+
+			scrollPane.setVvalue(1.0);
 
 		}
 
@@ -204,12 +205,12 @@ class MesajPane extends BorderPane {
 
 			case GELEN:
 				mesajLbl.setBackground(
-						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10), Insets.EMPTY)));
+						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
 				getChildren().addAll(mesajLbl, bosluk);
 				break;
 			case GIDEN:
 				mesajLbl.setBackground(
-						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10), Insets.EMPTY)));
+						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
 				getChildren().addAll(bosluk, mesajLbl);
 				break;
 

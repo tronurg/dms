@@ -21,7 +21,7 @@ public class Mesaj {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "mesaj_id", updatable = false)
+	@Column(name = "mesaj_id")
 	private Long mesajId;
 
 	@Column(name = "gonderen_uuid", nullable = false, updatable = false)
@@ -123,7 +123,7 @@ public class Mesaj {
 	protected void onPersist() {
 		if (this.mesajId != null)
 			return;
-		this.mesajId = id;
+		this.mesajId = this.id;
 	}
 
 }
