@@ -36,6 +36,7 @@ public class TestMcsy {
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);
 			frame.setLocationRelativeTo(null);
+			frame.setLocation(frame.getLocation().x - 450, frame.getLocation().y);
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
@@ -58,6 +59,29 @@ public class TestMcsy {
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);
 			frame.setLocationRelativeTo(null);
+
+			SwingUtilities.invokeLater(() -> frame.setVisible(true));
+
+		} catch (VeritabaniHatasi e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		try {
+			JComponent mcPanel = mcServisi.login("kiraz").getMcPanel();
+
+			JFrame frame = new JFrame();
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+			JPanel panel = new JPanel(new BorderLayout());
+			panel.add(mcPanel, BorderLayout.CENTER);
+
+//			mcPanel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+
+			frame.setContentPane(panel);
+			frame.setSize(400, 600);
+			frame.setLocationRelativeTo(null);
+			frame.setLocation(frame.getLocation().x + 450, frame.getLocation().y);
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
