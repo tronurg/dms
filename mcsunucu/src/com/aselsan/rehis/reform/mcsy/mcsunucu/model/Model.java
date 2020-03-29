@@ -45,14 +45,19 @@ public class Model {
 					// Yeni beacon tum yerel ve uzak kullanicilara dagitilacak.
 
 					yerelKullaniciBeacon.put(gonderenUuid, mesajNesnesiStr);
-					yerelKullaniciBeacon.forEach(
-							(aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr));
+					yerelKullaniciBeacon.forEach((aliciUuid, mesaj) -> {
+
+						if (aliciUuid.equals(gonderenUuid))
+							return;
+
+						dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+
+					});
 					dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
 
 				}
 
 				// Gonderen uuid agda yayinlanacak
-
 				dinleyici.uuidYayinla(gonderenUuid);
 
 				break;
@@ -133,7 +138,10 @@ public class Model {
 
 			case MESAJ:
 
-				dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				if (yerelKullaniciBeacon.containsKey(mesajNesnesi.aliciUuid))
+					dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				else if (uzakKullaniciBeacon.containsKey(mesajNesnesi.aliciUuid))
+					dinleyici.uzakKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
 
 				break;
 

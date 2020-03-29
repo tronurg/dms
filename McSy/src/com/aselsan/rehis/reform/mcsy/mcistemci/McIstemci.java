@@ -99,7 +99,7 @@ public class McIstemci {
 
 			inprocSocket.bind("inproc://dealer");
 
-			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_CONNECTED | ZMQ.EVENT_DISCONNECTED);
+			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_HANDSHAKE_PROTOCOL | ZMQ.EVENT_DISCONNECTED);
 
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
 			dealerSocket.setImmediate(false);
@@ -115,11 +115,13 @@ public class McIstemci {
 
 				if (poller.pollin(pollDealer)) {
 
-					gelenMesajiIsle(dealerSocket.recvStr(ZMQ.DONTWAIT));
+					String gelenMesaj = dealerSocket.recvStr(ZMQ.DONTWAIT);
+					gelenMesajiIsle(gelenMesaj);
 
 				} else if (poller.pollin(pollInproc)) {
 
-					dealerSocket.send(inprocSocket.recvStr(ZMQ.DONTWAIT), ZMQ.DONTWAIT);
+					String gidenMesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					dealerSocket.send(gidenMesaj, ZMQ.DONTWAIT);
 
 				}
 
@@ -165,7 +167,7 @@ public class McIstemci {
 
 				switch (event.getEvent()) {
 
-				case ZMQ.EVENT_CONNECTED:
+				case ZMQ.EVENT_HANDSHAKE_PROTOCOL:
 
 					dinleyiciyeSunucuBaglantiDurumuGuncellendi(true);
 					break;
