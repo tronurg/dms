@@ -100,6 +100,12 @@ class KisiPane extends GridPane {
 
 	}
 
+	void kisiGuncelle(Kisi kisi) {
+
+		kisiProperty.set(kisi);
+
+	}
+
 	void setOnMesajPaneGoster(Consumer<MesajPane> consumer) {
 
 		setOnMouseClicked(e -> {
@@ -113,15 +119,15 @@ class KisiPane extends GridPane {
 
 	}
 
-	void setOnMesajGonderAction(Consumer<String> consumer) {
+	void setOnMesajPaneGizle(Consumer<MesajPane> consumer) {
 
-		mesajPane.setOnMesajGonderAction(mesaj -> consumer.accept(mesaj));
+		mesajPane.setOnGeriAction(() -> consumer.accept(mesajPane));
 
 	}
 
-	void kisiGuncelle(Kisi kisi) {
+	void setOnMesajGonderAction(Consumer<String> consumer) {
 
-		kisiProperty.set(kisi);
+		mesajPane.setOnMesajGonderAction(mesaj -> consumer.accept(mesaj));
 
 	}
 

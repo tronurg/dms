@@ -85,15 +85,14 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 		model = new Model(kimlik);
 
-		model.dinleyiciEkle(this);
-
 		mcPanelSwing = new JFXPanel();
 		mcPanel = new McPanel();
 
-		mcPanel.dinleyiciEkle(this);
-
 		initModel();
 		initGUI();
+
+		model.dinleyiciEkle(this);
+		mcPanel.dinleyiciEkle(this);
 
 		mcIstemci = new McIstemci(kimlik.getUuid(), OrtakSabitler.SUNUCU_IP, OrtakSabitler.SUNUCU_PORT, this);
 
@@ -291,8 +290,6 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	@Override
 	public void mesajAlindi(String mesaj) {
 
-		// TODO
-
 		try {
 
 			Mesaj gelenMesaj = gson.fromJson(mesaj, Mesaj.class);
@@ -301,11 +298,9 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 			final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
 
-			String mesajId = getMesajId(yeniMesaj);
+			final String mesajId = getMesajId(yeniMesaj);
 
-			model.addMesaj(mesajId, yeniMesaj);
-
-			Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
+			islemKuyrugu.execute(() -> model.addMesaj(mesajId, yeniMesaj));
 
 		} catch (JsonSyntaxException | HibernateException e) {
 
@@ -356,30 +351,94 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	@Override
 	public void aciklamaGuncellendi(String aciklama) {
 
+		islemKuyrugu.execute(() -> {
+
+			try {
+
+				Kimlik kimlik = model.getKimlik();
+
+				if (aciklama.equals(kimlik.getAciklama()))
+					return;
+
+				kimlik.setAciklama(aciklama);
+
+				Kimlik yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
+
+				model.aciklamaGuncelle(aciklama);
+
+				Platform.runLater(() -> mcPanel.setKimlik(yeniKimlik));
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+			synchronized (beaconSyncObj) {
+
+				beaconSyncObj.notify();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void kisiMesajPaneliAcildi(final String uuid) {
+
+		islemKuyrugu.execute(() -> {
+
+			model.mesajPaneliAcildi(uuid);
+
+		});
+
+	}
+
+	@Override
+	public void kisiMesajPaneliKapandi(final String uuid) {
+
+		islemKuyrugu.execute(() -> {
+
+			model.mesajPaneliKapandi(uuid);
+
+		});
+
+	}
+
+	@Override
+	public void mesajAlindiBildir(Mesaj mesaj) {
+
+		String mesajId = getMesajId(mesaj);
+
+		Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, mesaj));
+
+		// TODO: Alindi raporu gonder
+		System.out.println("alindi");
+
+	}
+
+	@Override
+	public void mesajOkunduBildir(Mesaj mesaj) {
+
 		try {
 
-			Kimlik kimlik = model.getKimlik();
+			mesaj.setMesajDurumu(MesajDurumu.OKUNDU);
 
-			if (aciklama.equals(kimlik.getAciklama()))
-				return;
+			final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(mesaj);
 
-			kimlik.setAciklama(aciklama);
+			String mesajId = getMesajId(yeniMesaj);
 
-			Kimlik yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
+			model.addMesaj(mesajId, yeniMesaj);
 
-			model.aciklamaGuncelle(aciklama);
+			Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
 
-			Platform.runLater(() -> mcPanel.setKimlik(yeniKimlik));
+			// TODO: Okundu raporu gonder
+			System.out.println("okundu");
 
 		} catch (HibernateException e) {
 
 			e.printStackTrace();
-
-		}
-
-		synchronized (beaconSyncObj) {
-
-			beaconSyncObj.notify();
 
 		}
 

@@ -6,4 +6,8 @@ public interface UygulamaDinleyici {
 
 	void aciklamaGuncellendi(String aciklama);
 
+	void kisiMesajPaneliAcildi(String uuid);
+
+	void kisiMesajPaneliKapandi(String uuid);
+
 }

@@ -127,8 +127,6 @@ class MesajPane extends BorderPane {
 			ortaPane.getChildren().add(gelenMesajBalonu);
 			ortaPane.layout();
 
-			scrollPane.setVvalue(1.0);
-
 		}
 
 	}
@@ -143,9 +141,13 @@ class MesajPane extends BorderPane {
 			ortaPane.getChildren().add(gidenMesajBalonu);
 			ortaPane.layout();
 
-			scrollPane.setVvalue(1.0);
-
 		}
+
+	}
+
+	void sayfayiSonaKaydir() {
+
+		scrollPane.setVvalue(1.0);
 
 	}
 

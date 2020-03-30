@@ -26,6 +26,8 @@ public class Model {
 
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
+	private final List<String> acikUuidler = Collections.synchronizedList(new ArrayList<String>());
+
 	public Model(Kimlik kimlik) {
 
 		this.kimlik = kimlik;
@@ -102,11 +104,72 @@ public class Model {
 
 		mesajlar.put(mesajId, mesaj);
 
+		if (kimlik.getUuid().equals(mesaj.getAliciUuid())) {
+			// Bu gelen bir mesaj
+
+			switch (mesaj.getMesajDurumu()) {
+
+			case ULASTI:
+
+				if (acikUuidler.contains(mesaj.getGonderenUuid())) {
+					// Mesaj penceresi acik, dolayisiyla mesaj okundu
+
+					dinleyicilereMesajOkunduBildir(mesaj);
+
+				} else {
+					// Mesaj penceresi kapali, dolayisiyla mesaj alindi fakat henuz okunmadi
+
+					// TODO: Okunmamis mesajlara ekle
+
+					dinleyicilereMesajAlindiBildir(mesaj);
+
+				}
+
+				break;
+
+			case OKUNDU:
+
+				// TODO: Okunmamis mesajlardan kaldir
+
+				break;
+
+			default:
+
+				break;
+
+			}
+
+		}
+
 	}
 
 	public Map<String, Mesaj> getMesajlar() {
 
 		return mesajlar;
+
+	}
+
+	public void mesajPaneliAcildi(String uuid) {
+
+		acikUuidler.add(uuid);
+
+	}
+
+	public void mesajPaneliKapandi(String uuid) {
+
+		acikUuidler.remove(uuid);
+
+	}
+
+	private void dinleyicilereMesajAlindiBildir(final Mesaj mesaj) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.mesajAlindiBildir(mesaj));
+
+	}
+
+	private void dinleyicilereMesajOkunduBildir(final Mesaj mesaj) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.mesajOkunduBildir(mesaj));
 
 	}
 

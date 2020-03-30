@@ -91,7 +91,7 @@ class KisilerPane extends TitledPane {
 
 	}
 
-	private void kisiKartiEkle(String uuid) {
+	private void kisiKartiEkle(final String uuid) {
 
 		// Kisi karti ilk defa eklenecek
 
@@ -105,7 +105,13 @@ class KisilerPane extends TitledPane {
 
 		kisiPane.setOnMesajPaneGoster(mesajPane -> {
 
-			dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane));
+			dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane, uuid));
+
+		});
+
+		kisiPane.setOnMesajPaneGizle(mesajPane -> {
+
+			dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGizle(mesajPane, uuid));
 
 		});
 
@@ -121,7 +127,9 @@ class KisilerPane extends TitledPane {
 
 interface IKisilerPane {
 
-	void mesajPaneGoster(MesajPane mesajPane);
+	void mesajPaneGoster(MesajPane mesajPane, String uuid);
+
+	void mesajPaneGizle(MesajPane mesajPane, String uuid);
 
 	void mesajGonderTiklandi(String mesaj, String uuid);
 

@@ -99,11 +99,22 @@ public class McPanel extends StackPane implements IKisilerPane {
 	}
 
 	@Override
-	public void mesajPaneGoster(final MesajPane mesajPane) {
+	public void mesajPaneGoster(final MesajPane mesajPane, final String uuid) {
 
-		mesajPane.setOnGeriAction(() -> getChildren().remove(mesajPane));
+		mesajPane.sayfayiSonaKaydir();
 
 		getChildren().add(mesajPane);
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliAcildi(uuid));
+
+	}
+
+	@Override
+	public void mesajPaneGizle(MesajPane mesajPane, String uuid) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliKapandi(uuid));
+
+		getChildren().remove(mesajPane);
 
 	}
 
