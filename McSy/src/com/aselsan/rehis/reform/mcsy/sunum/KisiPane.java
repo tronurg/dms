@@ -1,11 +1,17 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.util.HashSet;
+
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
@@ -35,9 +41,13 @@ class KisiPane extends GridPane {
 	private final Label aciklamaLabel = new Label();
 	private final Label konumLabel = new Label();
 
+	private final Label okunmamisMesajlarLabel = new Label();
+
 	private final MesajPane mesajPane = new MesajPane();
 
 	private final ObjectProperty<Kisi> kisiProperty = new SimpleObjectProperty<Kisi>();
+
+	private final ObservableSet<String> okunmamisMesajlar = FXCollections.observableSet(new HashSet<String>());
 
 	KisiPane() {
 
@@ -76,7 +86,19 @@ class KisiPane extends GridPane {
 		mesajPane.isimProperty().bind(Bindings.createStringBinding(
 				() -> kisiProperty.get() == null ? null : kisiProperty.get().getIsim(), kisiProperty));
 
-		//
+		// Okunmamis mesaj sayisi properties
+		okunmamisMesajlar.addListener(new SetChangeListener<String>() {
+
+			@Override
+			public void onChanged(Change<? extends String> arg0) {
+
+				int okunmamisMesajSayisi = arg0.getSet().size();
+
+				okunmamisMesajlarLabel.setText(okunmamisMesajSayisi == 0 ? "" : String.valueOf(okunmamisMesajSayisi));
+
+			}
+
+		});
 
 		initProfilResmi();
 		initDurumCemberi();
@@ -97,6 +119,7 @@ class KisiPane extends GridPane {
 		add(isimLabel, 2, 0, 1, 1);
 		add(aciklamaLabel, 2, 1, 1, 1);
 		add(konumLabel, 2, 2, 1, 1);
+		add(okunmamisMesajlarLabel, 3, 0, 1, 3);
 
 	}
 
@@ -132,6 +155,12 @@ class KisiPane extends GridPane {
 	}
 
 	void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
+
+		if (mesaj.getMesajDurumu().equals(MesajDurumu.OKUNDU)) {
+			okunmamisMesajlar.remove(mesajId);
+		} else {
+			okunmamisMesajlar.add(mesajId);
+		}
 
 		mesajPane.gelenMesajGuncelle(mesajId, mesaj);
 

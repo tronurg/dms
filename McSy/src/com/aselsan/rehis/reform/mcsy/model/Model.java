@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.aselsan.rehis.reform.mcsy.model.intf.ModelDinleyici;
@@ -13,6 +15,7 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.KisiDurumu;
 
 public class Model {
 
@@ -27,6 +30,11 @@ public class Model {
 	private final List<ModelDinleyici> dinleyiciler = Collections.synchronizedList(new ArrayList<ModelDinleyici>());
 
 	private final List<String> acikUuidler = Collections.synchronizedList(new ArrayList<String>());
+
+	private final Map<String, Set<String>> gidenMesajlarBekleyen = Collections
+			.synchronizedMap(new LinkedHashMap<String, Set<String>>());
+	private final Map<String, Set<String>> gelenMesajlarBekleyen = Collections
+			.synchronizedMap(new LinkedHashMap<String, Set<String>>());
 
 	public Model(Kimlik kimlik) {
 
@@ -52,6 +60,12 @@ public class Model {
 
 	}
 
+	public void durumGuncelle(KisiDurumu durum) {
+
+		kimlik.setDurum(durum);
+
+	}
+
 	public boolean isSunucuBagli() {
 
 		return sunucuBagli.get();
@@ -73,6 +87,12 @@ public class Model {
 	public Kisi getKisi(String uuid) {
 
 		return kisiler.get(uuid);
+
+	}
+
+	public boolean isKisiCevrimici(String uuid) {
+
+		return !getKisi(uuid).getDurum().equals(KisiDurumu.CEVRIMDISI);
 
 	}
 
@@ -104,32 +124,51 @@ public class Model {
 
 		mesajlar.put(mesajId, mesaj);
 
-		if (kimlik.getUuid().equals(mesaj.getAliciUuid())) {
-			// Bu gelen bir mesaj
+		if (kimlik.getUuid().equals(mesaj.getGonderenUuid())) {
+			// Giden mesaj
+
+			String baglantiUuid = mesaj.getAliciUuid();
+
+			gidenMesajlarBekleyen.putIfAbsent(baglantiUuid, new LinkedHashSet<String>());
 
 			switch (mesaj.getMesajDurumu()) {
 
+			case OLUSTURULDU:
+
+			case GONDERILDI:
+
 			case ULASTI:
 
-				if (acikUuidler.contains(mesaj.getGonderenUuid())) {
-					// Mesaj penceresi acik, dolayisiyla mesaj okundu
-
-					dinleyicilereMesajOkunduBildir(mesaj);
-
-				} else {
-					// Mesaj penceresi kapali, dolayisiyla mesaj alindi fakat henuz okunmadi
-
-					// TODO: Okunmamis mesajlara ekle
-
-					dinleyicilereMesajAlindiBildir(mesaj);
-
-				}
+				gidenMesajlarBekleyen.get(baglantiUuid).add(mesajId);
 
 				break;
 
 			case OKUNDU:
 
-				// TODO: Okunmamis mesajlardan kaldir
+				gidenMesajlarBekleyen.get(baglantiUuid).remove(mesajId);
+
+				break;
+
+			}
+
+		} else if (kimlik.getUuid().equals(mesaj.getAliciUuid())) {
+			// Gelen mesaj
+
+			String baglantiUuid = mesaj.getGonderenUuid();
+
+			gelenMesajlarBekleyen.putIfAbsent(baglantiUuid, new LinkedHashSet<String>());
+
+			switch (mesaj.getMesajDurumu()) {
+
+			case ULASTI:
+
+				gelenMesajlarBekleyen.get(baglantiUuid).add(mesajId);
+
+				break;
+
+			case OKUNDU:
+
+				gelenMesajlarBekleyen.get(baglantiUuid).remove(mesajId);
 
 				break;
 
@@ -161,15 +200,31 @@ public class Model {
 
 	}
 
-	private void dinleyicilereMesajAlindiBildir(final Mesaj mesaj) {
+	public boolean isMesajPaneliAcik(String uuid) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.mesajAlindiBildir(mesaj));
+		return acikUuidler.contains(uuid);
 
 	}
 
-	private void dinleyicilereMesajOkunduBildir(final Mesaj mesaj) {
+	public Set<String> getGidenBekleyenMesajIdleri(String uuid) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.mesajOkunduBildir(mesaj));
+		gidenMesajlarBekleyen.putIfAbsent(uuid, new LinkedHashSet<String>());
+
+		return gidenMesajlarBekleyen.get(uuid);
+
+	}
+
+	public Set<String> getGelenBekleyenMesajIdleri(String uuid) {
+
+		gelenMesajlarBekleyen.putIfAbsent(uuid, new LinkedHashSet<String>());
+
+		return gelenMesajlarBekleyen.get(uuid);
+
+	}
+
+	public Mesaj getMesajByMesajId(String mesajId) {
+
+		return mesajlar.get(mesajId);
 
 	}
 

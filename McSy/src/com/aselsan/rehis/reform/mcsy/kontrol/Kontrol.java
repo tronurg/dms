@@ -88,11 +88,11 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 		mcPanelSwing = new JFXPanel();
 		mcPanel = new McPanel();
 
-		initModel();
-		initGUI();
-
 		model.dinleyiciEkle(this);
 		mcPanel.dinleyiciEkle(this);
+
+		initModel();
+		initGUI();
 
 		mcIstemci = new McIstemci(kimlik.getUuid(), OrtakSabitler.SUNUCU_IP, OrtakSabitler.SUNUCU_PORT, this);
 
@@ -197,40 +197,32 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	}
 
-	private Mesaj gidenMesajOlustur(String mesaj, String aliciUuid) throws HibernateException {
+	private void mesajGonder(String mesaj, String aliciUuid) {
 
-		Mesaj gidenMesaj = new Mesaj(model.getKimlik().getUuid(), aliciUuid, MesajTipi.MESAJ, mesaj);
+		try {
 
-		gidenMesaj.setMesajDurumu(MesajDurumu.OLUSTURULDU);
+			Mesaj gidenMesaj = new Mesaj(model.getKimlik().getUuid(), aliciUuid, MesajTipi.MESAJ, mesaj);
 
-		final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gidenMesaj);
+			boolean mesajGonderilecek = model.isKisiCevrimici(aliciUuid);
 
-		String mesajId = getMesajId(yeniMesaj);
+			gidenMesaj.setMesajDurumu(mesajGonderilecek ? MesajDurumu.GONDERILDI : MesajDurumu.OLUSTURULDU);
 
-		model.addMesaj(mesajId, yeniMesaj);
+			final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gidenMesaj);
 
-		Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
+			if (mesajGonderilecek)
+				mcIstemci.mesajGonder(gson.toJson(gidenMesaj), aliciUuid);
 
-		return yeniMesaj;
+			String mesajId = getMesajId(yeniMesaj);
 
-	}
+			islemKuyrugu.execute(() -> model.addMesaj(mesajId, yeniMesaj));
 
-	private void mesajGonder(Mesaj mesaj) {
+			Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
 
-		if (model.getKisi(mesaj.getAliciUuid()).getDurum().equals(KisiDurumu.CEVRIMDISI))
-			return;
+		} catch (HibernateException e) {
 
-		mcIstemci.mesajGonder(gson.toJson(mesaj), mesaj.getAliciUuid());
+			e.printStackTrace();
 
-		mesaj.setMesajDurumu(MesajDurumu.GONDERILDI);
-
-		final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(mesaj);
-
-		String mesajId = getMesajId(yeniMesaj);
-
-		model.addMesaj(mesajId, yeniMesaj);
-
-		Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
+		}
 
 	}
 
@@ -273,11 +265,55 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 		try {
 
 			Kisi gelenKisi = gson.fromJson(mesaj, Kisi.class);
+
+			final String uuid = gelenKisi.getUuid();
+			boolean wasCevrimici = model.isKisiCevrimici(uuid);
+
 			final Kisi yeniKisi = veritabaniYonetici.kisiEkleGuncelle(gelenKisi);
 
 			model.addKisi(yeniKisi);
 
 			Platform.runLater(() -> mcPanel.kisiGuncelle(yeniKisi));
+
+			if (!wasCevrimici) {
+				// Simdi cevrimici olduysa bekleyen mesajlarini gonder
+
+				islemKuyrugu.execute(() -> {
+
+					for (final String mesajId : model.getGidenBekleyenMesajIdleri(uuid)) {
+
+						// Koptuysa vazgec
+						if (!model.isKisiCevrimici(uuid))
+							break;
+
+						Mesaj bekleyenMesaj = model.getMesajByMesajId(mesajId);
+
+						if (!bekleyenMesaj.getMesajDurumu().equals(MesajDurumu.OLUSTURULDU))
+							continue;
+
+						mcIstemci.mesajGonder(gson.toJson(bekleyenMesaj), uuid);
+
+						bekleyenMesaj.setMesajDurumu(MesajDurumu.GONDERILDI);
+
+						try {
+
+							final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(bekleyenMesaj);
+
+							islemKuyrugu.execute(() -> model.addMesaj(mesajId, yeniMesaj));
+
+							Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
+
+						} catch (JsonSyntaxException | HibernateException e) {
+
+							e.printStackTrace();
+
+						}
+
+					}
+
+				});
+
+			}
 
 		} catch (JsonSyntaxException | HibernateException e) {
 
@@ -288,25 +324,39 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	}
 
 	@Override
-	public void mesajAlindi(String mesaj) {
+	public void mesajAlindi(final String mesaj) {
 
-		try {
+		islemKuyrugu.execute(() -> {
 
-			Mesaj gelenMesaj = gson.fromJson(mesaj, Mesaj.class);
+			try {
 
-			gelenMesaj.setMesajDurumu(MesajDurumu.ULASTI);
+				Mesaj gelenMesaj = gson.fromJson(mesaj, Mesaj.class);
 
-			final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
+				if (model.isMesajPaneliAcik(gelenMesaj.getGonderenUuid())) {
 
-			final String mesajId = getMesajId(yeniMesaj);
+					gelenMesaj.setMesajDurumu(MesajDurumu.OKUNDU);
 
-			islemKuyrugu.execute(() -> model.addMesaj(mesajId, yeniMesaj));
+				} else {
 
-		} catch (JsonSyntaxException | HibernateException e) {
+					gelenMesaj.setMesajDurumu(MesajDurumu.ULASTI);
 
-			e.printStackTrace();
+				}
 
-		}
+				final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
+
+				final String mesajId = getMesajId(yeniMesaj);
+
+				model.addMesaj(mesajId, yeniMesaj);
+
+				Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
+
+			} catch (JsonSyntaxException | HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 
@@ -330,21 +380,9 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	}
 
 	@Override
-	public void mesajGonderTiklandi(String mesaj, String aliciUuid) {
+	public void mesajGonderTiklandi(final String mesaj, final String aliciUuid) {
 
-		islemKuyrugu.execute(() -> {
-
-			try {
-
-				mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
-
-			} catch (HibernateException e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
+		islemKuyrugu.execute(() -> mesajGonder(mesaj, aliciUuid));
 
 	}
 
@@ -391,6 +429,28 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 			model.mesajPaneliAcildi(uuid);
 
+			for (final String mesajId : model.getGelenBekleyenMesajIdleri(uuid)) {
+
+				Mesaj mesaj = model.getMesajByMesajId(mesajId);
+
+				try {
+
+					mesaj.setMesajDurumu(MesajDurumu.OKUNDU);
+
+					final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(mesaj);
+
+					islemKuyrugu.execute(() -> model.addMesaj(mesajId, yeniMesaj));
+
+					Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
+
+				} catch (JsonSyntaxException | HibernateException e) {
+
+					e.printStackTrace();
+
+				}
+
+			}
+
 		});
 
 	}
@@ -403,44 +463,6 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 			model.mesajPaneliKapandi(uuid);
 
 		});
-
-	}
-
-	@Override
-	public void mesajAlindiBildir(Mesaj mesaj) {
-
-		String mesajId = getMesajId(mesaj);
-
-		Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, mesaj));
-
-		// TODO: Alindi raporu gonder
-		System.out.println("alindi");
-
-	}
-
-	@Override
-	public void mesajOkunduBildir(Mesaj mesaj) {
-
-		try {
-
-			mesaj.setMesajDurumu(MesajDurumu.OKUNDU);
-
-			final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(mesaj);
-
-			String mesajId = getMesajId(yeniMesaj);
-
-			model.addMesaj(mesajId, yeniMesaj);
-
-			Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
-
-			// TODO: Okundu raporu gonder
-			System.out.println("okundu");
-
-		} catch (HibernateException e) {
-
-			e.printStackTrace();
-
-		}
 
 	}
 
