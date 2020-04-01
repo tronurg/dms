@@ -223,6 +223,7 @@ class MesajPane extends BorderPane {
 			}
 
 			mesajLbl.maxWidthProperty().bind(Bindings.createDoubleBinding(() -> getWidth() * 0.80, widthProperty()));
+			prefHeightProperty().bind(mesajLbl.heightProperty());
 
 		}
 
