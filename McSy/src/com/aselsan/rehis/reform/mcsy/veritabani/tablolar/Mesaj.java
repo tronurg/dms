@@ -1,5 +1,7 @@
 package com.aselsan.rehis.reform.mcsy.veritabani.tablolar;
 
+import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -8,6 +10,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PostPersist;
+import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
 import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
@@ -43,6 +46,9 @@ public class Mesaj {
 	@Column(name = "mesaj_durumu", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private MesajDurumu mesajDurumu;
+
+	@Column(name = "tarih", nullable = false, updatable = false)
+	private Date tarih;
 
 	public Mesaj() {
 		super();
@@ -117,6 +123,11 @@ public class Mesaj {
 
 	public void setMesajDurumu(MesajDurumu mesajDurumu) {
 		this.mesajDurumu = mesajDurumu;
+	}
+
+	@PrePersist
+	protected void onCreate() {
+		this.tarih = new Date();
 	}
 
 	@PostPersist

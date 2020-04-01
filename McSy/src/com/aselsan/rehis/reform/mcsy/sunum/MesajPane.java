@@ -16,6 +16,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
@@ -73,8 +74,8 @@ class MesajPane extends BorderPane {
 
 		ustPane.setAlignment(Pos.CENTER_LEFT);
 
+		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setFitToWidth(true);
-		scrollPane.setFitToHeight(true);
 
 		mesajArea.setPrefRowCount(1);
 		mesajArea.setWrapText(true);
@@ -125,7 +126,6 @@ class MesajPane extends BorderPane {
 			gelenMesajBalonlari.put(mesajId, gelenMesajBalonu);
 
 			ortaPane.getChildren().add(gelenMesajBalonu);
-			ortaPane.layout();
 
 		}
 
@@ -139,7 +139,6 @@ class MesajPane extends BorderPane {
 			gidenMesajBalonlari.put(mesajId, gidenMesajBalonu);
 
 			ortaPane.getChildren().add(gidenMesajBalonu);
-			ortaPane.layout();
 
 		}
 
@@ -206,14 +205,19 @@ class MesajPane extends BorderPane {
 			switch (mesajTipi) {
 
 			case GELEN:
+
 				mesajLbl.setBackground(
 						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
 				getChildren().addAll(mesajLbl, bosluk);
+
 				break;
+
 			case GIDEN:
+
 				mesajLbl.setBackground(
 						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
 				getChildren().addAll(bosluk, mesajLbl);
+
 				break;
 
 			}
