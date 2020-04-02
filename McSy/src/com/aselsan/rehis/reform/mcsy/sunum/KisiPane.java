@@ -14,12 +14,20 @@ import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.paint.Color;
@@ -107,6 +115,7 @@ class KisiPane extends GridPane {
 		initIsimLabel();
 		initAciklamaLabel();
 		initKonumLabel();
+		initOkunmamisMesajlarLabel();
 
 		Separator sep = new Separator(Orientation.VERTICAL);
 		setMargin(sep, new Insets(0, 5, 0, 5));
@@ -221,6 +230,28 @@ class KisiPane extends GridPane {
 	private void initKonumLabel() {
 
 		konumLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+	}
+
+	private void initOkunmamisMesajlarLabel() {
+
+		okunmamisMesajlarLabel.minWidthProperty().bind(okunmamisMesajlarLabel.heightProperty());
+		okunmamisMesajlarLabel.prefWidthProperty().bind(okunmamisMesajlarLabel.widthProperty());
+
+		okunmamisMesajlarLabel.backgroundProperty()
+				.bind(Bindings.createObjectBinding(
+						() -> okunmamisMesajlarLabel.getText().isEmpty() ? null
+								: new Background(new BackgroundFill(Color.GREEN,
+										new CornerRadii(okunmamisMesajlarLabel.getHeight() / 2), Insets.EMPTY)),
+						okunmamisMesajlarLabel.textProperty(), okunmamisMesajlarLabel.heightProperty()));
+
+		okunmamisMesajlarLabel.setAlignment(Pos.CENTER);
+
+		okunmamisMesajlarLabel.setFont(Font.font(null, FontWeight.BOLD, okunmamisMesajlarLabel.getFont().getSize()));
+		okunmamisMesajlarLabel.setTextFill(Color.WHITE);
+
+		okunmamisMesajlarLabel.setBorder(new Border(
+				new BorderStroke(Color.RED, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(1.0))));
 
 	}
 
