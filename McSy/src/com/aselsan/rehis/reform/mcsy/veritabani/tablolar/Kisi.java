@@ -45,6 +45,10 @@ public class Kisi {
 	@ManyToMany(mappedBy = "kisiler")
 	private Set<Grup> gruplar = new HashSet<Grup>();
 
+	public Kisi() {
+		super();
+	}
+
 	public Long getId() {
 		return id;
 	}

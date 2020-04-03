@@ -3,14 +3,17 @@ package com.aselsan.rehis.reform.mcsy.sunum;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -26,7 +29,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -54,6 +59,8 @@ class MesajPane extends BorderPane {
 			.synchronizedMap(new HashMap<String, MesajBalonu>());
 	private final Map<String, MesajBalonu> gidenMesajBalonlari = Collections
 			.synchronizedMap(new HashMap<String, MesajBalonu>());
+
+	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
 
 	MesajPane() {
 
@@ -104,6 +111,29 @@ class MesajPane extends BorderPane {
 		setCenter(scrollPane);
 		setBottom(altPane);
 
+		ortaPane.heightProperty().addListener(new ChangeListener<Number>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
+
+				if (otoKaydirma.get())
+					sayfayiSonaKaydir();
+
+			}
+
+		});
+
+		scrollPane.vvalueProperty().addListener(new ChangeListener<Number>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
+
+				otoKaydirma.set((double) arg1 == scrollPane.getVmax());
+
+			}
+
+		});
+
 	}
 
 	ObjectProperty<Paint> durumColorProperty() {
@@ -146,7 +176,7 @@ class MesajPane extends BorderPane {
 
 	void sayfayiSonaKaydir() {
 
-		scrollPane.setVvalue(1.0);
+		scrollPane.setVvalue(scrollPane.getVmax());
 
 	}
 
@@ -173,12 +203,16 @@ class MesajPane extends BorderPane {
 
 	}
 
-	private class MesajBalonu extends HBox {
+	private class MesajBalonu extends GridPane {
 
 		private final MesajTipi mesajTipi;
 
 		private final Label mesajLbl;
+		private final Label bilgiLbl = new Label();
 		private final Region bosluk = new Region();
+
+		private final Circle beklemeCircle = new Circle(5.0);
+		private final Circle iletildiCircle = new Circle(5.0);
 
 		MesajBalonu(String mesaj, MesajTipi mesajTipi) {
 
@@ -194,6 +228,11 @@ class MesajPane extends BorderPane {
 
 		private void init() {
 
+			ColumnConstraints colDar = new ColumnConstraints();
+			colDar.setPercentWidth(20.0);
+			ColumnConstraints colGenis = new ColumnConstraints();
+			colGenis.setPercentWidth(80.0);
+
 			mesajLbl.setWrapText(true);
 			mesajLbl.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(10),
 					new BorderWidths(1))));
@@ -206,24 +245,33 @@ class MesajPane extends BorderPane {
 
 			case GELEN:
 
+				getColumnConstraints().addAll(colGenis, colDar);
+
 				mesajLbl.setBackground(
 						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
-				getChildren().addAll(mesajLbl, bosluk);
+
+				setHalignment(mesajLbl, HPos.LEFT);
+
+				add(mesajLbl, 0, 0, 1, 1);
+				add(bosluk, 1, 0, 1, 1);
 
 				break;
 
 			case GIDEN:
 
+				getColumnConstraints().addAll(colDar, colGenis);
+
 				mesajLbl.setBackground(
 						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
-				getChildren().addAll(bosluk, mesajLbl);
+
+				setHalignment(mesajLbl, HPos.RIGHT);
+
+				add(bosluk, 0, 0, 1, 1);
+				add(mesajLbl, 1, 0, 1, 1);
 
 				break;
 
 			}
-
-			mesajLbl.maxWidthProperty().bind(Bindings.createDoubleBinding(() -> getWidth() * 0.80, widthProperty()));
-			prefHeightProperty().bind(mesajLbl.heightProperty());
 
 		}
 

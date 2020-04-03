@@ -40,6 +40,10 @@ public class Grup {
 			@JoinColumn(name = "kisi_id") })
 	private Set<Kisi> kisiler = new HashSet<Kisi>();
 
+	public Grup() {
+		super();
+	}
+
 	public Grup(Long id, String uuid, String isim, String aciklama, String uuidKurucu, Set<Kisi> kisiler) {
 		this.isim = isim;
 		this.uuidKurucu = uuidKurucu;

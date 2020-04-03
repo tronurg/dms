@@ -42,7 +42,7 @@ public class Kimlik {
 	private Double boylam;
 
 	public Kimlik() {
-
+		super();
 	}
 
 	public Kimlik(String isim) {
