@@ -9,8 +9,6 @@ import java.util.function.Consumer;
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
@@ -136,15 +134,15 @@ class MesajPane extends BorderPane {
 
 	}
 
-	ObjectProperty<Paint> durumColorProperty() {
+	void setDurumColor(Paint fill) {
 
-		return durumCircle.fillProperty();
+		durumCircle.setFill(fill);
 
 	}
 
-	StringProperty isimProperty() {
+	void setIsim(String isim) {
 
-		return isimLabel.textProperty();
+		isimLabel.setText(isim);
 
 	}
 
@@ -209,10 +207,10 @@ class MesajPane extends BorderPane {
 
 		private final Label mesajLbl;
 		private final Label bilgiLbl = new Label();
-		private final Region bosluk = new Region();
+		private final Circle beklemeCircle = new Circle(5.0, Color.TRANSPARENT);
+		private final Circle iletildiCircle = new Circle(5.0, Color.TRANSPARENT);
 
-		private final Circle beklemeCircle = new Circle(5.0);
-		private final Circle iletildiCircle = new Circle(5.0);
+		private final Region bosluk = new Region();
 
 		MesajBalonu(String mesaj, MesajTipi mesajTipi) {
 

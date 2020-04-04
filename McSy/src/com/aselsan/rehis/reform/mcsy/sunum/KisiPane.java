@@ -7,8 +7,6 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.collections.SetChangeListener;
@@ -23,10 +21,6 @@ import javafx.scene.control.Separator;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
@@ -49,11 +43,21 @@ class KisiPane extends GridPane {
 	private final Label aciklamaLabel = new Label();
 	private final Label konumLabel = new Label();
 
-	private final Label okunmamisMesajlarLabel = new Label();
+	private final Label okunmamisMesajlarLabel = new Label() {
+
+		@Override
+		public Orientation getContentBias() {
+			return Orientation.VERTICAL;
+		}
+
+		@Override
+		protected double computeMinWidth(double height) {
+			return height;
+		}
+
+	};
 
 	private final MesajPane mesajPane = new MesajPane();
-
-	private final ObjectProperty<Kisi> kisiProperty = new SimpleObjectProperty<Kisi>();
 
 	private final ObservableSet<String> okunmamisMesajlar = FXCollections.observableSet(new HashSet<String>());
 
@@ -66,33 +70,6 @@ class KisiPane extends GridPane {
 	}
 
 	private void init() {
-
-		// Kisi properties
-
-		durumCemberi.strokeProperty().bind(Bindings.createObjectBinding(
-				() -> kisiProperty.get() == null ? null : kisiProperty.get().getDurum().getDurumRengi(), kisiProperty));
-		profilLabel.textProperty().bind(Bindings.createStringBinding(
-				() -> kisiProperty.get() == null ? null : kisiProperty.get().getIsim().substring(0, 1).toUpperCase(),
-				kisiProperty));
-
-		isimLabel.textProperty().bind(Bindings.createStringBinding(
-				() -> kisiProperty.get() == null ? null : kisiProperty.get().getIsim(), kisiProperty));
-		aciklamaLabel.textProperty().bind(Bindings.createStringBinding(
-				() -> kisiProperty.get() == null ? null : kisiProperty.get().getAciklama(), kisiProperty));
-		konumLabel.textProperty().bind(Bindings.createStringBinding(() -> {
-			Kisi kisi = kisiProperty.get();
-			if (kisi == null)
-				return null;
-			return kisi.getEnlem() == null || kisi.getBoylam() == null ? ""
-					: "(" + String.format("%.2f", kisi.getEnlem()) + String.format("%.2f", kisi.getEnlem()) + ")";
-		}, kisiProperty));
-
-		// Mesaj properties
-
-		mesajPane.durumColorProperty().bind(Bindings.createObjectBinding(
-				() -> kisiProperty.get() == null ? null : kisiProperty.get().getDurum().getDurumRengi(), kisiProperty));
-		mesajPane.isimProperty().bind(Bindings.createStringBinding(
-				() -> kisiProperty.get() == null ? null : kisiProperty.get().getIsim(), kisiProperty));
 
 		// Okunmamis mesaj sayisi properties
 		okunmamisMesajlar.addListener(new SetChangeListener<String>() {
@@ -128,13 +105,25 @@ class KisiPane extends GridPane {
 		add(isimLabel, 2, 0, 1, 1);
 		add(aciklamaLabel, 2, 1, 1, 1);
 		add(konumLabel, 2, 2, 1, 1);
-		add(okunmamisMesajlarLabel, 3, 0, 1, 3);
+		add(okunmamisMesajlarLabel, 3, 0, 1, 2);
 
 	}
 
 	void kisiGuncelle(Kisi kisi) {
 
-		kisiProperty.set(kisi);
+		if (kisi == null)
+			return;
+
+		durumCemberi.setStroke(kisi.getDurum().getDurumRengi());
+		profilLabel.setText(kisi.getIsim().substring(0, 1).toUpperCase());
+
+		isimLabel.setText(kisi.getIsim());
+		aciklamaLabel.setText(kisi.getAciklama());
+		konumLabel.setText(kisi.getEnlem() == null || kisi.getBoylam() == null ? ""
+				: "(" + String.format("%.2f", kisi.getEnlem()) + String.format("%.2f", kisi.getEnlem()) + ")");
+
+		mesajPane.setDurumColor(kisi.getDurum().getDurumRengi());
+		mesajPane.setIsim(kisi.getIsim());
 
 	}
 
@@ -235,13 +224,10 @@ class KisiPane extends GridPane {
 
 	private void initOkunmamisMesajlarLabel() {
 
-		okunmamisMesajlarLabel.minWidthProperty().bind(okunmamisMesajlarLabel.heightProperty());
-		okunmamisMesajlarLabel.prefWidthProperty().bind(okunmamisMesajlarLabel.widthProperty());
-
 		okunmamisMesajlarLabel.backgroundProperty()
 				.bind(Bindings.createObjectBinding(
 						() -> okunmamisMesajlarLabel.getText().isEmpty() ? null
-								: new Background(new BackgroundFill(Color.GREEN,
+								: new Background(new BackgroundFill(Color.RED,
 										new CornerRadii(okunmamisMesajlarLabel.getHeight() / 2), Insets.EMPTY)),
 						okunmamisMesajlarLabel.textProperty(), okunmamisMesajlarLabel.heightProperty()));
 
@@ -249,9 +235,6 @@ class KisiPane extends GridPane {
 
 		okunmamisMesajlarLabel.setFont(Font.font(null, FontWeight.BOLD, okunmamisMesajlarLabel.getFont().getSize()));
 		okunmamisMesajlarLabel.setTextFill(Color.WHITE);
-
-		okunmamisMesajlarLabel.setBorder(new Border(
-				new BorderStroke(Color.RED, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, new BorderWidths(1.0))));
 
 	}
 
