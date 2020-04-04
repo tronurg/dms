@@ -40,6 +40,8 @@ public class Model {
 
 				if (!mesajNesnesiStr.equals(yerelKullaniciBeacon.get(gonderenUuid))) {
 
+					boolean yeniEklendi = !yerelKullaniciBeacon.containsKey(gonderenUuid);
+
 					// Yerel uuid yeni eklendi veya guncellendi.
 					// Beacon, yerel beacon'lara eklenecek.
 					// Yeni beacon tum yerel ve uzak kullanicilara dagitilacak.
@@ -55,6 +57,9 @@ public class Model {
 					});
 					dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
 
+					if (yeniEklendi)
+						kullaniciyaTumBeaconlariGonder(gonderenUuid);
+
 				}
 
 				// Gonderen uuid agda yayinlanacak
@@ -64,20 +69,7 @@ public class Model {
 
 			case REQ_BCON:
 
-				yerelKullaniciBeacon.forEach((uuid, beacon) -> {
-
-					if (gonderenUuid.equals(uuid))
-						return;
-
-					dinleyici.yerelKullaniciyaGonder(gonderenUuid, beacon);
-
-				});
-
-				uzakKullaniciBeacon.forEach((uuid, beacon) -> {
-
-					dinleyici.yerelKullaniciyaGonder(gonderenUuid, beacon);
-
-				});
+				kullaniciyaTumBeaconlariGonder(gonderenUuid);
 
 				break;
 
@@ -171,6 +163,9 @@ public class Model {
 
 	public void uzakKullaniciKoptu(String uuid) {
 
+		if (!uzakKullaniciBeacon.containsKey(uuid))
+			return;
+
 		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", MesajTipi.UUID_KOPTU));
 
 		uzakKullaniciBeacon.remove(uuid);
@@ -182,6 +177,9 @@ public class Model {
 
 	public void yerelKullaniciKoptu(String uuid) {
 
+		if (!yerelKullaniciBeacon.containsKey(uuid))
+			return;
+
 		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", MesajTipi.UUID_KOPTU));
 
 		yerelKullaniciBeacon.remove(uuid);
@@ -190,6 +188,25 @@ public class Model {
 				.forEach((aliciUuid, mesaj) -> dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr));
 
 		dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
+
+	}
+
+	private void kullaniciyaTumBeaconlariGonder(String aliciUuid) {
+
+		yerelKullaniciBeacon.forEach((uuid, beacon) -> {
+
+			if (aliciUuid.equals(uuid))
+				return;
+
+			dinleyici.yerelKullaniciyaGonder(aliciUuid, beacon);
+
+		});
+
+		uzakKullaniciBeacon.forEach((uuid, beacon) -> {
+
+			dinleyici.yerelKullaniciyaGonder(aliciUuid, beacon);
+
+		});
 
 	}
 

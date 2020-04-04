@@ -203,9 +203,8 @@ public class VeritabaniYonetici {
 
 		Session session = factory.openSession();
 
-		Mesaj vtMesaj = session.createQuery(
-				"from Mesaj where aliciUuid like :aliciUuid and gonderenUuid like :gonderenUuid and mesajId=:mesajId",
-				Mesaj.class).setParameter("aliciUuid", mesaj.getAliciUuid())
+		Mesaj vtMesaj = session
+				.createQuery("from Mesaj where gonderenUuid like :gonderenUuid and mesajId=:mesajId", Mesaj.class)
 				.setParameter("gonderenUuid", mesaj.getGonderenUuid()).setParameter("mesajId", mesaj.getMesajId())
 				.uniqueResult();
 
@@ -238,81 +237,5 @@ public class VeritabaniYonetici {
 		return vtMesaj;
 
 	}
-
-//	public Kisi kisiGuncelle(Kisi kisi) throws HibernateException {
-//
-//		Session session = factory.openSession();
-//
-//		session.beginTransaction();
-//
-//		Kisi yeniKisi = (Kisi) session.merge(kisi);
-//
-//		session.getTransaction().commit();
-//
-//		session.close();
-//
-//		return yeniKisi;
-//
-//	}
-//
-//	public void grupEkle(Grup grup) throws HibernateException {
-//
-//		Session session = factory.openSession();
-//
-//		session.beginTransaction();
-//
-//		session.persist(grup);
-//
-//		session.getTransaction().commit();
-//
-//		session.close();
-//
-//	}
-//
-//	public Grup grupGuncelle(Grup grup) throws HibernateException {
-//
-//		Session session = factory.openSession();
-//
-//		session.beginTransaction();
-//
-//		Grup yeniGrup = (Grup) session.merge(grup);
-//
-//		session.getTransaction().commit();
-//
-//		session.close();
-//
-//		return yeniGrup;
-//
-//	}
-//
-//	public void mesajEkle(Mesaj mesaj) throws HibernateException {
-//
-//		Session session = factory.openSession();
-//
-//		session.beginTransaction();
-//
-//		session.persist(mesaj);
-//
-//		session.getTransaction().commit();
-//
-//		session.close();
-//
-//	}
-//
-//	public Mesaj mesajGuncelle(Mesaj mesaj) throws HibernateException {
-//
-//		Session session = factory.openSession();
-//
-//		session.beginTransaction();
-//
-//		Mesaj yeniMesaj = (Mesaj) session.merge(mesaj);
-//
-//		session.getTransaction().commit();
-//
-//		session.close();
-//
-//		return yeniMesaj;
-//
-//	}
 
 }
