@@ -94,14 +94,12 @@ class KisiPane extends GridPane {
 		initKonumLabel();
 		initOkunmamisMesajlarLabel();
 
-		Separator sep = new Separator(Orientation.VERTICAL);
-		setMargin(sep, new Insets(0, 5, 0, 5));
-
+		setHgap(5.0);
 		setValignment(profilResmi, VPos.TOP);
 		setHgrow(aciklamaLabel, Priority.ALWAYS);
 
 		add(profilResmi, 0, 0, 1, 3);
-		add(sep, 1, 0, 1, 3);
+		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
 		add(isimLabel, 2, 0, 1, 1);
 		add(aciklamaLabel, 2, 1, 1, 1);
 		add(konumLabel, 2, 2, 1, 1);

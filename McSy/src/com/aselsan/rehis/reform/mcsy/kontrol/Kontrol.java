@@ -232,7 +232,13 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 	private String getMesajId(Mesaj mesaj) {
 
-		return mesaj.getGonderenUuid() + ":" + mesaj.getMesajId();
+		return getMesajId(mesaj.getGonderenUuid(), mesaj.getMesajId());
+
+	}
+
+	private String getMesajId(String gonderenUuid, Long mesajId) {
+
+		return gonderenUuid + ":" + mesajId;
 
 	}
 
@@ -292,6 +298,35 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 		Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
 
 		return yeniMesaj;
+
+	}
+
+	private void gidenMesajDurumGuncelle(String mesaj, String karsiTarafUuid, MesajDurumu mesajDurumu) {
+
+		try {
+
+			Long id = Long.parseLong(mesaj);
+
+			String mesajId = getMesajId(model.getKimlik().getUuid(), id);
+
+			Mesaj gidenMesaj = model.getMesajByMesajId(mesajId);
+
+			if (gidenMesaj == null || !gidenMesaj.getAliciUuid().equals(karsiTarafUuid))
+				return;
+
+			gidenMesaj.setMesajDurumu(mesajDurumu);
+
+			Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gidenMesaj);
+
+			model.addMesaj(mesajId, yeniMesaj);
+
+			Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesajId, yeniMesaj));
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -393,6 +428,11 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 
 				Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
 
+				if (yeniMesaj.getMesajDurumu().equals(MesajDurumu.ULASTI))
+					mcIstemci.alindiGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
+				else if (yeniMesaj.getMesajDurumu().equals(MesajDurumu.OKUNDU))
+					mcIstemci.okunduGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
+
 			} catch (Exception e) {
 
 				e.printStackTrace();
@@ -412,6 +452,20 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 			return;
 
 		kisiKoptu(kisi);
+
+	}
+
+	@Override
+	public void karsiTarafMesajiAldi(String mesaj, String karsiTarafUuid) {
+
+		islemKuyrugu.execute(() -> gidenMesajDurumGuncelle(mesaj, karsiTarafUuid, MesajDurumu.ULASTI));
+
+	}
+
+	@Override
+	public void karsiTarafMesajiOkudu(String mesaj, String karsiTarafUuid) {
+
+		islemKuyrugu.execute(() -> gidenMesajDurumGuncelle(mesaj, karsiTarafUuid, MesajDurumu.OKUNDU));
 
 	}
 
@@ -503,6 +557,8 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 					islemKuyrugu.execute(() -> model.addMesaj(mesajId, yeniMesaj));
 
 					Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesajId, yeniMesaj));
+
+					mcIstemci.okunduGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
 
 				} catch (JsonSyntaxException | HibernateException e) {
 

@@ -125,6 +125,14 @@ public class Mesaj {
 		this.mesajDurumu = mesajDurumu;
 	}
 
+	public Date getTarih() {
+		return tarih;
+	}
+
+	public void setTarih(Date tarih) {
+		this.tarih = tarih;
+	}
+
 	@PrePersist
 	protected void onCreate() {
 		this.tarih = new Date();

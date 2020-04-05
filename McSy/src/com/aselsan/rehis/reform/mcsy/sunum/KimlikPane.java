@@ -7,7 +7,6 @@ import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 
 import javafx.beans.binding.Bindings;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
@@ -64,14 +63,12 @@ class KimlikPane extends GridPane {
 		initAciklamaTextArea();
 		initKonumLabel();
 
-		Separator sep = new Separator(Orientation.VERTICAL);
-		setMargin(sep, new Insets(0, 5, 0, 5));
-
+		setHgap(5.0);
 		setValignment(profilResmi, VPos.TOP);
 		setHgrow(aciklamaTextField, Priority.ALWAYS);
 
 		add(profilResmi, 0, 0, 1, 3);
-		add(sep, 1, 0, 1, 3);
+		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
 		add(isimLabel, 2, 0, 1, 1);
 		add(aciklamaTextField, 2, 1, 1, 1);
 		add(konumLabel, 2, 2, 1, 1);

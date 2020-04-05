@@ -10,4 +10,8 @@ public interface McIstemciDinleyici {
 
 	void sunucuBaglantiDurumuGuncellendi(boolean baglantiDurumu);
 
+	void karsiTarafMesajiAldi(String mesaj, String karsiTarafUuid);
+
+	void karsiTarafMesajiOkudu(String mesaj, String karsiTarafUuid);
+
 }

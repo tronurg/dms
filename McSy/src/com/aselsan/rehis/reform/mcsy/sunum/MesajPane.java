@@ -1,6 +1,8 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,6 +16,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -53,9 +56,7 @@ class MesajPane extends BorderPane {
 	private final TextArea mesajArea = new TextArea();
 	private final Button gonderBtn = SunumFabrika.newGonderBtn();
 
-	private final Map<String, MesajBalonu> gelenMesajBalonlari = Collections
-			.synchronizedMap(new HashMap<String, MesajBalonu>());
-	private final Map<String, MesajBalonu> gidenMesajBalonlari = Collections
+	private final Map<String, MesajBalonu> mesajBalonlari = Collections
 			.synchronizedMap(new HashMap<String, MesajBalonu>());
 
 	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
@@ -148,10 +149,10 @@ class MesajPane extends BorderPane {
 
 	void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
 
-		if (!gelenMesajBalonlari.containsKey(mesajId)) {
+		if (!mesajBalonlari.containsKey(mesajId)) {
 
-			MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), MesajTipi.GELEN);
-			gelenMesajBalonlari.put(mesajId, gelenMesajBalonu);
+			MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesaj.getTarih(), MesajTipi.GELEN);
+			mesajBalonlari.put(mesajId, gelenMesajBalonu);
 
 			ortaPane.getChildren().add(gelenMesajBalonu);
 
@@ -161,14 +162,17 @@ class MesajPane extends BorderPane {
 
 	void gidenMesajGuncelle(String mesajId, Mesaj mesaj) {
 
-		if (!gidenMesajBalonlari.containsKey(mesajId)) {
+		if (!mesajBalonlari.containsKey(mesajId)) {
 
-			MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), MesajTipi.GIDEN);
-			gidenMesajBalonlari.put(mesajId, gidenMesajBalonu);
+			MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesaj.getTarih(), MesajTipi.GIDEN);
+			mesajBalonlari.put(mesajId, gidenMesajBalonu);
 
 			ortaPane.getChildren().add(gidenMesajBalonu);
 
 		}
+
+		mesajBalonlari.get(mesajId).setIletiRenkeri(mesaj.getMesajDurumu().getBeklemeRengi(),
+				mesaj.getMesajDurumu().getIletildiRengi());
 
 	}
 
@@ -201,24 +205,30 @@ class MesajPane extends BorderPane {
 
 	}
 
-	private class MesajBalonu extends GridPane {
+	private static class MesajBalonu extends GridPane {
+
+		private static final double RADIUS = 3.0;
+		private static final SimpleDateFormat SDF = new SimpleDateFormat("HH:mm");
 
 		private final MesajTipi mesajTipi;
 
+		private final GridPane mesajPane = new GridPane();
 		private final Label mesajLbl;
-		private final Label bilgiLbl = new Label();
-		private final Circle beklemeCircle = new Circle(5.0, Color.TRANSPARENT);
-		private final Circle iletildiCircle = new Circle(5.0, Color.TRANSPARENT);
+		private final Label zamanLbl;
+		private final Group bilgiGrp = new Group();
+		private final Circle beklemeCircle = new Circle(RADIUS, Color.TRANSPARENT);
+		private final Circle iletildiCircle = new Circle(RADIUS, Color.TRANSPARENT);
 
 		private final Region bosluk = new Region();
 
-		MesajBalonu(String mesaj, MesajTipi mesajTipi) {
+		MesajBalonu(String mesaj, Date tarih, MesajTipi mesajTipi) {
 
 			super();
 
 			this.mesajTipi = mesajTipi;
 
 			mesajLbl = new Label(mesaj);
+			zamanLbl = new Label(SDF.format(tarih));
 
 			init();
 
@@ -226,50 +236,103 @@ class MesajPane extends BorderPane {
 
 		private void init() {
 
+			zamanLbl.setFont(Font.font(mesajLbl.getFont().getSize() * 0.75));
+			zamanLbl.setTextFill(Color.DIMGRAY);
+
 			ColumnConstraints colDar = new ColumnConstraints();
 			colDar.setPercentWidth(20.0);
 			ColumnConstraints colGenis = new ColumnConstraints();
 			colGenis.setPercentWidth(80.0);
 
 			mesajLbl.setWrapText(true);
-			mesajLbl.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(10),
-					new BorderWidths(1))));
 
 			HBox.setHgrow(bosluk, Priority.ALWAYS);
-
-			mesajLbl.setPadding(new Insets(5, 10, 5, 10));
 
 			switch (mesajTipi) {
 
 			case GELEN:
 
+				initGelenMesajPane();
+
 				getColumnConstraints().addAll(colGenis, colDar);
 
-				mesajLbl.setBackground(
+				mesajPane.setBackground(
 						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
 
-				setHalignment(mesajLbl, HPos.LEFT);
+				GridPane.setHalignment(mesajPane, HPos.LEFT);
+				GridPane.setHalignment(zamanLbl, HPos.LEFT);
 
-				add(mesajLbl, 0, 0, 1, 1);
+				add(mesajPane, 0, 0, 1, 1);
 				add(bosluk, 1, 0, 1, 1);
 
 				break;
 
 			case GIDEN:
 
+				initGidenMesajPane();
+
 				getColumnConstraints().addAll(colDar, colGenis);
 
-				mesajLbl.setBackground(
+				mesajPane.setBackground(
 						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
 
-				setHalignment(mesajLbl, HPos.RIGHT);
+				GridPane.setHalignment(mesajPane, HPos.RIGHT);
+				GridPane.setHalignment(zamanLbl, HPos.RIGHT);
 
 				add(bosluk, 0, 0, 1, 1);
-				add(mesajLbl, 1, 0, 1, 1);
+				add(mesajPane, 1, 0, 1, 1);
 
 				break;
 
 			}
+
+		}
+
+		public void setIletiRenkeri(Paint beklemeCircleColor, Paint iletildiCircleColor) {
+
+			beklemeCircle.setFill(beklemeCircleColor);
+			iletildiCircle.setFill(iletildiCircleColor);
+
+		}
+
+		private void initBilgiGrp() {
+
+			iletildiCircle.setLayoutX(2 * RADIUS);
+			bilgiGrp.getChildren().addAll(beklemeCircle, iletildiCircle);
+
+		}
+
+		private void initGelenMesajPane() {
+
+			initMesajPane();
+
+			mesajPane.add(mesajLbl, 0, 0, 1, 1);
+			mesajPane.add(zamanLbl, 0, 1, 1, 1);
+
+		}
+
+		private void initGidenMesajPane() {
+
+			initMesajPane();
+			initBilgiGrp();
+
+			mesajPane.add(mesajLbl, 0, 0, 2, 1);
+			mesajPane.add(zamanLbl, 0, 1, 1, 1);
+			mesajPane.add(bilgiGrp, 1, 1, 1, 1);
+
+		}
+
+		private void initMesajPane() {
+
+			GridPane.setFillWidth(mesajPane, false);
+
+			GridPane.setHgrow(zamanLbl, Priority.ALWAYS);
+
+			mesajPane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+					new CornerRadii(10), new BorderWidths(1))));
+
+			mesajPane.setPadding(new Insets(5.0));
+			mesajPane.setHgap(5.0);
 
 		}
 

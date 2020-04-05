@@ -92,6 +92,18 @@ public class McIstemci {
 
 	}
 
+	public void alindiGonder(String mesaj, String aliciUuid) {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.ALINDI)));
+
+	}
+
+	public void okunduGonder(String mesaj, String aliciUuid) {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.OKUNDU)));
+
+	}
+
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
@@ -216,6 +228,18 @@ public class McIstemci {
 
 				break;
 
+			case ALINDI:
+
+				dinleyiciyeKarsiTarafMesajiAldi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+
+				break;
+
+			case OKUNDU:
+
+				dinleyiciyeKarsiTarafMesajiOkudu(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+
+				break;
+
 			default:
 
 			}
@@ -263,6 +287,26 @@ public class McIstemci {
 		out.execute(() -> {
 
 			dinleyici.sunucuBaglantiDurumuGuncellendi(baglantiDurumu);
+
+		});
+
+	}
+
+	private void dinleyiciyeKarsiTarafMesajiAldi(final String mesaj, final String karsiTarafUuid) {
+
+		out.execute(() -> {
+
+			dinleyici.karsiTarafMesajiAldi(mesaj, karsiTarafUuid);
+
+		});
+
+	}
+
+	private void dinleyiciyeKarsiTarafMesajiOkudu(final String mesaj, final String karsiTarafUuid) {
+
+		out.execute(() -> {
+
+			dinleyici.karsiTarafMesajiOkudu(mesaj, karsiTarafUuid);
 
 		});
 

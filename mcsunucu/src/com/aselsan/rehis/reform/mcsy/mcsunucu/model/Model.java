@@ -74,6 +74,8 @@ public class Model {
 				break;
 
 			case MESAJ:
+			case ALINDI:
+			case OKUNDU:
 
 				String aliciUuid = mesajNesnesi.aliciUuid;
 
