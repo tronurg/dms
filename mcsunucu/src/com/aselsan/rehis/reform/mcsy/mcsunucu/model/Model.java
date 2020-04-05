@@ -77,12 +77,12 @@ public class Model {
 			case ALINDI:
 			case OKUNDU:
 
-				String aliciUuid = mesajNesnesi.aliciUuid;
+				String proxyUuid = mesajNesnesi.proxyUuid;
 
-				if (yerelKullaniciBeacon.containsKey(aliciUuid))
-					dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
-				else if (uzakKullaniciBeacon.containsKey(aliciUuid))
-					dinleyici.uzakKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				if (yerelKullaniciBeacon.containsKey(proxyUuid))
+					dinleyici.yerelKullaniciyaGonder(proxyUuid, mesajNesnesiStr);
+				else if (uzakKullaniciBeacon.containsKey(proxyUuid))
+					dinleyici.uzakKullaniciyaGonder(proxyUuid, mesajNesnesiStr);
 
 				break;
 
@@ -134,10 +134,12 @@ public class Model {
 			case ALINDI:
 			case OKUNDU:
 
-				if (yerelKullaniciBeacon.containsKey(mesajNesnesi.aliciUuid))
-					dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
-				else if (uzakKullaniciBeacon.containsKey(mesajNesnesi.aliciUuid))
-					dinleyici.uzakKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
+				String aliciUuid = mesajNesnesi.aliciUuid;
+
+				if (yerelKullaniciBeacon.containsKey(aliciUuid))
+					dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+				else if (uzakKullaniciBeacon.containsKey(aliciUuid))
+					dinleyici.uzakKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
 
 				break;
 
