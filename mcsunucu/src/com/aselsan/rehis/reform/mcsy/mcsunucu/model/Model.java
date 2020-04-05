@@ -131,6 +131,8 @@ public class Model {
 				break;
 
 			case MESAJ:
+			case ALINDI:
+			case OKUNDU:
 
 				if (yerelKullaniciBeacon.containsKey(mesajNesnesi.aliciUuid))
 					dinleyici.yerelKullaniciyaGonder(mesajNesnesi.aliciUuid, mesajNesnesiStr);
