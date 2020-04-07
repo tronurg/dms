@@ -101,8 +101,6 @@ public class McPanel extends StackPane implements IKisilerPane {
 	@Override
 	public void mesajPaneGoster(final MesajPane mesajPane, final String uuid) {
 
-		mesajPane.sayfayiSonaKaydir();
-
 		getChildren().add(mesajPane);
 
 		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliAcildi(uuid));

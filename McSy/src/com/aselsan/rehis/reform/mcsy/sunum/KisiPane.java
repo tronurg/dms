@@ -1,11 +1,13 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
-import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
@@ -59,7 +61,7 @@ class KisiPane extends GridPane {
 
 	private final MesajPane mesajPane = new MesajPane();
 
-	private final ObservableSet<String> okunmamisMesajlar = FXCollections.observableSet(new HashSet<String>());
+	private final ObservableSet<String> okunmamisMesajlar = FXCollections.observableSet(new LinkedHashSet<String>());
 
 	KisiPane() {
 
@@ -133,6 +135,22 @@ class KisiPane extends GridPane {
 				return;
 
 			consumer.accept(mesajPane);
+
+			Platform.runLater(() -> {
+
+				Iterator<String> mesajIdIt = okunmamisMesajlar.iterator();
+
+				if (mesajIdIt.hasNext()) {
+
+					mesajPane.sayfayiMesajaKaydir(mesajIdIt.next());
+
+				} else {
+
+					mesajPane.sayfayiSonaKaydir();
+
+				}
+
+			});
 
 		});
 

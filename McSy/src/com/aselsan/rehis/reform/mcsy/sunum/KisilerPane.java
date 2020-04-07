@@ -70,6 +70,13 @@ class KisilerPane extends TitledPane {
 			// Kisi karti ilk defa eklenecek
 			kisiKartiEkle(uuid);
 
+		} else {
+
+			KisiPane kisiPane = uuidler.get(uuid);
+
+			kisiler.getChildren().remove(kisiPane);
+			kisiler.getChildren().add(0, kisiPane);
+
 		}
 
 		uuidler.get(uuid).gelenMesajGuncelle(mesajId, gelenMesaj);
@@ -84,6 +91,13 @@ class KisilerPane extends TitledPane {
 
 			// Kisi karti ilk defa eklenecek
 			kisiKartiEkle(uuid);
+
+		} else {
+
+			KisiPane kisiPane = uuidler.get(uuid);
+
+			kisiler.getChildren().remove(kisiPane);
+			kisiler.getChildren().add(0, kisiPane);
 
 		}
 

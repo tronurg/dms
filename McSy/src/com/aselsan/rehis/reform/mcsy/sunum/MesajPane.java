@@ -176,6 +176,18 @@ class MesajPane extends BorderPane {
 
 	}
 
+	void sayfayiMesajaKaydir(String mesajId) {
+
+		MesajBalonu mesajBalonu = mesajBalonlari.get(mesajId);
+
+		if (mesajBalonu == null)
+			return;
+
+		scrollPane.setVvalue(scrollPane.getVmax() * Math.min(1.0, mesajBalonu.getLayoutY()
+				/ (ortaPane.getBoundsInLocal().getHeight() - scrollPane.getViewportBounds().getHeight())));
+
+	}
+
 	void sayfayiSonaKaydir() {
 
 		scrollPane.setVvalue(scrollPane.getVmax());
