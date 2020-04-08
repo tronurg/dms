@@ -15,7 +15,7 @@ import javafx.scene.control.Accordion;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class McPanel extends StackPane implements IKisilerPane {
+public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	private final VBox anaPane = new VBox();
 	private final KimlikPane kimlikPane = new KimlikPane();
@@ -38,7 +38,7 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 		VBox.setMargin(kimlikPane, new Insets(10));
 
-		kimlikPane.setOnAciklamaGuncellendi(aciklama -> dinleyicilereAciklamaGuncellendi(aciklama));
+		kimlikPane.dinleyiciEkle(this);
 
 		kisilerPane.dinleyiciEkle(this);
 
@@ -86,15 +86,47 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 	}
 
+	private void dinleyicilereAciklamaGuncellendi(final String aciklama) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
+
+	}
+
+	private void dinleyicilereDurumGuncelleTiklandi() {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.durumGuncelleTiklandi());
+
+	}
+
+	private void dinleyicilereKisiMesajPaneliAcildi(final String uuid) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliAcildi(uuid));
+
+	}
+
+	private void dinleyicilereKisiMesajPaneliKapandi(final String uuid) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliKapandi(uuid));
+
+	}
+
 	private void dinleyicilereMesajGonderTiklandi(final String mesaj, final String uuid) {
 
 		dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
 
 	}
 
-	private void dinleyicilereAciklamaGuncellendi(final String aciklama) {
+	@Override
+	public void aciklamaGuncellendi(String aciklama) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
+		dinleyicilereAciklamaGuncellendi(aciklama);
+
+	}
+
+	@Override
+	public void durumGuncelleTiklandi() {
+
+		dinleyicilereDurumGuncelleTiklandi();
 
 	}
 
@@ -105,14 +137,14 @@ public class McPanel extends StackPane implements IKisilerPane {
 
 		getChildren().add(mesajPane);
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliAcildi(uuid));
+		dinleyicilereKisiMesajPaneliAcildi(uuid);
 
 	}
 
 	@Override
 	public void mesajPaneGizle(MesajPane mesajPane, String uuid) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliKapandi(uuid));
+		dinleyicilereKisiMesajPaneliKapandi(uuid);
 
 		getChildren().remove(mesajPane);
 

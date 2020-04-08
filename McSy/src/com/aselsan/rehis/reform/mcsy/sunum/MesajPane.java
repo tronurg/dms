@@ -22,6 +22,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
+import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -49,7 +50,11 @@ class MesajPane extends BorderPane {
 	private final VBox ortaPane = new VBox(5);
 	private final HBox altPane = new HBox(5);
 
-	private final ScrollPane scrollPane = new ScrollPane(ortaPane);
+	private final ScrollPane scrollPane = new ScrollPane(ortaPane) {
+		@Override
+		public void requestFocus() {
+		}
+	};
 	private final Button geriBtn = SunumFabrika.newGeriBtn();
 	private final Circle durumCircle = new Circle(7.0);
 	private final Label isimLabel = new Label();
@@ -85,6 +90,8 @@ class MesajPane extends BorderPane {
 
 		mesajArea.setPrefRowCount(1);
 		mesajArea.setWrapText(true);
+		mesajArea.setTextFormatter(
+				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
 
 		HBox.setHgrow(mesajArea, Priority.ALWAYS);
 

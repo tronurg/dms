@@ -622,6 +622,47 @@ public class Kontrol implements ModelDinleyici, UygulamaDinleyici, McIstemciDinl
 	}
 
 	@Override
+	public void durumGuncelleTiklandi() {
+
+		islemKuyrugu.execute(() -> {
+
+			try {
+
+				Kimlik kimlik = model.getKimlik();
+
+				if (kimlik.getDurum().equals(KisiDurumu.MUSAIT)) {
+
+					kimlik.setDurum(KisiDurumu.MESGUL);
+
+				} else if (kimlik.getDurum().equals(KisiDurumu.MESGUL)) {
+
+					kimlik.setDurum(KisiDurumu.MUSAIT);
+
+				}
+
+				Kimlik yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
+
+				model.durumGuncelle(yeniKimlik.getDurum());
+
+				Platform.runLater(() -> mcPanel.setKimlik(yeniKimlik));
+
+				synchronized (beaconSyncObj) {
+
+					beaconSyncObj.notify();
+
+				}
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public void kisiMesajPaneliAcildi(final String uuid) {
 
 		islemKuyrugu.execute(() -> {

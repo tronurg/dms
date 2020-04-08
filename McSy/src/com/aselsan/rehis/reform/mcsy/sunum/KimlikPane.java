@@ -1,7 +1,9 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
@@ -43,7 +45,7 @@ class KimlikPane extends GridPane {
 	private final TextField aciklamaTextField = new TextField();
 	private final Label konumLabel = new Label();
 
-	private final AtomicReference<Consumer<String>> aciklamaGuncellendiConsumer = new AtomicReference<Consumer<String>>();
+	private final List<IKimlikPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IKimlikPane>());
 
 	KimlikPane() {
 
@@ -75,9 +77,9 @@ class KimlikPane extends GridPane {
 
 	}
 
-	void setOnAciklamaGuncellendi(Consumer<String> consumer) {
+	void dinleyiciEkle(IKimlikPane dinleyici) {
 
-		aciklamaGuncellendiConsumer.set(consumer);
+		dinleyiciler.add(dinleyici);
 
 	}
 
@@ -87,7 +89,8 @@ class KimlikPane extends GridPane {
 		profilLabel.setText(kimlik.getIsim().substring(0, 1).toUpperCase());
 
 		isimLabel.setText(kimlik.getIsim());
-		aciklamaTextField.setText(kimlik.getAciklama());
+		if (!aciklamaTextField.isEditable())
+			aciklamaTextField.setText(kimlik.getAciklama());
 		konumLabel.setText(kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
 				: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")");
 
@@ -96,6 +99,15 @@ class KimlikPane extends GridPane {
 	private void initProfilResmi() {
 
 		profilResmi.getChildren().addAll(durumCemberi, profilDairesi, profilLabel);
+
+		profilResmi.setOnMouseClicked(e -> {
+
+			if (!e.getButton().equals(MouseButton.PRIMARY))
+				return;
+
+			dinleyiciler.forEach(dinleyici -> dinleyici.durumGuncelleTiklandi());
+
+		});
 
 	}
 
@@ -170,10 +182,9 @@ class KimlikPane extends GridPane {
 			aciklamaTextField.setEditable(false);
 			requestFocus();
 
-			String aciklama = aciklamaTextField.getText();
+			final String aciklama = aciklamaTextField.getText();
 
-			if (!(aciklama.equals(sonAciklama.get()) || aciklamaGuncellendiConsumer.get() == null))
-				aciklamaGuncellendiConsumer.get().accept(aciklama);
+			dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
 
 		});
 
@@ -188,5 +199,13 @@ class KimlikPane extends GridPane {
 		konumLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
+
+}
+
+interface IKimlikPane {
+
+	void aciklamaGuncellendi(String aciklama);
+
+	void durumGuncelleTiklandi();
 
 }
