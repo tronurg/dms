@@ -74,6 +74,8 @@ public class Model {
 				break;
 
 			case MESAJ:
+			case MESAJ_DURUMU_VER:
+			case ALINMADI:
 			case ALINDI:
 			case OKUNDU:
 
@@ -131,6 +133,8 @@ public class Model {
 				break;
 
 			case MESAJ:
+			case MESAJ_DURUMU_VER:
+			case ALINMADI:
 			case ALINDI:
 			case OKUNDU:
 

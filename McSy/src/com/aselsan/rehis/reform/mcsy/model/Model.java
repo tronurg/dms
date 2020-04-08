@@ -134,9 +134,7 @@ public class Model {
 			switch (mesaj.getMesajDurumu()) {
 
 			case OLUSTURULDU:
-
 			case GONDERILDI:
-
 			case ULASTI:
 
 				gidenMesajlarBekleyen.get(baglantiUuid).add(mesajId);

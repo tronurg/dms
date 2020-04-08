@@ -92,6 +92,18 @@ public class McIstemci {
 
 	}
 
+	public void mesajDurumuIste(String mesaj, String aliciUuid) {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.MESAJ_DURUMU_VER)));
+
+	}
+
+	public void alinmadiGonder(String mesaj, String aliciUuid) {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.ALINMADI)));
+
+	}
+
 	public void alindiGonder(String mesaj, String aliciUuid) {
 
 		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.ALINDI)));
@@ -228,6 +240,18 @@ public class McIstemci {
 
 				break;
 
+			case MESAJ_DURUMU_VER:
+
+				dinleyiciyeMesajDurumuIstendi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+
+				break;
+
+			case ALINMADI:
+
+				dinleyiciyeKarsiTarafMesajiAlmadi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+
+				break;
+
 			case ALINDI:
 
 				dinleyiciyeKarsiTarafMesajiAldi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
@@ -287,6 +311,26 @@ public class McIstemci {
 		out.execute(() -> {
 
 			dinleyici.sunucuBaglantiDurumuGuncellendi(baglantiDurumu);
+
+		});
+
+	}
+
+	private void dinleyiciyeMesajDurumuIstendi(final String mesaj, final String karsiTarafUuid) {
+
+		out.execute(() -> {
+
+			dinleyici.mesajDurumuIstendi(mesaj, karsiTarafUuid);
+
+		});
+
+	}
+
+	private void dinleyiciyeKarsiTarafMesajiAlmadi(final String mesaj, final String karsiTarafUuid) {
+
+		out.execute(() -> {
+
+			dinleyici.karsiTarafMesajiAlmadi(mesaj, karsiTarafUuid);
 
 		});
 
