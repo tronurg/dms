@@ -46,9 +46,9 @@ import javafx.scene.text.FontWeight;
 
 class MesajPane extends BorderPane {
 
-	private final HBox ustPane = new HBox(5);
-	private final VBox ortaPane = new VBox(5);
-	private final HBox altPane = new HBox(5);
+	private final HBox ustPane = new HBox(5.0);
+	private final VBox ortaPane = new VBox(5.0);
+	private final HBox altPane = new HBox(5.0);
 
 	private final ScrollPane scrollPane = new ScrollPane(ortaPane) {
 		@Override
@@ -79,9 +79,9 @@ class MesajPane extends BorderPane {
 		ustPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 		altPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		ustPane.setPadding(new Insets(5));
-		ortaPane.setPadding(new Insets(5));
-		altPane.setPadding(new Insets(5));
+		ustPane.setPadding(new Insets(5.0));
+		ortaPane.setPadding(new Insets(5.0));
+		altPane.setPadding(new Insets(5.0));
 
 		ustPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -107,7 +107,7 @@ class MesajPane extends BorderPane {
 
 		});
 
-		HBox.setMargin(durumCircle, new Insets(5, 5, 5, 15));
+		HBox.setMargin(durumCircle, new Insets(5.0, 5.0, 5.0, 15.0));
 		isimLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 		ustPane.getChildren().addAll(geriBtn, durumCircle, isimLabel);
@@ -348,7 +348,7 @@ class MesajPane extends BorderPane {
 			GridPane.setHgrow(zamanLbl, Priority.ALWAYS);
 
 			mesajPane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(10), new BorderWidths(1))));
+					new CornerRadii(10.0), BorderWidths.DEFAULT)));
 
 			mesajPane.setPadding(new Insets(5.0));
 			mesajPane.setHgap(5.0);

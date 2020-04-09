@@ -36,7 +36,7 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	private void init() {
 
-		VBox.setMargin(kimlikPane, new Insets(10));
+		VBox.setMargin(kimlikPane, new Insets(10.0));
 
 		kimlikPane.dinleyiciEkle(this);
 
