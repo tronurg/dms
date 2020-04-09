@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
@@ -46,6 +47,8 @@ import javafx.scene.text.FontWeight;
 
 class MesajPane extends BorderPane {
 
+	private static final SimpleDateFormat GUN_AY_YIL = new SimpleDateFormat("dd.MM.yyyy");
+
 	private final HBox ustPane = new HBox(5.0);
 	private final VBox ortaPane = new VBox(5.0);
 	private final HBox altPane = new HBox(5.0);
@@ -65,6 +68,7 @@ class MesajPane extends BorderPane {
 			.synchronizedMap(new HashMap<String, MesajBalonu>());
 
 	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
+	private final AtomicReference<String> sonEklenenTarih = new AtomicReference<String>(null);
 
 	MesajPane() {
 
@@ -84,6 +88,7 @@ class MesajPane extends BorderPane {
 		altPane.setPadding(new Insets(5.0));
 
 		ustPane.setAlignment(Pos.CENTER_LEFT);
+		ortaPane.setAlignment(Pos.CENTER);
 
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setFitToWidth(true);
@@ -161,6 +166,11 @@ class MesajPane extends BorderPane {
 			MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesaj.getTarih(), MesajTipi.GELEN);
 			mesajBalonlari.put(mesajId, gelenMesajBalonu);
 
+			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
+			if (!tarih.equals(sonEklenenTarih.getAndSet(tarih))) {
+				ortaPane.getChildren().add(newTarihLabel(tarih));
+			}
+
 			ortaPane.getChildren().add(gelenMesajBalonu);
 
 		}
@@ -173,6 +183,11 @@ class MesajPane extends BorderPane {
 
 			MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesaj.getTarih(), MesajTipi.GIDEN);
 			mesajBalonlari.put(mesajId, gidenMesajBalonu);
+
+			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
+			if (!tarih.equals(sonEklenenTarih.getAndSet(tarih))) {
+				ortaPane.getChildren().add(newTarihLabel(tarih));
+			}
 
 			ortaPane.getChildren().add(gidenMesajBalonu);
 
@@ -224,10 +239,24 @@ class MesajPane extends BorderPane {
 
 	}
 
+	private Label newTarihLabel(String tarih) {
+
+		Label tarihLabel = new Label(tarih);
+
+		tarihLabel.setPadding(new Insets(0.0, 5.0, 0.0, 5.0));
+		tarihLabel
+				.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, new CornerRadii(5.0), Insets.EMPTY)));
+		tarihLabel.setBorder(new Border(new BorderStroke(Color.GRAY, BorderStrokeStyle.SOLID, new CornerRadii(5.0),
+				BorderWidths.DEFAULT, Insets.EMPTY)));
+
+		return tarihLabel;
+
+	}
+
 	private static class MesajBalonu extends GridPane {
 
 		private static final double RADIUS = 3.0;
-		private static final SimpleDateFormat SDF = new SimpleDateFormat("HH:mm");
+		private static final SimpleDateFormat SAAT_DAKIKA = new SimpleDateFormat("HH:mm");
 
 		private final MesajTipi mesajTipi;
 
@@ -247,7 +276,7 @@ class MesajPane extends BorderPane {
 			this.mesajTipi = mesajTipi;
 
 			mesajLbl = new Label(mesaj);
-			zamanLbl = new Label(SDF.format(tarih));
+			zamanLbl = new Label(SAAT_DAKIKA.format(tarih));
 
 			init();
 
@@ -357,7 +386,7 @@ class MesajPane extends BorderPane {
 
 	}
 
-	private enum MesajTipi {
+	private static enum MesajTipi {
 
 		GELEN, GIDEN
 
