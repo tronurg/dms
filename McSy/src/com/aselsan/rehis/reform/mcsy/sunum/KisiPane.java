@@ -134,18 +134,6 @@ class KisiPane extends GridPane {
 
 			consumer.accept(mesajPane);
 
-//			Iterator<String> mesajIdIt = okunmamisMesajlar.iterator();
-//
-//			if (mesajIdIt.hasNext()) {
-//
-//				mesajPane.sayfayiMesajaKaydir(mesajIdIt.next());
-//
-//			} else {
-//
-//				mesajPane.sayfayiSonaKaydir();
-//
-//			}
-
 		});
 
 	}

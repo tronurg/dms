@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
@@ -50,7 +49,7 @@ class MesajPane extends BorderPane {
 	private static final SimpleDateFormat GUN_AY_YIL = new SimpleDateFormat("dd.MM.yyyy");
 
 	private final HBox ustPane = new HBox(5.0);
-	private final VBox ortaPane = new VBox(5.0);
+	private final VBox ortaPane = new VBox(10.0);
 	private final HBox altPane = new HBox(5.0);
 
 	private final ScrollPane scrollPane = new ScrollPane(ortaPane) {
@@ -64,11 +63,12 @@ class MesajPane extends BorderPane {
 	private final TextArea mesajArea = new TextArea();
 	private final Button gonderBtn = SunumFabrika.newGonderBtn();
 
+	private final Map<String, VBox> gunKutulari = Collections.synchronizedMap(new HashMap<String, VBox>());
+
 	private final Map<String, MesajBalonu> mesajBalonlari = Collections
 			.synchronizedMap(new HashMap<String, MesajBalonu>());
 
 	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
-	private final AtomicReference<String> sonEklenenTarih = new AtomicReference<String>(null);
 
 	MesajPane() {
 
@@ -88,7 +88,6 @@ class MesajPane extends BorderPane {
 		altPane.setPadding(new Insets(5.0));
 
 		ustPane.setAlignment(Pos.CENTER_LEFT);
-		ortaPane.setAlignment(Pos.CENTER);
 
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setFitToWidth(true);
@@ -167,11 +166,14 @@ class MesajPane extends BorderPane {
 			mesajBalonlari.put(mesajId, gelenMesajBalonu);
 
 			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
-			if (!tarih.equals(sonEklenenTarih.getAndSet(tarih))) {
-				ortaPane.getChildren().add(newTarihLabel(tarih));
+			if (!gunKutulari.containsKey(tarih)) {
+				VBox gunKutusu = newGunKutusu(tarih);
+				gunKutusu.visibleProperty().bind(gelenMesajBalonu.visibleProperty());
+				gunKutulari.put(tarih, gunKutusu);
+				ortaPane.getChildren().add(gunKutusu);
 			}
 
-			ortaPane.getChildren().add(gelenMesajBalonu);
+			gunKutulari.get(tarih).getChildren().add(gelenMesajBalonu);
 
 		}
 
@@ -185,11 +187,14 @@ class MesajPane extends BorderPane {
 			mesajBalonlari.put(mesajId, gidenMesajBalonu);
 
 			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
-			if (!tarih.equals(sonEklenenTarih.getAndSet(tarih))) {
-				ortaPane.getChildren().add(newTarihLabel(tarih));
+			if (!gunKutulari.containsKey(tarih)) {
+				VBox gunKutusu = newGunKutusu(tarih);
+				gunKutusu.visibleProperty().bind(gidenMesajBalonu.visibleProperty());
+				gunKutulari.put(tarih, gunKutusu);
+				ortaPane.getChildren().add(gunKutusu);
 			}
 
-			ortaPane.getChildren().add(gidenMesajBalonu);
+			gunKutulari.get(tarih).getChildren().add(gidenMesajBalonu);
 
 		}
 
@@ -197,18 +202,6 @@ class MesajPane extends BorderPane {
 				mesaj.getMesajDurumu().getIletildiRengi());
 
 	}
-
-//	void sayfayiMesajaKaydir(String mesajId) {
-//
-//		MesajBalonu mesajBalonu = mesajBalonlari.get(mesajId);
-//
-//		if (mesajBalonu == null)
-//			return;
-//
-//		scrollPane.setVvalue(scrollPane.getVmax() * Math.min(1.0, mesajBalonu.getLayoutY()
-//				/ (ortaPane.getBoundsInLocal().getHeight() - scrollPane.getViewportBounds().getHeight())));
-//
-//	}
 
 	void sayfayiSonaKaydir() {
 
@@ -239,17 +232,25 @@ class MesajPane extends BorderPane {
 
 	}
 
-	private Label newTarihLabel(String tarih) {
+	private VBox newGunKutusu(String tarih) {
+
+		VBox gunKutusu = new VBox(5.0);
+
+		gunKutusu.setAlignment(Pos.CENTER);
 
 		Label tarihLabel = new Label(tarih);
 
 		tarihLabel.setPadding(new Insets(0.0, 5.0, 0.0, 5.0));
+		tarihLabel.setFont(Font.font(null, FontWeight.BOLD, tarihLabel.getFont().getSize()));
+		tarihLabel.setTextFill(Color.GRAY);
 		tarihLabel
-				.setBackground(new Background(new BackgroundFill(Color.DARKGRAY, new CornerRadii(5.0), Insets.EMPTY)));
-		tarihLabel.setBorder(new Border(new BorderStroke(Color.GRAY, BorderStrokeStyle.SOLID, new CornerRadii(5.0),
+				.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(5.0), Insets.EMPTY)));
+		tarihLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(5.0),
 				BorderWidths.DEFAULT, Insets.EMPTY)));
 
-		return tarihLabel;
+		gunKutusu.getChildren().add(tarihLabel);
+
+		return gunKutusu;
 
 	}
 
