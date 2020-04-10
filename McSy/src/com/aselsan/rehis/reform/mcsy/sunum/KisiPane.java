@@ -150,7 +150,9 @@ class KisiPane extends GridPane {
 
 	}
 
-	void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
+	void gelenMesajGuncelle(Mesaj mesaj) {
+
+		String mesajId = getMesajId(mesaj);
 
 		if (mesaj.getMesajDurumu().equals(MesajDurumu.OKUNDU)) {
 			okunmamisMesajlar.remove(mesajId);
@@ -162,9 +164,17 @@ class KisiPane extends GridPane {
 
 	}
 
-	void gidenMesajGuncelle(String mesajId, Mesaj mesaj) {
+	void gidenMesajGuncelle(Mesaj mesaj) {
+
+		String mesajId = getMesajId(mesaj);
 
 		mesajPane.gidenMesajGuncelle(mesajId, mesaj);
+
+	}
+
+	private String getMesajId(Mesaj mesaj) {
+
+		return mesaj.getGonderenUuid() + ":" + mesaj.getMesajId();
 
 	}
 

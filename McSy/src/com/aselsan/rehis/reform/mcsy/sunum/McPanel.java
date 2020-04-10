@@ -74,15 +74,15 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	}
 
-	public void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
+	public void gelenMesajGuncelle(Mesaj mesaj) {
 
-		kisilerPane.gelenMesajGuncelle(mesajId, mesaj);
+		kisilerPane.gelenMesajGuncelle(mesaj);
 
 	}
 
-	public void gidenMesajGuncelle(String mesajId, Mesaj mesaj) {
+	public void gidenMesajGuncelle(Mesaj mesaj) {
 
-		kisilerPane.gidenMesajGuncelle(mesajId, mesaj);
+		kisilerPane.gidenMesajGuncelle(mesaj);
 
 	}
 

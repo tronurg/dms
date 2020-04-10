@@ -168,7 +168,6 @@ class MesajPane extends BorderPane {
 			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
 			if (!gunKutulari.containsKey(tarih)) {
 				VBox gunKutusu = newGunKutusu(tarih);
-				gunKutusu.visibleProperty().bind(gelenMesajBalonu.visibleProperty());
 				gunKutulari.put(tarih, gunKutusu);
 				ortaPane.getChildren().add(gunKutusu);
 			}
@@ -189,7 +188,6 @@ class MesajPane extends BorderPane {
 			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
 			if (!gunKutulari.containsKey(tarih)) {
 				VBox gunKutusu = newGunKutusu(tarih);
-				gunKutusu.visibleProperty().bind(gidenMesajBalonu.visibleProperty());
 				gunKutulari.put(tarih, gunKutusu);
 				ortaPane.getChildren().add(gunKutusu);
 			}

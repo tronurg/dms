@@ -61,7 +61,7 @@ class KisilerPane extends TitledPane {
 
 	}
 
-	void gelenMesajGuncelle(String mesajId, Mesaj gelenMesaj) {
+	void gelenMesajGuncelle(Mesaj gelenMesaj) {
 
 		String uuid = gelenMesaj.getGonderenUuid();
 
@@ -79,11 +79,11 @@ class KisilerPane extends TitledPane {
 
 		}
 
-		uuidler.get(uuid).gelenMesajGuncelle(mesajId, gelenMesaj);
+		uuidler.get(uuid).gelenMesajGuncelle(gelenMesaj);
 
 	}
 
-	void gidenMesajGuncelle(String mesajId, Mesaj gidenMesaj) {
+	void gidenMesajGuncelle(Mesaj gidenMesaj) {
 
 		String uuid = gidenMesaj.getAliciUuid();
 
@@ -101,7 +101,7 @@ class KisilerPane extends TitledPane {
 
 		}
 
-		uuidler.get(uuid).gidenMesajGuncelle(mesajId, gidenMesaj);
+		uuidler.get(uuid).gidenMesajGuncelle(gidenMesaj);
 
 	}
 

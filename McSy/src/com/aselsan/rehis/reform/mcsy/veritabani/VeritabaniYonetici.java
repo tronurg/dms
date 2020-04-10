@@ -14,6 +14,7 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
 
 public class VeritabaniYonetici {
 
@@ -235,6 +236,77 @@ public class VeritabaniYonetici {
 		session.close();
 
 		return vtMesaj;
+
+	}
+
+	public Mesaj mesajDurumGuncelle(String gonderenUuid, long mesajId, MesajDurumu mesajDurumu)
+			throws HibernateException {
+
+		Session session = factory.openSession();
+
+		Mesaj vtMesaj = session
+				.createQuery("from Mesaj where gonderenUuid like :gonderenUuid and mesajId=:mesajId", Mesaj.class)
+				.setParameter("gonderenUuid", gonderenUuid).setParameter("mesajId", mesajId).uniqueResult();
+
+		if (vtMesaj != null) {
+
+			vtMesaj.setMesajDurumu(mesajDurumu);
+
+			session.beginTransaction();
+
+			vtMesaj = (Mesaj) session.merge(vtMesaj);
+
+			session.getTransaction().commit();
+
+		}
+
+		session.close();
+
+		return vtMesaj;
+
+	}
+
+	public Mesaj getMesaj(String gonderenUuid, long mesajId) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		Mesaj vtMesaj = session
+				.createQuery("from Mesaj where gonderenUuid like :gonderenUuid and mesajId=:mesajId", Mesaj.class)
+				.setParameter("gonderenUuid", gonderenUuid).setParameter("mesajId", mesajId).uniqueResult();
+
+		session.close();
+
+		return vtMesaj;
+
+	}
+
+	public List<Mesaj> getKisiyeGidenBekleyenMesajlar(String aliciUuid) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Mesaj> vtMesajlar = session.createQuery(
+				"from Mesaj where aliciUuid like :aliciUuid and (mesajDurumu like :olusturuldu or mesajDurumu like :gonderildi or mesajDurumu like :ulasti)",
+				Mesaj.class).setParameter("aliciUuid", aliciUuid).setParameter("olusturuldu", MesajDurumu.OLUSTURULDU)
+				.setParameter("gonderildi", MesajDurumu.GONDERILDI).setParameter("ulasti", MesajDurumu.ULASTI).list();
+
+		session.close();
+
+		return vtMesajlar;
+
+	}
+
+	public List<Mesaj> getKisidenGelenBekleyenMesajlar(String gonderenUuid) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Mesaj> vtMesajlar = session
+				.createQuery("from Mesaj where gonderenUuid like :gonderenUuid and mesajDurumu like :ulasti",
+						Mesaj.class)
+				.setParameter("gonderenUuid", gonderenUuid).setParameter("ulasti", MesajDurumu.ULASTI).list();
+
+		session.close();
+
+		return vtMesajlar;
 
 	}
 
