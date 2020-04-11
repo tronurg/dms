@@ -2,7 +2,9 @@ package com.aselsan.rehis.reform.mcsy.kontrol;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -141,6 +143,30 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 		model.getKisiler().forEach((uuid, kisi) -> Platform.runLater(() -> mcPanel.kisiGuncelle(kisi)));
 
 		model.getGruplar().forEach((uuid, grup) -> Platform.runLater(() -> mcPanel.grupGuncelle(grup)));
+
+		try {
+
+			// TODO
+
+			String yerelUuid = model.getKimlik().getUuid();
+
+			Set<String> karsiTarafUuidler = new HashSet<String>();
+			karsiTarafUuidler.addAll(veritabaniYonetici.getMesajGonderenUuidler());
+			karsiTarafUuidler.addAll(veritabaniYonetici.getMesajAlanUuidler());
+			karsiTarafUuidler.remove(model.getKimlik().getUuid());
+
+			karsiTarafUuidler.forEach(karsiUuid -> {
+
+				veritabaniYonetici.getIlkOkunmamisMesajdanItibarenTumMesajlar(yerelUuid, karsiUuid)
+						.forEach(e -> System.out.println(e.getIcerik()));
+
+			});
+
+		} catch (HibernateException e) {
+
+			e.printStackTrace();
+
+		}
 
 		veritabaniYonetici.tumMesajlariAl().forEach(mesaj -> {
 

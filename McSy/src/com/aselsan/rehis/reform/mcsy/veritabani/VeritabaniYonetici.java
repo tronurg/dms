@@ -1,7 +1,12 @@
 package com.aselsan.rehis.reform.mcsy.veritabani;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -303,6 +308,67 @@ public class VeritabaniYonetici {
 				.createQuery("from Mesaj where gonderenUuid like :gonderenUuid and mesajDurumu like :ulasti",
 						Mesaj.class)
 				.setParameter("gonderenUuid", gonderenUuid).setParameter("ulasti", MesajDurumu.ULASTI).list();
+
+		session.close();
+
+		return vtMesajlar;
+
+	}
+
+	public List<String> getMesajGonderenUuidler() throws HibernateException {
+
+		Session session = factory.openSession();
+
+		CriteriaBuilder cb = session.getCriteriaBuilder();
+		CriteriaQuery<String> cq = cb.createQuery(String.class);
+		Root<Mesaj> root = cq.from(Mesaj.class);
+		cq.select(root.get("gonderenUuid")).distinct(true);
+		List<String> vtUuidler = session.createQuery(cq).list();
+
+		session.close();
+
+		return vtUuidler;
+
+	}
+
+	public List<String> getMesajAlanUuidler() throws HibernateException {
+
+		Session session = factory.openSession();
+
+		CriteriaBuilder cb = session.getCriteriaBuilder();
+		CriteriaQuery<String> cq = cb.createQuery(String.class);
+		Root<Mesaj> root = cq.from(Mesaj.class);
+		cq.select(root.get("aliciUuid")).distinct(true);
+		List<String> vtUuidler = session.createQuery(cq).list();
+
+		session.close();
+
+		return vtUuidler;
+
+	}
+
+	public List<Mesaj> getIlkOkunmamisMesajdanItibarenTumMesajlar(String yerelUuid, String karsiUuid)
+			throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Mesaj> vtIlkOkunmamisMesaj = session.createQuery(
+				"from Mesaj where gonderenUuid like :karsiUuid and aliciUuid like :yerelUuid and mesajDurumu not like :okundu",
+				Mesaj.class).setParameter("yerelUuid", yerelUuid).setParameter("karsiUuid", karsiUuid)
+				.setParameter("okundu", MesajDurumu.OKUNDU).setMaxResults(1).list();
+
+		if (vtIlkOkunmamisMesaj.size() == 0) {
+
+			return Collections.emptyList();
+
+		}
+
+		Long ilkId = vtIlkOkunmamisMesaj.get(0).getId();
+
+		List<Mesaj> vtMesajlar = session.createQuery(
+				"from Mesaj where id >= :ilkId and ((gonderenUuid like :yerelUuid and aliciUuid like :karsiUuid) or (gonderenUuid like :karsiUuid and aliciUuid like :yerelUuid))",
+				Mesaj.class).setParameter("ilkId", ilkId).setParameter("yerelUuid", yerelUuid)
+				.setParameter("karsiUuid", karsiUuid).list();
 
 		session.close();
 
