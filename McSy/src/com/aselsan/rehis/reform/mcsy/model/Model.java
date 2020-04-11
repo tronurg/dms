@@ -73,7 +73,7 @@ public class Model {
 
 	public boolean isKisiCevrimici(String uuid) {
 
-		return !getKisi(uuid).getDurum().equals(KisiDurumu.CEVRIMDISI);
+		return kisiler.containsKey(uuid) && !getKisi(uuid).getDurum().equals(KisiDurumu.CEVRIMDISI);
 
 	}
 
