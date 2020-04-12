@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.mcsunucu.model.intf.ModelDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.IcerikTipi;
 import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajNesnesi;
-import com.aselsan.rehis.reform.mcsy.mcsunucu.veriyapilari.MesajTipi;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -34,7 +34,7 @@ public class Model {
 
 			String gonderenUuid = mesajNesnesi.gonderenUuid;
 
-			switch (mesajNesnesi.mesajTipi) {
+			switch (mesajNesnesi.icerikTipi) {
 
 			case BCON:
 
@@ -108,7 +108,7 @@ public class Model {
 
 			String gonderenUuid = mesajNesnesi.gonderenUuid;
 
-			switch (mesajNesnesi.mesajTipi) {
+			switch (mesajNesnesi.icerikTipi) {
 
 			case BCON:
 
@@ -176,7 +176,7 @@ public class Model {
 		if (!uzakKullaniciBeacon.containsKey(uuid))
 			return;
 
-		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", MesajTipi.UUID_KOPTU));
+		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", IcerikTipi.UUID_KOPTU));
 
 		uzakKullaniciBeacon.remove(uuid);
 
@@ -190,7 +190,7 @@ public class Model {
 		if (!yerelKullaniciBeacon.containsKey(uuid))
 			return;
 
-		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", MesajTipi.UUID_KOPTU));
+		String mesajNesnesiStr = gson.toJson(new MesajNesnesi(uuid, "", IcerikTipi.UUID_KOPTU));
 
 		yerelKullaniciBeacon.remove(uuid);
 

@@ -5,6 +5,7 @@ import java.util.LinkedHashSet;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -59,7 +60,7 @@ class KisiPane extends GridPane {
 
 	private final MesajPane mesajPane = new MesajPane();
 
-	private final ObservableSet<String> okunmamisMesajlar = FXCollections.observableSet(new LinkedHashSet<String>());
+	private final ObservableSet<Long> okunmamisMesajlar = FXCollections.observableSet(new LinkedHashSet<Long>());
 
 	KisiPane() {
 
@@ -72,10 +73,10 @@ class KisiPane extends GridPane {
 	private void init() {
 
 		// Okunmamis mesaj sayisi properties
-		okunmamisMesajlar.addListener(new SetChangeListener<String>() {
+		okunmamisMesajlar.addListener(new SetChangeListener<Long>() {
 
 			@Override
-			public void onChanged(Change<? extends String> arg0) {
+			public void onChanged(Change<? extends Long> arg0) {
 
 				int okunmamisMesajSayisi = arg0.getSet().size();
 
@@ -150,31 +151,21 @@ class KisiPane extends GridPane {
 
 	}
 
-	void gelenMesajGuncelle(Mesaj mesaj) {
+	void mesajEkle(Mesaj mesaj, MesajYonu mesajYonu) {
 
-		String mesajId = getMesajId(mesaj);
+		if (mesajYonu.equals(MesajYonu.GELEN) && !mesaj.getMesajDurumu().equals(MesajDurumu.OKUNDU))
+			okunmamisMesajlar.add(mesaj.getId());
 
-		if (mesaj.getMesajDurumu().equals(MesajDurumu.OKUNDU)) {
-			okunmamisMesajlar.remove(mesajId);
-		} else {
-			okunmamisMesajlar.add(mesajId);
-		}
-
-		mesajPane.gelenMesajGuncelle(mesajId, mesaj);
+		mesajPane.mesajEkle(mesaj, mesajYonu);
 
 	}
 
-	void gidenMesajGuncelle(Mesaj mesaj) {
+	void mesajGuncelle(Mesaj mesaj) {
 
-		String mesajId = getMesajId(mesaj);
+		if (mesaj.getMesajDurumu().equals(MesajDurumu.OKUNDU))
+			okunmamisMesajlar.remove(mesaj.getId());
 
-		mesajPane.gidenMesajGuncelle(mesajId, mesaj);
-
-	}
-
-	private String getMesajId(Mesaj mesaj) {
-
-		return mesaj.getGonderenUuid() + ":" + mesaj.getMesajId();
+		mesajPane.mesajGuncelle(mesaj);
 
 	}
 

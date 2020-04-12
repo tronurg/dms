@@ -17,7 +17,6 @@ import com.aselsan.rehis.reform.mcsy.arayuz.McHandle;
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.McIstemci;
 import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
-import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
 import com.aselsan.rehis.reform.mcsy.model.Model;
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
@@ -28,6 +27,8 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.KisiDurumu;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajTipi;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
@@ -172,11 +173,11 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 			if (model.getKimlik().getUuid().equals(mesaj.getGonderenUuid())) {
 
-				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(mesaj));
+				Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MesajYonu.GIDEN, mesaj.getAliciUuid()));
 
 			} else if (model.getKimlik().getUuid().equals(mesaj.getAliciUuid())) {
 
-				Platform.runLater(() -> mcPanel.gelenMesajGuncelle(mesaj));
+				Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MesajYonu.GELEN, mesaj.getGonderenUuid()));
 
 			}
 
@@ -326,7 +327,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 									if (!yeniMesaj.getMesajDurumu().equals(MesajDurumu.GONDERILDI))
 										break;
 
-									Platform.runLater(() -> mcPanel.gidenMesajGuncelle(yeniMesaj));
+									Platform.runLater(() -> mcPanel.mesajGuncelle(yeniMesaj, uuid));
 
 									break;
 
@@ -375,7 +376,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 				final Mesaj yeniMesaj = gelenMesajOlustur(mesaj);
 
-				Platform.runLater(() -> mcPanel.gelenMesajGuncelle(yeniMesaj));
+				Platform.runLater(() -> mcPanel.mesajEkle(yeniMesaj, MesajYonu.GELEN, yeniMesaj.getGonderenUuid()));
 
 				if (yeniMesaj.getMesajDurumu().equals(MesajDurumu.ULASTI))
 					mcIstemci.alindiGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
@@ -485,7 +486,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 				final Mesaj yeniMesaj = mesajGonder(bekleyenMesaj);
 
-				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(yeniMesaj));
+				Platform.runLater(() -> mcPanel.mesajGuncelle(yeniMesaj, karsiTarafUuid));
 
 			} catch (Exception e) {
 
@@ -512,7 +513,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 				if (gidenMesaj == null)
 					return;
 
-				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(gidenMesaj));
+				Platform.runLater(() -> mcPanel.mesajGuncelle(gidenMesaj, karsiTarafUuid));
 
 			} catch (Exception e) {
 
@@ -539,7 +540,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 				if (gidenMesaj == null)
 					return;
 
-				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(gidenMesaj));
+				Platform.runLater(() -> mcPanel.mesajGuncelle(gidenMesaj, karsiTarafUuid));
 
 			} catch (Exception e) {
 
@@ -567,7 +568,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 				final Mesaj yeniMesaj = mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
 
-				Platform.runLater(() -> mcPanel.gidenMesajGuncelle(yeniMesaj));
+				Platform.runLater(() -> mcPanel.mesajEkle(yeniMesaj, MesajYonu.GIDEN, aliciUuid));
 
 			} catch (Exception e) {
 
@@ -673,7 +674,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 						final Mesaj yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
 
-						Platform.runLater(() -> mcPanel.gelenMesajGuncelle(yeniMesaj));
+						Platform.runLater(() -> mcPanel.mesajGuncelle(yeniMesaj, uuid));
 
 						mcIstemci.okunduGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
 

@@ -1,6 +1,9 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -11,6 +14,7 @@ import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -49,8 +53,6 @@ import javafx.scene.text.FontWeight;
 
 class MesajPane extends BorderPane {
 
-	private static final SimpleDateFormat GUN_AY_YIL = new SimpleDateFormat("dd.MM.yyyy");
-
 	private final HBox ustPane = new HBox(5.0);
 	private final VBox ortaPane = new VBox(10.0);
 	private final HBox altPane = new HBox(5.0);
@@ -66,12 +68,29 @@ class MesajPane extends BorderPane {
 	private final TextArea mesajArea = new TextArea();
 	private final Button gonderBtn = SunumFabrika.newGonderBtn();
 
-	private final Map<String, GunKutusu> gunKutulari = Collections.synchronizedMap(new HashMap<String, GunKutusu>());
+	private final Map<LocalDate, GunKutusu> gunKutulari = Collections
+			.synchronizedMap(new HashMap<LocalDate, GunKutusu>());
 
-	private final Map<String, MesajBalonu> mesajBalonlari = Collections
-			.synchronizedMap(new HashMap<String, MesajBalonu>());
+	private final Map<Long, MesajBalonu> mesajBalonlari = Collections.synchronizedMap(new HashMap<Long, MesajBalonu>());
 
 	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
+
+	private final Comparator<Node> gunKutusuSiralayici = new Comparator<Node>() {
+
+		@Override
+		public int compare(Node arg0, Node arg1) {
+
+			if (!(arg0 instanceof GunKutusu && arg1 instanceof GunKutusu))
+				return 0;
+
+			GunKutusu gunKutusu0 = (GunKutusu) arg0;
+			GunKutusu gunKutusu1 = (GunKutusu) arg1;
+
+			return gunKutusu0.getTarih().compareTo(gunKutusu1.getTarih());
+
+		}
+
+	};
 
 	MesajPane() {
 
@@ -161,47 +180,37 @@ class MesajPane extends BorderPane {
 
 	}
 
-	void gelenMesajGuncelle(String mesajId, Mesaj mesaj) {
+	void mesajEkle(Mesaj mesaj, MesajYonu mesajYonu) {
 
-		if (!mesajBalonlari.containsKey(mesajId)) {
+		if (mesajBalonlari.containsKey(mesaj.getId()))
+			return;
 
-			MesajBalonu gelenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesaj.getTarih(), MesajTipi.GELEN,
-					mesaj.getId());
-			mesajBalonlari.put(mesajId, gelenMesajBalonu);
+		Date mesajTarihi = mesaj.getTarih();
 
-			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
-			if (!gunKutulari.containsKey(tarih)) {
-				GunKutusu gunKutusu = new GunKutusu(tarih);
-				gunKutulari.put(tarih, gunKutusu);
-				ortaPane.getChildren().add(gunKutusu);
-			}
+		MesajBalonu mesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesajTarihi, mesajYonu);
+		mesajBalonu.setIletiRenkeri(mesaj.getMesajDurumu().getBeklemeRengi(),
+				mesaj.getMesajDurumu().getIletildiRengi());
 
-			gunKutulari.get(tarih).mesajBalonuEkle(gelenMesajBalonu);
+		mesajBalonlari.put(mesaj.getId(), mesajBalonu);
 
+		LocalDate mesajGunu = mesajTarihi.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		if (!gunKutulari.containsKey(mesajGunu)) {
+			GunKutusu gunKutusu = new GunKutusu(mesajGunu);
+			gunKutulari.put(mesajGunu, gunKutusu);
+			ortaPane.getChildren().add(gunKutusu);
+			FXCollections.sort(ortaPane.getChildren(), gunKutusuSiralayici);
 		}
+
+		gunKutulari.get(mesajGunu).mesajBalonuEkle(mesajBalonu);
 
 	}
 
-	void gidenMesajGuncelle(String mesajId, Mesaj mesaj) {
+	void mesajGuncelle(Mesaj mesaj) {
 
-		if (!mesajBalonlari.containsKey(mesajId)) {
+		if (!mesajBalonlari.containsKey(mesaj.getId()))
+			return;
 
-			MesajBalonu gidenMesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesaj.getTarih(), MesajTipi.GIDEN,
-					mesaj.getId());
-			mesajBalonlari.put(mesajId, gidenMesajBalonu);
-
-			String tarih = GUN_AY_YIL.format(mesaj.getTarih());
-			if (!gunKutulari.containsKey(tarih)) {
-				GunKutusu gunKutusu = new GunKutusu(tarih);
-				gunKutulari.put(tarih, gunKutusu);
-				ortaPane.getChildren().add(gunKutusu);
-			}
-
-			gunKutulari.get(tarih).mesajBalonuEkle(gidenMesajBalonu);
-
-		}
-
-		mesajBalonlari.get(mesajId).setIletiRenkeri(mesaj.getMesajDurumu().getBeklemeRengi(),
+		mesajBalonlari.get(mesaj.getId()).setIletiRenkeri(mesaj.getMesajDurumu().getBeklemeRengi(),
 				mesaj.getMesajDurumu().getIletildiRengi());
 
 	}
@@ -240,8 +249,8 @@ class MesajPane extends BorderPane {
 		private static final double RADIUS = 3.0;
 		private static final SimpleDateFormat SAAT_DAKIKA = new SimpleDateFormat("HH:mm");
 
-		private final MesajTipi mesajTipi;
-		private final long mesajId;
+		private final Date tarih;
+		private final MesajYonu mesajYonu;
 
 		private final GridPane mesajPane = new GridPane();
 		private final Label mesajLbl;
@@ -252,12 +261,12 @@ class MesajPane extends BorderPane {
 
 		private final Region bosluk = new Region();
 
-		MesajBalonu(String mesaj, Date tarih, MesajTipi mesajTipi, long mesajId) {
+		MesajBalonu(String mesaj, Date tarih, MesajYonu mesajYonu) {
 
 			super();
 
-			this.mesajTipi = mesajTipi;
-			this.mesajId = mesajId;
+			this.tarih = tarih;
+			this.mesajYonu = mesajYonu;
 
 			mesajLbl = new Label(mesaj);
 			zamanLbl = new Label(SAAT_DAKIKA.format(tarih));
@@ -280,7 +289,7 @@ class MesajPane extends BorderPane {
 
 			HBox.setHgrow(bosluk, Priority.ALWAYS);
 
-			switch (mesajTipi) {
+			switch (mesajYonu) {
 
 			case GELEN:
 
@@ -327,9 +336,9 @@ class MesajPane extends BorderPane {
 
 		}
 
-		long getMesajId() {
+		Date getTarih() {
 
-			return mesajId;
+			return tarih;
 
 		}
 
@@ -378,6 +387,10 @@ class MesajPane extends BorderPane {
 
 	private static class GunKutusu extends BorderPane {
 
+		private static final DateTimeFormatter GUN_AY_YIL = DateTimeFormatter.ofPattern("dd.MM.uuuu");
+
+		private final LocalDate tarih;
+
 		private final Label tarihLabel;
 		private final VBox mesajBox = new VBox(5.0);
 
@@ -389,22 +402,22 @@ class MesajPane extends BorderPane {
 				if (!(arg0 instanceof MesajBalonu && arg1 instanceof MesajBalonu))
 					return 0;
 
-				MesajBalonu mb0 = (MesajBalonu) arg0;
-				MesajBalonu mb1 = (MesajBalonu) arg1;
+				MesajBalonu mesajBalonu0 = (MesajBalonu) arg0;
+				MesajBalonu mesajBalonu1 = (MesajBalonu) arg1;
 
-				if (mb0.getMesajId() < mb1.getMesajId())
-					return -1;
-				else if (mb0.getMesajId() > mb1.getMesajId())
-					return 1;
+				return mesajBalonu0.getTarih().compareTo(mesajBalonu1.getTarih());
 
-				return 0;
 			}
 
 		};
 
-		GunKutusu(String tarih) {
+		GunKutusu(LocalDate tarih) {
 
-			tarihLabel = new Label(tarih);
+			super();
+
+			this.tarih = tarih;
+
+			tarihLabel = new Label(GUN_AY_YIL.format(tarih));
 
 			init();
 
@@ -436,11 +449,11 @@ class MesajPane extends BorderPane {
 
 		}
 
-	}
+		LocalDate getTarih() {
 
-	private static enum MesajTipi {
+			return tarih;
 
-		GELEN, GIDEN
+		}
 
 	}
 

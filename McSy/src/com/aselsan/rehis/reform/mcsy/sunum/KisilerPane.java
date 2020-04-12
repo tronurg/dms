@@ -2,13 +2,16 @@ package com.aselsan.rehis.reform.mcsy.sunum;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
 import javafx.beans.binding.Bindings;
 import javafx.scene.control.TitledPane;
@@ -18,9 +21,11 @@ class KisilerPane extends TitledPane {
 
 	private final VBox kisiler = new VBox();
 
-	private final Map<String, KisiPane> uuidler = Collections.synchronizedMap(new HashMap<String, KisiPane>());
+	private final Map<String, KisiPane> uuidKisiPane = Collections.synchronizedMap(new HashMap<String, KisiPane>());
 
 	private final List<IKisilerPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IKisilerPane>());
+
+	private final AtomicReference<Date> guncelTarih = new AtomicReference<Date>(new Date(0));
 
 	KisilerPane() {
 
@@ -47,93 +52,70 @@ class KisilerPane extends TitledPane {
 
 	void kisiGuncelle(Kisi kisi) {
 
-		final String uuid = kisi.getUuid();
-
-		if (!uuidler.containsKey(uuid)) {
-
-			// Kisi karti ilk defa eklenecek
-			kisiKartiEkle(uuid);
-
-		}
-
-		// Kisi guncellenecek
-		uuidler.get(uuid).kisiGuncelle(kisi);
+		getKisiPane(kisi.getUuid()).kisiGuncelle(kisi);
 
 	}
 
-	void gelenMesajGuncelle(Mesaj gelenMesaj) {
+	void mesajEkle(Mesaj mesaj, MesajYonu mesajYonu, String uuid) {
 
-		String uuid = gelenMesaj.getGonderenUuid();
+		KisiPane kisiPane = getKisiPane(uuid);
 
-		if (!uuidler.containsKey(uuid)) {
+		kisiPane.mesajEkle(mesaj, mesajYonu);
 
-			// Kisi karti ilk defa eklenecek
-			kisiKartiEkle(uuid);
+		Date mesajTarihi = mesaj.getTarih();
 
-		} else {
+		if (guncelTarih.get().compareTo(mesajTarihi) < 0) {
 
-			KisiPane kisiPane = uuidler.get(uuid);
+			guncelTarih.set(mesajTarihi);
 
 			kisiler.getChildren().remove(kisiPane);
 			kisiler.getChildren().add(0, kisiPane);
 
 		}
 
-		uuidler.get(uuid).gelenMesajGuncelle(gelenMesaj);
+	}
+
+	void mesajGuncelle(Mesaj mesaj, String uuid) {
+
+		KisiPane kisiPane = getKisiPane(uuid);
+
+		kisiPane.mesajGuncelle(mesaj);
 
 	}
 
-	void gidenMesajGuncelle(Mesaj gidenMesaj) {
+	private KisiPane getKisiPane(final String uuid) {
 
-		String uuid = gidenMesaj.getAliciUuid();
+		if (!uuidKisiPane.containsKey(uuid)) {
 
-		if (!uuidler.containsKey(uuid)) {
+			KisiPane kisiPane = new KisiPane();
 
-			// Kisi karti ilk defa eklenecek
-			kisiKartiEkle(uuid);
+			kisiPane.setOnMesajGonderAction(mesaj -> {
 
-		} else {
+				dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
 
-			KisiPane kisiPane = uuidler.get(uuid);
+			});
 
-			kisiler.getChildren().remove(kisiPane);
+			kisiPane.setOnMesajPaneGoster(mesajPane -> {
+
+				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane, uuid));
+
+			});
+
+			kisiPane.setOnMesajPaneGizle(mesajPane -> {
+
+				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGizle(mesajPane, uuid));
+
+			});
+
+			uuidKisiPane.put(uuid, kisiPane);
+
 			kisiler.getChildren().add(0, kisiPane);
+
+			setExpanded(true);
 
 		}
 
-		uuidler.get(uuid).gidenMesajGuncelle(gidenMesaj);
-
-	}
-
-	private void kisiKartiEkle(final String uuid) {
-
-		// Kisi karti ilk defa eklenecek
-
-		KisiPane kisiPane = new KisiPane();
-
-		kisiPane.setOnMesajGonderAction(mesaj -> {
-
-			dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
-
-		});
-
-		kisiPane.setOnMesajPaneGoster(mesajPane -> {
-
-			dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane, uuid));
-
-		});
-
-		kisiPane.setOnMesajPaneGizle(mesajPane -> {
-
-			dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGizle(mesajPane, uuid));
-
-		});
-
-		uuidler.put(uuid, kisiPane);
-
-		kisiler.getChildren().add(0, kisiPane);
-
-		setExpanded(true);
+		return uuidKisiPane.get(uuid);
 
 	}
 

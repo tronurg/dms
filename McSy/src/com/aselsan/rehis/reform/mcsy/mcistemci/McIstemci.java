@@ -10,8 +10,8 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.aselsan.rehis.reform.mcsy.mcistemci.intf.McIstemciDinleyici;
+import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.IcerikTipi;
 import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajNesnesi;
-import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
@@ -76,43 +76,43 @@ public class McIstemci {
 
 	public void beaconGonder(String mesaj) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, MesajTipi.BCON)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, IcerikTipi.BCON)));
 
 	}
 
 	public void tumBeaconlariIste() {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi("", uuid, MesajTipi.REQ_BCON)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi("", uuid, IcerikTipi.REQ_BCON)));
 
 	}
 
 	public void mesajGonder(String mesaj, String aliciUuid) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.MESAJ)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, IcerikTipi.MESAJ)));
 
 	}
 
 	public void mesajDurumuIste(String mesaj, String aliciUuid) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.MESAJ_DURUMU_VER)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, IcerikTipi.MESAJ_DURUMU_VER)));
 
 	}
 
 	public void alinmadiGonder(String mesaj, String aliciUuid) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.ALINMADI)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, IcerikTipi.ALINMADI)));
 
 	}
 
 	public void alindiGonder(String mesaj, String aliciUuid) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.ALINDI)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, IcerikTipi.ALINDI)));
 
 	}
 
 	public void okunduGonder(String mesaj, String aliciUuid) {
 
-		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, MesajTipi.OKUNDU)));
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, IcerikTipi.OKUNDU)));
 
 	}
 
@@ -220,7 +220,7 @@ public class McIstemci {
 			if (uuid.equals(mesajNesnesi.gonderenUuid))
 				return;
 
-			switch (mesajNesnesi.mesajTipi) {
+			switch (mesajNesnesi.icerikTipi) {
 
 			case BCON:
 

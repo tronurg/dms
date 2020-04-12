@@ -9,6 +9,7 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Accordion;
@@ -74,15 +75,15 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	}
 
-	public void gelenMesajGuncelle(Mesaj mesaj) {
+	public void mesajEkle(Mesaj mesaj, MesajYonu mesajYonu, String uuid) {
 
-		kisilerPane.gelenMesajGuncelle(mesaj);
+		kisilerPane.mesajEkle(mesaj, mesajYonu, uuid);
 
 	}
 
-	public void gidenMesajGuncelle(Mesaj mesaj) {
+	public void mesajGuncelle(Mesaj mesaj, String uuid) {
 
-		kisilerPane.gidenMesajGuncelle(mesaj);
+		kisilerPane.mesajGuncelle(mesaj, uuid);
 
 	}
 

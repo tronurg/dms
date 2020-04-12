@@ -13,8 +13,8 @@ import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
-import com.aselsan.rehis.reform.mcsy.mcistemci.veriyapilari.MesajTipi;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajDurumu;
+import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajTipi;
 
 @Entity
 @Table(name = "mesaj")
