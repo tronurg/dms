@@ -117,6 +117,12 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	}
 
+	private void dinleyicilereSayfaBasaKaydirildi(final String uuid) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.sayfaBasaKaydirildi(uuid));
+
+	}
+
 	@Override
 	public void aciklamaGuncellendi(String aciklama) {
 
@@ -152,9 +158,16 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 	}
 
 	@Override
-	public void mesajGonderTiklandi(String mesaj, String uuid) {
+	public void mesajGonderTiklandi(String mesajTxt, String uuid) {
 
-		dinleyicilereMesajGonderTiklandi(mesaj, uuid);
+		dinleyicilereMesajGonderTiklandi(mesajTxt, uuid);
+
+	}
+
+	@Override
+	public void sayfaBasaKaydirildi(String uuid) {
+
+		dinleyicilereSayfaBasaKaydirildi(uuid);
 
 	}
 

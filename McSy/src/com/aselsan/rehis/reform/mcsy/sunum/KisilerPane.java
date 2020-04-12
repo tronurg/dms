@@ -89,12 +89,6 @@ class KisilerPane extends TitledPane {
 
 			KisiPane kisiPane = new KisiPane();
 
-			kisiPane.setOnMesajGonderAction(mesaj -> {
-
-				dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
-
-			});
-
 			kisiPane.setOnMesajPaneGoster(mesajPane -> {
 
 				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane, uuid));
@@ -104,6 +98,18 @@ class KisilerPane extends TitledPane {
 			kisiPane.setOnMesajPaneGizle(mesajPane -> {
 
 				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGizle(mesajPane, uuid));
+
+			});
+
+			kisiPane.setOnMesajGonderAction(mesajTxt -> {
+
+				dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesajTxt, uuid));
+
+			});
+
+			kisiPane.setOnSayfaBasaKaydirildi(() -> {
+
+				dinleyiciler.forEach(dinleyici -> dinleyici.sayfaBasaKaydirildi(uuid));
 
 			});
 
@@ -127,6 +133,8 @@ interface IKisilerPane {
 
 	void mesajPaneGizle(MesajPane mesajPane, String uuid);
 
-	void mesajGonderTiklandi(String mesaj, String uuid);
+	void mesajGonderTiklandi(String mesajTxt, String uuid);
+
+	void sayfaBasaKaydirildi(String uuid);
 
 }

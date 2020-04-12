@@ -23,6 +23,8 @@ public class Model {
 
 	private final List<String> acikUuidler = Collections.synchronizedList(new ArrayList<String>());
 
+	private final Map<String, Long> minMesajIdler = Collections.synchronizedMap(new HashMap<String, Long>());
+
 	public Model(Kimlik kimlik) {
 
 		this.kimlik = kimlik;
@@ -116,6 +118,24 @@ public class Model {
 	public boolean isMesajPaneliAcik(String uuid) {
 
 		return acikUuidler.contains(uuid);
+
+	}
+
+	public void mesajIdEkle(String uuid, Long id) {
+
+		if (minMesajIdler.containsKey(uuid) && minMesajIdler.get(uuid) < id)
+			return;
+
+		minMesajIdler.put(uuid, id);
+
+	}
+
+	public Long getMinMesajId(String uuid) {
+
+		if (!minMesajIdler.containsKey(uuid))
+			return -1L;
+
+		return minMesajIdler.get(uuid);
 
 	}
 

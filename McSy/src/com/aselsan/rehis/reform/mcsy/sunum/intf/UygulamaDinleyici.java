@@ -10,6 +10,8 @@ public interface UygulamaDinleyici {
 
 	void kisiMesajPaneliKapandi(String uuid);
 
-	void mesajGonderTiklandi(String mesaj, String aliciUuid);
+	void mesajGonderTiklandi(String mesajTxt, String aliciUuid);
+
+	void sayfaBasaKaydirildi(String uuid);
 
 }

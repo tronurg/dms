@@ -2,7 +2,9 @@ package com.aselsan.rehis.reform.mcsy.veritabani;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -315,31 +317,19 @@ public class VeritabaniYonetici {
 
 	}
 
-	public List<String> getMesajGonderenUuidler() throws HibernateException {
+	public Set<String> getUuidIleMesajlasanTumUuidler(String uuid) {
+
+		Set<String> vtUuidler = new HashSet<String>();
 
 		Session session = factory.openSession();
 
 		CriteriaBuilder cb = session.getCriteriaBuilder();
 		CriteriaQuery<String> cq = cb.createQuery(String.class);
 		Root<Mesaj> root = cq.from(Mesaj.class);
-		cq.select(root.get("gonderenUuid")).distinct(true);
-		List<String> vtUuidler = session.createQuery(cq).list();
-
-		session.close();
-
-		return vtUuidler;
-
-	}
-
-	public List<String> getMesajAlanUuidler() throws HibernateException {
-
-		Session session = factory.openSession();
-
-		CriteriaBuilder cb = session.getCriteriaBuilder();
-		CriteriaQuery<String> cq = cb.createQuery(String.class);
-		Root<Mesaj> root = cq.from(Mesaj.class);
-		cq.select(root.get("aliciUuid")).distinct(true);
-		List<String> vtUuidler = session.createQuery(cq).list();
+		cq.select(root.get("gonderenUuid")).where(cb.like(root.get("aliciUuid"), uuid)).distinct(true);
+		vtUuidler.addAll(session.createQuery(cq).list());
+		cq.select(root.get("aliciUuid")).where(cb.like(root.get("gonderenUuid"), uuid)).distinct(true);
+		vtUuidler.addAll(session.createQuery(cq).list());
 
 		session.close();
 
@@ -366,9 +356,40 @@ public class VeritabaniYonetici {
 		Long ilkId = vtIlkOkunmamisMesaj.get(0).getId();
 
 		List<Mesaj> vtMesajlar = session.createQuery(
-				"from Mesaj where id >= :ilkId and ((gonderenUuid like :yerelUuid and aliciUuid like :karsiUuid) or (gonderenUuid like :karsiUuid and aliciUuid like :yerelUuid))",
+				"from Mesaj where id>=:ilkId and ((gonderenUuid like :yerelUuid and aliciUuid like :karsiUuid) or (gonderenUuid like :karsiUuid and aliciUuid like :yerelUuid))",
 				Mesaj.class).setParameter("ilkId", ilkId).setParameter("yerelUuid", yerelUuid)
 				.setParameter("karsiUuid", karsiUuid).list();
+
+		session.close();
+
+		return vtMesajlar;
+
+	}
+
+	public List<Mesaj> getSonMesajlar(String yerelUuid, String karsiUuid, int mesajSayisi) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Mesaj> vtMesajlar = session.createQuery(
+				"from Mesaj where (gonderenUuid like :yerelUuid and aliciUuid like :karsiUuid) or (gonderenUuid like :karsiUuid and aliciUuid like :yerelUuid) order by id desc",
+				Mesaj.class).setParameter("yerelUuid", yerelUuid).setParameter("karsiUuid", karsiUuid)
+				.setMaxResults(mesajSayisi).list();
+
+		session.close();
+
+		return vtMesajlar;
+
+	}
+
+	public List<Mesaj> getIddenOncekiSonMesajlar(String yerelUuid, String karsiUuid, long id, int mesajSayisi)
+			throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Mesaj> vtMesajlar = session.createQuery(
+				"from Mesaj where id<:id and ((gonderenUuid like :yerelUuid and aliciUuid like :karsiUuid) or (gonderenUuid like :karsiUuid and aliciUuid like :yerelUuid)) order by id desc",
+				Mesaj.class).setParameter("id", id).setParameter("yerelUuid", yerelUuid)
+				.setParameter("karsiUuid", karsiUuid).setMaxResults(mesajSayisi).list();
 
 		session.close();
 

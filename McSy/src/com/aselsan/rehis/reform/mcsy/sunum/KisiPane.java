@@ -147,7 +147,13 @@ class KisiPane extends GridPane {
 
 	void setOnMesajGonderAction(Consumer<String> consumer) {
 
-		mesajPane.setOnMesajGonderAction(mesaj -> consumer.accept(mesaj));
+		mesajPane.setOnMesajGonderAction(mesajTxt -> consumer.accept(mesajTxt));
+
+	}
+
+	void setOnSayfaBasaKaydirildi(Runnable runnable) {
+
+		mesajPane.setOnSayfaBasaKaydirildi(() -> runnable.run());
 
 	}
 

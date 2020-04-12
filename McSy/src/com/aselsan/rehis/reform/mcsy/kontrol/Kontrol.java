@@ -1,8 +1,9 @@
 package com.aselsan.rehis.reform.mcsy.kontrol;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +43,8 @@ import javafx.scene.Scene;
 public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle {
 
 	private static final Map<String, Kontrol> INSTANCES = Collections.synchronizedMap(new HashMap<String, Kontrol>());
+
+	private static final int SAYFA_MIN_MESAJ_SAYISI = 5;
 
 	private final VeritabaniYonetici veritabaniYonetici;
 
@@ -147,19 +150,28 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 		try {
 
-			// TODO
-
 			String yerelUuid = model.getKimlik().getUuid();
 
-			Set<String> karsiTarafUuidler = new HashSet<String>();
-			karsiTarafUuidler.addAll(veritabaniYonetici.getMesajGonderenUuidler());
-			karsiTarafUuidler.addAll(veritabaniYonetici.getMesajAlanUuidler());
-			karsiTarafUuidler.remove(model.getKimlik().getUuid());
+			Set<String> karsiUuidler = veritabaniYonetici.getUuidIleMesajlasanTumUuidler(yerelUuid);
 
-			karsiTarafUuidler.forEach(karsiUuid -> {
+			karsiUuidler.forEach(karsiUuid -> {
 
-				veritabaniYonetici.getIlkOkunmamisMesajdanItibarenTumMesajlar(yerelUuid, karsiUuid)
-						.forEach(e -> System.out.println(e.getIcerik()));
+				List<Mesaj> vtMesajlar = new ArrayList<Mesaj>();
+
+				vtMesajlar.addAll(veritabaniYonetici.getIlkOkunmamisMesajdanItibarenTumMesajlar(yerelUuid, karsiUuid));
+
+				if (vtMesajlar.size() == 0) {
+
+					vtMesajlar.addAll(veritabaniYonetici.getSonMesajlar(yerelUuid, karsiUuid, SAYFA_MIN_MESAJ_SAYISI));
+
+				} else if (vtMesajlar.size() < SAYFA_MIN_MESAJ_SAYISI) {
+
+					vtMesajlar.addAll(veritabaniYonetici.getIddenOncekiSonMesajlar(yerelUuid, karsiUuid,
+							vtMesajlar.get(0).getId(), SAYFA_MIN_MESAJ_SAYISI - vtMesajlar.size()));
+
+				}
+
+				vtMesajlar.forEach(mesaj -> paneleMesajEkle(mesaj));
 
 			});
 
@@ -169,19 +181,29 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 		}
 
-		veritabaniYonetici.tumMesajlariAl().forEach(mesaj -> {
+	}
 
-			if (model.getKimlik().getUuid().equals(mesaj.getGonderenUuid())) {
+	private void paneleMesajEkle(Mesaj mesaj) {
 
-				Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MesajYonu.GIDEN, mesaj.getAliciUuid()));
+		String yerelUuid = model.getKimlik().getUuid();
 
-			} else if (model.getKimlik().getUuid().equals(mesaj.getAliciUuid())) {
+		if (yerelUuid.equals(mesaj.getGonderenUuid())) {
 
-				Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MesajYonu.GELEN, mesaj.getGonderenUuid()));
+			final String karsiUuid = mesaj.getAliciUuid();
 
-			}
+			model.mesajIdEkle(karsiUuid, mesaj.getId());
 
-		});
+			Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MesajYonu.GIDEN, karsiUuid));
+
+		} else if (yerelUuid.equals(mesaj.getAliciUuid())) {
+
+			final String karsiUuid = mesaj.getGonderenUuid();
+
+			model.mesajIdEkle(karsiUuid, mesaj.getId());
+
+			Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MesajYonu.GELEN, karsiUuid));
+
+		}
 
 	}
 
@@ -376,7 +398,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 				final Mesaj yeniMesaj = gelenMesajOlustur(mesaj);
 
-				Platform.runLater(() -> mcPanel.mesajEkle(yeniMesaj, MesajYonu.GELEN, yeniMesaj.getGonderenUuid()));
+				paneleMesajEkle(yeniMesaj);
 
 				if (yeniMesaj.getMesajDurumu().equals(MesajDurumu.ULASTI))
 					mcIstemci.alindiGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
@@ -560,27 +582,6 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 	}
 
 	@Override
-	public void mesajGonderTiklandi(final String mesaj, final String aliciUuid) {
-
-		islemKuyrugu.execute(() -> {
-
-			try {
-
-				final Mesaj yeniMesaj = mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
-
-				Platform.runLater(() -> mcPanel.mesajEkle(yeniMesaj, MesajYonu.GIDEN, aliciUuid));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
 	public void aciklamaGuncellendi(String aciklama) {
 
 		islemKuyrugu.execute(() -> {
@@ -702,6 +703,39 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 		islemKuyrugu.execute(() -> {
 
 			model.mesajPaneliKapandi(uuid);
+
+		});
+
+	}
+
+	@Override
+	public void mesajGonderTiklandi(final String mesaj, final String aliciUuid) {
+
+		islemKuyrugu.execute(() -> {
+
+			try {
+
+				final Mesaj yeniMesaj = mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
+
+				paneleMesajEkle(yeniMesaj);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void sayfaBasaKaydirildi(String uuid) {
+
+		islemKuyrugu.execute(() -> {
+
+			veritabaniYonetici.getIddenOncekiSonMesajlar(model.getKimlik().getUuid(), uuid, model.getMinMesajId(uuid),
+					SAYFA_MIN_MESAJ_SAYISI).forEach(mesaj -> paneleMesajEkle(mesaj));
 
 		});
 

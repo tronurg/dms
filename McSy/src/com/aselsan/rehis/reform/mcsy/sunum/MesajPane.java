@@ -221,24 +221,39 @@ class MesajPane extends BorderPane {
 
 	}
 
-	void setOnGeriAction(Runnable runnable) {
+	void setOnGeriAction(final Runnable runnable) {
 
 		geriBtn.setOnAction(e -> runnable.run());
 
 	}
 
-	void setOnMesajGonderAction(Consumer<String> consumer) {
+	void setOnSayfaBasaKaydirildi(final Runnable runnable) {
+
+		// TODO: Iyilestirilecek
+
+		scrollPane.setOnScroll(e -> {
+
+			if (e.getDeltaY() < 0)
+				return;
+
+			runnable.run();
+
+		});
+
+	}
+
+	void setOnMesajGonderAction(final Consumer<String> consumer) {
 
 		gonderBtn.setOnAction(e -> {
 
-			final String mesaj = mesajArea.getText().trim();
+			final String mesajTxt = mesajArea.getText().trim();
 
 			mesajArea.setText("");
 
-			if (mesaj.isEmpty())
+			if (mesajTxt.isEmpty())
 				return;
 
-			consumer.accept(mesaj);
+			consumer.accept(mesajTxt);
 
 		});
 
