@@ -112,6 +112,7 @@ class MesajPane extends BorderPane {
 		ustPane.setAlignment(Pos.CENTER_LEFT);
 
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
 
 		mesajArea.setPrefRowCount(1);
@@ -357,13 +358,6 @@ class MesajPane extends BorderPane {
 
 		}
 
-		private void initBilgiGrp() {
-
-			iletildiCircle.setLayoutX(2 * RADIUS);
-			bilgiGrp.getChildren().addAll(beklemeCircle, iletildiCircle);
-
-		}
-
 		private void initGelenMesajPane() {
 
 			initMesajPane();
@@ -395,6 +389,13 @@ class MesajPane extends BorderPane {
 
 			mesajPane.setPadding(new Insets(5.0));
 			mesajPane.setHgap(5.0);
+
+		}
+
+		private void initBilgiGrp() {
+
+			iletildiCircle.setLayoutX(2 * RADIUS);
+			bilgiGrp.getChildren().addAll(beklemeCircle, iletildiCircle);
 
 		}
 
