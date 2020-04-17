@@ -667,7 +667,9 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 			try {
 
-				for (final Mesaj gelenMesaj : veritabaniYonetici.getKisidenGelenBekleyenMesajlar(uuid)) {
+				List<Mesaj> kisidenGelenBekleyenMesajlar = veritabaniYonetici.getKisidenGelenBekleyenMesajlar(uuid);
+
+				for (final Mesaj gelenMesaj : kisidenGelenBekleyenMesajlar) {
 
 					try {
 
@@ -686,6 +688,9 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 					}
 
 				}
+
+				Platform.runLater(() -> mcPanel.ekraniMesajaKaydir(uuid,
+						kisidenGelenBekleyenMesajlar.size() > 0 ? kisidenGelenBekleyenMesajlar.get(0).getId() : -1L));
 
 			} catch (HibernateException e) {
 
@@ -730,12 +735,24 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 	}
 
 	@Override
-	public void sayfaBasaKaydirildi(String uuid) {
+	public void sayfaBasaKaydirildi(final String uuid) {
 
 		islemKuyrugu.execute(() -> {
 
-			veritabaniYonetici.getIddenOncekiSonMesajlar(model.getKimlik().getUuid(), uuid, model.getMinMesajId(uuid),
-					SAYFA_MIN_MESAJ_SAYISI).forEach(mesaj -> paneleMesajEkle(mesaj));
+			Long oncekiMinMesajId = model.getMinMesajId(uuid);
+
+			if (oncekiMinMesajId < 0)
+				return;
+
+			List<Mesaj> iddenOncekiSonMesajlar = veritabaniYonetici.getIddenOncekiSonMesajlar(
+					model.getKimlik().getUuid(), uuid, oncekiMinMesajId, SAYFA_MIN_MESAJ_SAYISI);
+
+			if (iddenOncekiSonMesajlar.size() == 0)
+				return;
+
+			iddenOncekiSonMesajlar.forEach(mesaj -> paneleMesajEkle(mesaj));
+
+			Platform.runLater(() -> mcPanel.ekraniMesajaKaydir(uuid, oncekiMinMesajId));
 
 		});
 

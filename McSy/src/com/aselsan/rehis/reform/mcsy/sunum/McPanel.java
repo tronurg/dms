@@ -87,6 +87,12 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	}
 
+	public void ekraniMesajaKaydir(String uuid, Long mesajId) {
+
+		kisilerPane.ekraniMesajaKaydir(uuid, mesajId);
+
+	}
+
 	private void dinleyicilereAciklamaGuncellendi(final String aciklama) {
 
 		dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
@@ -139,8 +145,6 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	@Override
 	public void mesajPaneGoster(final MesajPane mesajPane, final String uuid) {
-
-		mesajPane.sayfayiSonaKaydir();
 
 		getChildren().add(mesajPane);
 

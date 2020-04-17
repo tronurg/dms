@@ -216,9 +216,19 @@ class MesajPane extends BorderPane {
 
 	}
 
-	void sayfayiSonaKaydir() {
+	void ekraniMesajaKaydir(Long mesajId) {
 
-		scrollPane.setVvalue(scrollPane.getVmax());
+		System.out.println(mesajId);
+
+		if (mesajId < 0) {
+
+			sayfayiSonaKaydir();
+
+			return;
+
+		}
+
+		// TODO
 
 	}
 
@@ -229,8 +239,6 @@ class MesajPane extends BorderPane {
 	}
 
 	void setOnSayfaBasaKaydirildi(final Runnable runnable) {
-
-		// TODO: Iyilestirilecek
 
 		scrollPane.setOnScroll(e -> {
 
@@ -257,6 +265,12 @@ class MesajPane extends BorderPane {
 			consumer.accept(mesajTxt);
 
 		});
+
+	}
+
+	private void sayfayiSonaKaydir() {
+
+		scrollPane.setVvalue(scrollPane.getVmax());
 
 	}
 

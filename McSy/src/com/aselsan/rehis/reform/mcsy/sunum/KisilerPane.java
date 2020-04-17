@@ -83,6 +83,14 @@ class KisilerPane extends TitledPane {
 
 	}
 
+	void ekraniMesajaKaydir(String uuid, Long mesajId) {
+
+		KisiPane kisiPane = getKisiPane(uuid);
+
+		kisiPane.ekraniMesajaKaydir(mesajId);
+
+	}
+
 	private KisiPane getKisiPane(final String uuid) {
 
 		if (!uuidKisiPane.containsKey(uuid)) {

@@ -175,6 +175,12 @@ class KisiPane extends GridPane {
 
 	}
 
+	void ekraniMesajaKaydir(Long mesajId) {
+
+		mesajPane.ekraniMesajaKaydir(mesajId);
+
+	}
+
 	private void initProfilResmi() {
 
 		profilResmi.getChildren().addAll(durumCemberi, profilDairesi, profilLabel);
