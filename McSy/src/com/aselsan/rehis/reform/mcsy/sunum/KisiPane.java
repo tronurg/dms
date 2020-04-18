@@ -181,6 +181,18 @@ class KisiPane extends GridPane {
 
 	}
 
+	void konumuKaydet(Long mesajId) {
+
+		mesajPane.konumuKaydet(mesajId);
+
+	}
+
+	void kaydedilenKonumaGit() {
+
+		mesajPane.kaydedilenKonumaGit();
+
+	}
+
 	private void initProfilResmi() {
 
 		profilResmi.getChildren().addAll(durumCemberi, profilDairesi, profilLabel);

@@ -4,12 +4,14 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
@@ -74,6 +76,9 @@ class MesajPane extends BorderPane {
 	private final Map<Long, MesajBalonu> mesajBalonlari = Collections.synchronizedMap(new HashMap<Long, MesajBalonu>());
 
 	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
+
+	private final AtomicReference<SimpleEntry<Node, Double>> kaydedilenNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
+			null);
 
 	private final Comparator<Node> gunKutusuSiralayici = new Comparator<Node>() {
 
@@ -194,6 +199,9 @@ class MesajPane extends BorderPane {
 
 		gunKutulari.get(mesajGunu).mesajBalonuEkle(mesajBalonu);
 
+		if (mesajYonu.equals(MesajYonu.GIDEN))
+			sayfayiSonaKaydir();
+
 	}
 
 	void mesajGuncelle(Mesaj mesaj) {
@@ -235,6 +243,41 @@ class MesajPane extends BorderPane {
 
 	}
 
+	void konumuKaydet(Long mesajId) {
+
+		MesajBalonu mesajBalonu = mesajBalonlari.get(mesajId);
+
+		if (mesajBalonu == null)
+			return;
+
+		Double yNode = scrollPane.sceneToLocal(mesajBalonu.localToScene(0.0, 0.0)).getY();
+
+		kaydedilenNodeY.set(new SimpleEntry<Node, Double>(mesajBalonu, yNode));
+
+	}
+
+	void kaydedilenKonumaGit() {
+
+		SimpleEntry<Node, Double> nodeY = kaydedilenNodeY.getAndSet(null);
+
+		if (nodeY == null)
+			return;
+
+		scrollPane.applyCss();
+		scrollPane.layout();
+
+		Double kaydirilacakY = ortaPane.sceneToLocal(nodeY.getKey().localToScene(0.0, 0.0)).getY()
+				- ortaPane.sceneToLocal(scrollPane.localToScene(0.0, nodeY.getValue())).getY();
+
+		Double ortaPaneYukseklik = ortaPane.getHeight();
+		Double scrollPaneViewportYukseklik = scrollPane.getViewportBounds().getHeight();
+
+		Double yOran = Math.min(1.0, kaydirilacakY / (ortaPaneYukseklik - scrollPaneViewportYukseklik));
+
+		scrollPane.setVvalue(scrollPane.getVvalue() + (scrollPane.getVmax() * yOran));
+
+	}
+
 	void setOnGeriAction(final Runnable runnable) {
 
 		geriBtn.setOnAction(e -> runnable.run());
@@ -245,7 +288,7 @@ class MesajPane extends BorderPane {
 
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
-			if (e2.doubleValue() != 0.0)
+			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
 				return;
 
 			runnable.run();

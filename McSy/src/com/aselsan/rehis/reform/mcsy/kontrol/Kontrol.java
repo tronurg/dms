@@ -750,9 +750,11 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 			if (iddenOncekiSonMesajlar.size() == 0)
 				return;
 
+			Platform.runLater(() -> mcPanel.konumuKaydet(uuid, oncekiMinMesajId));
+
 			iddenOncekiSonMesajlar.forEach(mesaj -> paneleMesajEkle(mesaj));
 
-			Platform.runLater(() -> mcPanel.ekraniMesajaKaydir(uuid, oncekiMinMesajId));
+			Platform.runLater(() -> mcPanel.kaydedilenKonumaGit(uuid));
 
 		});
 

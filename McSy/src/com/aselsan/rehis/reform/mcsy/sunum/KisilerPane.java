@@ -91,6 +91,22 @@ class KisilerPane extends TitledPane {
 
 	}
 
+	void konumuKaydet(String uuid, Long mesajId) {
+
+		KisiPane kisiPane = getKisiPane(uuid);
+
+		kisiPane.konumuKaydet(mesajId);
+
+	}
+
+	void kaydedilenKonumaGit(String uuid) {
+
+		KisiPane kisiPane = getKisiPane(uuid);
+
+		kisiPane.kaydedilenKonumaGit();
+
+	}
+
 	private KisiPane getKisiPane(final String uuid) {
 
 		if (!uuidKisiPane.containsKey(uuid)) {

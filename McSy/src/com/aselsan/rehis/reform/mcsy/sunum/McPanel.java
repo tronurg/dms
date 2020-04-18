@@ -93,6 +93,18 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 	}
 
+	public void konumuKaydet(String uuid, Long mesajId) {
+
+		kisilerPane.konumuKaydet(uuid, mesajId);
+
+	}
+
+	public void kaydedilenKonumaGit(String uuid) {
+
+		kisilerPane.kaydedilenKonumaGit(uuid);
+
+	}
+
 	private void dinleyicilereAciklamaGuncellendi(final String aciklama) {
 
 		dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
