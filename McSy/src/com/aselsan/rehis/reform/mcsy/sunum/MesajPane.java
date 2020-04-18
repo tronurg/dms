@@ -16,8 +16,6 @@ import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -53,9 +51,11 @@ import javafx.scene.text.FontWeight;
 
 class MesajPane extends BorderPane {
 
-	private final HBox ustPane = new HBox(5.0);
-	private final VBox ortaPane = new VBox(10.0);
-	private final HBox altPane = new HBox(5.0);
+	private static final double GAP = 5.0;
+
+	private final HBox ustPane = new HBox(GAP);
+	private final VBox ortaPane = new VBox(2 * GAP);
+	private final HBox altPane = new HBox(GAP);
 
 	private final ScrollPane scrollPane = new ScrollPane(ortaPane) {
 		@Override
@@ -105,9 +105,9 @@ class MesajPane extends BorderPane {
 		ustPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 		altPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		ustPane.setPadding(new Insets(5.0));
-		ortaPane.setPadding(new Insets(5.0));
-		altPane.setPadding(new Insets(5.0));
+		ustPane.setPadding(new Insets(GAP));
+		ortaPane.setPadding(new Insets(GAP));
+		altPane.setPadding(new Insets(GAP));
 
 		ustPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -134,7 +134,7 @@ class MesajPane extends BorderPane {
 
 		});
 
-		HBox.setMargin(durumCircle, new Insets(5.0, 5.0, 5.0, 15.0));
+		HBox.setMargin(durumCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
 		isimLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 		ustPane.getChildren().addAll(geriBtn, durumCircle, isimLabel);
@@ -144,26 +144,16 @@ class MesajPane extends BorderPane {
 		setCenter(scrollPane);
 		setBottom(altPane);
 
-		ortaPane.heightProperty().addListener(new ChangeListener<Number>() {
+		ortaPane.heightProperty().addListener((e0, e1, e2) -> {
 
-			@Override
-			public void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
-
-				if (otoKaydirma.get())
-					sayfayiSonaKaydir();
-
-			}
+			if (otoKaydirma.get())
+				sayfayiSonaKaydir();
 
 		});
 
-		scrollPane.vvalueProperty().addListener(new ChangeListener<Number>() {
+		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
-			@Override
-			public void changed(ObservableValue<? extends Number> arg0, Number arg1, Number arg2) {
-
-				otoKaydirma.set((double) arg1 == scrollPane.getVmax());
-
-			}
+			otoKaydirma.set(e1.doubleValue() == scrollPane.getVmax());
 
 		});
 
@@ -218,9 +208,9 @@ class MesajPane extends BorderPane {
 
 	void ekraniMesajaKaydir(Long mesajId) {
 
-		System.out.println(mesajId);
+		MesajBalonu mesajBalonu = mesajBalonlari.get(mesajId);
 
-		if (mesajId < 0) {
+		if (mesajBalonu == null) {
 
 			sayfayiSonaKaydir();
 
@@ -228,7 +218,20 @@ class MesajPane extends BorderPane {
 
 		}
 
-		// TODO
+		scrollPane.applyCss();
+		scrollPane.layout();
+
+		Double ortaPaneYukseklik = ortaPane.getHeight();
+		Double scrollPaneViewportYukseklik = scrollPane.getViewportBounds().getHeight();
+
+		if (ortaPaneYukseklik < scrollPaneViewportYukseklik)
+			return;
+
+		Double kaydirilacakY = ortaPane.sceneToLocal(mesajBalonu.localToScene(0.0, 0.0)).getY() - GAP;
+
+		Double yOran = Math.min(1.0, kaydirilacakY / (ortaPaneYukseklik - scrollPaneViewportYukseklik));
+
+		scrollPane.setVvalue(scrollPane.getVmax() * yOran);
 
 	}
 
@@ -240,9 +243,9 @@ class MesajPane extends BorderPane {
 
 	void setOnSayfaBasaKaydirildi(final Runnable runnable) {
 
-		scrollPane.setOnScroll(e -> {
+		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
-			if (e.getDeltaY() < 0)
+			if (e2.doubleValue() != 0.0)
 				return;
 
 			runnable.run();
@@ -399,10 +402,10 @@ class MesajPane extends BorderPane {
 			GridPane.setHgrow(zamanLbl, Priority.ALWAYS);
 
 			mesajPane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(10.0), BorderWidths.DEFAULT)));
+					new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
 
-			mesajPane.setPadding(new Insets(5.0));
-			mesajPane.setHgap(5.0);
+			mesajPane.setPadding(new Insets(GAP));
+			mesajPane.setHgap(GAP);
 
 		}
 
@@ -422,7 +425,7 @@ class MesajPane extends BorderPane {
 		private final LocalDate tarih;
 
 		private final Label tarihLabel;
-		private final VBox mesajBox = new VBox(5.0);
+		private final VBox mesajBox = new VBox(GAP);
 
 		private final Comparator<Node> mesajBalonuSiralayici = new Comparator<Node>() {
 
@@ -456,15 +459,15 @@ class MesajPane extends BorderPane {
 		private void init() {
 
 			// init tarihLabel
-			tarihLabel.setPadding(new Insets(0.0, 5.0, 0.0, 5.0));
+			tarihLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
 			tarihLabel.setFont(Font.font(null, FontWeight.BOLD, tarihLabel.getFont().getSize()));
 			tarihLabel.setTextFill(Color.GRAY);
 			tarihLabel.setBackground(
-					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(5.0), Insets.EMPTY)));
+					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY)));
 			tarihLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(5.0), BorderWidths.DEFAULT, Insets.EMPTY)));
+					new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY)));
 			BorderPane.setAlignment(tarihLabel, Pos.CENTER);
-			BorderPane.setMargin(tarihLabel, new Insets(0.0, 0.0, 5.0, 0.0));
+			BorderPane.setMargin(tarihLabel, new Insets(0.0, 0.0, GAP, 0.0));
 
 			setTop(tarihLabel);
 			setCenter(mesajBox);

@@ -44,7 +44,7 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 	private static final Map<String, Kontrol> INSTANCES = Collections.synchronizedMap(new HashMap<String, Kontrol>());
 
-	private static final int SAYFA_MIN_MESAJ_SAYISI = 5;
+	private static final int SAYFA_MIN_MESAJ_SAYISI = 50;
 
 	private final VeritabaniYonetici veritabaniYonetici;
 
