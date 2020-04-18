@@ -226,20 +226,7 @@ class MesajPane extends BorderPane {
 
 		}
 
-		scrollPane.applyCss();
-		scrollPane.layout();
-
-		Double ortaPaneYukseklik = ortaPane.getHeight();
-		Double scrollPaneViewportYukseklik = scrollPane.getViewportBounds().getHeight();
-
-		if (ortaPaneYukseklik < scrollPaneViewportYukseklik)
-			return;
-
-		Double kaydirilacakY = ortaPane.sceneToLocal(mesajBalonu.localToScene(0.0, 0.0)).getY() - GAP;
-
-		Double yOran = Math.min(1.0, kaydirilacakY / (ortaPaneYukseklik - scrollPaneViewportYukseklik));
-
-		scrollPane.setVvalue(scrollPane.getVmax() * yOran);
+		sayfayiKaydir(mesajBalonu, GAP);
 
 	}
 
@@ -263,18 +250,7 @@ class MesajPane extends BorderPane {
 		if (nodeY == null)
 			return;
 
-		scrollPane.applyCss();
-		scrollPane.layout();
-
-		Double kaydirilacakY = ortaPane.sceneToLocal(nodeY.getKey().localToScene(0.0, 0.0)).getY()
-				- ortaPane.sceneToLocal(scrollPane.localToScene(0.0, nodeY.getValue())).getY();
-
-		Double ortaPaneYukseklik = ortaPane.getHeight();
-		Double scrollPaneViewportYukseklik = scrollPane.getViewportBounds().getHeight();
-
-		Double yOran = Math.min(1.0, kaydirilacakY / (ortaPaneYukseklik - scrollPaneViewportYukseklik));
-
-		scrollPane.setVvalue(scrollPane.getVvalue() + (scrollPane.getVmax() * yOran));
+		sayfayiKaydir(nodeY.getKey(), nodeY.getValue());
 
 	}
 
@@ -311,6 +287,25 @@ class MesajPane extends BorderPane {
 			consumer.accept(mesajTxt);
 
 		});
+
+	}
+
+	private void sayfayiKaydir(Node kaydirilacakNode, double bias) {
+
+		scrollPane.applyCss();
+		scrollPane.layout();
+
+		Double ortaPaneYukseklik = ortaPane.getHeight();
+		Double scrollPaneViewportYukseklik = scrollPane.getViewportBounds().getHeight();
+
+		if (ortaPaneYukseklik < scrollPaneViewportYukseklik)
+			return;
+
+		Double kaydirilacakY = ortaPane.sceneToLocal(kaydirilacakNode.localToScene(0.0, 0.0)).getY() - bias;
+
+		Double yOran = Math.min(1.0, kaydirilacakY / (ortaPaneYukseklik - scrollPaneViewportYukseklik));
+
+		scrollPane.setVvalue(scrollPane.getVmax() * yOran);
 
 	}
 
