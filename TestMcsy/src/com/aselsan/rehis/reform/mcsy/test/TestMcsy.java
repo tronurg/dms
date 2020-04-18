@@ -23,7 +23,7 @@ public class TestMcsy {
 	protected void activate() {
 
 		try {
-			JComponent mcPanel = mcServisi.login("elma").getMcPanel();
+			JComponent mcPanel = mcServisi.login("elma", "elma").getMcPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -46,7 +46,7 @@ public class TestMcsy {
 		}
 
 		try {
-			JComponent mcPanel = mcServisi.login("armut").getMcPanel();
+			JComponent mcPanel = mcServisi.login("armut", "armut").getMcPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -68,7 +68,7 @@ public class TestMcsy {
 		}
 
 		try {
-			JComponent mcPanel = mcServisi.login("kiraz").getMcPanel();
+			JComponent mcPanel = mcServisi.login("kiraz", "kiraz").getMcPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

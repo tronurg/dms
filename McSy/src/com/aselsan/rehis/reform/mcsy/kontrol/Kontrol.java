@@ -82,9 +82,9 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 	});
 
-	private Kontrol(String kullaniciAdi) throws VeritabaniHatasi {
+	private Kontrol(String kullaniciAdi, String kullaniciSifresi) throws VeritabaniHatasi {
 
-		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi);
+		veritabaniYonetici = new VeritabaniYonetici(kullaniciAdi, kullaniciSifresi);
 
 		Kimlik kimlik = veritabaniYonetici.getKimlik();
 
@@ -105,9 +105,9 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 	}
 
-	public static Kontrol getInstance(String kullaniciAdi) throws VeritabaniHatasi {
+	public static Kontrol getInstance(String kullaniciAdi, String kullaniciSifresi) throws VeritabaniHatasi {
 
-		INSTANCES.putIfAbsent(kullaniciAdi, new Kontrol(kullaniciAdi));
+		INSTANCES.putIfAbsent(kullaniciAdi, new Kontrol(kullaniciAdi, kullaniciSifresi));
 
 		return INSTANCES.get(kullaniciAdi);
 

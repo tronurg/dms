@@ -17,6 +17,7 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
 
 import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
+import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
@@ -29,22 +30,25 @@ public class VeritabaniYonetici {
 
 	private final SessionFactory factory;
 
-	public VeritabaniYonetici(String veritabaniAdi) throws VeritabaniHatasi {
+	public VeritabaniYonetici(String veritabaniAdi, String veritabaniSifresi) throws VeritabaniHatasi {
 
 		isim = veritabaniAdi;
 
 		try {
 
 			factory = new Configuration().configure(new File("./plugins/hibernate.cfg/mcsy.cfg.xml"))
-					.setProperty("hibernate.connection.url", "jdbc:h2:./h2/" + veritabaniAdi)
-					.addAnnotatedClass(Grup.class).addAnnotatedClass(Kimlik.class).addAnnotatedClass(Kisi.class)
-					.addAnnotatedClass(Mesaj.class).buildSessionFactory();
+					.setProperty("hibernate.connection.url",
+							"jdbc:h2:" + OrtakSabitler.VERITABANI_YOLU + File.separator + veritabaniAdi)
+					.setProperty("hibernate.connection.username", veritabaniAdi)
+					.setProperty("hibernate.connection.password", veritabaniSifresi).addAnnotatedClass(Grup.class)
+					.addAnnotatedClass(Kimlik.class).addAnnotatedClass(Kisi.class).addAnnotatedClass(Mesaj.class)
+					.buildSessionFactory();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
 
 		} catch (HibernateException e) {
 
-			throw new VeritabaniHatasi("Veritabanina erisilemiyor. Hesap kullanimda olabilir.");
+			throw new VeritabaniHatasi("Veritabanina erisilemiyor. Sifre hatali veya hesap kullanimda olabilir.");
 
 		}
 

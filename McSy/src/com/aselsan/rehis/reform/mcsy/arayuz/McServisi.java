@@ -4,6 +4,6 @@ import com.aselsan.rehis.reform.mcsy.arayuz.exceptions.VeritabaniHatasi;
 
 public interface McServisi {
 
-	McHandle login(String kullaniciAdi) throws VeritabaniHatasi;
+	McHandle login(String kullaniciAdi, String kullaniciSifresi) throws VeritabaniHatasi;
 
 }

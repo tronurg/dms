@@ -66,6 +66,25 @@ public class OrtakMetotlar {
 
 	}
 
+	static String getVeritabaniYolu() {
+
+		String veritabaniYolu = "./h2";
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/MCSY/VERITABANI_YOLU")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			veritabaniYolu = node.getTextContent();
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return veritabaniYolu;
+
+	}
+
 	static int getBeaconAralikMs() {
 
 		int beaconAralikMs = 2000;

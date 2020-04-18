@@ -11,9 +11,9 @@ import com.aselsan.rehis.reform.mcsy.kontrol.Kontrol;
 public class Mcsy implements McServisi {
 
 	@Override
-	public McHandle login(String kullaniciAdi) throws VeritabaniHatasi {
+	public McHandle login(String kullaniciAdi, String kullaniciSifresi) throws VeritabaniHatasi {
 
-		return Kontrol.getInstance(kullaniciAdi);
+		return Kontrol.getInstance(kullaniciAdi, kullaniciSifresi);
 
 	}
 

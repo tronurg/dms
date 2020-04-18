@@ -4,6 +4,7 @@ public class OrtakSabitler {
 
 	public static final String SUNUCU_IP = OrtakMetotlar.getSunucuIp();
 	public static final int SUNUCU_PORT = OrtakMetotlar.getSunucuPort();
+	public static final String VERITABANI_YOLU = OrtakMetotlar.getVeritabaniYolu();
 	public static final int BEACON_ARALIK_MS = OrtakMetotlar.getBeaconAralikMs();
 
 	public static final Integer OZEL_MESAJ_KODU_METIN = 0;
