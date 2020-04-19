@@ -9,8 +9,10 @@ import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -233,6 +235,34 @@ public class TcpYonetici implements TcpSunucuDinleyici {
 				return;
 
 			sunucuyaMesajGonder(mcSunucu, mesaj);
+
+		});
+
+	}
+
+	public void kullanicilaraMesajGonder(List<String> uuidler, String mesaj) {
+
+		islemKuyrugu.execute(() -> {
+
+			final Set<McSunucu> mcSunucular = new HashSet<McSunucu>();
+
+			uuidler.forEach(uuid -> {
+
+				Kullanici kullanici = kullanicilar.get(uuid);
+
+				if (kullanici == null)
+					return;
+
+				McSunucu mcSunucu = kullanici.mcSunucu;
+
+				if (mcSunucu == null)
+					return;
+
+				mcSunucular.add(mcSunucu);
+
+			});
+
+			mcSunucular.forEach(mcSunucu -> sunucuyaMesajGonder(mcSunucu, mesaj));
 
 		});
 

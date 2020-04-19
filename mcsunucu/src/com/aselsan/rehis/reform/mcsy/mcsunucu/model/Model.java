@@ -58,7 +58,7 @@ public class Model {
 					dinleyici.tumUzakKullanicilaraGonder(mesajNesnesiStr);
 
 					if (yeniEklendi)
-						kullaniciyaTumBeaconlariGonder(gonderenUuid);
+						yerelKullaniciyaTumBeaconlariGonder(gonderenUuid);
 
 				}
 
@@ -69,7 +69,7 @@ public class Model {
 
 			case REQ_BCON:
 
-				kullaniciyaTumBeaconlariGonder(gonderenUuid);
+				yerelKullaniciyaTumBeaconlariGonder(gonderenUuid);
 
 				break;
 
@@ -81,10 +81,20 @@ public class Model {
 
 				String proxyUuid = mesajNesnesi.proxyUuid;
 
-				if (yerelKullaniciBeacon.containsKey(proxyUuid))
-					dinleyici.yerelKullaniciyaGonder(proxyUuid, mesajNesnesiStr);
-				else if (uzakKullaniciBeacon.containsKey(proxyUuid))
+				if (yerelKullaniciBeacon.containsKey(proxyUuid)) {
+
+					String aliciUuid = mesajNesnesi.aliciUuid;
+
+					if (yerelKullaniciBeacon.containsKey(aliciUuid))
+						dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+					else if (uzakKullaniciBeacon.containsKey(aliciUuid))
+						dinleyici.uzakKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+
+				} else if (uzakKullaniciBeacon.containsKey(proxyUuid)) {
+
 					dinleyici.uzakKullaniciyaGonder(proxyUuid, mesajNesnesiStr);
+
+				}
 
 				break;
 
@@ -201,7 +211,7 @@ public class Model {
 
 	}
 
-	private void kullaniciyaTumBeaconlariGonder(String aliciUuid) {
+	private void yerelKullaniciyaTumBeaconlariGonder(String aliciUuid) {
 
 		yerelKullaniciBeacon.forEach((uuid, beacon) -> {
 
