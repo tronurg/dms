@@ -1,7 +1,9 @@
 package com.aselsan.rehis.reform.mcsy.mcsunucu.model;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -83,12 +85,23 @@ public class Model {
 
 				if (yerelKullaniciBeacon.containsKey(proxyUuid)) {
 
-					String aliciUuid = mesajNesnesi.aliciUuid;
+					String[] aliciUuidler = mesajNesnesi.aliciUuid.split(";");
 
-					if (yerelKullaniciBeacon.containsKey(aliciUuid))
-						dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
-					else if (uzakKullaniciBeacon.containsKey(aliciUuid))
-						dinleyici.uzakKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+					List<String> uzakAliciUuidler = new ArrayList<String>();
+
+					for (String aliciUuid : aliciUuidler) {
+
+						if (yerelKullaniciBeacon.containsKey(aliciUuid))
+							dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+						else if (uzakKullaniciBeacon.containsKey(aliciUuid))
+							uzakAliciUuidler.add(aliciUuid);
+
+					}
+
+					if (uzakAliciUuidler.size() == 1)
+						dinleyici.uzakKullaniciyaGonder(uzakAliciUuidler.get(0), mesajNesnesiStr);
+					else if (uzakAliciUuidler.size() > 0)
+						dinleyici.uzakKullanicilaraGonder(uzakAliciUuidler, mesajNesnesiStr);
 
 				} else if (uzakKullaniciBeacon.containsKey(proxyUuid)) {
 
@@ -148,12 +161,23 @@ public class Model {
 			case ALINDI:
 			case OKUNDU:
 
-				String aliciUuid = mesajNesnesi.aliciUuid;
+				String[] aliciUuidler = mesajNesnesi.aliciUuid.split(";");
 
-				if (yerelKullaniciBeacon.containsKey(aliciUuid))
-					dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
-				else if (uzakKullaniciBeacon.containsKey(aliciUuid))
-					dinleyici.uzakKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+				List<String> uzakAliciUuidler = new ArrayList<String>();
+
+				for (String aliciUuid : aliciUuidler) {
+
+					if (yerelKullaniciBeacon.containsKey(aliciUuid))
+						dinleyici.yerelKullaniciyaGonder(aliciUuid, mesajNesnesiStr);
+					else if (uzakKullaniciBeacon.containsKey(aliciUuid))
+						uzakAliciUuidler.add(aliciUuid);
+
+				}
+
+				if (uzakAliciUuidler.size() == 1)
+					dinleyici.uzakKullaniciyaGonder(uzakAliciUuidler.get(0), mesajNesnesiStr);
+				else if (uzakAliciUuidler.size() > 0)
+					dinleyici.uzakKullanicilaraGonder(uzakAliciUuidler, mesajNesnesiStr);
 
 				break;
 

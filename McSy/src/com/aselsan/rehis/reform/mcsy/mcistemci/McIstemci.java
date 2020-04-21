@@ -92,9 +92,36 @@ public class McIstemci {
 
 	}
 
+	public void mesajGonder(String mesaj, String proxyUuid, String aliciUuid) {
+
+		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, proxyUuid, aliciUuid, IcerikTipi.MESAJ)));
+
+	}
+
+	public void mesajGonder(String mesaj, String proxyUuid, String... aliciUuidler) {
+
+		dealerQueue.offer(gson
+				.toJson(new MesajNesnesi(mesaj, uuid, proxyUuid, String.join(";", aliciUuidler), IcerikTipi.MESAJ)));
+
+	}
+
 	public void mesajDurumuIste(String mesaj, String aliciUuid) {
 
 		dealerQueue.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, aliciUuid, IcerikTipi.MESAJ_DURUMU_VER)));
+
+	}
+
+	public void mesajDurumuIste(String mesaj, String proxyUuid, String aliciUuid) {
+
+		dealerQueue
+				.offer(gson.toJson(new MesajNesnesi(mesaj, uuid, proxyUuid, aliciUuid, IcerikTipi.MESAJ_DURUMU_VER)));
+
+	}
+
+	public void mesajDurumuIste(String mesaj, String proxyUuid, String... aliciUuidler) {
+
+		dealerQueue.offer(gson.toJson(
+				new MesajNesnesi(mesaj, uuid, proxyUuid, String.join(";", aliciUuidler), IcerikTipi.MESAJ_DURUMU_VER)));
 
 	}
 

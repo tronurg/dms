@@ -3,6 +3,7 @@ package com.aselsan.rehis.reform.mcsy.mcsunucu.kontrol;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -270,6 +271,21 @@ public class Kontrol implements TcpYoneticiDinleyici, ModelDinleyici {
 		try {
 
 			getTcpYonetici().kullaniciyaMesajGonder(aliciUuid, mesaj);
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	@Override
+	public void uzakKullanicilaraGonder(List<String> aliciUuidler, String mesaj) {
+
+		try {
+
+			getTcpYonetici().kullanicilaraMesajGonder(aliciUuidler, mesaj);
 
 		} catch (IOException e) {
 
