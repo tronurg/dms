@@ -12,17 +12,17 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.Accordion;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
+public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGruplarPane {
 
 	private final VBox anaPane = new VBox();
 	private final KimlikPane kimlikPane = new KimlikPane();
 	private final KisilerPane kisilerPane = new KisilerPane();
 	private final GruplarPane gruplarPane = new GruplarPane();
-	private final Accordion kisilerGruplarPane = new Accordion();
+	private final VBox kisilerGruplarPane = new VBox();
 
 	private final List<UygulamaDinleyici> dinleyiciler = Collections
 			.synchronizedList(new ArrayList<UygulamaDinleyici>());
@@ -39,11 +39,15 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 
 		VBox.setMargin(kimlikPane, new Insets(10.0));
 
+		VBox.setVgrow(kisilerPane, Priority.ALWAYS);
+		VBox.setVgrow(gruplarPane, Priority.ALWAYS);
+		VBox.setVgrow(kisilerGruplarPane, Priority.ALWAYS);
+
 		kimlikPane.dinleyiciEkle(this);
-
 		kisilerPane.dinleyiciEkle(this);
+		gruplarPane.dinleyiciEkle(this);
 
-		kisilerGruplarPane.getPanes().addAll(kisilerPane, gruplarPane);
+		kisilerGruplarPane.getChildren().addAll(kisilerPane, gruplarPane);
 
 		anaPane.getChildren().addAll(kimlikPane, kisilerGruplarPane);
 
@@ -184,6 +188,36 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane {
 	public void sayfaBasaKaydirildi(String uuid) {
 
 		dinleyicilereSayfaBasaKaydirildi(uuid);
+
+	}
+
+	@Override
+	public void grupOlusturTiklandi() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void grupMesajPaneGoster(MesajPane mesajPane, String uuid) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void grupMesajPaneGizle(MesajPane mesajPane, String uuid) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void grupMesajGonderTiklandi(String mesajTxt, String uuid) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void grupSayfaBasaKaydirildi(String uuid) {
+		// TODO Auto-generated method stub
 
 	}
 

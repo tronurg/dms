@@ -14,6 +14,8 @@ import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
 import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 
 import javafx.beans.binding.Bindings;
+import javafx.geometry.Insets;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.VBox;
 
@@ -38,7 +40,15 @@ class KisilerPane extends TitledPane {
 	private void init() {
 
 		setText(OrtakMetotlar.cevir("KISILER"));
-		setContent(kisiler);
+
+		kisiler.setPadding(new Insets(10.0));
+
+		ScrollPane scrollPane = new ScrollPane(kisiler);
+		scrollPane.setFitToWidth(true);
+
+		scrollPane.setPadding(Insets.EMPTY);
+
+		setContent(scrollPane);
 
 		disableProperty().bind(Bindings.isEmpty(kisiler.getChildren()));
 
