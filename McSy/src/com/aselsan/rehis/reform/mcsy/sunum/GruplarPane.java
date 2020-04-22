@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
@@ -21,6 +22,8 @@ class GruplarPane extends TitledPane {
 	private final Button grupOlusturBtn = SunumFabrika.newEkleBtn();
 	private final VBox gruplar = new VBox();
 
+	private final GrupOlusturPane grupOlusturPane = new GrupOlusturPane();
+
 	private final List<IGruplarPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IGruplarPane>());
 
 	GruplarPane() {
@@ -32,6 +35,9 @@ class GruplarPane extends TitledPane {
 	}
 
 	private void init() {
+
+		grupOlusturPane.setOnGeriAction(
+				() -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturPaneGizle(grupOlusturPane)));
 
 		initGrupOlusturBtn();
 
@@ -57,6 +63,12 @@ class GruplarPane extends TitledPane {
 
 	}
 
+	void grupOlusturPaneKisiGuncelle(Kisi kisi) {
+
+		grupOlusturPane.kisiGuncelle(kisi);
+
+	}
+
 	private void initGrupOlusturBtn() {
 
 		grupOlusturBtn.setMnemonicParsing(false);
@@ -64,7 +76,8 @@ class GruplarPane extends TitledPane {
 		grupOlusturBtn.setTextFill(Color.GRAY);
 		grupOlusturBtn.setPadding(new Insets(10.0));
 
-		grupOlusturBtn.setOnAction(e -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturTiklandi()));
+		grupOlusturBtn
+				.setOnAction(e -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturPaneGoster(grupOlusturPane)));
 
 	}
 
@@ -72,7 +85,9 @@ class GruplarPane extends TitledPane {
 
 interface IGruplarPane {
 
-	void grupOlusturTiklandi();
+	void grupOlusturPaneGoster(GrupOlusturPane grupOlusturPane);
+
+	void grupOlusturPaneGizle(GrupOlusturPane grupOlusturPane);
 
 	void grupMesajPaneGoster(MesajPane mesajPane, String uuid);
 

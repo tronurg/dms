@@ -62,7 +62,7 @@ class KimlikPane extends GridPane {
 		initProfilDairesi();
 		initProfilLabel();
 		initIsimLabel();
-		initAciklamaTextArea();
+		initAciklamaTextField();
 		initKonumLabel();
 
 		setHgap(5.0);
@@ -145,14 +145,14 @@ class KimlikPane extends GridPane {
 
 	}
 
-	private void initAciklamaTextArea() {
+	private void initAciklamaTextField() {
 
 		final AtomicReference<String> sonAciklama = new AtomicReference<String>();
 
 		aciklamaTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
-		aciklamaTextField.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIRINIZ"));
+		aciklamaTextField.setPromptText(OrtakMetotlar.cevir("ACIKLAMA_GIR"));
 		aciklamaTextField.setFocusTraversable(false);
 		aciklamaTextField.setEditable(false);
 

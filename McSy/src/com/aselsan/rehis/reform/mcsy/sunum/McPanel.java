@@ -70,6 +70,7 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 	public void kisiGuncelle(Kisi kisi) {
 
 		kisilerPane.kisiGuncelle(kisi);
+		gruplarPane.grupOlusturPaneKisiGuncelle(kisi);
 
 	}
 
@@ -192,8 +193,16 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 	}
 
 	@Override
-	public void grupOlusturTiklandi() {
-		// TODO Auto-generated method stub
+	public void grupOlusturPaneGoster(GrupOlusturPane grupOlusturPane) {
+
+		getChildren().add(grupOlusturPane);
+
+	}
+
+	@Override
+	public void grupOlusturPaneGizle(GrupOlusturPane grupOlusturPane) {
+
+		getChildren().remove(grupOlusturPane);
 
 	}
 
