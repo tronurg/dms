@@ -3,13 +3,16 @@ package com.aselsan.rehis.reform.mcsy.sunum;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 import com.aselsan.rehis.reform.mcsy.ortak.OrtakMetotlar;
 import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 
+import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -51,6 +54,7 @@ public class GrupOlusturPane extends BorderPane {
 	private final Button grupOlusturBtn = new Button();
 
 	private final List<String> uuidler = Collections.synchronizedList(new ArrayList<String>());
+	private final ObservableSet<String> seciliUuidler = FXCollections.observableSet(new HashSet<String>());
 
 	private final Comparator<Node> kisiSiralayici = new Comparator<Node>() {
 
@@ -95,32 +99,38 @@ public class GrupOlusturPane extends BorderPane {
 			final Button kisiEkleBtn = SunumFabrika.newEkleBtn();
 			initButon(kisiEkleBtn);
 			kisiEkleBtn.setText(isim);
-			kisiEkleBtn.managedProperty().bind(kisiEkleBtn.visibleProperty());
+
+			final Button kisiCikarBtn = SunumFabrika.newCikarBtn();
+			initButon(kisiCikarBtn);
+			kisiCikarBtn.setText(isim);
+
+			kisiEkleBtn.visibleProperty().bind(Bindings.not(kisiCikarBtn.visibleProperty()));
+			kisiCikarBtn.visibleProperty()
+					.bind(Bindings.createBooleanBinding(() -> seciliUuidler.contains(uuid), seciliUuidler));
 
 			kisiEkleBtn.setOnAction(e -> {
 
-				kisiEkleBtn.setVisible(false);
-
-				final Button kisiCikarBtn = SunumFabrika.newCikarBtn();
-				initButon(kisiCikarBtn);
-				kisiCikarBtn.setText(isim);
-
-				kisiCikarBtn.setOnAction(e1 -> {
-
-					eklenenKisilerPane.getChildren().remove(kisiCikarBtn);
-
-					kisiEkleBtn.setVisible(true);
-
-				});
-
+				eklenenKisilerPane.getChildren().remove(kisiCikarBtn);
 				eklenenKisilerPane.getChildren().add(0, kisiCikarBtn);
+
+				seciliUuidler.add(uuid);
 
 			});
 
+			kisiCikarBtn.setOnAction(e -> seciliUuidler.remove(uuid));
+
+			eklenenKisilerPane.getChildren().add(kisiCikarBtn);
 			eklenmemisKisilerPane.getChildren().add(kisiEkleBtn);
 			FXCollections.sort(eklenmemisKisilerPane.getChildren(), kisiSiralayici);
 
 		}
+
+	}
+
+	void reset() {
+
+		grupAdiTextField.setText("");
+		seciliUuidler.clear();
 
 	}
 
@@ -129,6 +139,7 @@ public class GrupOlusturPane extends BorderPane {
 		btn.setMnemonicParsing(false);
 		btn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 		btn.setPadding(new Insets(5.0));
+		btn.managedProperty().bind(btn.visibleProperty());
 
 	}
 
@@ -186,6 +197,9 @@ public class GrupOlusturPane extends BorderPane {
 		TitledPane eklenmemisKisilerTitledPane = new TitledPane(OrtakMetotlar.cevir("TUM_KISILER"),
 				eklenmemisKisilerBorderPane);
 
+		eklenenKisilerTitledPane.setCollapsible(false);
+		eklenmemisKisilerTitledPane.setCollapsible(false);
+
 		scrollableContent.getChildren().addAll(eklenenKisilerTitledPane, eklenmemisKisilerTitledPane);
 
 	}
@@ -219,6 +233,9 @@ public class GrupOlusturPane extends BorderPane {
 		grupOlusturBtn.setText(OrtakMetotlar.cevir("GRUP_OLUSTUR"));
 
 		grupOlusturBtn.setMaxWidth(Double.MAX_VALUE);
+
+		grupOlusturBtn.disableProperty()
+				.bind(Bindings.size(seciliUuidler).isEqualTo(0).or(grupAdiTextField.textProperty().isEmpty()));
 
 	}
 

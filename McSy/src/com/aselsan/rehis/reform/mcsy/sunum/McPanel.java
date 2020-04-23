@@ -195,6 +195,8 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 	@Override
 	public void grupOlusturPaneGoster(GrupOlusturPane grupOlusturPane) {
 
+		grupOlusturPane.reset();
+
 		getChildren().add(grupOlusturPane);
 
 	}

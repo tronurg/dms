@@ -70,12 +70,12 @@ public class SunumFabrika {
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
-		circle.strokeProperty()
-				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.BLUE : Color.GRAY, btn.hoverProperty()));
-		line1.strokeProperty()
-				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.BLUE : Color.GRAY, btn.hoverProperty()));
-		line2.strokeProperty()
-				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.BLUE : Color.GRAY, btn.hoverProperty()));
+		circle.strokeProperty().bind(
+				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
+		line1.strokeProperty().bind(
+				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
+		line2.strokeProperty().bind(
+				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
 
 		return btn;
 

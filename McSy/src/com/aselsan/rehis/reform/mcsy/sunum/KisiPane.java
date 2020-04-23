@@ -1,6 +1,6 @@
 package com.aselsan.rehis.reform.mcsy.sunum;
 
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
@@ -10,7 +10,6 @@ import com.aselsan.rehis.reform.mcsy.veriyapilari.MesajYonu;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
-import javafx.collections.SetChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
@@ -60,7 +59,7 @@ class KisiPane extends GridPane {
 
 	private final MesajPane mesajPane = new MesajPane();
 
-	private final ObservableSet<Long> okunmamisMesajlar = FXCollections.observableSet(new LinkedHashSet<Long>());
+	private final ObservableSet<Long> okunmamisMesajlar = FXCollections.observableSet(new HashSet<Long>());
 
 	KisiPane() {
 
@@ -71,20 +70,6 @@ class KisiPane extends GridPane {
 	}
 
 	private void init() {
-
-		// Okunmamis mesaj sayisi properties
-		okunmamisMesajlar.addListener(new SetChangeListener<Long>() {
-
-			@Override
-			public void onChanged(Change<? extends Long> arg0) {
-
-				int okunmamisMesajSayisi = arg0.getSet().size();
-
-				okunmamisMesajlarLabel.setText(okunmamisMesajSayisi == 0 ? "" : String.valueOf(okunmamisMesajSayisi));
-
-			}
-
-		});
 
 		initProfilResmi();
 		initDurumCemberi();
@@ -249,15 +234,17 @@ class KisiPane extends GridPane {
 
 		okunmamisMesajlarLabel.backgroundProperty()
 				.bind(Bindings.createObjectBinding(
-						() -> okunmamisMesajlarLabel.getText().isEmpty() ? null
-								: new Background(new BackgroundFill(Color.RED,
-										new CornerRadii(okunmamisMesajlarLabel.getHeight() / 2), Insets.EMPTY)),
-						okunmamisMesajlarLabel.textProperty(), okunmamisMesajlarLabel.heightProperty()));
+						() -> new Background(new BackgroundFill(Color.RED,
+								new CornerRadii(okunmamisMesajlarLabel.getHeight() / 2), Insets.EMPTY)),
+						okunmamisMesajlarLabel.heightProperty()));
 
 		okunmamisMesajlarLabel.setAlignment(Pos.CENTER);
 
 		okunmamisMesajlarLabel.setFont(Font.font(null, FontWeight.BOLD, okunmamisMesajlarLabel.getFont().getSize()));
 		okunmamisMesajlarLabel.setTextFill(Color.WHITE);
+
+		okunmamisMesajlarLabel.visibleProperty().bind(Bindings.size(okunmamisMesajlar).greaterThan(0));
+		okunmamisMesajlarLabel.textProperty().bind(Bindings.size(okunmamisMesajlar).asString());
 
 	}
 
