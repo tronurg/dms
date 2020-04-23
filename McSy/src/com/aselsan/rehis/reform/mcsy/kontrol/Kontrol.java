@@ -760,4 +760,14 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 
 	}
 
+	@Override
+	public void grupOlusturTalepEdildi(String grupAdi, List<String> seciliUuidler) {
+
+		// TODO Auto-generated method stub
+
+		System.out.println(grupAdi);
+		seciliUuidler.forEach(e -> System.out.println(e));
+
+	}
+
 }

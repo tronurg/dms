@@ -87,6 +87,12 @@ public class GrupOlusturPane extends BorderPane {
 
 	}
 
+	void setOnGrupOlusturAction(final Runnable runnable) {
+
+		grupOlusturBtn.setOnAction(e -> runnable.run());
+
+	}
+
 	void kisiGuncelle(Kisi kisi) {
 
 		final String uuid = kisi.getUuid();
@@ -124,6 +130,18 @@ public class GrupOlusturPane extends BorderPane {
 			FXCollections.sort(eklenmemisKisilerPane.getChildren(), kisiSiralayici);
 
 		}
+
+	}
+
+	String getGrupAdi() {
+
+		return grupAdiTextField.getText().trim();
+
+	}
+
+	List<String> getSeciliUuidler() {
+
+		return new ArrayList<String>(seciliUuidler);
 
 	}
 

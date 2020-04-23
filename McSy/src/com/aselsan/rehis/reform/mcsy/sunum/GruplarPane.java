@@ -38,6 +38,8 @@ class GruplarPane extends TitledPane {
 
 		grupOlusturPane.setOnGeriAction(
 				() -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturPaneGizle(grupOlusturPane)));
+		grupOlusturPane.setOnGrupOlusturAction(
+				() -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturTiklandi(grupOlusturPane)));
 
 		initGrupOlusturBtn();
 
@@ -88,6 +90,8 @@ interface IGruplarPane {
 	void grupOlusturPaneGoster(GrupOlusturPane grupOlusturPane);
 
 	void grupOlusturPaneGizle(GrupOlusturPane grupOlusturPane);
+
+	void grupOlusturTiklandi(GrupOlusturPane grupOlusturPane);
 
 	void grupMesajPaneGoster(MesajPane mesajPane, String uuid);
 

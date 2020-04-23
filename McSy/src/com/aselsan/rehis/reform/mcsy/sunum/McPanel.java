@@ -146,6 +146,12 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 
 	}
 
+	private void dinleyicilereGrupOlusturTalepEdildi(final String grupAdi, final List<String> seciliUuidler) {
+
+		dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturTalepEdildi(grupAdi, seciliUuidler));
+
+	}
+
 	@Override
 	public void aciklamaGuncellendi(String aciklama) {
 
@@ -195,8 +201,6 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 	@Override
 	public void grupOlusturPaneGoster(GrupOlusturPane grupOlusturPane) {
 
-		grupOlusturPane.reset();
-
 		getChildren().add(grupOlusturPane);
 
 	}
@@ -205,6 +209,15 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 	public void grupOlusturPaneGizle(GrupOlusturPane grupOlusturPane) {
 
 		getChildren().remove(grupOlusturPane);
+
+	}
+
+	@Override
+	public void grupOlusturTiklandi(GrupOlusturPane grupOlusturPane) {
+
+		getChildren().remove(grupOlusturPane);
+		dinleyicilereGrupOlusturTalepEdildi(grupOlusturPane.getGrupAdi(), grupOlusturPane.getSeciliUuidler());
+		grupOlusturPane.reset();
 
 	}
 
