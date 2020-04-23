@@ -11,6 +11,7 @@ import com.aselsan.rehis.reform.mcsy.sunum.fabrika.SunumFabrika;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
@@ -110,9 +111,15 @@ public class GrupOlusturPane extends BorderPane {
 			initButon(kisiCikarBtn);
 			kisiCikarBtn.setText(isim);
 
-			kisiEkleBtn.visibleProperty().bind(Bindings.not(kisiCikarBtn.visibleProperty()));
-			kisiCikarBtn.visibleProperty()
-					.bind(Bindings.createBooleanBinding(() -> seciliUuidler.contains(uuid), seciliUuidler));
+			BooleanBinding kisiEklemeBinding = Bindings.createBooleanBinding(() -> seciliUuidler.contains(uuid),
+					seciliUuidler);
+			BooleanBinding kisiAramaBinding = Bindings.createBooleanBinding(() -> {
+				String kisiAramaStr = kisiAramaTextField.getText().toLowerCase();
+				return kisiAramaStr.isEmpty() || isim.toLowerCase().startsWith(kisiAramaStr);
+			}, kisiAramaTextField.textProperty());
+
+			kisiEkleBtn.visibleProperty().bind(kisiAramaBinding.and(kisiEklemeBinding.not()));
+			kisiCikarBtn.visibleProperty().bind(kisiEklemeBinding);
 
 			kisiEkleBtn.setOnAction(e -> {
 
@@ -147,6 +154,7 @@ public class GrupOlusturPane extends BorderPane {
 
 	void reset() {
 
+		kisiAramaTextField.setText("");
 		grupAdiTextField.setText("");
 		seciliUuidler.clear();
 
