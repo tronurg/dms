@@ -23,6 +23,7 @@ import com.aselsan.rehis.reform.mcsy.ortak.OrtakSabitler;
 import com.aselsan.rehis.reform.mcsy.sunum.McPanel;
 import com.aselsan.rehis.reform.mcsy.sunum.intf.UygulamaDinleyici;
 import com.aselsan.rehis.reform.mcsy.veritabani.VeritabaniYonetici;
+import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Grup;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kimlik;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Kisi;
 import com.aselsan.rehis.reform.mcsy.veritabani.tablolar.Mesaj;
@@ -763,10 +764,40 @@ public class Kontrol implements UygulamaDinleyici, McIstemciDinleyici, McHandle 
 	@Override
 	public void grupOlusturTalepEdildi(String grupAdi, List<String> seciliUuidler) {
 
-		// TODO Auto-generated method stub
+		Grup grup = new Grup(grupAdi, model.getKimlik().getUuid());
 
-		System.out.println(grupAdi);
-		seciliUuidler.forEach(e -> System.out.println(e));
+		seciliUuidler.forEach(uuid -> {
+
+			try {
+
+				Kisi kisi = veritabaniYonetici.getKisi(uuid);
+
+				if (kisi != null)
+					grup.getKisiler().add(kisi);
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+		try {
+
+			Grup yeniGrup = veritabaniYonetici.grupEkleGuncelle(grup);
+
+			model.addGrup(yeniGrup);
+
+			Platform.runLater(() -> mcPanel.grupGuncelle(yeniGrup));
+
+			// TODO
+
+		} catch (HibernateException e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 

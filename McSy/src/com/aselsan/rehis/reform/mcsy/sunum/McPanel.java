@@ -78,6 +78,8 @@ public class McPanel extends StackPane implements IKimlikPane, IKisilerPane, IGr
 
 		// TODO
 
+		grup.getKisiler().forEach(kisi -> System.out.println(kisi.getIsim()));
+
 	}
 
 	public void mesajEkle(Mesaj mesaj, MesajYonu mesajYonu, String uuid) {

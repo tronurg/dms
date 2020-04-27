@@ -44,7 +44,7 @@ public class Grup {
 		super();
 	}
 
-	public Grup(Long id, String uuid, String isim, String aciklama, String uuidKurucu, Set<Kisi> kisiler) {
+	public Grup(String isim, String uuidKurucu) {
 		this.isim = isim;
 		this.uuidKurucu = uuidKurucu;
 	}

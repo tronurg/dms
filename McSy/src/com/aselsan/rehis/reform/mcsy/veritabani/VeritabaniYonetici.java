@@ -401,4 +401,17 @@ public class VeritabaniYonetici {
 
 	}
 
+	public Kisi getKisi(String uuid) {
+
+		Session session = factory.openSession();
+
+		Kisi vtKisi = session.createQuery("from Kisi where uuid like :uuid", Kisi.class).setParameter("uuid", uuid)
+				.uniqueResult();
+
+		session.close();
+
+		return vtKisi;
+
+	}
+
 }
