@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="com.ogya.dms.main.Dms">
+   <service>
+      <provide interface="com.ogya.dms.intf.DmsService"/>
+   </service>
+   <implementation class="com.ogya.dms.main.Dms"/>
+</scr:component>
