@@ -14,7 +14,7 @@ public enum ContactStatus {
 
 	}
 
-	public Color getDurumRengi() {
+	public Color getStatusColor() {
 
 		return statusColor;
 

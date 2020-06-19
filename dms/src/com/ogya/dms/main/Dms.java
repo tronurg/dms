@@ -11,9 +11,9 @@ import com.ogya.dms.intf.exceptions.DbException;
 public class Dms implements DmsService {
 
 	@Override
-	public DmsHandle login(String kullaniciAdi, String kullaniciSifresi) throws DbException {
+	public DmsHandle login(String username, String password) throws DbException {
 
-		return Control.getInstance(kullaniciAdi, kullaniciSifresi);
+		return Control.getInstance(username, password);
 
 	}
 

@@ -13,16 +13,16 @@ import javafx.scene.shape.StrokeLineCap;
 
 public class ViewFactory {
 
-	public static Button newGeriBtn() {
+	public static Button newBackBtn() {
 
 		Button btn = new Button();
 
 		Circle circle = new Circle(16.0);
 		circle.setFill(Color.DODGERBLUE);
-		Polygon ucgen = new Polygon();
-		ucgen.getPoints().addAll(new Double[] { -13.0, 0.0, 7.0, 10.5, 7.0, -10.5 });
-		ucgen.setFill(Color.ANTIQUEWHITE);
-		Group group = new Group(circle, ucgen);
+		Polygon triangle = new Polygon();
+		triangle.getPoints().addAll(new Double[] { -13.0, 0.0, 7.0, 10.5, 7.0, -10.5 });
+		triangle.setFill(Color.ANTIQUEWHITE);
+		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
@@ -32,16 +32,16 @@ public class ViewFactory {
 
 	}
 
-	public static Button newGonderBtn() {
+	public static Button newSendBtn() {
 
 		Button btn = new Button();
 
 		Circle circle = new Circle(16.0);
 		circle.setFill(Color.GREEN);
-		Polygon ucgen = new Polygon();
-		ucgen.getPoints().addAll(new Double[] { -7.0, -10.5, 13.0, 0.0, -7.0, 10.5 });
-		ucgen.setFill(Color.ANTIQUEWHITE);
-		Group group = new Group(circle, ucgen);
+		Polygon triangle = new Polygon();
+		triangle.getPoints().addAll(new Double[] { -7.0, -10.5, 13.0, 0.0, -7.0, 10.5 });
+		triangle.setFill(Color.ANTIQUEWHITE);
+		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
@@ -51,7 +51,7 @@ public class ViewFactory {
 
 	}
 
-	public static Button newEkleBtn() {
+	public static Button newAddBtn() {
 
 		Button btn = new Button();
 
@@ -81,7 +81,7 @@ public class ViewFactory {
 
 	}
 
-	public static Button newCikarBtn() {
+	public static Button newRemoveBtn() {
 
 		Button btn = new Button();
 

@@ -2,20 +2,20 @@ package com.ogya.dms.dmsclient.intf;
 
 public interface DmsClientListener {
 
-	void beaconAlindi(String mesaj);
+	void beaconReceived(String message);
 
-	void mesajAlindi(String mesaj);
+	void messageReceived(String message);
 
-	void kullaniciKoptu(String uuid);
+	void userDisconnected(String uuid);
 
-	void sunucuBaglantiDurumuGuncellendi(boolean baglantiDurumu);
+	void serverConnStatusUpdated(boolean connStatus);
 
-	void mesajDurumuIstendi(String mesaj, String karsiTarafUuid);
+	void messageStatusClaimed(String message, String remoteUuid);
 
-	void karsiTarafMesajiAlmadi(String mesaj, String karsiTarafUuid);
+	void messageNotReceivedRemotely(String message, String remoteUuid);
 
-	void karsiTarafMesajiAldi(String mesaj, String karsiTarafUuid);
+	void messageReceivedRemotely(String message, String remoteUuid);
 
-	void karsiTarafMesajiOkudu(String mesaj, String karsiTarafUuid);
+	void messageReadRemotely(String message, String remoteUuid);
 
 }

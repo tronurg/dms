@@ -16,8 +16,8 @@ import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "group")
-public class Group {
+@Table(name = "dgroup")
+public class Dgroup {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,15 +36,15 @@ public class Group {
 	private String uuidCreator;
 
 	@ManyToMany
-	@JoinTable(name = "group_contacts", joinColumns = { @JoinColumn(name = "group_id") }, inverseJoinColumns = {
+	@JoinTable(name = "dgroup_contacts", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "contact_id") })
 	private Set<Contact> contacts = new HashSet<Contact>();
 
-	public Group() {
+	public Dgroup() {
 		super();
 	}
 
-	public Group(String name, String uuidCreator) {
+	public Dgroup(String name, String uuidCreator) {
 		this.name = name;
 		this.uuidCreator = uuidCreator;
 	}

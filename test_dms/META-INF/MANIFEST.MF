@@ -3,8 +3,8 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Test_dms
 Bundle-SymbolicName: test_dms
 Bundle-Version: 1.0.0.qualifier
-Require-Bundle: dms;bundle-version="1.0.0"
 Automatic-Module-Name: test_dms
 Service-Component: OSGI-INF/com.ogya.dms.test.DmsTest.xml
 Import-Package: org.osgi.service.component.annotations
 Bundle-ActivationPolicy: lazy
+Require-Bundle: dms;bundle-version="1.0.0"

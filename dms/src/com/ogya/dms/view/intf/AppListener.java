@@ -4,18 +4,18 @@ import java.util.List;
 
 public interface AppListener {
 
-	void aciklamaGuncellendi(String aciklama);
+	void commentUpdated(String comment);
 
-	void durumGuncelleTiklandi();
+	void updateStatusClicked();
 
-	void kisiMesajPaneliAcildi(String uuid);
+	void contactMessagePaneOpened(String uuid);
 
-	void kisiMesajPaneliKapandi(String uuid);
+	void contactMessagePaneClosed(String uuid);
 
-	void mesajGonderTiklandi(String mesajTxt, String aliciUuid);
+	void sendMessageClicked(String messageTxt, String receiverUuid);
 
-	void sayfaBasaKaydirildi(String uuid);
+	void paneScrolledToTop(String uuid);
 
-	void grupOlusturTalepEdildi(String grupAdi, List<String> seciliUuidler);
+	void createGroupRequested(String groupName, List<String> selectedUuids);
 
 }

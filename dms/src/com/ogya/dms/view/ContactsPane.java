@@ -21,13 +21,14 @@ import javafx.scene.layout.VBox;
 
 class ContactsPane extends TitledPane {
 
-	private final VBox kisiler = new VBox();
+	private final VBox contacts = new VBox();
 
-	private final Map<String, ContactPane> uuidKisiPane = Collections.synchronizedMap(new HashMap<String, ContactPane>());
+	private final Map<String, ContactPane> uuidContactPane = Collections
+			.synchronizedMap(new HashMap<String, ContactPane>());
 
-	private final List<IKisilerPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IKisilerPane>());
+	private final List<IContactsPane> listeners = Collections.synchronizedList(new ArrayList<IContactsPane>());
 
-	private final AtomicReference<Date> guncelTarih = new AtomicReference<Date>(new Date(0));
+	private final AtomicReference<Date> currentDate = new AtomicReference<Date>(new Date(0));
 
 	ContactsPane() {
 
@@ -39,136 +40,136 @@ class ContactsPane extends TitledPane {
 
 	private void init() {
 
-		setText(CommonMethods.cevir("KISILER"));
+		setText(CommonMethods.translate("CONTACTS"));
 
-		kisiler.setPadding(new Insets(10.0));
+		contacts.setPadding(new Insets(10.0));
 
-		ScrollPane scrollPane = new ScrollPane(kisiler);
+		ScrollPane scrollPane = new ScrollPane(contacts);
 		scrollPane.setFitToWidth(true);
 
 		scrollPane.setPadding(Insets.EMPTY);
 
 		setContent(scrollPane);
 
-		disableProperty().bind(Bindings.isEmpty(kisiler.getChildren()));
+		disableProperty().bind(Bindings.isEmpty(contacts.getChildren()));
 
 	}
 
-	void dinleyiciEkle(IKisilerPane dinleyici) {
+	void addListener(IContactsPane listener) {
 
-		dinleyiciler.add(dinleyici);
-
-	}
-
-	void kisiGuncelle(Contact kisi) {
-
-		getKisiPane(kisi.getUuid()).kisiGuncelle(kisi);
+		listeners.add(listener);
 
 	}
 
-	void mesajEkle(Message mesaj, MessageDirection mesajYonu, String uuid) {
+	void updateContact(Contact contact) {
 
-		ContactPane kisiPane = getKisiPane(uuid);
+		getContactPane(contact.getUuid()).updateContact(contact);
 
-		kisiPane.mesajEkle(mesaj, mesajYonu);
+	}
 
-		Date mesajTarihi = mesaj.getTarih();
+	void addMessage(Message message, MessageDirection messageDirection, String uuid) {
 
-		if (guncelTarih.get().compareTo(mesajTarihi) < 0) {
+		ContactPane contactPane = getContactPane(uuid);
 
-			guncelTarih.set(mesajTarihi);
+		contactPane.addMessage(message, messageDirection);
 
-			kisiler.getChildren().remove(kisiPane);
-			kisiler.getChildren().add(0, kisiPane);
+		Date messageDate = message.getDate();
+
+		if (currentDate.get().compareTo(messageDate) < 0) {
+
+			currentDate.set(messageDate);
+
+			contacts.getChildren().remove(contactPane);
+			contacts.getChildren().add(0, contactPane);
 
 		}
 
 	}
 
-	void mesajGuncelle(Message mesaj, String uuid) {
+	void updateMessage(Message message, String uuid) {
 
-		ContactPane kisiPane = getKisiPane(uuid);
+		ContactPane contactPane = getContactPane(uuid);
 
-		kisiPane.mesajGuncelle(mesaj);
-
-	}
-
-	void ekraniMesajaKaydir(String uuid, Long mesajId) {
-
-		ContactPane kisiPane = getKisiPane(uuid);
-
-		kisiPane.ekraniMesajaKaydir(mesajId);
+		contactPane.updateMessage(message);
 
 	}
 
-	void konumuKaydet(String uuid, Long mesajId) {
+	void scrollPaneToMessage(String uuid, Long mesajId) {
 
-		ContactPane kisiPane = getKisiPane(uuid);
+		ContactPane contactPane = getContactPane(uuid);
 
-		kisiPane.konumuKaydet(mesajId);
-
-	}
-
-	void kaydedilenKonumaGit(String uuid) {
-
-		ContactPane kisiPane = getKisiPane(uuid);
-
-		kisiPane.kaydedilenKonumaGit();
+		contactPane.scrollPaneToMessage(mesajId);
 
 	}
 
-	private ContactPane getKisiPane(final String uuid) {
+	void savePosition(String uuid, Long mesajId) {
 
-		if (!uuidKisiPane.containsKey(uuid)) {
+		ContactPane contactPane = getContactPane(uuid);
 
-			ContactPane kisiPane = new ContactPane();
+		contactPane.savePosition(mesajId);
 
-			kisiPane.setOnMesajPaneGoster(mesajPane -> {
+	}
 
-				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGoster(mesajPane, uuid));
+	void scrollToSavedPosition(String uuid) {
 
-			});
+		ContactPane contactPane = getContactPane(uuid);
 
-			kisiPane.setOnMesajPaneGizle(mesajPane -> {
+		contactPane.scrollToSavedPosition();
 
-				dinleyiciler.forEach(dinleyici -> dinleyici.mesajPaneGizle(mesajPane, uuid));
+	}
 
-			});
+	private ContactPane getContactPane(final String uuid) {
 
-			kisiPane.setOnMesajGonderAction(mesajTxt -> {
+		if (!uuidContactPane.containsKey(uuid)) {
 
-				dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesajTxt, uuid));
+			ContactPane contactPane = new ContactPane();
 
-			});
+			contactPane.setOnShowMessagePane(messagePane -> {
 
-			kisiPane.setOnSayfaBasaKaydirildi(() -> {
-
-				dinleyiciler.forEach(dinleyici -> dinleyici.sayfaBasaKaydirildi(uuid));
+				listeners.forEach(listener -> listener.showMessagePane(messagePane, uuid));
 
 			});
 
-			uuidKisiPane.put(uuid, kisiPane);
+			contactPane.setOnHideMessagePane(messagePane -> {
 
-			kisiler.getChildren().add(0, kisiPane);
+				listeners.forEach(listener -> listener.hideMessagePane(messagePane, uuid));
+
+			});
+
+			contactPane.setOnSendMessageAction(messageTxt -> {
+
+				listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, uuid));
+
+			});
+
+			contactPane.setOnPaneScrolledToTop(() -> {
+
+				listeners.forEach(listener -> listener.paneScrolledToTop(uuid));
+
+			});
+
+			uuidContactPane.put(uuid, contactPane);
+
+			contacts.getChildren().add(0, contactPane);
 
 			setExpanded(true);
 
 		}
 
-		return uuidKisiPane.get(uuid);
+		return uuidContactPane.get(uuid);
 
 	}
 
 }
 
-interface IKisilerPane {
+interface IContactsPane {
 
-	void mesajPaneGoster(MessagePane mesajPane, String uuid);
+	void showMessagePane(MessagePane messagePane, String uuid);
 
-	void mesajPaneGizle(MessagePane mesajPane, String uuid);
+	void hideMessagePane(MessagePane messagePane, String uuid);
 
-	void mesajGonderTiklandi(String mesajTxt, String uuid);
+	void sendMessageClicked(String messageTxt, String uuid);
 
-	void sayfaBasaKaydirildi(String uuid);
+	void paneScrolledToTop(String uuid);
 
 }

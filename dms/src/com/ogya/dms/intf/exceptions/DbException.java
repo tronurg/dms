@@ -7,9 +7,9 @@ public class DbException extends Exception {
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public DbException(String hataMesaji) {
+	public DbException(String errorMessage) {
 
-		super(hataMesaji);
+		super(errorMessage);
 
 	}
 

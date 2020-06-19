@@ -4,8 +4,8 @@ import java.util.HashSet;
 
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Message;
-import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.MessageStatus;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -34,16 +34,16 @@ class ContactPane extends GridPane {
 
 	private static final double SIZE = 24.0;
 
-	private final Group profilResmi = new Group();
-	private final Circle durumCemberi = new Circle(SIZE);
-	private final Circle profilDairesi = new Circle(SIZE * 0.8);
-	private final Label profilLabel = new Label();
+	private final Group profilePicture = new Group();
+	private final Circle statusCircle = new Circle(SIZE);
+	private final Circle profileRound = new Circle(SIZE * 0.8);
+	private final Label profileLabel = new Label();
 
-	private final Label isimLabel = new Label();
-	private final Label aciklamaLabel = new Label();
-	private final Label konumLabel = new Label();
+	private final Label nameLabel = new Label();
+	private final Label commentLabel = new Label();
+	private final Label coordinatesLabel = new Label();
 
-	private final Label okunmamisMesajlarLabel = new Label() {
+	private final Label unreadMessagesLabel = new Label() {
 
 		@Override
 		public Orientation getContentBias() {
@@ -57,9 +57,9 @@ class ContactPane extends GridPane {
 
 	};
 
-	private final MessagePane mesajPane = new MessagePane();
+	private final MessagePane messagePane = new MessagePane();
 
-	private final ObservableSet<Long> okunmamisMesajlar = FXCollections.observableSet(new HashSet<Long>());
+	private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
 
 	ContactPane() {
 
@@ -71,180 +71,182 @@ class ContactPane extends GridPane {
 
 	private void init() {
 
-		initProfilResmi();
-		initDurumCemberi();
-		initProfilDairesi();
-		initProfilLabel();
-		initIsimLabel();
-		initAciklamaLabel();
+		initProfilePicture();
+		initStatusCircle();
+		initProfileRound();
+		initProfileLabel();
+		initNameLabel();
+		initCommentLabel();
 		initKonumLabel();
-		initOkunmamisMesajlarLabel();
+		initUnreadMessagesLabel();
 
 		setHgap(5.0);
-		setValignment(profilResmi, VPos.TOP);
-		setHgrow(aciklamaLabel, Priority.ALWAYS);
+		setValignment(profilePicture, VPos.TOP);
+		setHgrow(commentLabel, Priority.ALWAYS);
 
-		add(profilResmi, 0, 0, 1, 3);
+		add(profilePicture, 0, 0, 1, 3);
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
-		add(isimLabel, 2, 0, 1, 1);
-		add(aciklamaLabel, 2, 1, 1, 1);
-		add(konumLabel, 2, 2, 1, 1);
-		add(okunmamisMesajlarLabel, 3, 0, 1, 2);
+		add(nameLabel, 2, 0, 1, 1);
+		add(commentLabel, 2, 1, 1, 1);
+		add(coordinatesLabel, 2, 2, 1, 1);
+		add(unreadMessagesLabel, 3, 0, 1, 2);
 
 	}
 
-	void kisiGuncelle(Contact kisi) {
+	void updateContact(Contact contact) {
 
-		if (kisi == null)
+		if (contact == null)
 			return;
 
-		durumCemberi.setStroke(kisi.getDurum().getDurumRengi());
-		profilLabel.setText(kisi.getIsim().substring(0, 1).toUpperCase());
+		statusCircle.setStroke(contact.getStatus().getStatusColor());
+		profileLabel.setText(contact.getName().substring(0, 1).toUpperCase());
 
-		isimLabel.setText(kisi.getIsim());
-		aciklamaLabel.setText(kisi.getAciklama());
-		konumLabel.setText(kisi.getEnlem() == null || kisi.getBoylam() == null ? ""
-				: "(" + String.format("%.2f", kisi.getEnlem()) + String.format("%.2f", kisi.getEnlem()) + ")");
+		nameLabel.setText(contact.getName());
+		commentLabel.setText(contact.getComment());
+		coordinatesLabel.setText(contact.getLattitude() == null || contact.getLongitude() == null ? ""
+				: "(" + String.format("%.2f", contact.getLattitude()) + String.format("%.2f", contact.getLongitude())
+						+ ")");
 
-		mesajPane.setDurumColor(kisi.getDurum().getDurumRengi());
-		mesajPane.setIsim(kisi.getIsim());
+		messagePane.setStatusColor(contact.getStatus().getStatusColor());
+		messagePane.setName(contact.getName());
 
 	}
 
-	void setOnMesajPaneGoster(Consumer<MessagePane> consumer) {
+	void setOnShowMessagePane(Consumer<MessagePane> consumer) {
 
 		setOnMouseClicked(e -> {
 
 			if (!(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2 && e.isStillSincePress()))
 				return;
 
-			consumer.accept(mesajPane);
+			consumer.accept(messagePane);
 
 		});
 
 	}
 
-	void setOnMesajPaneGizle(Consumer<MessagePane> consumer) {
+	void setOnHideMessagePane(Consumer<MessagePane> consumer) {
 
-		mesajPane.setOnGeriAction(() -> consumer.accept(mesajPane));
-
-	}
-
-	void setOnMesajGonderAction(Consumer<String> consumer) {
-
-		mesajPane.setOnMesajGonderAction(mesajTxt -> consumer.accept(mesajTxt));
+		messagePane.setOnBackAction(() -> consumer.accept(messagePane));
 
 	}
 
-	void setOnSayfaBasaKaydirildi(Runnable runnable) {
+	void setOnSendMessageAction(Consumer<String> consumer) {
 
-		mesajPane.setOnSayfaBasaKaydirildi(() -> runnable.run());
-
-	}
-
-	void mesajEkle(Message mesaj, MessageDirection mesajYonu) {
-
-		if (mesajYonu.equals(MessageDirection.GELEN) && !mesaj.getMesajDurumu().equals(MessageStatus.OKUNDU))
-			okunmamisMesajlar.add(mesaj.getId());
-
-		mesajPane.mesajEkle(mesaj, mesajYonu);
+		messagePane.setOnSendMessageAction(messageTxt -> consumer.accept(messageTxt));
 
 	}
 
-	void mesajGuncelle(Message mesaj) {
+	void setOnPaneScrolledToTop(Runnable runnable) {
 
-		if (mesaj.getMesajDurumu().equals(MessageStatus.OKUNDU))
-			okunmamisMesajlar.remove(mesaj.getId());
-
-		mesajPane.mesajGuncelle(mesaj);
+		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
 
 	}
 
-	void ekraniMesajaKaydir(Long mesajId) {
+	void addMessage(Message message, MessageDirection messageDirection) {
 
-		mesajPane.ekraniMesajaKaydir(mesajId);
+		if (messageDirection.equals(MessageDirection.INCOMING)
+				&& !message.getMessageStatus().equals(MessageStatus.READ))
+			unreadMessages.add(message.getId());
 
-	}
-
-	void konumuKaydet(Long mesajId) {
-
-		mesajPane.konumuKaydet(mesajId);
+		messagePane.addMessage(message, messageDirection);
 
 	}
 
-	void kaydedilenKonumaGit() {
+	void updateMessage(Message message) {
 
-		mesajPane.kaydedilenKonumaGit();
+		if (message.getMessageStatus().equals(MessageStatus.READ))
+			unreadMessages.remove(message.getId());
 
-	}
-
-	private void initProfilResmi() {
-
-		profilResmi.getChildren().addAll(durumCemberi, profilDairesi, profilLabel);
+		messagePane.updateMessage(message);
 
 	}
 
-	private void initDurumCemberi() {
+	void scrollPaneToMessage(Long messageId) {
 
-		durumCemberi.setStrokeWidth(SIZE * 0.2);
-		durumCemberi.setFill(Color.TRANSPARENT);
-
-	}
-
-	private void initProfilDairesi() {
-
-		profilDairesi.setFill(Color.DARKGRAY);
+		messagePane.scrollPaneToMessage(messageId);
 
 	}
 
-	private void initProfilLabel() {
+	void savePosition(Long messageId) {
 
-		profilLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		profilLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
-
-		profilLabel.translateXProperty().bind(Bindings.createDoubleBinding(() -> -profilLabel.widthProperty().get() / 2,
-				profilLabel.widthProperty()));
-		profilLabel.translateYProperty().bind(Bindings
-				.createDoubleBinding(() -> -profilLabel.heightProperty().get() / 2, profilLabel.heightProperty()));
+		messagePane.savePosition(messageId);
 
 	}
 
-	private void initIsimLabel() {
+	void scrollToSavedPosition() {
 
-		isimLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		isimLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+		messagePane.scrollToSavedPosition();
 
 	}
 
-	private void initAciklamaLabel() {
+	private void initProfilePicture() {
 
-		aciklamaLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel);
+
+	}
+
+	private void initStatusCircle() {
+
+		statusCircle.setStrokeWidth(SIZE * 0.2);
+		statusCircle.setFill(Color.TRANSPARENT);
+
+	}
+
+	private void initProfileRound() {
+
+		profileRound.setFill(Color.DARKGRAY);
+
+	}
+
+	private void initProfileLabel() {
+
+		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+		profileLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
+
+		profileLabel.translateXProperty().bind(Bindings
+				.createDoubleBinding(() -> -profileLabel.widthProperty().get() / 2, profileLabel.widthProperty()));
+		profileLabel.translateYProperty().bind(Bindings
+				.createDoubleBinding(() -> -profileLabel.heightProperty().get() / 2, profileLabel.heightProperty()));
+
+	}
+
+	private void initNameLabel() {
+
+		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+
+	}
+
+	private void initCommentLabel() {
+
+		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 
 	private void initKonumLabel() {
 
-		konumLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 
-	private void initOkunmamisMesajlarLabel() {
+	private void initUnreadMessagesLabel() {
 
-		okunmamisMesajlarLabel.backgroundProperty()
+		unreadMessagesLabel.backgroundProperty()
 				.bind(Bindings.createObjectBinding(
 						() -> new Background(new BackgroundFill(Color.RED,
-								new CornerRadii(okunmamisMesajlarLabel.getHeight() / 2), Insets.EMPTY)),
-						okunmamisMesajlarLabel.heightProperty()));
+								new CornerRadii(unreadMessagesLabel.getHeight() / 2), Insets.EMPTY)),
+						unreadMessagesLabel.heightProperty()));
 
-		okunmamisMesajlarLabel.setAlignment(Pos.CENTER);
+		unreadMessagesLabel.setAlignment(Pos.CENTER);
 
-		okunmamisMesajlarLabel.setFont(Font.font(null, FontWeight.BOLD, okunmamisMesajlarLabel.getFont().getSize()));
-		okunmamisMesajlarLabel.setTextFill(Color.WHITE);
+		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLabel.getFont().getSize()));
+		unreadMessagesLabel.setTextFill(Color.WHITE);
 
-		okunmamisMesajlarLabel.visibleProperty().bind(Bindings.size(okunmamisMesajlar).greaterThan(0));
-		okunmamisMesajlarLabel.textProperty().bind(Bindings.size(okunmamisMesajlar).asString());
+		unreadMessagesLabel.visibleProperty().bind(Bindings.size(unreadMessages).greaterThan(0));
+		unreadMessagesLabel.textProperty().bind(Bindings.size(unreadMessages).asString());
 
 	}
 

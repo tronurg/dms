@@ -85,16 +85,16 @@ public class CommonMethods {
 
 	}
 
-	static int getBeaconTimeoutMs() {
+	static int getBeaconIntervalMs() {
 
-		int beaconTimeoutMs = 2000;
+		int beaconIntervalMs = 2000;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/BEACON_TIMEOUT_MS")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/BEACON_INTERVAL_MS")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			beaconTimeoutMs = Integer.parseInt(node.getTextContent());
+			beaconIntervalMs = Integer.parseInt(node.getTextContent());
 
 		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
 
@@ -102,7 +102,7 @@ public class CommonMethods {
 
 		}
 
-		return beaconTimeoutMs;
+		return beaconIntervalMs;
 
 	}
 

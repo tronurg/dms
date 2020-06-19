@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.ogya.dms.database.tables.Group;
-import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Contact;
+import com.ogya.dms.database.tables.Dgroup;
+import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.intf.AppListener;
@@ -16,16 +16,15 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class DmsPanel extends StackPane implements IKimlikPane, IKisilerPane, IGruplarPane {
+public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane, IGroupsPane {
 
-	private final VBox anaPane = new VBox();
-	private final IdentityPane kimlikPane = new IdentityPane();
-	private final ContactsPane kisilerPane = new ContactsPane();
-	private final GroupsPane gruplarPane = new GroupsPane();
-	private final VBox kisilerGruplarPane = new VBox();
+	private final VBox mainPane = new VBox();
+	private final IdentityPane identityPane = new IdentityPane();
+	private final ContactsPane contactsPane = new ContactsPane();
+	private final GroupsPane groupsPane = new GroupsPane();
+	private final VBox contactsGroupsPane = new VBox();
 
-	private final List<AppListener> dinleyiciler = Collections
-			.synchronizedList(new ArrayList<AppListener>());
+	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
 	public DmsPanel() {
 
@@ -37,212 +36,212 @@ public class DmsPanel extends StackPane implements IKimlikPane, IKisilerPane, IG
 
 	private void init() {
 
-		VBox.setMargin(kimlikPane, new Insets(10.0));
+		VBox.setMargin(identityPane, new Insets(10.0));
 
-		VBox.setVgrow(kisilerPane, Priority.ALWAYS);
-		VBox.setVgrow(gruplarPane, Priority.ALWAYS);
-		VBox.setVgrow(kisilerGruplarPane, Priority.ALWAYS);
+		VBox.setVgrow(contactsPane, Priority.ALWAYS);
+		VBox.setVgrow(groupsPane, Priority.ALWAYS);
+		VBox.setVgrow(contactsGroupsPane, Priority.ALWAYS);
 
-		kimlikPane.dinleyiciEkle(this);
-		kisilerPane.dinleyiciEkle(this);
-		gruplarPane.dinleyiciEkle(this);
+		identityPane.addListener(this);
+		contactsPane.addListener(this);
+		groupsPane.addListener(this);
 
-		kisilerGruplarPane.getChildren().addAll(kisilerPane, gruplarPane);
+		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
 
-		anaPane.getChildren().addAll(kimlikPane, kisilerGruplarPane);
+		mainPane.getChildren().addAll(identityPane, contactsGroupsPane);
 
-		getChildren().add(anaPane);
-
-	}
-
-	public void dinleyiciEkle(AppListener dinleyici) {
-
-		dinleyiciler.add(dinleyici);
+		getChildren().add(mainPane);
 
 	}
 
-	public void setKimlik(Identity kimlik) {
+	public void addListener(AppListener listener) {
 
-		kimlikPane.setKimlik(kimlik);
-
-	}
-
-	public void kisiGuncelle(Contact kisi) {
-
-		kisilerPane.kisiGuncelle(kisi);
-		gruplarPane.grupOlusturPaneKisiGuncelle(kisi);
+		listeners.add(listener);
 
 	}
 
-	public void grupGuncelle(Group grup) {
+	public void setIdentity(Identity identity) {
+
+		identityPane.setIdentity(identity);
+
+	}
+
+	public void updateContact(Contact contact) {
+
+		contactsPane.updateContact(contact);
+		groupsPane.createGroupPaneUpdateContact(contact);
+
+	}
+
+	public void updateDgroup(Dgroup dgroup) {
 
 		// TODO
 
-		grup.getKisiler().forEach(kisi -> System.out.println(kisi.getIsim()));
+		dgroup.getContacts().forEach(contact -> System.out.println(contact.getName()));
 
 	}
 
-	public void mesajEkle(Message mesaj, MessageDirection mesajYonu, String uuid) {
+	public void addMessage(Message message, MessageDirection messageDirection, String uuid) {
 
-		kisilerPane.mesajEkle(mesaj, mesajYonu, uuid);
-
-	}
-
-	public void mesajGuncelle(Message mesaj, String uuid) {
-
-		kisilerPane.mesajGuncelle(mesaj, uuid);
+		contactsPane.addMessage(message, messageDirection, uuid);
 
 	}
 
-	public void ekraniMesajaKaydir(String uuid, Long mesajId) {
+	public void updateMessage(Message message, String uuid) {
 
-		kisilerPane.ekraniMesajaKaydir(uuid, mesajId);
-
-	}
-
-	public void konumuKaydet(String uuid, Long mesajId) {
-
-		kisilerPane.konumuKaydet(uuid, mesajId);
+		contactsPane.updateMessage(message, uuid);
 
 	}
 
-	public void kaydedilenKonumaGit(String uuid) {
+	public void scrollPaneToMessage(String uuid, Long messageId) {
 
-		kisilerPane.kaydedilenKonumaGit(uuid);
-
-	}
-
-	private void dinleyicilereAciklamaGuncellendi(final String aciklama) {
-
-		dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
+		contactsPane.scrollPaneToMessage(uuid, messageId);
 
 	}
 
-	private void dinleyicilereDurumGuncelleTiklandi() {
+	public void savePosition(String uuid, Long messageId) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.durumGuncelleTiklandi());
-
-	}
-
-	private void dinleyicilereKisiMesajPaneliAcildi(final String uuid) {
-
-		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliAcildi(uuid));
+		contactsPane.savePosition(uuid, messageId);
 
 	}
 
-	private void dinleyicilereKisiMesajPaneliKapandi(final String uuid) {
+	public void scrollToSavedPosition(String uuid) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.kisiMesajPaneliKapandi(uuid));
-
-	}
-
-	private void dinleyicilereMesajGonderTiklandi(final String mesaj, final String uuid) {
-
-		dinleyiciler.forEach(dinleyici -> dinleyici.mesajGonderTiklandi(mesaj, uuid));
+		contactsPane.scrollToSavedPosition(uuid);
 
 	}
 
-	private void dinleyicilereSayfaBasaKaydirildi(final String uuid) {
+	private void commentUpdatedToListeners(final String comment) {
 
-		dinleyiciler.forEach(dinleyici -> dinleyici.sayfaBasaKaydirildi(uuid));
-
-	}
-
-	private void dinleyicilereGrupOlusturTalepEdildi(final String grupAdi, final List<String> seciliUuidler) {
-
-		dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturTalepEdildi(grupAdi, seciliUuidler));
+		listeners.forEach(listener -> listener.commentUpdated(comment));
 
 	}
 
-	@Override
-	public void aciklamaGuncellendi(String aciklama) {
+	private void updateStatusClickedToListeners() {
 
-		dinleyicilereAciklamaGuncellendi(aciklama);
+		listeners.forEach(listener -> listener.updateStatusClicked());
+
+	}
+
+	private void contactMessagePaneOpenedToListeners(final String uuid) {
+
+		listeners.forEach(listener -> listener.contactMessagePaneOpened(uuid));
+
+	}
+
+	private void contactMessagePaneClosedToListeners(final String uuid) {
+
+		listeners.forEach(listener -> listener.contactMessagePaneClosed(uuid));
+
+	}
+
+	private void sendMessageClickedToListeners(final String message, final String uuid) {
+
+		listeners.forEach(listener -> listener.sendMessageClicked(message, uuid));
+
+	}
+
+	private void paneScrolledToTopToListeners(final String uuid) {
+
+		listeners.forEach(listener -> listener.paneScrolledToTop(uuid));
+
+	}
+
+	private void createGroupRequestedToListeners(final String groupName, final List<String> selectedUuids) {
+
+		listeners.forEach(listener -> listener.createGroupRequested(groupName, selectedUuids));
 
 	}
 
 	@Override
-	public void durumGuncelleTiklandi() {
+	public void commentUpdated(String comment) {
 
-		dinleyicilereDurumGuncelleTiklandi();
-
-	}
-
-	@Override
-	public void mesajPaneGoster(final MessagePane mesajPane, final String uuid) {
-
-		getChildren().add(mesajPane);
-
-		dinleyicilereKisiMesajPaneliAcildi(uuid);
+		commentUpdatedToListeners(comment);
 
 	}
 
 	@Override
-	public void mesajPaneGizle(MessagePane mesajPane, String uuid) {
+	public void updateStatusClicked() {
 
-		dinleyicilereKisiMesajPaneliKapandi(uuid);
-
-		getChildren().remove(mesajPane);
+		updateStatusClickedToListeners();
 
 	}
 
 	@Override
-	public void mesajGonderTiklandi(String mesajTxt, String uuid) {
+	public void showMessagePane(final MessagePane messagePane, final String uuid) {
 
-		dinleyicilereMesajGonderTiklandi(mesajTxt, uuid);
+		getChildren().add(messagePane);
 
-	}
-
-	@Override
-	public void sayfaBasaKaydirildi(String uuid) {
-
-		dinleyicilereSayfaBasaKaydirildi(uuid);
+		contactMessagePaneOpenedToListeners(uuid);
 
 	}
 
 	@Override
-	public void grupOlusturPaneGoster(CreateGroupPane grupOlusturPane) {
+	public void hideMessagePane(MessagePane messagePane, String uuid) {
 
-		getChildren().add(grupOlusturPane);
+		contactMessagePaneClosedToListeners(uuid);
 
-	}
-
-	@Override
-	public void grupOlusturPaneGizle(CreateGroupPane grupOlusturPane) {
-
-		getChildren().remove(grupOlusturPane);
+		getChildren().remove(messagePane);
 
 	}
 
 	@Override
-	public void grupOlusturTiklandi(CreateGroupPane grupOlusturPane) {
+	public void sendMessageClicked(String messageTxt, String uuid) {
 
-		getChildren().remove(grupOlusturPane);
-		dinleyicilereGrupOlusturTalepEdildi(grupOlusturPane.getGrupAdi(), grupOlusturPane.getSeciliUuidler());
-		grupOlusturPane.reset();
+		sendMessageClickedToListeners(messageTxt, uuid);
 
 	}
 
 	@Override
-	public void grupMesajPaneGoster(MessagePane mesajPane, String uuid) {
+	public void paneScrolledToTop(String uuid) {
+
+		paneScrolledToTopToListeners(uuid);
+
+	}
+
+	@Override
+	public void showCreateGroupPane(CreateGroupPane createGroupPane) {
+
+		getChildren().add(createGroupPane);
+
+	}
+
+	@Override
+	public void hideCreateGroupPane(CreateGroupPane createGroupPane) {
+
+		getChildren().remove(createGroupPane);
+
+	}
+
+	@Override
+	public void createGroupClicked(CreateGroupPane createGroupPane) {
+
+		getChildren().remove(createGroupPane);
+		createGroupRequestedToListeners(createGroupPane.getGroupName(), createGroupPane.getSelectedUuids());
+		createGroupPane.reset();
+
+	}
+
+	@Override
+	public void showGroupMessagePane(MessagePane messagePane, String uuid) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void grupMesajPaneGizle(MessagePane mesajPane, String uuid) {
+	public void hideGroupMessagePane(MessagePane messagePane, String uuid) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void grupMesajGonderTiklandi(String mesajTxt, String uuid) {
+	public void sendGroupMessageClicked(String messageTxt, String uuid) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void grupSayfaBasaKaydirildi(String uuid) {
+	public void groupPaneScrolledToTop(String uuid) {
 		// TODO Auto-generated method stub
 
 	}

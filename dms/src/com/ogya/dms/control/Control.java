@@ -21,9 +21,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.DbManager;
-import com.ogya.dms.database.tables.Group;
-import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Contact;
+import com.ogya.dms.database.tables.Dgroup;
+import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.dmsclient.DmsClient;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
@@ -31,9 +31,9 @@ import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.ContactStatus;
+import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
-import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.DmsPanel;
 import com.ogya.dms.view.intf.AppListener;
 
@@ -45,16 +45,16 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private static final Map<String, Control> INSTANCES = Collections.synchronizedMap(new HashMap<String, Control>());
 
-	private static final int SAYFA_MIN_MESAJ_SAYISI = 50;
+	private static final int MIN_MESSAGES_PER_PAGE = 50;
 
-	private final DbManager veritabaniYonetici;
+	private final DbManager dbManager;
 
 	private final Model model;
 
-	private final DmsPanel mcPanel;
-	private final JFXPanel mcPanelSwing;
+	private final DmsPanel dmsPanel;
+	private final JFXPanel dmsPanelSwing;
 
-	private final DmsClient mcIstemci;
+	private final DmsClient dmsClient;
 
 	private final Gson gson = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
 
@@ -72,7 +72,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private final Object beaconSyncObj = new Object();
 
-	private final ExecutorService islemKuyrugu = Executors.newSingleThreadExecutor(new ThreadFactory() {
+	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
 		@Override
 		public Thread newThread(Runnable arg0) {
@@ -83,96 +83,96 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	});
 
-	private Control(String kullaniciAdi, String kullaniciSifresi) throws DbException {
+	private Control(String username, String password) throws DbException {
 
-		veritabaniYonetici = new DbManager(kullaniciAdi, kullaniciSifresi);
+		dbManager = new DbManager(username, password);
 
-		Identity kimlik = veritabaniYonetici.getKimlik();
+		Identity identity = dbManager.getIdentity();
 
-		model = new Model(kimlik);
+		model = new Model(identity);
 
-		mcPanelSwing = new JFXPanel();
-		mcPanel = new DmsPanel();
+		dmsPanelSwing = new JFXPanel();
+		dmsPanel = new DmsPanel();
 
-		mcPanel.dinleyiciEkle(this);
+		dmsPanel.addListener(this);
 
-		initVeritabani();
+		initDatabase();
 		initModel();
 		initGUI();
 
-		mcIstemci = new DmsClient(kimlik.getUuid(), CommonConstants.SUNUCU_IP, CommonConstants.SUNUCU_PORT, this);
+		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
 
-		ilklendir();
-
-	}
-
-	public static Control getInstance(String kullaniciAdi, String kullaniciSifresi) throws DbException {
-
-		INSTANCES.putIfAbsent(kullaniciAdi, new Control(kullaniciAdi, kullaniciSifresi));
-
-		return INSTANCES.get(kullaniciAdi);
+		init();
 
 	}
 
-	private void ilklendir() {
+	public static Control getInstance(String username, String password) throws DbException {
 
-		Thread beaconYayinlaThread = new Thread(this::beaconYayinla);
-		beaconYayinlaThread.setDaemon(true);
-		beaconYayinlaThread.start();
+		INSTANCES.putIfAbsent(username, new Control(username, password));
+
+		return INSTANCES.get(username);
 
 	}
 
-	private void initVeritabani() {
+	private void init() {
 
-		veritabaniYonetici.tumKisileriAl().forEach(kisi -> {
-			kisi.setDurum(ContactStatus.CEVRIMDISI);
-			veritabaniYonetici.kisiEkleGuncelle(kisi);
+		Thread publishBeaconThread = new Thread(this::publishBeacon);
+		publishBeaconThread.setDaemon(true);
+		publishBeaconThread.start();
+
+	}
+
+	private void initDatabase() {
+
+		dbManager.fetchAllContacts().forEach(contact -> {
+			contact.setStatus(ContactStatus.OFFLINE);
+			dbManager.addUpdateContact(contact);
 		});
 
 	}
 
 	private void initModel() {
 
-		veritabaniYonetici.tumKisileriAl().forEach(kisi -> model.addKisi(kisi));
-		veritabaniYonetici.tumGruplariAl().forEach(grup -> model.addGrup(grup));
+		dbManager.fetchAllContacts().forEach(contact -> model.addContact(contact));
+		dbManager.fetchAllGroups().forEach(dgroup -> model.addDgroup(dgroup));
 
 	}
 
 	private void initGUI() {
 
 		Platform.runLater(() -> {
-			mcPanelSwing.setScene(new Scene(mcPanel));
-			mcPanel.setKimlik(model.getKimlik());
+			dmsPanelSwing.setScene(new Scene(dmsPanel));
+			dmsPanel.setIdentity(model.getIdentity());
 		});
 
-		model.getKisiler().forEach((uuid, kisi) -> Platform.runLater(() -> mcPanel.kisiGuncelle(kisi)));
+		model.getContacts().forEach((uuid, contact) -> Platform.runLater(() -> dmsPanel.updateContact(contact)));
 
-		model.getGruplar().forEach((uuid, grup) -> Platform.runLater(() -> mcPanel.grupGuncelle(grup)));
+		model.getDgroups().forEach((uuid, dgroup) -> Platform.runLater(() -> dmsPanel.updateDgroup(dgroup)));
 
 		try {
 
-			String yerelUuid = model.getKimlik().getUuid();
+			String localUuid = model.getIdentity().getUuid();
 
-			Set<String> karsiUuidler = veritabaniYonetici.getUuidIleMesajlasanTumUuidler(yerelUuid);
+			Set<String> remoteUuids = dbManager.getAllUuidsMessagingWithUuid(localUuid);
 
-			karsiUuidler.forEach(karsiUuid -> {
+			remoteUuids.forEach(remoteUuid -> {
 
-				List<Message> vtMesajlar = new ArrayList<Message>();
+				List<Message> dbMessages = new ArrayList<Message>();
 
-				vtMesajlar.addAll(veritabaniYonetici.getIlkOkunmamisMesajdanItibarenTumMesajlar(yerelUuid, karsiUuid));
+				dbMessages.addAll(dbManager.getAllMessagesSinceFirstUnreadMessage(localUuid, remoteUuid));
 
-				if (vtMesajlar.size() == 0) {
+				if (dbMessages.size() == 0) {
 
-					vtMesajlar.addAll(veritabaniYonetici.getSonMesajlar(yerelUuid, karsiUuid, SAYFA_MIN_MESAJ_SAYISI));
+					dbMessages.addAll(dbManager.getLastMessages(localUuid, remoteUuid, MIN_MESSAGES_PER_PAGE));
 
-				} else if (vtMesajlar.size() < SAYFA_MIN_MESAJ_SAYISI) {
+				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
 
-					vtMesajlar.addAll(veritabaniYonetici.getIddenOncekiSonMesajlar(yerelUuid, karsiUuid,
-							vtMesajlar.get(0).getId(), SAYFA_MIN_MESAJ_SAYISI - vtMesajlar.size()));
+					dbMessages.addAll(dbManager.getLastMessagesBeforeId(localUuid, remoteUuid,
+							dbMessages.get(0).getId(), MIN_MESSAGES_PER_PAGE - dbMessages.size()));
 
 				}
 
-				vtMesajlar.forEach(mesaj -> paneleMesajEkle(mesaj));
+				dbMessages.forEach(message -> addMessageToPane(message));
 
 			});
 
@@ -184,42 +184,42 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void paneleMesajEkle(Message mesaj) {
+	private void addMessageToPane(Message message) {
 
-		String yerelUuid = model.getKimlik().getUuid();
+		String localUuid = model.getIdentity().getUuid();
 
-		if (yerelUuid.equals(mesaj.getGonderenUuid())) {
+		if (localUuid.equals(message.getSenderUuid())) {
 
-			final String karsiUuid = mesaj.getAliciUuid();
+			final String remoteUuid = message.getReceiverUuid();
 
-			model.mesajIdEkle(karsiUuid, mesaj.getId());
+			model.addMessageId(remoteUuid, message.getId());
 
-			Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MessageDirection.GIDEN, karsiUuid));
+			Platform.runLater(() -> dmsPanel.addMessage(message, MessageDirection.OUTGOING, remoteUuid));
 
-		} else if (yerelUuid.equals(mesaj.getAliciUuid())) {
+		} else if (localUuid.equals(message.getReceiverUuid())) {
 
-			final String karsiUuid = mesaj.getGonderenUuid();
+			final String remoteUuid = message.getSenderUuid();
 
-			model.mesajIdEkle(karsiUuid, mesaj.getId());
+			model.addMessageId(remoteUuid, message.getId());
 
-			Platform.runLater(() -> mcPanel.mesajEkle(mesaj, MessageDirection.GELEN, karsiUuid));
+			Platform.runLater(() -> dmsPanel.addMessage(message, MessageDirection.INCOMING, remoteUuid));
 
 		}
 
 	}
 
-	private void beaconYayinla() {
+	private void publishBeacon() {
 
 		while (true) {
 
 			synchronized (beaconSyncObj) {
 
-				if (model.isSunucuBagli())
-					mcIstemci.beaconGonder(gson.toJson(model.getKimlik()));
+				if (model.isServerConnected())
+					dmsClient.sendBeacon(gson.toJson(model.getIdentity()));
 
 				try {
 
-					beaconSyncObj.wait(CommonConstants.BEACON_ARALIK_MS);
+					beaconSyncObj.wait(CommonConstants.BEACON_INTERVAL_MS);
 
 				} catch (InterruptedException e) {
 
@@ -231,19 +231,19 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void kisiKoptu(Contact kisi) {
+	private void contactDisconnected(Contact contact) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
-			kisi.setDurum(ContactStatus.CEVRIMDISI);
+			contact.setStatus(ContactStatus.OFFLINE);
 
 			try {
 
-				final Contact yeniKisi = veritabaniYonetici.kisiEkleGuncelle(kisi);
+				final Contact newContact = dbManager.addUpdateContact(contact);
 
-				model.addKisi(yeniKisi);
+				model.addContact(newContact);
 
-				Platform.runLater(() -> mcPanel.kisiGuncelle(yeniKisi));
+				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
 			} catch (HibernateException e) {
 
@@ -255,54 +255,55 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Message gidenMesajOlustur(String mesaj, String aliciUuid) throws Exception {
+	private Message createOutgoingMessage(String message, String receiverUuid) throws Exception {
 
-		Message gidenMesaj = new Message(model.getKimlik().getUuid(), aliciUuid, MessageType.MESAJ, mesaj);
+		Message outgoingMessage = new Message(model.getIdentity().getUuid(), receiverUuid, MessageType.MESSAGE,
+				message);
 
-		gidenMesaj.setMesajDurumu(MessageStatus.OLUSTURULDU);
+		outgoingMessage.setMessageStatus(MessageStatus.CREATED);
 
-		Message yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gidenMesaj);
+		Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-		return yeniMesaj;
+		return newMessage;
 
 	}
 
-	private Message gelenMesajOlustur(String mesaj) throws Exception {
+	private Message createIncomingMessage(String message) throws Exception {
 
-		Message gelenMesaj = gson.fromJson(mesaj, Message.class);
+		Message incomingMessage = gson.fromJson(message, Message.class);
 
-		if (model.isMesajPaneliAcik(gelenMesaj.getGonderenUuid())) {
+		if (model.isMessagePaneOpen(incomingMessage.getSenderUuid())) {
 
-			gelenMesaj.setMesajDurumu(MessageStatus.OKUNDU);
+			incomingMessage.setMessageStatus(MessageStatus.READ);
 
 		} else {
 
-			gelenMesaj.setMesajDurumu(MessageStatus.ULASTI);
+			incomingMessage.setMessageStatus(MessageStatus.REACHED);
 
 		}
 
-		Message yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
+		Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-		return yeniMesaj;
+		return newMessage;
 
 	}
 
-	private Message mesajGonder(Message mesaj) {
+	private Message sendMessage(Message message) {
 
-		String aliciUuid = mesaj.getAliciUuid();
+		String receiverUuid = message.getReceiverUuid();
 
-		if (!model.isKisiCevrimici(aliciUuid))
-			return mesaj;
+		if (!model.isContactOnline(receiverUuid))
+			return message;
 
-		mcIstemci.mesajGonder(gson.toJson(mesaj), aliciUuid);
+		dmsClient.sendMessage(gson.toJson(message), receiverUuid);
 
 		try {
 
-			mesaj.setMesajDurumu(MessageStatus.GONDERILDI);
+			message.setMessageStatus(MessageStatus.SENT);
 
-			Message yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(mesaj);
+			Message newMessage = dbManager.addUpdateMessage(message);
 
-			return yeniMesaj;
+			return newMessage;
 
 		} catch (HibernateException e) {
 
@@ -310,55 +311,55 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		}
 
-		return mesaj;
+		return message;
 
 	}
 
 	@Override
-	public void beaconAlindi(String mesaj) {
+	public void beaconReceived(String message) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				Contact gelenKisi = gson.fromJson(mesaj, Contact.class);
+				Contact incomingContact = gson.fromJson(message, Contact.class);
 
-				final String uuid = gelenKisi.getUuid();
-				boolean wasCevrimici = model.isKisiCevrimici(uuid);
+				final String uuid = incomingContact.getUuid();
+				boolean wasOnline = model.isContactOnline(uuid);
 
-				final Contact yeniKisi = veritabaniYonetici.kisiEkleGuncelle(gelenKisi);
+				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
-				model.addKisi(yeniKisi);
+				model.addContact(newContact);
 
-				Platform.runLater(() -> mcPanel.kisiGuncelle(yeniKisi));
+				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
-				if (!wasCevrimici) {
+				if (!wasOnline) {
 					// Simdi cevrimici olduysa bekleyen mesajlarini gonder
 
-					islemKuyrugu.execute(() -> {
+					taskQueue.execute(() -> {
 
 						try {
 
-							for (final Message bekleyenMesaj : veritabaniYonetici.getKisiyeGidenBekleyenMesajlar(uuid)) {
+							for (final Message waitingMessage : dbManager.getMessagesWaitingToContact(uuid)) {
 
-								switch (bekleyenMesaj.getMesajDurumu()) {
+								switch (waitingMessage.getMessageStatus()) {
 
-								case OLUSTURULDU:
+								case CREATED:
 
-									final Message yeniMesaj = mesajGonder(bekleyenMesaj);
+									final Message newMessage = sendMessage(waitingMessage);
 
-									if (!yeniMesaj.getMesajDurumu().equals(MessageStatus.GONDERILDI))
+									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT))
 										break;
 
-									Platform.runLater(() -> mcPanel.mesajGuncelle(yeniMesaj, uuid));
+									Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
 
 									break;
 
-								case GONDERILDI:
-								case ULASTI:
+								case SENT:
+								case REACHED:
 
-									mcIstemci.mesajDurumuIste(Long.toString(bekleyenMesaj.getMesajId()),
-											bekleyenMesaj.getAliciUuid());
+									dmsClient.claimMessageStatus(Long.toString(waitingMessage.getMessageId()),
+											waitingMessage.getReceiverUuid());
 
 									break;
 
@@ -391,20 +392,20 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void mesajAlindi(final String mesaj) {
+	public void messageReceived(final String message) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				final Message yeniMesaj = gelenMesajOlustur(mesaj);
+				final Message newMessage = createIncomingMessage(message);
 
-				paneleMesajEkle(yeniMesaj);
+				addMessageToPane(newMessage);
 
-				if (yeniMesaj.getMesajDurumu().equals(MessageStatus.ULASTI))
-					mcIstemci.alindiGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
-				else if (yeniMesaj.getMesajDurumu().equals(MessageStatus.OKUNDU))
-					mcIstemci.okunduGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
+				if (newMessage.getMessageStatus().equals(MessageStatus.REACHED))
+					dmsClient.sendReceived(Long.toString(newMessage.getMessageId()), newMessage.getSenderUuid());
+				else if (newMessage.getMessageStatus().equals(MessageStatus.READ))
+					dmsClient.sendRead(Long.toString(newMessage.getMessageId()), newMessage.getSenderUuid());
 
 			} catch (Exception e) {
 
@@ -417,23 +418,23 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void kullaniciKoptu(String uuid) {
+	public void userDisconnected(String uuid) {
 
-		Contact kisi = model.getKisi(uuid);
+		Contact contact = model.getContact(uuid);
 
-		if (kisi == null)
+		if (contact == null)
 			return;
 
-		kisiKoptu(kisi);
+		contactDisconnected(contact);
 
 	}
 
 	@Override
-	public void sunucuBaglantiDurumuGuncellendi(boolean arg0) {
+	public void serverConnStatusUpdated(boolean connStatus) {
 
-		model.setSunucuBaglantiDurumu(arg0);
+		model.setServerConnStatus(connStatus);
 
-		if (arg0) {
+		if (connStatus) {
 
 			synchronized (beaconSyncObj) {
 
@@ -441,13 +442,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
-			mcIstemci.tumBeaconlariIste();
+			dmsClient.claimAllBeacons();
 
 		} else {
 
-			model.getKisiler().forEach((uuid, kisi) -> {
+			model.getContacts().forEach((uuid, contact) -> {
 
-				kisiKoptu(kisi);
+				contactDisconnected(contact);
 
 			});
 
@@ -456,27 +457,27 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void mesajDurumuIstendi(String mesaj, String karsiTarafUuid) {
+	public void messageStatusClaimed(String message, String remoteUuid) {
 
-		final Long mesajId = Long.parseLong(mesaj);
+		final Long messageId = Long.parseLong(message);
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				Message gelenMesaj = veritabaniYonetici.getMesaj(karsiTarafUuid, mesajId);
+				Message incomingMessage = dbManager.getMessage(remoteUuid, messageId);
 
-				if (gelenMesaj == null) {
+				if (incomingMessage == null) {
 
-					mcIstemci.alinmadiGonder(mesaj, karsiTarafUuid);
+					dmsClient.sendNotReceived(message, remoteUuid);
 
-				} else if (gelenMesaj.getMesajDurumu().equals(MessageStatus.ULASTI)) {
+				} else if (incomingMessage.getMessageStatus().equals(MessageStatus.REACHED)) {
 
-					mcIstemci.alindiGonder(mesaj, karsiTarafUuid);
+					dmsClient.sendReceived(message, remoteUuid);
 
-				} else if (gelenMesaj.getMesajDurumu().equals(MessageStatus.OKUNDU)) {
+				} else if (incomingMessage.getMessageStatus().equals(MessageStatus.READ)) {
 
-					mcIstemci.okunduGonder(mesaj, karsiTarafUuid);
+					dmsClient.sendRead(message, remoteUuid);
 
 				}
 
@@ -491,52 +492,25 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void karsiTarafMesajiAlmadi(String mesaj, String karsiTarafUuid) {
+	public void messageNotReceivedRemotely(String message, String remoteUuid) {
 
-		final Long mesajId = Long.parseLong(mesaj);
+		final Long messageId = Long.parseLong(message);
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				Message bekleyenMesaj = veritabaniYonetici.mesajDurumGuncelle(model.getKimlik().getUuid(), mesajId,
-						MessageStatus.OLUSTURULDU);
+				Message waitingMessage = dbManager.updateMessageStatus(model.getIdentity().getUuid(), messageId,
+						MessageStatus.CREATED);
 
-				if (bekleyenMesaj == null)
+				if (waitingMessage == null)
 					return;
 
 				// Mesaji tekrar gonder
 
-				final Message yeniMesaj = mesajGonder(bekleyenMesaj);
+				final Message newMessage = sendMessage(waitingMessage);
 
-				Platform.runLater(() -> mcPanel.mesajGuncelle(yeniMesaj, karsiTarafUuid));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void karsiTarafMesajiAldi(String mesaj, String karsiTarafUuid) {
-
-		final Long mesajId = Long.parseLong(mesaj);
-
-		islemKuyrugu.execute(() -> {
-
-			try {
-
-				final Message gidenMesaj = veritabaniYonetici.mesajDurumGuncelle(model.getKimlik().getUuid(), mesajId,
-						MessageStatus.ULASTI);
-
-				if (gidenMesaj == null)
-					return;
-
-				Platform.runLater(() -> mcPanel.mesajGuncelle(gidenMesaj, karsiTarafUuid));
+				Platform.runLater(() -> dmsPanel.updateMessage(newMessage, remoteUuid));
 
 			} catch (Exception e) {
 
@@ -549,21 +523,21 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void karsiTarafMesajiOkudu(String mesaj, String karsiTarafUuid) {
+	public void messageReceivedRemotely(String message, String remoteUuid) {
 
-		final Long mesajId = Long.parseLong(mesaj);
+		final Long messageId = Long.parseLong(message);
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				final Message gidenMesaj = veritabaniYonetici.mesajDurumGuncelle(model.getKimlik().getUuid(), mesajId,
-						MessageStatus.OKUNDU);
+				final Message outgoingMessage = dbManager.updateMessageStatus(model.getIdentity().getUuid(), messageId,
+						MessageStatus.REACHED);
 
-				if (gidenMesaj == null)
+				if (outgoingMessage == null)
 					return;
 
-				Platform.runLater(() -> mcPanel.mesajGuncelle(gidenMesaj, karsiTarafUuid));
+				Platform.runLater(() -> dmsPanel.updateMessage(outgoingMessage, remoteUuid));
 
 			} catch (Exception e) {
 
@@ -576,31 +550,58 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public JComponent getMcPanel() {
+	public void messageReadRemotely(String message, String remoteUuid) {
 
-		return mcPanelSwing;
+		final Long messageId = Long.parseLong(message);
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				final Message outgoingMessage = dbManager.updateMessageStatus(model.getIdentity().getUuid(), messageId,
+						MessageStatus.READ);
+
+				if (outgoingMessage == null)
+					return;
+
+				Platform.runLater(() -> dmsPanel.updateMessage(outgoingMessage, remoteUuid));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 
 	@Override
-	public void aciklamaGuncellendi(String aciklama) {
+	public JComponent getDmsPanel() {
 
-		islemKuyrugu.execute(() -> {
+		return dmsPanelSwing;
+
+	}
+
+	@Override
+	public void commentUpdated(String comment) {
+
+		taskQueue.execute(() -> {
 
 			try {
 
-				Identity kimlik = model.getKimlik();
+				Identity identity = model.getIdentity();
 
-				if (aciklama.equals(kimlik.getAciklama()))
+				if (comment.equals(identity.getComment()))
 					return;
 
-				kimlik.setAciklama(aciklama);
+				identity.setComment(comment);
 
-				Identity yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
+				Identity newIdentity = dbManager.updateIdentity(identity);
 
-				model.aciklamaGuncelle(aciklama);
+				model.updateComment(comment);
 
-				Platform.runLater(() -> mcPanel.setKimlik(yeniKimlik));
+				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
 				synchronized (beaconSyncObj) {
 
@@ -619,29 +620,29 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void durumGuncelleTiklandi() {
+	public void updateStatusClicked() {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				Identity kimlik = model.getKimlik();
+				Identity identity = model.getIdentity();
 
-				if (kimlik.getDurum().equals(ContactStatus.MUSAIT)) {
+				if (identity.getStatus().equals(ContactStatus.AVAILABLE)) {
 
-					kimlik.setDurum(ContactStatus.MESGUL);
+					identity.setStatus(ContactStatus.BUSY);
 
-				} else if (kimlik.getDurum().equals(ContactStatus.MESGUL)) {
+				} else if (identity.getStatus().equals(ContactStatus.BUSY)) {
 
-					kimlik.setDurum(ContactStatus.MUSAIT);
+					identity.setStatus(ContactStatus.AVAILABLE);
 
 				}
 
-				Identity yeniKimlik = veritabaniYonetici.kimlikGuncelle(kimlik);
+				Identity newIdentity = dbManager.updateIdentity(identity);
 
-				model.durumGuncelle(yeniKimlik.getDurum());
+				model.updateStatus(newIdentity.getStatus());
 
-				Platform.runLater(() -> mcPanel.setKimlik(yeniKimlik));
+				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
 				synchronized (beaconSyncObj) {
 
@@ -660,27 +661,27 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void kisiMesajPaneliAcildi(final String uuid) {
+	public void contactMessagePaneOpened(final String uuid) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
-			model.mesajPaneliAcildi(uuid);
+			model.messagePaneOpened(uuid);
 
 			try {
 
-				List<Message> kisidenGelenBekleyenMesajlar = veritabaniYonetici.getKisidenGelenBekleyenMesajlar(uuid);
+				List<Message> messagesWaitingFromContact = dbManager.getMessagesWaitingFromContact(uuid);
 
-				for (final Message gelenMesaj : kisidenGelenBekleyenMesajlar) {
+				for (final Message incomingMessage : messagesWaitingFromContact) {
 
 					try {
 
-						gelenMesaj.setMesajDurumu(MessageStatus.OKUNDU);
+						incomingMessage.setMessageStatus(MessageStatus.READ);
 
-						final Message yeniMesaj = veritabaniYonetici.mesajEkleGuncelle(gelenMesaj);
+						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-						Platform.runLater(() -> mcPanel.mesajGuncelle(yeniMesaj, uuid));
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
 
-						mcIstemci.okunduGonder(Long.toString(yeniMesaj.getMesajId()), yeniMesaj.getGonderenUuid());
+						dmsClient.sendRead(Long.toString(newMessage.getMessageId()), newMessage.getSenderUuid());
 
 					} catch (JsonSyntaxException | HibernateException e) {
 
@@ -690,8 +691,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				}
 
-				Platform.runLater(() -> mcPanel.ekraniMesajaKaydir(uuid,
-						kisidenGelenBekleyenMesajlar.size() > 0 ? kisidenGelenBekleyenMesajlar.get(0).getId() : -1L));
+				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(uuid,
+						messagesWaitingFromContact.size() > 0 ? messagesWaitingFromContact.get(0).getId() : -1L));
 
 			} catch (HibernateException e) {
 
@@ -704,26 +705,26 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void kisiMesajPaneliKapandi(final String uuid) {
+	public void contactMessagePaneClosed(final String uuid) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
-			model.mesajPaneliKapandi(uuid);
+			model.messagePaneClosed(uuid);
 
 		});
 
 	}
 
 	@Override
-	public void mesajGonderTiklandi(final String mesaj, final String aliciUuid) {
+	public void sendMessageClicked(final String message, final String receiverUuid) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				final Message yeniMesaj = mesajGonder(gidenMesajOlustur(mesaj, aliciUuid));
+				final Message newMessage = sendMessage(createOutgoingMessage(message, receiverUuid));
 
-				paneleMesajEkle(yeniMesaj);
+				addMessageToPane(newMessage);
 
 			} catch (Exception e) {
 
@@ -736,44 +737,44 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void sayfaBasaKaydirildi(final String uuid) {
+	public void paneScrolledToTop(final String uuid) {
 
-		islemKuyrugu.execute(() -> {
+		taskQueue.execute(() -> {
 
-			Long oncekiMinMesajId = model.getMinMesajId(uuid);
+			Long previousMinMessageId = model.getMinMessageId(uuid);
 
-			if (oncekiMinMesajId < 0)
+			if (previousMinMessageId < 0)
 				return;
 
-			List<Message> iddenOncekiSonMesajlar = veritabaniYonetici.getIddenOncekiSonMesajlar(
-					model.getKimlik().getUuid(), uuid, oncekiMinMesajId, SAYFA_MIN_MESAJ_SAYISI);
+			List<Message> lastMessagesBeforeId = dbManager.getLastMessagesBeforeId(model.getIdentity().getUuid(), uuid,
+					previousMinMessageId, MIN_MESSAGES_PER_PAGE);
 
-			if (iddenOncekiSonMesajlar.size() == 0)
+			if (lastMessagesBeforeId.size() == 0)
 				return;
 
-			Platform.runLater(() -> mcPanel.konumuKaydet(uuid, oncekiMinMesajId));
+			Platform.runLater(() -> dmsPanel.savePosition(uuid, previousMinMessageId));
 
-			iddenOncekiSonMesajlar.forEach(mesaj -> paneleMesajEkle(mesaj));
+			lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
-			Platform.runLater(() -> mcPanel.kaydedilenKonumaGit(uuid));
+			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(uuid));
 
 		});
 
 	}
 
 	@Override
-	public void grupOlusturTalepEdildi(String grupAdi, List<String> seciliUuidler) {
+	public void createGroupRequested(String dgroupName, List<String> selectedUuids) {
 
-		Group grup = new Group(grupAdi, model.getKimlik().getUuid());
+		Dgroup dgroup = new Dgroup(dgroupName, model.getIdentity().getUuid());
 
-		seciliUuidler.forEach(uuid -> {
+		selectedUuids.forEach(uuid -> {
 
 			try {
 
-				Contact kisi = veritabaniYonetici.getKisi(uuid);
+				Contact contact = dbManager.getContact(uuid);
 
-				if (kisi != null)
-					grup.getKisiler().add(kisi);
+				if (contact != null)
+					dgroup.getContacts().add(contact);
 
 			} catch (HibernateException e) {
 
@@ -785,11 +786,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		try {
 
-			Group yeniGrup = veritabaniYonetici.grupEkleGuncelle(grup);
+			Dgroup newDgroup = dbManager.addUpdateDgroup(dgroup);
 
-			model.addGrup(yeniGrup);
+			model.addDgroup(newDgroup);
 
-			Platform.runLater(() -> mcPanel.grupGuncelle(yeniGrup));
+			Platform.runLater(() -> dmsPanel.updateDgroup(newDgroup));
 
 			// TODO
 

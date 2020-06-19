@@ -4,6 +4,6 @@ import javax.swing.JComponent;
 
 public interface DmsHandle {
 
-	JComponent getMcPanel();
+	JComponent getDmsPanel();
 
 }

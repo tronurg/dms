@@ -17,13 +17,13 @@ import com.ogya.dms.intf.exceptions.DbException;
 @Component(immediate = true)
 public class DmsTest {
 
-	private DmsService mcServisi;
+	private DmsService dmsService;
 
 	@Activate
 	protected void activate() {
 
 		try {
-			JComponent mcPanel = mcServisi.login("elma", "elma").getMcPanel();
+			JComponent mcPanel = dmsService.login("elma", "elma").getDmsPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -46,7 +46,7 @@ public class DmsTest {
 		}
 
 		try {
-			JComponent mcPanel = mcServisi.login("armut", "armut").getMcPanel();
+			JComponent mcPanel = dmsService.login("armut", "armut").getDmsPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -68,7 +68,7 @@ public class DmsTest {
 		}
 
 		try {
-			JComponent mcPanel = mcServisi.login("kiraz", "kiraz").getMcPanel();
+			JComponent mcPanel = dmsService.login("kiraz", "kiraz").getDmsPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -93,15 +93,15 @@ public class DmsTest {
 	}
 
 	@Reference
-	protected void addMcServisi(DmsService mcServisi) {
+	protected void addDmsService(DmsService dmsService) {
 
-		this.mcServisi = mcServisi;
+		this.dmsService = dmsService;
 
 	}
 
-	protected void removeMcServisi(DmsService mcServisi) {
+	protected void removeDmsService(DmsService dmsService) {
 
-		this.mcServisi = null;
+		this.dmsService = null;
 
 	}
 

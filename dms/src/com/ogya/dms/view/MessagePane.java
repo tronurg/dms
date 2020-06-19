@@ -55,43 +55,43 @@ class MessagePane extends BorderPane {
 
 	private static final double GAP = 5.0;
 
-	private final HBox ustPane = new HBox(GAP);
-	private final VBox ortaPane = new VBox(2 * GAP);
-	private final HBox altPane = new HBox(GAP);
+	private final HBox topPane = new HBox(GAP);
+	private final VBox centerPane = new VBox(2 * GAP);
+	private final HBox bottomPane = new HBox(GAP);
 
-	private final ScrollPane scrollPane = new ScrollPane(ortaPane) {
+	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
 		public void requestFocus() {
 		}
 	};
-	private final Button geriBtn = ViewFactory.newGeriBtn();
-	private final Circle durumCircle = new Circle(7.0);
-	private final Label isimLabel = new Label();
-	private final TextArea mesajArea = new TextArea();
-	private final Button gonderBtn = ViewFactory.newGonderBtn();
+	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Circle statusCircle = new Circle(7.0);
+	private final Label nameLabel = new Label();
+	private final TextArea messageArea = new TextArea();
+	private final Button sendBtn = ViewFactory.newSendBtn();
 
-	private final Map<LocalDate, GunKutusu> gunKutulari = Collections
-			.synchronizedMap(new HashMap<LocalDate, GunKutusu>());
+	private final Map<LocalDate, DayBox> dayBoxes = Collections.synchronizedMap(new HashMap<LocalDate, DayBox>());
 
-	private final Map<Long, MesajBalonu> mesajBalonlari = Collections.synchronizedMap(new HashMap<Long, MesajBalonu>());
+	private final Map<Long, MessageBalloon> messageBalloons = Collections
+			.synchronizedMap(new HashMap<Long, MessageBalloon>());
 
-	private final AtomicBoolean otoKaydirma = new AtomicBoolean(true);
+	private final AtomicBoolean autoScroll = new AtomicBoolean(true);
 
-	private final AtomicReference<SimpleEntry<Node, Double>> kaydedilenNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
+	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
 
-	private final Comparator<Node> gunKutusuSiralayici = new Comparator<Node>() {
+	private final Comparator<Node> dayBoxesSorter = new Comparator<Node>() {
 
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof GunKutusu && arg1 instanceof GunKutusu))
+			if (!(arg0 instanceof DayBox && arg1 instanceof DayBox))
 				return 0;
 
-			GunKutusu gunKutusu0 = (GunKutusu) arg0;
-			GunKutusu gunKutusu1 = (GunKutusu) arg1;
+			DayBox dayBox0 = (DayBox) arg0;
+			DayBox dayBox1 = (DayBox) arg1;
 
-			return gunKutusu0.getTarih().compareTo(gunKutusu1.getTarih());
+			return dayBox0.getDate().compareTo(dayBox1.getDate());
 
 		}
 
@@ -107,31 +107,31 @@ class MessagePane extends BorderPane {
 
 	private void init() {
 
-		ustPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		altPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+		bottomPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		ustPane.setPadding(new Insets(GAP));
-		ortaPane.setPadding(new Insets(GAP));
-		altPane.setPadding(new Insets(GAP));
+		topPane.setPadding(new Insets(GAP));
+		centerPane.setPadding(new Insets(GAP));
+		bottomPane.setPadding(new Insets(GAP));
 
-		ustPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
 
-		mesajArea.setPrefRowCount(1);
-		mesajArea.setWrapText(true);
-		mesajArea.setTextFormatter(
+		messageArea.setPrefRowCount(1);
+		messageArea.setWrapText(true);
+		messageArea.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
 
-		HBox.setHgrow(mesajArea, Priority.ALWAYS);
+		HBox.setHgrow(messageArea, Priority.ALWAYS);
 
-		mesajArea.setOnKeyPressed(e -> {
+		messageArea.setOnKeyPressed(e -> {
 
 			if (e.getCode().equals(KeyCode.ENTER)) {
 
-				gonderBtn.fire();
+				sendBtn.fire();
 
 				e.consume();
 
@@ -139,128 +139,128 @@ class MessagePane extends BorderPane {
 
 		});
 
-		HBox.setMargin(durumCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
-		isimLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
+		HBox.setMargin(statusCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
-		ustPane.getChildren().addAll(geriBtn, durumCircle, isimLabel);
-		altPane.getChildren().addAll(mesajArea, gonderBtn);
+		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
+		bottomPane.getChildren().addAll(messageArea, sendBtn);
 
-		setTop(ustPane);
+		setTop(topPane);
 		setCenter(scrollPane);
-		setBottom(altPane);
+		setBottom(bottomPane);
 
-		ortaPane.heightProperty().addListener((e0, e1, e2) -> {
+		centerPane.heightProperty().addListener((e0, e1, e2) -> {
 
-			if (otoKaydirma.get())
-				sayfayiSonaKaydir();
+			if (autoScroll.get())
+				scrollPaneToBottom();
 
 		});
 
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
-			otoKaydirma.set(e1.doubleValue() == scrollPane.getVmax());
+			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
 
 		});
 
 	}
 
-	void setDurumColor(Paint fill) {
+	void setStatusColor(Paint fill) {
 
-		durumCircle.setFill(fill);
-
-	}
-
-	void setIsim(String isim) {
-
-		isimLabel.setText(isim);
+		statusCircle.setFill(fill);
 
 	}
 
-	void mesajEkle(Message mesaj, MessageDirection mesajYonu) {
+	void setName(String name) {
 
-		if (mesajBalonlari.containsKey(mesaj.getId()))
+		nameLabel.setText(name);
+
+	}
+
+	void addMessage(Message message, MessageDirection messageDirection) {
+
+		if (messageBalloons.containsKey(message.getId()))
 			return;
 
-		Date mesajTarihi = mesaj.getTarih();
+		Date messageDate = message.getDate();
 
-		MesajBalonu mesajBalonu = new MesajBalonu(mesaj.getIcerik(), mesajTarihi, mesajYonu);
-		mesajBalonu.setIletiRenkeri(mesaj.getMesajDurumu().getBeklemeRengi(),
-				mesaj.getMesajDurumu().getIletildiRengi());
+		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageDate, messageDirection);
+		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
+				message.getMessageStatus().getTransmittedColor());
 
-		mesajBalonlari.put(mesaj.getId(), mesajBalonu);
+		messageBalloons.put(message.getId(), messageBalloon);
 
-		LocalDate mesajGunu = mesajTarihi.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-		if (!gunKutulari.containsKey(mesajGunu)) {
-			GunKutusu gunKutusu = new GunKutusu(mesajGunu);
-			gunKutulari.put(mesajGunu, gunKutusu);
-			ortaPane.getChildren().add(gunKutusu);
-			FXCollections.sort(ortaPane.getChildren(), gunKutusuSiralayici);
+		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		if (!dayBoxes.containsKey(messageDay)) {
+			DayBox gunKutusu = new DayBox(messageDay);
+			dayBoxes.put(messageDay, gunKutusu);
+			centerPane.getChildren().add(gunKutusu);
+			FXCollections.sort(centerPane.getChildren(), dayBoxesSorter);
 		}
 
-		gunKutulari.get(mesajGunu).mesajBalonuEkle(mesajBalonu);
+		dayBoxes.get(messageDay).addMessageBalloon(messageBalloon);
 
-		if (mesajYonu.equals(MessageDirection.GIDEN))
-			sayfayiSonaKaydir();
+		if (messageDirection.equals(MessageDirection.OUTGOING))
+			scrollPaneToBottom();
 
 	}
 
-	void mesajGuncelle(Message mesaj) {
+	void updateMessage(Message message) {
 
-		if (!mesajBalonlari.containsKey(mesaj.getId()))
+		if (!messageBalloons.containsKey(message.getId()))
 			return;
 
-		mesajBalonlari.get(mesaj.getId()).setIletiRenkeri(mesaj.getMesajDurumu().getBeklemeRengi(),
-				mesaj.getMesajDurumu().getIletildiRengi());
+		messageBalloons.get(message.getId()).setMessageColors(message.getMessageStatus().getWaitingColor(),
+				message.getMessageStatus().getTransmittedColor());
 
 	}
 
-	void ekraniMesajaKaydir(Long mesajId) {
+	void scrollPaneToMessage(Long messageId) {
 
-		MesajBalonu mesajBalonu = mesajBalonlari.get(mesajId);
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (mesajBalonu == null) {
+		if (messageBalloon == null) {
 
-			sayfayiSonaKaydir();
+			scrollPaneToBottom();
 
 			return;
 
 		}
 
-		sayfayiKaydir(mesajBalonu, GAP);
+		scrollPane(messageBalloon, GAP);
 
 	}
 
-	void konumuKaydet(Long mesajId) {
+	void savePosition(Long messageId) {
 
-		MesajBalonu mesajBalonu = mesajBalonlari.get(mesajId);
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (mesajBalonu == null)
+		if (messageBalloon == null)
 			return;
 
-		Double yNode = scrollPane.sceneToLocal(mesajBalonu.localToScene(0.0, 0.0)).getY();
+		Double yNode = scrollPane.sceneToLocal(messageBalloon.localToScene(0.0, 0.0)).getY();
 
-		kaydedilenNodeY.set(new SimpleEntry<Node, Double>(mesajBalonu, yNode));
+		savedNodeY.set(new SimpleEntry<Node, Double>(messageBalloon, yNode));
 
 	}
 
-	void kaydedilenKonumaGit() {
+	void scrollToSavedPosition() {
 
-		SimpleEntry<Node, Double> nodeY = kaydedilenNodeY.getAndSet(null);
+		SimpleEntry<Node, Double> nodeY = savedNodeY.getAndSet(null);
 
 		if (nodeY == null)
 			return;
 
-		sayfayiKaydir(nodeY.getKey(), nodeY.getValue());
+		scrollPane(nodeY.getKey(), nodeY.getValue());
 
 	}
 
-	void setOnGeriAction(final Runnable runnable) {
+	void setOnBackAction(final Runnable runnable) {
 
-		geriBtn.setOnAction(e -> runnable.run());
+		backBtn.setOnAction(e -> runnable.run());
 
 	}
 
-	void setOnSayfaBasaKaydirildi(final Runnable runnable) {
+	void setOnPaneScrolledToTop(final Runnable runnable) {
 
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
@@ -273,13 +273,13 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void setOnMesajGonderAction(final Consumer<String> consumer) {
+	void setOnSendMessageAction(final Consumer<String> consumer) {
 
-		gonderBtn.setOnAction(e -> {
+		sendBtn.setOnAction(e -> {
 
-			final String mesajTxt = mesajArea.getText().trim();
+			final String mesajTxt = messageArea.getText().trim();
 
-			mesajArea.setText("");
+			messageArea.setText("");
 
 			if (mesajTxt.isEmpty())
 				return;
@@ -290,57 +290,57 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void sayfayiKaydir(Node kaydirilacakNode, double bias) {
+	private void scrollPane(Node kaydirilacakNode, double bias) {
 
 		scrollPane.applyCss();
 		scrollPane.layout();
 
-		Double ortaPaneYukseklik = ortaPane.getHeight();
-		Double scrollPaneViewportYukseklik = scrollPane.getViewportBounds().getHeight();
+		Double centerPaneHeight = centerPane.getHeight();
+		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
 
-		if (ortaPaneYukseklik < scrollPaneViewportYukseklik)
+		if (centerPaneHeight < scrollPaneViewportHeight)
 			return;
 
-		Double kaydirilacakY = ortaPane.sceneToLocal(kaydirilacakNode.localToScene(0.0, 0.0)).getY() - bias;
+		Double scrollY = centerPane.sceneToLocal(kaydirilacakNode.localToScene(0.0, 0.0)).getY() - bias;
 
-		Double yOran = Math.min(1.0, kaydirilacakY / (ortaPaneYukseklik - scrollPaneViewportYukseklik));
+		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
 
-		scrollPane.setVvalue(scrollPane.getVmax() * yOran);
+		scrollPane.setVvalue(scrollPane.getVmax() * ratioY);
 
 	}
 
-	private void sayfayiSonaKaydir() {
+	private void scrollPaneToBottom() {
 
 		scrollPane.setVvalue(scrollPane.getVmax());
 
 	}
 
-	private static class MesajBalonu extends GridPane {
+	private static class MessageBalloon extends GridPane {
 
 		private static final double RADIUS = 3.0;
-		private static final SimpleDateFormat SAAT_DAKIKA = new SimpleDateFormat("HH:mm");
+		private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
 
-		private final Date tarih;
-		private final MessageDirection mesajYonu;
+		private final Date date;
+		private final MessageDirection messageDirection;
 
-		private final GridPane mesajPane = new GridPane();
-		private final Label mesajLbl;
-		private final Label zamanLbl;
-		private final Group bilgiGrp = new Group();
-		private final Circle beklemeCircle = new Circle(RADIUS, Color.TRANSPARENT);
-		private final Circle iletildiCircle = new Circle(RADIUS, Color.TRANSPARENT);
+		private final GridPane messagePane = new GridPane();
+		private final Label messageLbl;
+		private final Label timeLbl;
+		private final Group infoGrp = new Group();
+		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
+		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
 
-		private final Region bosluk = new Region();
+		private final Region gap = new Region();
 
-		MesajBalonu(String mesaj, Date tarih, MessageDirection mesajYonu) {
+		MessageBalloon(String message, Date date, MessageDirection messageDirection) {
 
 			super();
 
-			this.tarih = tarih;
-			this.mesajYonu = mesajYonu;
+			this.date = date;
+			this.messageDirection = messageDirection;
 
-			mesajLbl = new Label(mesaj);
-			zamanLbl = new Label(SAAT_DAKIKA.format(tarih));
+			messageLbl = new Label(message);
+			timeLbl = new Label(HOUR_MIN.format(date));
 
 			init();
 
@@ -348,51 +348,51 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			zamanLbl.setFont(Font.font(mesajLbl.getFont().getSize() * 0.75));
-			zamanLbl.setTextFill(Color.DIMGRAY);
+			timeLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
+			timeLbl.setTextFill(Color.DIMGRAY);
 
-			ColumnConstraints colDar = new ColumnConstraints();
-			colDar.setPercentWidth(20.0);
-			ColumnConstraints colGenis = new ColumnConstraints();
-			colGenis.setPercentWidth(80.0);
+			ColumnConstraints colNarrow = new ColumnConstraints();
+			colNarrow.setPercentWidth(20.0);
+			ColumnConstraints colWide = new ColumnConstraints();
+			colWide.setPercentWidth(80.0);
 
-			mesajLbl.setWrapText(true);
+			messageLbl.setWrapText(true);
 
-			HBox.setHgrow(bosluk, Priority.ALWAYS);
+			HBox.setHgrow(gap, Priority.ALWAYS);
 
-			switch (mesajYonu) {
+			switch (messageDirection) {
 
-			case GELEN:
+			case INCOMING:
 
-				initGelenMesajPane();
+				initIncomingMessagePane();
 
-				getColumnConstraints().addAll(colGenis, colDar);
+				getColumnConstraints().addAll(colWide, colNarrow);
 
-				mesajPane.setBackground(
+				messagePane.setBackground(
 						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
 
-				GridPane.setHalignment(mesajPane, HPos.LEFT);
-				GridPane.setHalignment(zamanLbl, HPos.LEFT);
+				GridPane.setHalignment(messagePane, HPos.LEFT);
+				GridPane.setHalignment(timeLbl, HPos.LEFT);
 
-				add(mesajPane, 0, 0, 1, 1);
-				add(bosluk, 1, 0, 1, 1);
+				add(messagePane, 0, 0, 1, 1);
+				add(gap, 1, 0, 1, 1);
 
 				break;
 
-			case GIDEN:
+			case OUTGOING:
 
-				initGidenMesajPane();
+				initOutgoingMessagePane();
 
-				getColumnConstraints().addAll(colDar, colGenis);
+				getColumnConstraints().addAll(colNarrow, colWide);
 
-				mesajPane.setBackground(
+				messagePane.setBackground(
 						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
 
-				GridPane.setHalignment(mesajPane, HPos.RIGHT);
-				GridPane.setHalignment(zamanLbl, HPos.RIGHT);
+				GridPane.setHalignment(messagePane, HPos.RIGHT);
+				GridPane.setHalignment(timeLbl, HPos.RIGHT);
 
-				add(bosluk, 0, 0, 1, 1);
-				add(mesajPane, 1, 0, 1, 1);
+				add(gap, 0, 0, 1, 1);
+				add(messagePane, 1, 0, 1, 1);
 
 				break;
 
@@ -400,95 +400,95 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void setIletiRenkeri(Paint beklemeCircleColor, Paint iletildiCircleColor) {
+		void setMessageColors(Paint waitingCircleColor, Paint transmittedCircleColor) {
 
-			beklemeCircle.setFill(beklemeCircleColor);
-			iletildiCircle.setFill(iletildiCircleColor);
-
-		}
-
-		Date getTarih() {
-
-			return tarih;
+			waitingCircle.setFill(waitingCircleColor);
+			transmittedCircle.setFill(transmittedCircleColor);
 
 		}
 
-		private void initGelenMesajPane() {
+		Date getDate() {
 
-			initMesajPane();
-
-			mesajPane.add(mesajLbl, 0, 0, 1, 1);
-			mesajPane.add(zamanLbl, 0, 1, 1, 1);
+			return date;
 
 		}
 
-		private void initGidenMesajPane() {
+		private void initIncomingMessagePane() {
 
-			initMesajPane();
-			initBilgiGrp();
+			initMessagePane();
 
-			mesajPane.add(mesajLbl, 0, 0, 2, 1);
-			mesajPane.add(zamanLbl, 0, 1, 1, 1);
-			mesajPane.add(bilgiGrp, 1, 1, 1, 1);
+			messagePane.add(messageLbl, 0, 0, 1, 1);
+			messagePane.add(timeLbl, 0, 1, 1, 1);
 
 		}
 
-		private void initMesajPane() {
+		private void initOutgoingMessagePane() {
 
-			GridPane.setFillWidth(mesajPane, false);
+			initMessagePane();
+			initInfoGrp();
 
-			GridPane.setHgrow(zamanLbl, Priority.ALWAYS);
+			messagePane.add(messageLbl, 0, 0, 2, 1);
+			messagePane.add(timeLbl, 0, 1, 1, 1);
+			messagePane.add(infoGrp, 1, 1, 1, 1);
 
-			mesajPane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+		}
+
+		private void initMessagePane() {
+
+			GridPane.setFillWidth(messagePane, false);
+
+			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
+
+			messagePane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 					new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
 
-			mesajPane.setPadding(new Insets(GAP));
-			mesajPane.setHgap(GAP);
+			messagePane.setPadding(new Insets(GAP));
+			messagePane.setHgap(GAP);
 
 		}
 
-		private void initBilgiGrp() {
+		private void initInfoGrp() {
 
-			iletildiCircle.setLayoutX(2 * RADIUS);
-			bilgiGrp.getChildren().addAll(beklemeCircle, iletildiCircle);
+			transmittedCircle.setLayoutX(2 * RADIUS);
+			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 		}
 
 	}
 
-	private static class GunKutusu extends BorderPane {
+	private static class DayBox extends BorderPane {
 
-		private static final DateTimeFormatter GUN_AY_YIL = DateTimeFormatter.ofPattern("dd.MM.uuuu");
+		private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
-		private final LocalDate tarih;
+		private final LocalDate date;
 
-		private final Label tarihLabel;
-		private final VBox mesajBox = new VBox(GAP);
+		private final Label dateLabel;
+		private final VBox messageBox = new VBox(GAP);
 
-		private final Comparator<Node> mesajBalonuSiralayici = new Comparator<Node>() {
+		private final Comparator<Node> messageBalloonsSorter = new Comparator<Node>() {
 
 			@Override
 			public int compare(Node arg0, Node arg1) {
 
-				if (!(arg0 instanceof MesajBalonu && arg1 instanceof MesajBalonu))
+				if (!(arg0 instanceof MessageBalloon && arg1 instanceof MessageBalloon))
 					return 0;
 
-				MesajBalonu mesajBalonu0 = (MesajBalonu) arg0;
-				MesajBalonu mesajBalonu1 = (MesajBalonu) arg1;
+				MessageBalloon messageBalloon0 = (MessageBalloon) arg0;
+				MessageBalloon messageBalloon1 = (MessageBalloon) arg1;
 
-				return mesajBalonu0.getTarih().compareTo(mesajBalonu1.getTarih());
+				return messageBalloon0.getDate().compareTo(messageBalloon1.getDate());
 
 			}
 
 		};
 
-		GunKutusu(LocalDate tarih) {
+		DayBox(LocalDate date) {
 
 			super();
 
-			this.tarih = tarih;
+			this.date = date;
 
-			tarihLabel = new Label(GUN_AY_YIL.format(tarih));
+			dateLabel = new Label(DAY_MONTH_YEAR.format(date));
 
 			init();
 
@@ -496,33 +496,33 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			// init tarihLabel
-			tarihLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-			tarihLabel.setFont(Font.font(null, FontWeight.BOLD, tarihLabel.getFont().getSize()));
-			tarihLabel.setTextFill(Color.GRAY);
-			tarihLabel.setBackground(
+			// init dateLabel
+			dateLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
+			dateLabel.setFont(Font.font(null, FontWeight.BOLD, dateLabel.getFont().getSize()));
+			dateLabel.setTextFill(Color.GRAY);
+			dateLabel.setBackground(
 					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY)));
-			tarihLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+			dateLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 					new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY)));
-			BorderPane.setAlignment(tarihLabel, Pos.CENTER);
-			BorderPane.setMargin(tarihLabel, new Insets(0.0, 0.0, GAP, 0.0));
+			BorderPane.setAlignment(dateLabel, Pos.CENTER);
+			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, GAP, 0.0));
 
-			setTop(tarihLabel);
-			setCenter(mesajBox);
-
-		}
-
-		void mesajBalonuEkle(MesajBalonu mesajBalonu) {
-
-			mesajBox.getChildren().add(mesajBalonu);
-
-			FXCollections.sort(mesajBox.getChildren(), mesajBalonuSiralayici);
+			setTop(dateLabel);
+			setCenter(messageBox);
 
 		}
 
-		LocalDate getTarih() {
+		void addMessageBalloon(MessageBalloon messageBalloon) {
 
-			return tarih;
+			messageBox.getChildren().add(messageBalloon);
+
+			FXCollections.sort(messageBox.getChildren(), messageBalloonsSorter);
+
+		}
+
+		LocalDate getDate() {
+
+			return date;
 
 		}
 

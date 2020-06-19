@@ -36,16 +36,16 @@ class IdentityPane extends GridPane {
 
 	private static final double SIZE = 30.0;
 
-	private final Group profilResmi = new Group();
-	private final Circle durumCemberi = new Circle(SIZE);
-	private final Circle profilDairesi = new Circle(SIZE * 0.8);
-	private final Label profilLabel = new Label();
+	private final Group profilePicture = new Group();
+	private final Circle statusCircle = new Circle(SIZE);
+	private final Circle profileRound = new Circle(SIZE * 0.8);
+	private final Label profileLabel = new Label();
 
-	private final Label isimLabel = new Label();
-	private final TextField aciklamaTextField = new TextField();
-	private final Label konumLabel = new Label();
+	private final Label nameLabel = new Label();
+	private final TextField commentTextField = new TextField();
+	private final Label coordinatesLabel = new Label();
 
-	private final List<IKimlikPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IKimlikPane>());
+	private final List<IIdentityPane> listeners = Collections.synchronizedList(new ArrayList<IIdentityPane>());
 
 	IdentityPane() {
 
@@ -57,155 +57,156 @@ class IdentityPane extends GridPane {
 
 	private void init() {
 
-		initProfilResmi();
-		initDurumCemberi();
-		initProfilDairesi();
-		initProfilLabel();
-		initIsimLabel();
-		initAciklamaTextField();
-		initKonumLabel();
+		initProfilePicture();
+		initStatusCircle();
+		initProfileRound();
+		initProfileLabel();
+		initNameLabel();
+		initCommentTextField();
+		initCoordinatesLabel();
 
 		setHgap(5.0);
-		setValignment(profilResmi, VPos.TOP);
-		setHgrow(aciklamaTextField, Priority.ALWAYS);
+		setValignment(profilePicture, VPos.TOP);
+		setHgrow(commentTextField, Priority.ALWAYS);
 
-		add(profilResmi, 0, 0, 1, 3);
+		add(profilePicture, 0, 0, 1, 3);
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
-		add(isimLabel, 2, 0, 1, 1);
-		add(aciklamaTextField, 2, 1, 1, 1);
-		add(konumLabel, 2, 2, 1, 1);
+		add(nameLabel, 2, 0, 1, 1);
+		add(commentTextField, 2, 1, 1, 1);
+		add(coordinatesLabel, 2, 2, 1, 1);
 
 	}
 
-	void dinleyiciEkle(IKimlikPane dinleyici) {
+	void addListener(IIdentityPane listener) {
 
-		dinleyiciler.add(dinleyici);
-
-	}
-
-	void setKimlik(Identity kimlik) {
-
-		durumCemberi.setStroke(kimlik.getDurum().getDurumRengi());
-		profilLabel.setText(kimlik.getIsim().substring(0, 1).toUpperCase());
-
-		isimLabel.setText(kimlik.getIsim());
-		if (!aciklamaTextField.isEditable())
-			aciklamaTextField.setText(kimlik.getAciklama());
-		konumLabel.setText(kimlik.getEnlem() == null || kimlik.getBoylam() == null ? ""
-				: "(" + String.format("%.2f", kimlik.getEnlem()) + String.format("%.2f", kimlik.getEnlem()) + ")");
+		listeners.add(listener);
 
 	}
 
-	private void initProfilResmi() {
+	void setIdentity(Identity identity) {
 
-		profilResmi.getChildren().addAll(durumCemberi, profilDairesi, profilLabel);
+		statusCircle.setStroke(identity.getStatus().getStatusColor());
+		profileLabel.setText(identity.getName().substring(0, 1).toUpperCase());
 
-		profilResmi.setOnMouseClicked(e -> {
+		nameLabel.setText(identity.getName());
+		if (!commentTextField.isEditable())
+			commentTextField.setText(identity.getComment());
+		coordinatesLabel.setText(identity.getLattitude() == null || identity.getLongitude() == null ? ""
+				: "(" + String.format("%.2f", identity.getLattitude()) + String.format("%.2f", identity.getLongitude())
+						+ ")");
+
+	}
+
+	private void initProfilePicture() {
+
+		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel);
+
+		profilePicture.setOnMouseClicked(e -> {
 
 			if (!e.getButton().equals(MouseButton.PRIMARY))
 				return;
 
-			dinleyiciler.forEach(dinleyici -> dinleyici.durumGuncelleTiklandi());
+			listeners.forEach(listener -> listener.updateStatusClicked());
 
 		});
 
 	}
 
-	private void initDurumCemberi() {
+	private void initStatusCircle() {
 
-		durumCemberi.setStrokeWidth(SIZE * 0.2);
-		durumCemberi.setFill(Color.TRANSPARENT);
-
-	}
-
-	private void initProfilDairesi() {
-
-		profilDairesi.setFill(Color.DARKGRAY);
+		statusCircle.setStrokeWidth(SIZE * 0.2);
+		statusCircle.setFill(Color.TRANSPARENT);
 
 	}
 
-	private void initProfilLabel() {
+	private void initProfileRound() {
 
-		profilLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		profilLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
-
-		profilLabel.translateXProperty().bind(Bindings.createDoubleBinding(() -> -profilLabel.widthProperty().get() / 2,
-				profilLabel.widthProperty()));
-		profilLabel.translateYProperty().bind(Bindings
-				.createDoubleBinding(() -> -profilLabel.heightProperty().get() / 2, profilLabel.heightProperty()));
+		profileRound.setFill(Color.DARKGRAY);
 
 	}
 
-	private void initIsimLabel() {
+	private void initProfileLabel() {
 
-		isimLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		isimLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+		profileLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
+
+		profileLabel.translateXProperty().bind(Bindings
+				.createDoubleBinding(() -> -profileLabel.widthProperty().get() / 2, profileLabel.widthProperty()));
+		profileLabel.translateYProperty().bind(Bindings
+				.createDoubleBinding(() -> -profileLabel.heightProperty().get() / 2, profileLabel.heightProperty()));
 
 	}
 
-	private void initAciklamaTextField() {
+	private void initNameLabel() {
 
-		final AtomicReference<String> sonAciklama = new AtomicReference<String>();
+		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		aciklamaTextField.setTextFormatter(
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+
+	}
+
+	private void initCommentTextField() {
+
+		final AtomicReference<String> lastComment = new AtomicReference<String>();
+
+		commentTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
-		aciklamaTextField.setPromptText(CommonMethods.cevir("ACIKLAMA_GIR"));
-		aciklamaTextField.setFocusTraversable(false);
-		aciklamaTextField.setEditable(false);
+		commentTextField.setPromptText(CommonMethods.translate("TYPE_COMMENT"));
+		commentTextField.setFocusTraversable(false);
+		commentTextField.setEditable(false);
 
-		aciklamaTextField.setOnMouseClicked(e -> {
+		commentTextField.setOnMouseClicked(e -> {
 
-			if (aciklamaTextField.isEditable())
+			if (commentTextField.isEditable())
 				return;
 
 			if (!e.getButton().equals(MouseButton.PRIMARY))
 				return;
 
-			sonAciklama.set(aciklamaTextField.getText());
-			aciklamaTextField.setEditable(true);
+			lastComment.set(commentTextField.getText());
+			commentTextField.setEditable(true);
 
 		});
 
-		aciklamaTextField.setOnKeyPressed(e -> {
+		commentTextField.setOnKeyPressed(e -> {
 
 			KeyCode code = e.getCode();
 			if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
 				return;
 
 			if (e.getCode().equals(KeyCode.ESCAPE))
-				aciklamaTextField.setText(sonAciklama.get());
+				commentTextField.setText(lastComment.get());
 
 			e.consume();
-			aciklamaTextField.setEditable(false);
+			commentTextField.setEditable(false);
 			requestFocus();
 
-			final String aciklama = aciklamaTextField.getText();
+			final String comment = commentTextField.getText();
 
-			dinleyiciler.forEach(dinleyici -> dinleyici.aciklamaGuncellendi(aciklama));
+			listeners.forEach(listener -> listener.commentUpdated(comment));
 
 		});
 
-		aciklamaTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
+		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
 				BorderStrokeStyle.SOLID, new CornerRadii(15.0), BorderWidths.DEFAULT) }));
-		aciklamaTextField.setBackground(Background.EMPTY);
+		commentTextField.setBackground(Background.EMPTY);
 
 	}
 
-	private void initKonumLabel() {
+	private void initCoordinatesLabel() {
 
-		konumLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 
 }
 
-interface IKimlikPane {
+interface IIdentityPane {
 
-	void aciklamaGuncellendi(String aciklama);
+	void commentUpdated(String comment);
 
-	void durumGuncelleTiklandi();
+	void updateStatusClicked();
 
 }

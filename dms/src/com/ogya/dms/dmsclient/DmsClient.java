@@ -24,13 +24,13 @@ public class DmsClient {
 	private final String serverIp;
 	private final int dealerPort;
 
-	private final DmsClientListener dinleyici;
+	private final DmsClientListener listener;
 
 	private final LinkedBlockingQueue<String> dealerQueue = new LinkedBlockingQueue<String>();
 
 	private final Gson gson = new Gson();
 
-	private final ExecutorService out = Executors.newSingleThreadExecutor(new ThreadFactory() {
+	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
 		@Override
 		public Thread newThread(Runnable arg0) {
@@ -45,14 +45,14 @@ public class DmsClient {
 
 	});
 
-	public DmsClient(String uuid, String comIp, int comPort, DmsClientListener dinleyici) {
+	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
 		this.uuid = uuid;
 
-		this.serverIp = comIp;
-		this.dealerPort = comPort;
+		this.serverIp = commIp;
+		this.dealerPort = commPort;
 
-		this.dinleyici = dinleyici;
+		this.listener = listener;
 
 		start();
 
@@ -74,72 +74,72 @@ public class DmsClient {
 
 	}
 
-	public void beaconGonder(String mesaj) {
+	public void sendBeacon(String message) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, ContentType.BCON)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.BCON)));
 
 	}
 
-	public void tumBeaconlariIste() {
+	public void claimAllBeacons() {
 
 		dealerQueue.offer(gson.toJson(new MessagePojo("", uuid, ContentType.REQ_BCON)));
 
 	}
 
-	public void mesajGonder(String mesaj, String aliciUuid) {
+	public void sendMessage(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, aliciUuid, ContentType.MESAJ)));
-
-	}
-
-	public void mesajGonder(String mesaj, String proxyUuid, String aliciUuid) {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, proxyUuid, aliciUuid, ContentType.MESAJ)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE)));
 
 	}
 
-	public void mesajGonder(String mesaj, String proxyUuid, String... aliciUuidler) {
+	public void sendMessage(String message, String proxyUuid, String receiverUuid) {
 
-		dealerQueue.offer(gson
-				.toJson(new MessagePojo(mesaj, uuid, proxyUuid, String.join(";", aliciUuidler), ContentType.MESAJ)));
-
-	}
-
-	public void mesajDurumuIste(String mesaj, String aliciUuid) {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, aliciUuid, ContentType.MESAJ_DURUMU_VER)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.MESSAGE)));
 
 	}
 
-	public void mesajDurumuIste(String mesaj, String proxyUuid, String aliciUuid) {
-
-		dealerQueue
-				.offer(gson.toJson(new MessagePojo(mesaj, uuid, proxyUuid, aliciUuid, ContentType.MESAJ_DURUMU_VER)));
-
-	}
-
-	public void mesajDurumuIste(String mesaj, String proxyUuid, String... aliciUuidler) {
+	public void sendMessage(String message, String proxyUuid, String... receiverUuids) {
 
 		dealerQueue.offer(gson.toJson(
-				new MessagePojo(mesaj, uuid, proxyUuid, String.join(";", aliciUuidler), ContentType.MESAJ_DURUMU_VER)));
+				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
 
 	}
 
-	public void alinmadiGonder(String mesaj, String aliciUuid) {
+	public void claimMessageStatus(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, aliciUuid, ContentType.ALINMADI)));
-
-	}
-
-	public void alindiGonder(String mesaj, String aliciUuid) {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, aliciUuid, ContentType.ALINDI)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS)));
 
 	}
 
-	public void okunduGonder(String mesaj, String aliciUuid) {
+	public void claimMessageStatus(String message, String proxyUuid, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(mesaj, uuid, aliciUuid, ContentType.OKUNDU)));
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS)));
+
+	}
+
+	public void claimMessageStatus(String message, String proxyUuid, String... receiverUuids) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids),
+				ContentType.CLAIM_MESSAGE_STATUS)));
+
+	}
+
+	public void sendNotReceived(String message, String receiverUuid) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.NOT_RECEIVED)));
+
+	}
+
+	public void sendReceived(String message, String receiverUuid) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.RECEIVED)));
+
+	}
+
+	public void sendRead(String message, String receiverUuid) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.READ)));
 
 	}
 
@@ -166,13 +166,13 @@ public class DmsClient {
 
 				if (poller.pollin(pollDealer)) {
 
-					String gelenMesaj = dealerSocket.recvStr(ZMQ.DONTWAIT);
-					gelenMesajiIsle(gelenMesaj);
+					String receivedMessage = dealerSocket.recvStr(ZMQ.DONTWAIT);
+					processIncomingMessage(receivedMessage);
 
 				} else if (poller.pollin(pollInproc)) {
 
-					String gidenMesaj = inprocSocket.recvStr(ZMQ.DONTWAIT);
-					dealerSocket.send(gidenMesaj, ZMQ.DONTWAIT);
+					String sentMessage = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					dealerSocket.send(sentMessage, ZMQ.DONTWAIT);
 
 				}
 
@@ -220,11 +220,11 @@ public class DmsClient {
 
 				case ZMQ.EVENT_HANDSHAKE_PROTOCOL:
 
-					dinleyiciyeSunucuBaglantiDurumuGuncellendi(true);
+					serverConnStatusUpdatedToListener(true);
 					break;
 
 				case ZMQ.EVENT_DISCONNECTED:
-					dinleyiciyeSunucuBaglantiDurumuGuncellendi(false);
+					serverConnStatusUpdatedToListener(false);
 					break;
 
 				}
@@ -235,59 +235,59 @@ public class DmsClient {
 
 	}
 
-	private void gelenMesajiIsle(String mesaj) {
+	private void processIncomingMessage(String message) {
 
-		if (mesaj.isEmpty())
+		if (message.isEmpty())
 			return;
 
 		try {
 
-			MessagePojo mesajNesnesi = gson.fromJson(mesaj, MessagePojo.class);
+			MessagePojo messagePojo = gson.fromJson(message, MessagePojo.class);
 
-			if (uuid.equals(mesajNesnesi.gonderenUuid))
+			if (uuid.equals(messagePojo.senderUuid))
 				return;
 
-			switch (mesajNesnesi.icerikTipi) {
+			switch (messagePojo.contentType) {
 
 			case BCON:
 
-				dinleyiciyeBeaconAlindi(mesajNesnesi.mesaj);
+				beaconReceivedToListener(messagePojo.message);
 
 				break;
 
-			case MESAJ:
+			case MESSAGE:
 
-				dinleyiciyeMesajAlindi(mesajNesnesi.mesaj);
-
-				break;
-
-			case UUID_KOPTU:
-
-				dinleyiciyeKullaniciKoptu(mesajNesnesi.mesaj);
+				messageReceivedToListener(messagePojo.message);
 
 				break;
 
-			case MESAJ_DURUMU_VER:
+			case UUID_DISCONNECTED:
 
-				dinleyiciyeMesajDurumuIstendi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
-
-				break;
-
-			case ALINMADI:
-
-				dinleyiciyeKarsiTarafMesajiAlmadi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+				userDisconnectedToListener(messagePojo.message);
 
 				break;
 
-			case ALINDI:
+			case CLAIM_MESSAGE_STATUS:
 
-				dinleyiciyeKarsiTarafMesajiAldi(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+				messageStatusClaimedToListener(messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
-			case OKUNDU:
+			case NOT_RECEIVED:
 
-				dinleyiciyeKarsiTarafMesajiOkudu(mesajNesnesi.mesaj, mesajNesnesi.gonderenUuid);
+				messageNotReceivedRemotelyToListener(messagePojo.message, messagePojo.senderUuid);
+
+				break;
+
+			case RECEIVED:
+
+				messageReceivedRemotelyToListener(messagePojo.message, messagePojo.senderUuid);
+
+				break;
+
+			case READ:
+
+				messageReadRemotelyToListener(messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
@@ -303,81 +303,81 @@ public class DmsClient {
 
 	}
 
-	private void dinleyiciyeBeaconAlindi(final String mesaj) {
+	private void beaconReceivedToListener(final String message) {
 
-		out.execute(() -> {
+		taskQueue.execute(() -> {
 
-			dinleyici.beaconAlindi(mesaj);
-
-		});
-
-	}
-
-	private void dinleyiciyeMesajAlindi(final String mesaj) {
-
-		out.execute(() -> {
-
-			dinleyici.mesajAlindi(mesaj);
+			listener.beaconReceived(message);
 
 		});
 
 	}
 
-	private void dinleyiciyeKullaniciKoptu(final String uuid) {
+	private void messageReceivedToListener(final String message) {
 
-		out.execute(() -> {
+		taskQueue.execute(() -> {
 
-			dinleyici.kullaniciKoptu(uuid);
-
-		});
-
-	}
-
-	private void dinleyiciyeSunucuBaglantiDurumuGuncellendi(final boolean baglantiDurumu) {
-
-		out.execute(() -> {
-
-			dinleyici.sunucuBaglantiDurumuGuncellendi(baglantiDurumu);
+			listener.messageReceived(message);
 
 		});
 
 	}
 
-	private void dinleyiciyeMesajDurumuIstendi(final String mesaj, final String karsiTarafUuid) {
+	private void userDisconnectedToListener(final String uuid) {
 
-		out.execute(() -> {
+		taskQueue.execute(() -> {
 
-			dinleyici.mesajDurumuIstendi(mesaj, karsiTarafUuid);
-
-		});
-
-	}
-
-	private void dinleyiciyeKarsiTarafMesajiAlmadi(final String mesaj, final String karsiTarafUuid) {
-
-		out.execute(() -> {
-
-			dinleyici.karsiTarafMesajiAlmadi(mesaj, karsiTarafUuid);
+			listener.userDisconnected(uuid);
 
 		});
 
 	}
 
-	private void dinleyiciyeKarsiTarafMesajiAldi(final String mesaj, final String karsiTarafUuid) {
+	private void serverConnStatusUpdatedToListener(final boolean connStatus) {
 
-		out.execute(() -> {
+		taskQueue.execute(() -> {
 
-			dinleyici.karsiTarafMesajiAldi(mesaj, karsiTarafUuid);
+			listener.serverConnStatusUpdated(connStatus);
 
 		});
 
 	}
 
-	private void dinleyiciyeKarsiTarafMesajiOkudu(final String mesaj, final String karsiTarafUuid) {
+	private void messageStatusClaimedToListener(final String message, final String remoteUuid) {
 
-		out.execute(() -> {
+		taskQueue.execute(() -> {
 
-			dinleyici.karsiTarafMesajiOkudu(mesaj, karsiTarafUuid);
+			listener.messageStatusClaimed(message, remoteUuid);
+
+		});
+
+	}
+
+	private void messageNotReceivedRemotelyToListener(final String message, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.messageNotReceivedRemotely(message, remoteUuid);
+
+		});
+
+	}
+
+	private void messageReceivedRemotelyToListener(final String message, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.messageReceivedRemotely(message, remoteUuid);
+
+		});
+
+	}
+
+	private void messageReadRemotelyToListener(final String message, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.messageReadRemotely(message, remoteUuid);
 
 		});
 

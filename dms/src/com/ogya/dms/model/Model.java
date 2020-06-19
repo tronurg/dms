@@ -7,135 +7,135 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.ogya.dms.database.tables.Group;
-import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Contact;
+import com.ogya.dms.database.tables.Dgroup;
+import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.structures.ContactStatus;
 
 public class Model {
 
-	private final Identity kimlik;
+	private final Identity identity;
 
-	private final AtomicBoolean sunucuBagli = new AtomicBoolean(false);
+	private final AtomicBoolean isServerConnected = new AtomicBoolean(false);
 
-	private final Map<String, Contact> kisiler = Collections.synchronizedMap(new HashMap<String, Contact>());
-	private final Map<String, Group> gruplar = Collections.synchronizedMap(new HashMap<String, Group>());
+	private final Map<String, Contact> contacts = Collections.synchronizedMap(new HashMap<String, Contact>());
+	private final Map<String, Dgroup> dgroups = Collections.synchronizedMap(new HashMap<String, Dgroup>());
 
-	private final List<String> acikUuidler = Collections.synchronizedList(new ArrayList<String>());
+	private final List<String> openUuids = Collections.synchronizedList(new ArrayList<String>());
 
-	private final Map<String, Long> minMesajIdler = Collections.synchronizedMap(new HashMap<String, Long>());
+	private final Map<String, Long> minMessageIds = Collections.synchronizedMap(new HashMap<String, Long>());
 
-	public Model(Identity kimlik) {
+	public Model(Identity identity) {
 
-		this.kimlik = kimlik;
-
-	}
-
-	public Identity getKimlik() {
-
-		return kimlik;
+		this.identity = identity;
 
 	}
 
-	public void aciklamaGuncelle(String aciklama) {
+	public Identity getIdentity() {
 
-		kimlik.setAciklama(aciklama);
-
-	}
-
-	public void durumGuncelle(ContactStatus durum) {
-
-		kimlik.setDurum(durum);
+		return identity;
 
 	}
 
-	public boolean isSunucuBagli() {
+	public void updateComment(String comment) {
 
-		return sunucuBagli.get();
-
-	}
-
-	public void setSunucuBaglantiDurumu(boolean arg0) {
-
-		sunucuBagli.set(arg0);
+		identity.setComment(comment);
 
 	}
 
-	public void addKisi(Contact kisi) {
+	public void updateStatus(ContactStatus status) {
 
-		kisiler.put(kisi.getUuid(), kisi);
-
-	}
-
-	public Contact getKisi(String uuid) {
-
-		return kisiler.get(uuid);
+		identity.setStatus(status);
 
 	}
 
-	public boolean isKisiCevrimici(String uuid) {
+	public boolean isServerConnected() {
 
-		return kisiler.containsKey(uuid) && !getKisi(uuid).getDurum().equals(ContactStatus.CEVRIMDISI);
-
-	}
-
-	public Map<String, Contact> getKisiler() {
-
-		return kisiler;
+		return isServerConnected.get();
 
 	}
 
-	public void addGrup(Group grup) {
+	public void setServerConnStatus(boolean connStatus) {
 
-		gruplar.put(grup.getUuid(), grup);
-
-	}
-
-	public Group getGrup(String uuid) {
-
-		return gruplar.get(uuid);
+		isServerConnected.set(connStatus);
 
 	}
 
-	public Map<String, Group> getGruplar() {
+	public void addContact(Contact contact) {
 
-		return gruplar;
-
-	}
-
-	public void mesajPaneliAcildi(String uuid) {
-
-		acikUuidler.add(uuid);
+		contacts.put(contact.getUuid(), contact);
 
 	}
 
-	public void mesajPaneliKapandi(String uuid) {
+	public Contact getContact(String uuid) {
 
-		acikUuidler.remove(uuid);
-
-	}
-
-	public boolean isMesajPaneliAcik(String uuid) {
-
-		return acikUuidler.contains(uuid);
+		return contacts.get(uuid);
 
 	}
 
-	public void mesajIdEkle(String uuid, Long id) {
+	public boolean isContactOnline(String uuid) {
 
-		if (minMesajIdler.containsKey(uuid) && minMesajIdler.get(uuid) < id)
+		return contacts.containsKey(uuid) && !getContact(uuid).getStatus().equals(ContactStatus.OFFLINE);
+
+	}
+
+	public Map<String, Contact> getContacts() {
+
+		return contacts;
+
+	}
+
+	public void addDgroup(Dgroup dgroup) {
+
+		dgroups.put(dgroup.getUuid(), dgroup);
+
+	}
+
+	public Dgroup getDgroup(String uuid) {
+
+		return dgroups.get(uuid);
+
+	}
+
+	public Map<String, Dgroup> getDgroups() {
+
+		return dgroups;
+
+	}
+
+	public void messagePaneOpened(String uuid) {
+
+		openUuids.add(uuid);
+
+	}
+
+	public void messagePaneClosed(String uuid) {
+
+		openUuids.remove(uuid);
+
+	}
+
+	public boolean isMessagePaneOpen(String uuid) {
+
+		return openUuids.contains(uuid);
+
+	}
+
+	public void addMessageId(String uuid, Long id) {
+
+		if (minMessageIds.containsKey(uuid) && minMessageIds.get(uuid) < id)
 			return;
 
-		minMesajIdler.put(uuid, id);
+		minMessageIds.put(uuid, id);
 
 	}
 
-	public Long getMinMesajId(String uuid) {
+	public Long getMinMessageId(String uuid) {
 
-		if (!minMesajIdler.containsKey(uuid))
+		if (!minMessageIds.containsKey(uuid))
 			return -1L;
 
-		return minMesajIdler.get(uuid);
+		return minMessageIds.get(uuid);
 
 	}
 

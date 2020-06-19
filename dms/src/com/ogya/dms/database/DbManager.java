@@ -18,7 +18,7 @@ import org.hibernate.query.Query;
 
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
-import com.ogya.dms.database.tables.Group;
+import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.intf.exceptions.DbException;
@@ -40,7 +40,7 @@ public class DbManager {
 					.setProperty("hibernate.connection.url",
 							"jdbc:h2:" + CommonConstants.DB_PATH + File.separator + dbName)
 					.setProperty("hibernate.connection.username", dbName)
-					.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Group.class)
+					.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Dgroup.class)
 					.addAnnotatedClass(Identity.class).addAnnotatedClass(Contact.class).addAnnotatedClass(Message.class)
 					.buildSessionFactory();
 
@@ -93,13 +93,13 @@ public class DbManager {
 
 	}
 
-	public List<Group> fetchAllGroups() throws HibernateException {
+	public List<Dgroup> fetchAllGroups() throws HibernateException {
 
 		Session session = factory.openSession();
 
-		Query<Group> queryGroup = session.createQuery("from Group", Group.class);
+		Query<Dgroup> queryDmsGroup = session.createQuery("from Dgroup", Dgroup.class);
 
-		List<Group> allGroups = queryGroup.list();
+		List<Dgroup> allGroups = queryDmsGroup.list();
 
 		session.close();
 
@@ -174,32 +174,32 @@ public class DbManager {
 
 	}
 
-	public Group addUpdateGroup(Group group) throws HibernateException {
+	public Dgroup addUpdateDgroup(Dgroup dgroup) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		Group dbGroup = session.createQuery("from Group where uuid like :uuid", Group.class)
-				.setParameter("uuid", group.getUuid()).uniqueResult();
+		Dgroup dbDgroup = session.createQuery("from Dgroup where uuid like :uuid", Dgroup.class)
+				.setParameter("uuid", dgroup.getUuid()).uniqueResult();
 
-		if (dbGroup == null) {
+		if (dbDgroup == null) {
 
-			dbGroup = group;
+			dbDgroup = dgroup;
 
-			dbGroup.setId(null);
+			dbDgroup.setId(null);
 
 			session.beginTransaction();
 
-			session.persist(dbGroup);
+			session.persist(dbDgroup);
 
 			session.getTransaction().commit();
 
 		} else {
 
-			group.setId(dbGroup.getId());
+			dgroup.setId(dbDgroup.getId());
 
 			session.beginTransaction();
 
-			dbGroup = (Group) session.merge(group);
+			dbDgroup = (Dgroup) session.merge(dgroup);
 
 			session.getTransaction().commit();
 
@@ -207,7 +207,7 @@ public class DbManager {
 
 		session.close();
 
-		return dbGroup;
+		return dbDgroup;
 
 	}
 
@@ -291,7 +291,7 @@ public class DbManager {
 
 	}
 
-	public List<Message> getMessagesWaitingToUser(String receiverUuid) throws HibernateException {
+	public List<Message> getMessagesWaitingToContact(String receiverUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
@@ -306,7 +306,7 @@ public class DbManager {
 
 	}
 
-	public List<Message> getMessagesWaitingFromUser(String senderUuid) throws HibernateException {
+	public List<Message> getMessagesWaitingFromContact(String senderUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 

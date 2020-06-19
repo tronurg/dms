@@ -43,7 +43,7 @@ public class Contact {
 	private Double longitude;
 
 	@ManyToMany(mappedBy = "contacts")
-	private Set<Group> groups = new HashSet<Group>();
+	private Set<Dgroup> dgroups = new HashSet<Dgroup>();
 
 	public Contact() {
 		super();
@@ -105,12 +105,12 @@ public class Contact {
 		this.longitude = longitude;
 	}
 
-	public Set<Group> getGroups() {
-		return groups;
+	public Set<Dgroup> getDgroups() {
+		return dgroups;
 	}
 
-	public void setGroups(Set<Group> groups) {
-		this.groups = groups;
+	public void setDmsGroups(Set<Dgroup> dgroups) {
+		this.dgroups = dgroups;
 	}
 
 }

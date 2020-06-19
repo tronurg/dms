@@ -19,12 +19,12 @@ import javafx.scene.paint.Color;
 class GroupsPane extends TitledPane {
 
 	private final BorderPane borderPane = new BorderPane();
-	private final Button grupOlusturBtn = ViewFactory.newEkleBtn();
-	private final VBox gruplar = new VBox();
+	private final Button createGroupBtn = ViewFactory.newAddBtn();
+	private final VBox groups = new VBox();
 
-	private final CreateGroupPane grupOlusturPane = new CreateGroupPane();
+	private final CreateGroupPane createGroupPane = new CreateGroupPane();
 
-	private final List<IGruplarPane> dinleyiciler = Collections.synchronizedList(new ArrayList<IGruplarPane>());
+	private final List<IGroupsPane> listeners = Collections.synchronizedList(new ArrayList<IGroupsPane>());
 
 	GroupsPane() {
 
@@ -36,21 +36,21 @@ class GroupsPane extends TitledPane {
 
 	private void init() {
 
-		grupOlusturPane.setOnGeriAction(
-				() -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturPaneGizle(grupOlusturPane)));
-		grupOlusturPane.setOnGrupOlusturAction(
-				() -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturTiklandi(grupOlusturPane)));
+		createGroupPane
+				.setOnBackAction(() -> listeners.forEach(listener -> listener.hideCreateGroupPane(createGroupPane)));
+		createGroupPane.setOnCreateGroupAction(
+				() -> listeners.forEach(listener -> listener.createGroupClicked(createGroupPane)));
 
 		initGrupOlusturBtn();
 
-		setText(CommonMethods.cevir("GRUPLAR"));
+		setText(CommonMethods.translate("GROUPS"));
 
-		gruplar.setPadding(new Insets(10.0));
+		groups.setPadding(new Insets(10.0));
 
-		ScrollPane scrollPane = new ScrollPane(gruplar);
+		ScrollPane scrollPane = new ScrollPane(groups);
 		scrollPane.setFitToWidth(true);
 
-		borderPane.setTop(grupOlusturBtn);
+		borderPane.setTop(createGroupBtn);
 		borderPane.setCenter(scrollPane);
 
 		borderPane.setPadding(Insets.EMPTY);
@@ -59,46 +59,45 @@ class GroupsPane extends TitledPane {
 
 	}
 
-	void dinleyiciEkle(IGruplarPane dinleyici) {
+	void addListener(IGroupsPane listener) {
 
-		dinleyiciler.add(dinleyici);
+		listeners.add(listener);
 
 	}
 
-	void grupOlusturPaneKisiGuncelle(Contact kisi) {
+	void createGroupPaneUpdateContact(Contact contact) {
 
-		grupOlusturPane.kisiGuncelle(kisi);
+		createGroupPane.updateContact(contact);
 
 	}
 
 	private void initGrupOlusturBtn() {
 
-		grupOlusturBtn.setMnemonicParsing(false);
-		grupOlusturBtn.setText(CommonMethods.cevir("GRUP_OLUSTUR"));
-		grupOlusturBtn.setTextFill(Color.GRAY);
-		grupOlusturBtn.setPadding(new Insets(10.0));
+		createGroupBtn.setMnemonicParsing(false);
+		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
+		createGroupBtn.setTextFill(Color.GRAY);
+		createGroupBtn.setPadding(new Insets(10.0));
 
-		grupOlusturBtn
-				.setOnAction(e -> dinleyiciler.forEach(dinleyici -> dinleyici.grupOlusturPaneGoster(grupOlusturPane)));
+		createGroupBtn.setOnAction(e -> listeners.forEach(listener -> listener.showCreateGroupPane(createGroupPane)));
 
 	}
 
 }
 
-interface IGruplarPane {
+interface IGroupsPane {
 
-	void grupOlusturPaneGoster(CreateGroupPane grupOlusturPane);
+	void showCreateGroupPane(CreateGroupPane createGroupPane);
 
-	void grupOlusturPaneGizle(CreateGroupPane grupOlusturPane);
+	void hideCreateGroupPane(CreateGroupPane createGroupPane);
 
-	void grupOlusturTiklandi(CreateGroupPane grupOlusturPane);
+	void createGroupClicked(CreateGroupPane createGroupPane);
 
-	void grupMesajPaneGoster(MessagePane mesajPane, String uuid);
+	void showGroupMessagePane(MessagePane messagePane, String uuid);
 
-	void grupMesajPaneGizle(MessagePane mesajPane, String uuid);
+	void hideGroupMessagePane(MessagePane messagePane, String uuid);
 
-	void grupMesajGonderTiklandi(String mesajTxt, String uuid);
+	void sendGroupMessageClicked(String messageTxt, String uuid);
 
-	void grupSayfaBasaKaydirildi(String uuid);
+	void groupPaneScrolledToTop(String uuid);
 
 }

@@ -37,10 +37,10 @@ public class CreateGroupPane extends BorderPane {
 
 	private static final double GAP = 5.0;
 
-	private final HBox ustPane = new HBox(GAP);
+	private final HBox topPane = new HBox(GAP);
 
-	private final Button geriBtn = ViewFactory.newGeriBtn();
-	private final TextField grupAdiTextField = new TextField();
+	private final Button backBtn = ViewFactory.newBackBtn();
+	private final TextField groupNameTextField = new TextField();
 
 	private final VBox scrollableContent = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
@@ -48,16 +48,16 @@ public class CreateGroupPane extends BorderPane {
 		public void requestFocus() {
 		}
 	};
-	private final VBox eklenenKisilerPane = new VBox();
-	private final VBox eklenmemisKisilerPane = new VBox();
-	private final TextField kisiAramaTextField = new TextField();
+	private final VBox addedContactsPane = new VBox();
+	private final VBox notAddedContactsPane = new VBox();
+	private final TextField searchContactTextField = new TextField();
 
-	private final Button grupOlusturBtn = new Button();
+	private final Button createGroupBtn = new Button();
 
-	private final List<String> uuidler = Collections.synchronizedList(new ArrayList<String>());
-	private final ObservableSet<String> seciliUuidler = FXCollections.observableSet(new HashSet<String>());
+	private final List<String> uuids = Collections.synchronizedList(new ArrayList<String>());
+	private final ObservableSet<String> selectedUuids = FXCollections.observableSet(new HashSet<String>());
 
-	private final Comparator<Node> kisiSiralayici = new Comparator<Node>() {
+	private final Comparator<Node> contactsSorter = new Comparator<Node>() {
 
 		@Override
 		public int compare(Node arg0, Node arg1) {
@@ -82,85 +82,85 @@ public class CreateGroupPane extends BorderPane {
 
 	}
 
-	void setOnGeriAction(final Runnable runnable) {
+	void setOnBackAction(final Runnable runnable) {
 
-		geriBtn.setOnAction(e -> runnable.run());
-
-	}
-
-	void setOnGrupOlusturAction(final Runnable runnable) {
-
-		grupOlusturBtn.setOnAction(e -> runnable.run());
+		backBtn.setOnAction(e -> runnable.run());
 
 	}
 
-	void kisiGuncelle(Contact kisi) {
+	void setOnCreateGroupAction(final Runnable runnable) {
 
-		final String uuid = kisi.getUuid();
-		final String isim = kisi.getIsim();
+		createGroupBtn.setOnAction(e -> runnable.run());
 
-		if (!uuidler.contains(uuid)) {
+	}
 
-			uuidler.add(uuid);
+	void updateContact(Contact contact) {
 
-			final Button kisiEkleBtn = ViewFactory.newEkleBtn();
-			initButon(kisiEkleBtn);
-			kisiEkleBtn.setText(isim);
+		final String uuid = contact.getUuid();
+		final String name = contact.getName();
 
-			final Button kisiCikarBtn = ViewFactory.newCikarBtn();
-			initButon(kisiCikarBtn);
-			kisiCikarBtn.setText(isim);
+		if (!uuids.contains(uuid)) {
 
-			BooleanBinding kisiEklemeBinding = Bindings.createBooleanBinding(() -> seciliUuidler.contains(uuid),
-					seciliUuidler);
-			BooleanBinding kisiAramaBinding = Bindings.createBooleanBinding(() -> {
-				String kisiAramaStr = kisiAramaTextField.getText().toLowerCase();
-				return kisiAramaStr.isEmpty() || isim.toLowerCase().startsWith(kisiAramaStr);
-			}, kisiAramaTextField.textProperty());
+			uuids.add(uuid);
 
-			kisiEkleBtn.visibleProperty().bind(kisiAramaBinding.and(kisiEklemeBinding.not()));
-			kisiCikarBtn.visibleProperty().bind(kisiEklemeBinding);
+			final Button addContactBtn = ViewFactory.newAddBtn();
+			initButton(addContactBtn);
+			addContactBtn.setText(name);
 
-			kisiEkleBtn.setOnAction(e -> {
+			final Button removeContactBtn = ViewFactory.newRemoveBtn();
+			initButton(removeContactBtn);
+			removeContactBtn.setText(name);
 
-				eklenenKisilerPane.getChildren().remove(kisiCikarBtn);
-				eklenenKisilerPane.getChildren().add(0, kisiCikarBtn);
+			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedUuids.contains(uuid),
+					selectedUuids);
+			BooleanBinding searchContactBinding = Bindings.createBooleanBinding(() -> {
+				String searchContactStr = searchContactTextField.getText().toLowerCase();
+				return searchContactStr.isEmpty() || name.toLowerCase().startsWith(searchContactStr);
+			}, searchContactTextField.textProperty());
 
-				seciliUuidler.add(uuid);
+			addContactBtn.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
+			removeContactBtn.visibleProperty().bind(addContactBinding);
+
+			addContactBtn.setOnAction(e -> {
+
+				addedContactsPane.getChildren().remove(removeContactBtn);
+				addedContactsPane.getChildren().add(0, removeContactBtn);
+
+				selectedUuids.add(uuid);
 
 			});
 
-			kisiCikarBtn.setOnAction(e -> seciliUuidler.remove(uuid));
+			removeContactBtn.setOnAction(e -> selectedUuids.remove(uuid));
 
-			eklenenKisilerPane.getChildren().add(kisiCikarBtn);
-			eklenmemisKisilerPane.getChildren().add(kisiEkleBtn);
-			FXCollections.sort(eklenmemisKisilerPane.getChildren(), kisiSiralayici);
+			addedContactsPane.getChildren().add(removeContactBtn);
+			notAddedContactsPane.getChildren().add(addContactBtn);
+			FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
 
 		}
 
 	}
 
-	String getGrupAdi() {
+	String getGroupName() {
 
-		return grupAdiTextField.getText().trim();
+		return groupNameTextField.getText().trim();
 
 	}
 
-	List<String> getSeciliUuidler() {
+	List<String> getSelectedUuids() {
 
-		return new ArrayList<String>(seciliUuidler);
+		return new ArrayList<String>(selectedUuids);
 
 	}
 
 	void reset() {
 
-		kisiAramaTextField.setText("");
-		grupAdiTextField.setText("");
-		seciliUuidler.clear();
+		searchContactTextField.setText("");
+		groupNameTextField.setText("");
+		selectedUuids.clear();
 
 	}
 
-	private void initButon(Button btn) {
+	private void initButton(Button btn) {
 
 		btn.setMnemonicParsing(false);
 		btn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
@@ -171,97 +171,97 @@ public class CreateGroupPane extends BorderPane {
 
 	private void init() {
 
-		initUstPane();
+		initTopPane();
 		initScrollableContent();
-		initGrupOlusturBtn();
+		initCreateGroupBtn();
 
 		scrollPane.setFitToWidth(true);
 
-		setTop(ustPane);
+		setTop(topPane);
 		setCenter(scrollPane);
-		setBottom(grupOlusturBtn);
+		setBottom(createGroupBtn);
 
 	}
 
-	private void initUstPane() {
+	private void initTopPane() {
 
-		ustPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		ustPane.setPadding(new Insets(GAP));
-		ustPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+		topPane.setPadding(new Insets(GAP));
+		topPane.setAlignment(Pos.CENTER_LEFT);
 
-		initGrupAdiTextField();
+		initGroupNameTextField();
 
-		ustPane.getChildren().addAll(geriBtn, grupAdiTextField);
+		topPane.getChildren().addAll(backBtn, groupNameTextField);
 
 	}
 
-	private void initGrupAdiTextField() {
+	private void initGroupNameTextField() {
 
-		grupAdiTextField.setTextFormatter(
+		groupNameTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
-		grupAdiTextField.setPromptText(CommonMethods.cevir("GRUP_ADI_GIR"));
-		grupAdiTextField.setFocusTraversable(false);
-		grupAdiTextField.setBackground(Background.EMPTY);
-		grupAdiTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
+		groupNameTextField.setFocusTraversable(false);
+		groupNameTextField.setBackground(Background.EMPTY);
+		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 
 	}
 
 	private void initScrollableContent() {
 
-		initEklenenKisilerPane();
-		initEklenmemisKisilerPane();
-		initKisiAramaTextField();
+		initAddedContactsPane();
+		initNotAddedContactsPane();
+		initSearchContactTextField();
 
-		BorderPane eklenmemisKisilerBorderPane = new BorderPane();
-		eklenmemisKisilerBorderPane.setPadding(Insets.EMPTY);
-		eklenmemisKisilerBorderPane.setTop(kisiAramaTextField);
-		eklenmemisKisilerBorderPane.setCenter(eklenmemisKisilerPane);
+		BorderPane notAddedContactsBorderPane = new BorderPane();
+		notAddedContactsBorderPane.setPadding(Insets.EMPTY);
+		notAddedContactsBorderPane.setTop(searchContactTextField);
+		notAddedContactsBorderPane.setCenter(notAddedContactsPane);
 
-		TitledPane eklenenKisilerTitledPane = new TitledPane(CommonMethods.cevir("EKLENEN_KISILER"),
-				eklenenKisilerPane);
-		TitledPane eklenmemisKisilerTitledPane = new TitledPane(CommonMethods.cevir("TUM_KISILER"),
-				eklenmemisKisilerBorderPane);
+		TitledPane addedContactsTitledPane = new TitledPane(CommonMethods.translate("ADDED_CONTACTS"),
+				addedContactsPane);
+		TitledPane notAddedContactsTitledPane = new TitledPane(CommonMethods.translate("ALL_CONTACTS"),
+				notAddedContactsBorderPane);
 
-		eklenenKisilerTitledPane.setCollapsible(false);
-		eklenmemisKisilerTitledPane.setCollapsible(false);
+		addedContactsTitledPane.setCollapsible(false);
+		notAddedContactsTitledPane.setCollapsible(false);
 
-		scrollableContent.getChildren().addAll(eklenenKisilerTitledPane, eklenmemisKisilerTitledPane);
-
-	}
-
-	private void initEklenenKisilerPane() {
-
-		eklenenKisilerPane.setPadding(Insets.EMPTY);
+		scrollableContent.getChildren().addAll(addedContactsTitledPane, notAddedContactsTitledPane);
 
 	}
 
-	private void initEklenmemisKisilerPane() {
+	private void initAddedContactsPane() {
 
-		eklenmemisKisilerPane.setPadding(Insets.EMPTY);
-
-	}
-
-	private void initKisiAramaTextField() {
-
-		kisiAramaTextField.setPromptText(CommonMethods.cevir("ARA"));
-		kisiAramaTextField.setFocusTraversable(false);
+		addedContactsPane.setPadding(Insets.EMPTY);
 
 	}
 
-	private void initGrupOlusturBtn() {
+	private void initNotAddedContactsPane() {
 
-		grupOlusturBtn.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));
-		grupOlusturBtn.setTextFill(Color.ANTIQUEWHITE);
-		grupOlusturBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+		notAddedContactsPane.setPadding(Insets.EMPTY);
 
-		grupOlusturBtn.setMnemonicParsing(false);
-		grupOlusturBtn.setText(CommonMethods.cevir("GRUP_OLUSTUR"));
+	}
 
-		grupOlusturBtn.setMaxWidth(Double.MAX_VALUE);
+	private void initSearchContactTextField() {
 
-		grupOlusturBtn.disableProperty()
-				.bind(Bindings.size(seciliUuidler).isEqualTo(0).or(grupAdiTextField.textProperty().isEmpty()));
+		searchContactTextField.setPromptText(CommonMethods.translate("FIND"));
+		searchContactTextField.setFocusTraversable(false);
+
+	}
+
+	private void initCreateGroupBtn() {
+
+		createGroupBtn.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));
+		createGroupBtn.setTextFill(Color.ANTIQUEWHITE);
+		createGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+
+		createGroupBtn.setMnemonicParsing(false);
+		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
+
+		createGroupBtn.setMaxWidth(Double.MAX_VALUE);
+
+		createGroupBtn.disableProperty()
+				.bind(Bindings.size(selectedUuids).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty()));
 
 	}
 
