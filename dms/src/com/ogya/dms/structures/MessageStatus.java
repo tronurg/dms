@@ -4,16 +4,20 @@ import javafx.scene.paint.Color;
 
 public enum MessageStatus {
 
-	CREATED(Color.TRANSPARENT, Color.TRANSPARENT), SENT(Color.DARKGRAY, Color.TRANSPARENT),
-	REACHED(Color.DARKGRAY, Color.DARKGRAY), READ(Color.DEEPSKYBLUE, Color.DEEPSKYBLUE);
+	CREATED(Color.TRANSPARENT, Color.TRANSPARENT, 0), SENT(Color.DARKGRAY, Color.TRANSPARENT, 1),
+	REACHED(Color.DARKGRAY, Color.DARKGRAY, 2), READ(Color.DEEPSKYBLUE, Color.DEEPSKYBLUE, 3);
+
+	private static final MessageStatus[] orderedStatus = new MessageStatus[] { CREATED, SENT, REACHED, SENT };
 
 	private final Color waitingColor;
 	private final Color transmittedColor;
+	private final int logicalOrder;
 
-	private MessageStatus(Color waitingColor, Color transmittedColor) {
+	private MessageStatus(Color waitingColor, Color transmittedColor, int logicalOrder) {
 
 		this.waitingColor = waitingColor;
 		this.transmittedColor = transmittedColor;
+		this.logicalOrder = logicalOrder;
 
 	}
 
@@ -26,6 +30,21 @@ public enum MessageStatus {
 	public Color getTransmittedColor() {
 
 		return transmittedColor;
+
+	}
+
+	public int getLogicalOrder() {
+
+		return logicalOrder;
+
+	}
+
+	public static MessageStatus getMessageStatusByLogicalOrder(int logicalOrder) {
+
+		if (logicalOrder < 0 || !(logicalOrder < orderedStatus.length))
+			return null;
+
+		return orderedStatus[logicalOrder];
 
 	}
 

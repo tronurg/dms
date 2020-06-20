@@ -134,7 +134,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void initModel() {
 
 		dbManager.fetchAllContacts().forEach(contact -> model.addContact(contact));
-		dbManager.fetchAllGroups().forEach(dgroup -> model.addDgroup(dgroup));
+		dbManager.fetchAllGroups().forEach(dgroup -> model.addGroup(dgroup));
 
 	}
 
@@ -147,7 +147,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		model.getContacts().forEach((uuid, contact) -> Platform.runLater(() -> dmsPanel.updateContact(contact)));
 
-		model.getDgroups().forEach((uuid, dgroup) -> Platform.runLater(() -> dmsPanel.updateDgroup(dgroup)));
+		model.getGroups().forEach((uuid, dgroup) -> Platform.runLater(() -> dmsPanel.updateGroup(dgroup)));
 
 		try {
 
@@ -255,10 +255,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Message createOutgoingMessage(String message, String receiverUuid) throws Exception {
+	private Message createOutgoingMessage(String message, String receiverUuid, MessageType messageType)
+			throws Exception {
 
-		Message outgoingMessage = new Message(model.getIdentity().getUuid(), receiverUuid, MessageType.MESSAGE,
-				message);
+		Message outgoingMessage = new Message(model.getIdentity().getUuid(), receiverUuid, messageType, message);
 
 		outgoingMessage.setMessageStatus(MessageStatus.CREATED);
 
@@ -312,6 +312,33 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		}
 
 		return message;
+
+	}
+
+	private Dgroup createGroup(String groupName, String uuidCreator, List<String> selectedUuids) throws Exception {
+
+		Dgroup group = new Dgroup(groupName, model.getIdentity().getUuid());
+
+		selectedUuids.forEach(uuid -> {
+
+			try {
+
+				Contact contact = dbManager.getContact(uuid);
+
+				if (contact != null)
+					group.getContacts().add(contact);
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+		Dgroup newGroup = dbManager.addUpdateGroup(group);
+
+		return newGroup;
 
 	}
 
@@ -722,7 +749,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message newMessage = sendMessage(createOutgoingMessage(message, receiverUuid));
+				final Message newMessage = sendMessage(createOutgoingMessage(message, receiverUuid, MessageType.TEXT));
 
 				addMessageToPane(newMessage);
 
@@ -763,42 +790,27 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void createGroupRequested(String dgroupName, List<String> selectedUuids) {
+	public void createGroupRequested(String groupName, List<String> selectedUuids) {
 
-		Dgroup dgroup = new Dgroup(dgroupName, model.getIdentity().getUuid());
-
-		selectedUuids.forEach(uuid -> {
+		taskQueue.execute(() -> {
 
 			try {
 
-				Contact contact = dbManager.getContact(uuid);
+				final Dgroup newGroup = createGroup(groupName, model.getIdentity().getUuid(), selectedUuids);
 
-				if (contact != null)
-					dgroup.getContacts().add(contact);
+				model.addGroup(newGroup);
 
-			} catch (HibernateException e) {
+				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+				// TODO: Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
+
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
 			}
 
 		});
-
-		try {
-
-			Dgroup newDgroup = dbManager.addUpdateDgroup(dgroup);
-
-			model.addDgroup(newDgroup);
-
-			Platform.runLater(() -> dmsPanel.updateDgroup(newDgroup));
-
-			// TODO
-
-		} catch (HibernateException e) {
-
-			e.printStackTrace();
-
-		}
 
 	}
 

@@ -47,6 +47,9 @@ public class Message {
 	@Enumerated(EnumType.STRING)
 	private MessageStatus messageStatus;
 
+	@Column(name = "message_status_str")
+	private String messageStatusStr;
+
 	@Column(name = "date", nullable = false, updatable = false)
 	private Date date;
 
@@ -123,6 +126,14 @@ public class Message {
 
 	public void setMessageStatus(MessageStatus messageStatus) {
 		this.messageStatus = messageStatus;
+	}
+
+	public String getMessageStatusStr() {
+		return messageStatusStr;
+	}
+
+	public void setMessageStatusStr(String messageStatusStr) {
+		this.messageStatusStr = messageStatusStr;
 	}
 
 	public Date getDate() {

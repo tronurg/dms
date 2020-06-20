@@ -97,9 +97,9 @@ public class DbManager {
 
 		Session session = factory.openSession();
 
-		Query<Dgroup> queryDmsGroup = session.createQuery("from Dgroup", Dgroup.class);
+		Query<Dgroup> queryGroup = session.createQuery("from Dgroup", Dgroup.class);
 
-		List<Dgroup> allGroups = queryDmsGroup.list();
+		List<Dgroup> allGroups = queryGroup.list();
 
 		session.close();
 
@@ -174,32 +174,32 @@ public class DbManager {
 
 	}
 
-	public Dgroup addUpdateDgroup(Dgroup dgroup) throws HibernateException {
+	public Dgroup addUpdateGroup(Dgroup group) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		Dgroup dbDgroup = session.createQuery("from Dgroup where uuid like :uuid", Dgroup.class)
-				.setParameter("uuid", dgroup.getUuid()).uniqueResult();
+		Dgroup dbGroup = session.createQuery("from Dgroup where uuid like :uuid", Dgroup.class)
+				.setParameter("uuid", group.getUuid()).uniqueResult();
 
-		if (dbDgroup == null) {
+		if (dbGroup == null) {
 
-			dbDgroup = dgroup;
+			dbGroup = group;
 
-			dbDgroup.setId(null);
+			dbGroup.setId(null);
 
 			session.beginTransaction();
 
-			session.persist(dbDgroup);
+			session.persist(dbGroup);
 
 			session.getTransaction().commit();
 
 		} else {
 
-			dgroup.setId(dbDgroup.getId());
+			group.setId(dbGroup.getId());
 
 			session.beginTransaction();
 
-			dbDgroup = (Dgroup) session.merge(dgroup);
+			dbGroup = (Dgroup) session.merge(group);
 
 			session.getTransaction().commit();
 
@@ -207,7 +207,7 @@ public class DbManager {
 
 		session.close();
 
-		return dbDgroup;
+		return dbGroup;
 
 	}
 

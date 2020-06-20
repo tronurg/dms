@@ -73,11 +73,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	public void updateDgroup(Dgroup dgroup) {
+	public void updateGroup(Dgroup group) {
 
 		// TODO
 
-		dgroup.getContacts().forEach(contact -> System.out.println(contact.getName()));
+		group.getContacts().forEach(contact -> System.out.println(contact.getName()));
 
 	}
 

@@ -19,7 +19,7 @@ public class Model {
 	private final AtomicBoolean isServerConnected = new AtomicBoolean(false);
 
 	private final Map<String, Contact> contacts = Collections.synchronizedMap(new HashMap<String, Contact>());
-	private final Map<String, Dgroup> dgroups = Collections.synchronizedMap(new HashMap<String, Dgroup>());
+	private final Map<String, Dgroup> groups = Collections.synchronizedMap(new HashMap<String, Dgroup>());
 
 	private final List<String> openUuids = Collections.synchronizedList(new ArrayList<String>());
 
@@ -85,21 +85,21 @@ public class Model {
 
 	}
 
-	public void addDgroup(Dgroup dgroup) {
+	public void addGroup(Dgroup group) {
 
-		dgroups.put(dgroup.getUuid(), dgroup);
-
-	}
-
-	public Dgroup getDgroup(String uuid) {
-
-		return dgroups.get(uuid);
+		groups.put(group.getUuid(), group);
 
 	}
 
-	public Map<String, Dgroup> getDgroups() {
+	public Dgroup getGroup(String uuid) {
 
-		return dgroups;
+		return groups.get(uuid);
+
+	}
+
+	public Map<String, Dgroup> getGroups() {
+
+		return groups;
 
 	}
 

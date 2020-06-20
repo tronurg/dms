@@ -29,9 +29,6 @@ public class Dgroup {
 	@Column(name = "name", nullable = false, updatable = false)
 	private String name;
 
-	@Column(name = "comment")
-	private String comment;
-
 	@Column(name = "uuid_creator", nullable = false, updatable = false)
 	private String uuidCreator;
 
@@ -71,14 +68,6 @@ public class Dgroup {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public String getComment() {
-		return comment;
-	}
-
-	public void setComment(String comment) {
-		this.comment = comment;
 	}
 
 	public String getUuidCreator() {
