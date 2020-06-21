@@ -9,9 +9,9 @@ import java.util.function.Consumer;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.structures.ContentType;
+import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.server.model.intf.ModelListener;
-import com.ogya.dms.server.structures.ContentType;
-import com.ogya.dms.server.structures.MessagePojo;
 
 public class Model {
 

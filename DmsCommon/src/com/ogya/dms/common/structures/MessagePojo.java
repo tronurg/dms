@@ -1,4 +1,4 @@
-package com.ogya.dms.dmsclient.structures;
+package com.ogya.dms.common.structures;
 
 public class MessagePojo {
 

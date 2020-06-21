@@ -3,6 +3,7 @@ package com.ogya.dms.control;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,7 +61,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		@Override
 		public boolean shouldSkipField(FieldAttributes arg0) {
-			return arg0.getName().equals("id");
+			return arg0.getName().equals("id") || arg0.getName().equals("messageStatusStr");
 		}
 
 		@Override
@@ -339,6 +340,18 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		Dgroup newGroup = dbManager.addUpdateGroup(group);
 
 		return newGroup;
+
+	}
+
+	private String getAddToGroupMessage(Set<Contact> contacts) {
+
+		Map<String, String> uuidName = new LinkedHashMap<String, String>();
+
+		contacts.forEach(contact -> uuidName.put(contact.getUuid(), contact.getName()));
+
+		String addToGroupMessage = gson.toJson(uuidName);
+
+		return addToGroupMessage;
 
 	}
 
@@ -803,6 +816,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
 				// TODO: Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
+
+				String addToGroupMessage = getAddToGroupMessage(newGroup.getContacts());
 
 			} catch (Exception e) {
 

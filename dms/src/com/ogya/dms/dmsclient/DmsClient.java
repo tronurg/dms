@@ -11,9 +11,9 @@ import org.zeromq.ZMQ;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.structures.ContentType;
+import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
-import com.ogya.dms.dmsclient.structures.ContentType;
-import com.ogya.dms.dmsclient.structures.MessagePojo;
 
 public class DmsClient {
 

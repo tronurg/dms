@@ -29,8 +29,8 @@ public class Dgroup {
 	@Column(name = "name", nullable = false, updatable = false)
 	private String name;
 
-	@Column(name = "uuid_creator", nullable = false, updatable = false)
-	private String uuidCreator;
+	@Column(name = "uuid_owner", nullable = false, updatable = false)
+	private String uuidOwner;
 
 	@ManyToMany
 	@JoinTable(name = "dgroup_contacts", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
@@ -41,9 +41,9 @@ public class Dgroup {
 		super();
 	}
 
-	public Dgroup(String name, String uuidCreator) {
+	public Dgroup(String name, String uuidOwner) {
 		this.name = name;
-		this.uuidCreator = uuidCreator;
+		this.uuidOwner = uuidOwner;
 	}
 
 	public Long getId() {
@@ -70,12 +70,12 @@ public class Dgroup {
 		this.name = name;
 	}
 
-	public String getUuidCreator() {
-		return uuidCreator;
+	public String getUuidOwner() {
+		return uuidOwner;
 	}
 
-	public void setUuidCreator(String uuidCreator) {
-		this.uuidCreator = uuidCreator;
+	public void setUuidOwner(String uuidOwner) {
+		this.uuidOwner = uuidOwner;
 	}
 
 	public Set<Contact> getContacts() {
