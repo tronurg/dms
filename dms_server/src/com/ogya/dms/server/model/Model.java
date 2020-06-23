@@ -83,7 +83,7 @@ public class Model {
 
 				String proxyUuid = messagePojo.proxyUuid;
 
-				if (localUserBeacon.containsKey(proxyUuid)) {
+				if (proxyUuid == null || localUserBeacon.containsKey(proxyUuid)) {
 
 					String[] receiverUuids = messagePojo.receiverUuid.split(";");
 

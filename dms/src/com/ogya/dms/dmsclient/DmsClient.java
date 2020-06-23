@@ -98,10 +98,44 @@ public class DmsClient {
 
 	}
 
+	public void sendMessage(String message, String... receiverUuids) {
+
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
+
+	}
+
 	public void sendMessage(String message, String proxyUuid, String... receiverUuids) {
 
 		dealerQueue.offer(gson.toJson(
 				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
+
+	}
+
+	public void sendGroupMessage(String message, String receiverUuid) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.GROUP_MESSAGE)));
+
+	}
+
+	public void sendGroupMessage(String message, String proxyUuid, String receiverUuid) {
+
+		dealerQueue
+				.offer(gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.GROUP_MESSAGE)));
+
+	}
+
+	public void sendGroupMessage(String message, String... receiverUuids) {
+
+		dealerQueue.offer(gson
+				.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.GROUP_MESSAGE)));
+
+	}
+
+	public void sendGroupMessage(String message, String proxyUuid, String... receiverUuids) {
+
+		dealerQueue.offer(gson.toJson(
+				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.GROUP_MESSAGE)));
 
 	}
 
@@ -115,6 +149,13 @@ public class DmsClient {
 
 		dealerQueue.offer(
 				gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS)));
+
+	}
+
+	public void claimMessageStatus(String message, String... receiverUuids) {
+
+		dealerQueue.offer(gson.toJson(
+				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.CLAIM_MESSAGE_STATUS)));
 
 	}
 
@@ -261,6 +302,12 @@ public class DmsClient {
 
 				break;
 
+			case GROUP_MESSAGE:
+
+				groupMessageReceivedToListener(messagePojo.message);
+
+				break;
+
 			case UUID_DISCONNECTED:
 
 				userDisconnectedToListener(messagePojo.message);
@@ -318,6 +365,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.messageReceived(message);
+
+		});
+
+	}
+
+	private void groupMessageReceivedToListener(final String message) {
+
+		taskQueue.execute(() -> {
+
+			listener.groupMessageReceived(message);
 
 		});
 

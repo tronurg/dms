@@ -458,6 +458,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void groupMessageReceived(final String message) {
+
+		taskQueue.execute(() -> {
+
+			// TODO
+
+		});
+
+	}
+
+	@Override
 	public void userDisconnected(String uuid) {
 
 		Contact contact = model.getContact(uuid);
