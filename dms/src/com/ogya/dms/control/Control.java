@@ -1,5 +1,6 @@
 package com.ogya.dms.control;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.DbManager;
 import com.ogya.dms.database.tables.Contact;
@@ -48,6 +50,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private static final int MIN_MESSAGES_PER_PAGE = 50;
 
+	private final String localUuid;
+
 	private final DbManager dbManager;
 
 	private final Model model;
@@ -71,6 +75,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}).create();
 
+	private final Type gsonHashMapType = new TypeToken<HashMap<String, MessageStatus>>() {
+	}.getType();
+
 	private final Object beaconSyncObj = new Object();
 
 	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -89,6 +96,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		dbManager = new DbManager(username, password);
 
 		Identity identity = dbManager.getIdentity();
+		localUuid = identity.getUuid();
 
 		model = new Model(identity);
 
@@ -152,8 +160,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		try {
 
-			String localUuid = model.getIdentity().getUuid();
-
 			Set<String> remoteUuids = dbManager.getAllUuidsMessagingWithUuid(localUuid);
 
 			remoteUuids.forEach(remoteUuid -> {
@@ -186,8 +192,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	private void addMessageToPane(Message message) {
-
-		String localUuid = model.getIdentity().getUuid();
 
 		if (localUuid.equals(message.getSenderUuid())) {
 
@@ -259,7 +263,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private Message createOutgoingMessage(String message, String receiverUuid, MessageType messageType)
 			throws Exception {
 
-		Message outgoingMessage = new Message(model.getIdentity().getUuid(), receiverUuid, messageType, message);
+		Message outgoingMessage = new Message(localUuid, receiverUuid, messageType, message);
 
 		outgoingMessage.setMessageStatus(MessageStatus.CREATED);
 
@@ -316,9 +320,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Dgroup createGroup(String groupName, String uuidCreator, List<String> selectedUuids) throws Exception {
+	private Dgroup createGroup(String groupName, String uuidOwner, List<String> selectedUuids) throws Exception {
 
-		Dgroup group = new Dgroup(groupName, model.getIdentity().getUuid());
+		Dgroup group = new Dgroup(groupName, uuidOwner);
 
 		selectedUuids.forEach(uuid -> {
 
@@ -352,6 +356,100 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		String addToGroupMessage = gson.toJson(uuidName);
 
 		return addToGroupMessage;
+
+	}
+
+	private Message createOutgoingGroupMessage(String message, Dgroup group, MessageType messageType) throws Exception {
+
+		Message outgoingMessage = new Message(localUuid, group.getUuid(), messageType, message);
+
+		final Map<String, MessageStatus> messageStatus = new HashMap<String, MessageStatus>();
+
+		// If I'm not the group owner, then follow the group owner's message status too.
+		if (!localUuid.equals(group.getUuidOwner()))
+			messageStatus.put(group.getUuidOwner(), MessageStatus.CREATED);
+
+		group.getContacts().forEach(contact -> {
+
+			// Skip the original sender (don't follow my message status for I'm its sender)
+			if (localUuid.equals(contact.getUuid()))
+				return;
+
+			messageStatus.put(contact.getUuid(), MessageStatus.CREATED);
+
+		});
+
+		outgoingMessage.setMessageStatus(MessageStatus.CREATED);
+
+		outgoingMessage.setMessageStatusStr(gson.toJson(messageStatus));
+
+		Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
+
+		return newMessage;
+
+	}
+
+	private Message sendGroupMessage(Message message, Dgroup group) {
+
+		final Map<String, MessageStatus> messageStatus = gson.fromJson(message.getMessageStatusStr(), gsonHashMapType);
+		final List<String> onlineUuids = new ArrayList<String>();
+
+		if (localUuid.equals(group.getUuidOwner())) {
+			// It's my group, so I have to send this message to all the members except the
+			// original sender.
+
+			group.getContacts().forEach(contact -> {
+
+				// Skip the original sender
+				if (contact.getUuid().equals(message.getSenderUuid()))
+					return;
+
+				String receiverUuid = contact.getUuid();
+
+				if (!model.isContactOnline(receiverUuid))
+					return;
+
+				messageStatus.put(receiverUuid, MessageStatus.SENT); // Assuming that the message will be sent...
+				onlineUuids.add(receiverUuid);
+
+			});
+
+			if (onlineUuids.size() < 1)
+				return message;
+
+			dmsClient.sendGroupMessage(gson.toJson(message), onlineUuids);
+
+		} else {
+			// It's not my group, so I will send this message to the group owner only.
+
+			String receiverUuid = group.getUuidOwner();
+
+			if (!model.isContactOnline(receiverUuid))
+				return message;
+
+			dmsClient.sendGroupMessage(gson.toJson(message), receiverUuid);
+
+			messageStatus.put(receiverUuid, MessageStatus.SENT);
+
+		}
+
+		try {
+
+			message.setMessageStatus(MessageStatus.SENT);
+
+			message.setMessageStatusStr(gson.toJson(messageStatus));
+
+			Message newMessage = dbManager.addUpdateMessage(message);
+
+			return newMessage;
+
+		} catch (HibernateException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return message;
 
 	}
 
@@ -551,8 +649,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				Message waitingMessage = dbManager.updateMessageStatus(model.getIdentity().getUuid(), messageId,
-						MessageStatus.CREATED);
+				Message waitingMessage = dbManager.updateMessageStatus(localUuid, messageId, MessageStatus.CREATED);
 
 				if (waitingMessage == null)
 					return;
@@ -582,7 +679,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message outgoingMessage = dbManager.updateMessageStatus(model.getIdentity().getUuid(), messageId,
+				final Message outgoingMessage = dbManager.updateMessageStatus(localUuid, messageId,
 						MessageStatus.REACHED);
 
 				if (outgoingMessage == null)
@@ -609,8 +706,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message outgoingMessage = dbManager.updateMessageStatus(model.getIdentity().getUuid(), messageId,
-						MessageStatus.READ);
+				final Message outgoingMessage = dbManager.updateMessageStatus(localUuid, messageId, MessageStatus.READ);
 
 				if (outgoingMessage == null)
 					return;
@@ -797,7 +893,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			if (previousMinMessageId < 0)
 				return;
 
-			List<Message> lastMessagesBeforeId = dbManager.getLastMessagesBeforeId(model.getIdentity().getUuid(), uuid,
+			List<Message> lastMessagesBeforeId = dbManager.getLastMessagesBeforeId(localUuid, uuid,
 					previousMinMessageId, MIN_MESSAGES_PER_PAGE);
 
 			if (lastMessagesBeforeId.size() == 0)
@@ -820,15 +916,18 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Dgroup newGroup = createGroup(groupName, model.getIdentity().getUuid(), selectedUuids);
+				final Dgroup newGroup = createGroup(groupName, localUuid, selectedUuids);
 
 				model.addGroup(newGroup);
 
 				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-				// TODO: Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
+				// Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
 
 				String addToGroupMessage = getAddToGroupMessage(newGroup.getContacts());
+
+				sendGroupMessage(createOutgoingGroupMessage(addToGroupMessage, newGroup, MessageType.GROUP_ADD),
+						newGroup);
 
 			} catch (Exception e) {
 

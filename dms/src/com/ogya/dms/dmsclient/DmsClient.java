@@ -105,7 +105,7 @@ public class DmsClient {
 
 	}
 
-	public void sendMessage(String message, String proxyUuid, String... receiverUuids) {
+	public void sendMessage(String message, String proxyUuid, Iterable<String> receiverUuids) {
 
 		dealerQueue.offer(gson.toJson(
 				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
@@ -125,7 +125,7 @@ public class DmsClient {
 
 	}
 
-	public void sendGroupMessage(String message, String... receiverUuids) {
+	public void sendGroupMessage(String message, Iterable<String> receiverUuids) {
 
 		dealerQueue.offer(gson
 				.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.GROUP_MESSAGE)));
