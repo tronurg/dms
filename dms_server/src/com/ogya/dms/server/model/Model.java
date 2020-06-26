@@ -76,6 +76,7 @@ public class Model {
 				break;
 
 			case MESSAGE:
+			case GROUP_MESSAGE:
 			case CLAIM_MESSAGE_STATUS:
 			case NOT_RECEIVED:
 			case RECEIVED:
@@ -156,6 +157,7 @@ public class Model {
 				break;
 
 			case MESSAGE:
+			case GROUP_MESSAGE:
 			case CLAIM_MESSAGE_STATUS:
 			case NOT_RECEIVED:
 			case RECEIVED:

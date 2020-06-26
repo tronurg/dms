@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -32,7 +33,7 @@ public class Dgroup {
 	@Column(name = "uuid_owner", nullable = false, updatable = false)
 	private String uuidOwner;
 
-	@ManyToMany
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "dgroup_contacts", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "contact_id") })
 	private Set<Contact> contacts = new HashSet<Contact>();
@@ -88,7 +89,8 @@ public class Dgroup {
 
 	@PrePersist
 	private void onCreate() {
-		this.uuid = UUID.randomUUID().toString();
+		if (this.uuid == null)
+			this.uuid = UUID.randomUUID().toString();
 	}
 
 }

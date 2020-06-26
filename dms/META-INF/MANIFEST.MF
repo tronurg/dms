@@ -9,7 +9,8 @@ Automatic-Module-Name: dms
 Import-Package: org.osgi.service.component.annotations
 Service-Component: OSGI-INF/com.ogya.dms.main.Dms.xml
 Bundle-ActivationPolicy: lazy
-Bundle-ClassPath: lib/gson-2.8.6.jar,
+Bundle-ClassPath: lib/dms-common.jar,
+ lib/gson-2.8.6.jar,
  lib/jeromq-0.5.2.jar,
  lib/jfxrt.jar,
  lib/db/antlr-2.7.7.jar,
