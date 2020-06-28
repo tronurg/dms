@@ -3,7 +3,7 @@ package com.ogya.dms.structures;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GroupReport {
+public class StatusReport {
 
 	public final Map<String, MessageStatus> uuidStatus = new HashMap<String, MessageStatus>();
 

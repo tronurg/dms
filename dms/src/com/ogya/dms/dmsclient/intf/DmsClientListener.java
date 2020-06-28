@@ -4,9 +4,9 @@ public interface DmsClientListener {
 
 	void beaconReceived(String message);
 
-	void messageReceived(String message);
+	void messageReceived(String message, String remoteUuid);
 
-	void groupMessageReceived(String message);
+	void groupMessageReceived(String message, String remoteUuid);
 
 	void userDisconnected(String uuid);
 
@@ -14,10 +14,10 @@ public interface DmsClientListener {
 
 	void messageStatusClaimed(String message, String remoteUuid);
 
-	void messageNotReceivedRemotely(String message, String remoteUuid);
+	void messageStatusFed(String message, String remoteUuid);
 
-	void messageReceivedRemotely(String message, String remoteUuid);
+	void statusReportClaimed(String message, String remoteUuid);
 
-	void messageReadRemotely(String message, String remoteUuid);
+	void statusReportFed(String message, String remoteUuid);
 
 }

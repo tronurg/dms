@@ -16,6 +16,8 @@ public class Model {
 
 	private final Identity identity;
 
+	private final String localUuid;
+
 	private final AtomicBoolean isServerConnected = new AtomicBoolean(false);
 
 	private final Map<String, Contact> contacts = Collections.synchronizedMap(new HashMap<String, Contact>());
@@ -29,11 +31,19 @@ public class Model {
 
 		this.identity = identity;
 
+		this.localUuid = identity.getUuid();
+
 	}
 
 	public Identity getIdentity() {
 
 		return identity;
+
+	}
+
+	public String getLocalUuid() {
+
+		return localUuid;
 
 	}
 
@@ -100,6 +110,12 @@ public class Model {
 	public Map<String, Dgroup> getGroups() {
 
 		return groups;
+
+	}
+
+	public boolean isMyGroup(String groupUuid) {
+
+		return groups.containsKey(groupUuid) && localUuid.equals(groups.get(groupUuid).getUuidOwner());
 
 	}
 

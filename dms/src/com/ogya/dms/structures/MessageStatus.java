@@ -5,9 +5,9 @@ import javafx.scene.paint.Color;
 public enum MessageStatus {
 
 	CREATED(Color.TRANSPARENT, Color.TRANSPARENT, 0), SENT(Color.DARKGRAY, Color.TRANSPARENT, 1),
-	REACHED(Color.DARKGRAY, Color.DARKGRAY, 2), READ(Color.DEEPSKYBLUE, Color.DEEPSKYBLUE, 3);
+	RECEIVED(Color.DARKGRAY, Color.DARKGRAY, 2), READ(Color.DEEPSKYBLUE, Color.DEEPSKYBLUE, 3);
 
-	private static final MessageStatus[] orderedStatus = new MessageStatus[] { CREATED, SENT, REACHED, SENT };
+	private static final MessageStatus[] orderedStatus = new MessageStatus[] { CREATED, SENT, RECEIVED, SENT };
 
 	private final Color waitingColor;
 	private final Color transmittedColor;

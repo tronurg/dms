@@ -75,12 +75,7 @@ public class Model {
 
 				break;
 
-			case MESSAGE:
-			case GROUP_MESSAGE:
-			case CLAIM_MESSAGE_STATUS:
-			case NOT_RECEIVED:
-			case RECEIVED:
-			case READ:
+			default:
 
 				String proxyUuid = messagePojo.proxyUuid;
 
@@ -111,8 +106,6 @@ public class Model {
 				}
 
 				break;
-
-			default:
 
 			}
 
@@ -156,12 +149,7 @@ public class Model {
 
 				break;
 
-			case MESSAGE:
-			case GROUP_MESSAGE:
-			case CLAIM_MESSAGE_STATUS:
-			case NOT_RECEIVED:
-			case RECEIVED:
-			case READ:
+			default:
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
@@ -182,8 +170,6 @@ public class Model {
 					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr);
 
 				break;
-
-			default:
 
 			}
 

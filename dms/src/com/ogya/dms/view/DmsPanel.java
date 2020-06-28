@@ -93,6 +93,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void updateGroupMessage(Message message, String groupUuid) {
+
+		// TODO
+
+	}
+
 	public void scrollPaneToMessage(String uuid, Long messageId) {
 
 		contactsPane.scrollPaneToMessage(uuid, messageId);

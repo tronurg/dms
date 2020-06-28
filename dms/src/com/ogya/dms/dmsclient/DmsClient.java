@@ -92,36 +92,17 @@ public class DmsClient {
 
 	}
 
-	public void sendMessage(String message, String proxyUuid, String receiverUuid) {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.MESSAGE)));
-
-	}
-
-	public void sendMessage(String message, String... receiverUuids) {
-
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
-
-	}
-
-	public void sendMessage(String message, String proxyUuid, Iterable<String> receiverUuids) {
-
-		dealerQueue.offer(gson.toJson(
-				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
-
-	}
+	// PROVISIONARY
+//	public void sendMessage(String message, String proxyUuid, Iterable<String> receiverUuids) {
+//
+//		dealerQueue.offer(gson.toJson(
+//				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
+//
+//	}
 
 	public void sendGroupMessage(String message, String receiverUuid) {
 
 		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.GROUP_MESSAGE)));
-
-	}
-
-	public void sendGroupMessage(String message, String proxyUuid, String receiverUuid) {
-
-		dealerQueue
-				.offer(gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.GROUP_MESSAGE)));
 
 	}
 
@@ -132,55 +113,27 @@ public class DmsClient {
 
 	}
 
-	public void sendGroupMessage(String message, String proxyUuid, String... receiverUuids) {
-
-		dealerQueue.offer(gson.toJson(
-				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.GROUP_MESSAGE)));
-
-	}
-
 	public void claimMessageStatus(String message, String receiverUuid) {
 
 		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS)));
 
 	}
 
-	public void claimMessageStatus(String message, String proxyUuid, String receiverUuid) {
+	public void feedMessageStatus(String message, String receiverUuid) {
 
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, proxyUuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS)));
-
-	}
-
-	public void claimMessageStatus(String message, String... receiverUuids) {
-
-		dealerQueue.offer(gson.toJson(
-				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.CLAIM_MESSAGE_STATUS)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS)));
 
 	}
 
-	public void claimMessageStatus(String message, String proxyUuid, String... receiverUuids) {
+	public void claimStatusReport(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids),
-				ContentType.CLAIM_MESSAGE_STATUS)));
-
-	}
-
-	public void sendNotReceived(String message, String receiverUuid) {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.NOT_RECEIVED)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT)));
 
 	}
 
-	public void sendReceived(String message, String receiverUuid) {
+	public void feedStatusReport(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.RECEIVED)));
-
-	}
-
-	public void sendRead(String message, String receiverUuid) {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.READ)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT)));
 
 	}
 
@@ -298,13 +251,13 @@ public class DmsClient {
 
 			case MESSAGE:
 
-				messageReceivedToListener(messagePojo.message);
+				messageReceivedToListener(messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
 			case GROUP_MESSAGE:
 
-				groupMessageReceivedToListener(messagePojo.message);
+				groupMessageReceivedToListener(messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
@@ -320,21 +273,21 @@ public class DmsClient {
 
 				break;
 
-			case NOT_RECEIVED:
+			case FEED_MESSAGE_STATUS:
 
-				messageNotReceivedRemotelyToListener(messagePojo.message, messagePojo.senderUuid);
-
-				break;
-
-			case RECEIVED:
-
-				messageReceivedRemotelyToListener(messagePojo.message, messagePojo.senderUuid);
+				messageStatusFedToListener(messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
-			case READ:
+			case CLAIM_STATUS_REPORT:
 
-				messageReadRemotelyToListener(messagePojo.message, messagePojo.senderUuid);
+				statusReportClaimedToListener(messagePojo.message, messagePojo.senderUuid);
+
+				break;
+
+			case FEED_STATUS_REPORT:
+
+				statusReportFedToListener(messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
@@ -360,21 +313,21 @@ public class DmsClient {
 
 	}
 
-	private void messageReceivedToListener(final String message) {
+	private void messageReceivedToListener(final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageReceived(message);
+			listener.messageReceived(message, remoteUuid);
 
 		});
 
 	}
 
-	private void groupMessageReceivedToListener(final String message) {
+	private void groupMessageReceivedToListener(final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.groupMessageReceived(message);
+			listener.groupMessageReceived(message, remoteUuid);
 
 		});
 
@@ -410,31 +363,31 @@ public class DmsClient {
 
 	}
 
-	private void messageNotReceivedRemotelyToListener(final String message, final String remoteUuid) {
+	private void messageStatusFedToListener(final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageNotReceivedRemotely(message, remoteUuid);
+			listener.messageStatusFed(message, remoteUuid);
 
 		});
 
 	}
 
-	private void messageReceivedRemotelyToListener(final String message, final String remoteUuid) {
+	private void statusReportClaimedToListener(final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageReceivedRemotely(message, remoteUuid);
+			listener.statusReportClaimed(message, remoteUuid);
 
 		});
 
 	}
 
-	private void messageReadRemotelyToListener(final String message, final String remoteUuid) {
+	private void statusReportFedToListener(final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageReadRemotely(message, remoteUuid);
+			listener.statusReportFed(message, remoteUuid);
 
 		});
 

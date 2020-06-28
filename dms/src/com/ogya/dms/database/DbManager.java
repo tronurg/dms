@@ -250,32 +250,32 @@ public class DbManager {
 
 	}
 
-	public Message updateMessageStatus(String senderUuid, long messageId, MessageStatus messageStatus)
-			throws HibernateException {
-
-		Session session = factory.openSession();
-
-		Message dbMessage = session
-				.createQuery("from Message where senderUuid like :senderUuid and messageId=:messageId", Message.class)
-				.setParameter("senderUuid", senderUuid).setParameter("messageId", messageId).uniqueResult();
-
-		if (dbMessage != null) {
-
-			dbMessage.setMessageStatus(messageStatus);
-
-			session.beginTransaction();
-
-			dbMessage = (Message) session.merge(dbMessage);
-
-			session.getTransaction().commit();
-
-		}
-
-		session.close();
-
-		return dbMessage;
-
-	}
+//	public Message updateMessageStatus(String senderUuid, long messageId, MessageStatus messageStatus)
+//			throws HibernateException {
+//
+//		Session session = factory.openSession();
+//
+//		Message dbMessage = session
+//				.createQuery("from Message where senderUuid like :senderUuid and messageId=:messageId", Message.class)
+//				.setParameter("senderUuid", senderUuid).setParameter("messageId", messageId).uniqueResult();
+//
+//		if (dbMessage != null) {
+//
+//			dbMessage.setMessageStatus(messageStatus);
+//
+//			session.beginTransaction();
+//
+//			dbMessage = (Message) session.merge(dbMessage);
+//
+//			session.getTransaction().commit();
+//
+//		}
+//
+//		session.close();
+//
+//		return dbMessage;
+//
+//	}
 
 	public Message getMessage(String senderUuid, long messageId) throws HibernateException {
 
@@ -298,7 +298,7 @@ public class DbManager {
 		List<Message> dbMessages = session.createQuery(
 				"from Message where receiverUuid like :receiverUuid and (messageStatus like :created or messageStatus like :sent or messageStatus like :reached)",
 				Message.class).setParameter("receiverUuid", receiverUuid).setParameter("created", MessageStatus.CREATED)
-				.setParameter("sent", MessageStatus.SENT).setParameter("reached", MessageStatus.REACHED).list();
+				.setParameter("sent", MessageStatus.SENT).setParameter("reached", MessageStatus.RECEIVED).list();
 
 		session.close();
 
@@ -313,7 +313,7 @@ public class DbManager {
 		List<Message> dbMessages = session
 				.createQuery("from Message where senderUuid like :senderUuid and messageStatus like :reached",
 						Message.class)
-				.setParameter("senderUuid", senderUuid).setParameter("reached", MessageStatus.REACHED).list();
+				.setParameter("senderUuid", senderUuid).setParameter("reached", MessageStatus.RECEIVED).list();
 
 		session.close();
 
