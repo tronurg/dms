@@ -6,8 +6,6 @@ public interface DmsClientListener {
 
 	void messageReceived(String message, String remoteUuid);
 
-	void groupMessageReceived(String message, String remoteUuid);
-
 	void userDisconnected(String uuid);
 
 	void serverConnStatusUpdated(boolean connStatus);

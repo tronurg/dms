@@ -5,10 +5,11 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -18,7 +19,6 @@ import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.factory.ViewFactory;
 
-import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -54,6 +54,7 @@ import javafx.scene.text.FontWeight;
 class MessagePane extends BorderPane {
 
 	private static final double GAP = 5.0;
+	private static final double SMALL_GAP = 2.0;
 
 	private final HBox topPane = new HBox(GAP);
 	private final VBox centerPane = new VBox(2 * GAP);
@@ -70,7 +71,7 @@ class MessagePane extends BorderPane {
 	private final TextArea messageArea = new TextArea();
 	private final Button sendBtn = ViewFactory.newSendBtn();
 
-	private final Map<LocalDate, DayBox> dayBoxes = Collections.synchronizedMap(new HashMap<LocalDate, DayBox>());
+	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
 	private final Map<Long, MessageBalloon> messageBalloons = Collections
 			.synchronizedMap(new HashMap<Long, MessageBalloon>());
@@ -79,23 +80,6 @@ class MessagePane extends BorderPane {
 
 	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
-
-	private final Comparator<Node> dayBoxesSorter = new Comparator<Node>() {
-
-		@Override
-		public int compare(Node arg0, Node arg1) {
-
-			if (!(arg0 instanceof DayBox && arg1 instanceof DayBox))
-				return 0;
-
-			DayBox dayBox0 = (DayBox) arg0;
-			DayBox dayBox1 = (DayBox) arg1;
-
-			return dayBox0.getDate().compareTo(dayBox1.getDate());
-
-		}
-
-	};
 
 	MessagePane() {
 
@@ -176,28 +160,68 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void addMessage(Message message, MessageDirection messageDirection) {
+	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection) {
 
 		if (messageBalloons.containsKey(message.getId()))
 			return;
 
 		Date messageDate = message.getDate();
+		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection);
 
-		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageDate, messageDirection);
+		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageInfo);
 		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
 				message.getMessageStatus().getTransmittedColor());
 
 		messageBalloons.put(message.getId(), messageBalloon);
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-		if (!dayBoxes.containsKey(messageDay)) {
-			DayBox gunKutusu = new DayBox(messageDay);
-			dayBoxes.put(messageDay, gunKutusu);
-			centerPane.getChildren().add(gunKutusu);
-			FXCollections.sort(centerPane.getChildren(), dayBoxesSorter);
+
+		if (dayBoxes.isEmpty() || !dayBoxes.get(0).getDay().equals(messageDay)) {
+
+			DayBox dayBox = new DayBox(messageDay);
+			dayBox.addMessageBalloonToTop(messageBalloon);
+			dayBoxes.add(0, dayBox);
+			centerPane.getChildren().add(0, dayBox);
+
+		} else {
+
+			dayBoxes.get(0).addMessageBalloonToTop(messageBalloon);
+
 		}
 
-		dayBoxes.get(messageDay).addMessageBalloon(messageBalloon);
+		if (messageDirection.equals(MessageDirection.OUTGOING))
+			scrollPaneToBottom();
+
+	}
+
+	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection) {
+
+		if (messageBalloons.containsKey(message.getId()))
+			return;
+
+		Date messageDate = message.getDate();
+		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection);
+
+		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageInfo);
+		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
+				message.getMessageStatus().getTransmittedColor());
+
+		messageBalloons.put(message.getId(), messageBalloon);
+
+		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+
+		if (dayBoxes.isEmpty() || !dayBoxes.get(dayBoxes.size() - 1).getDay().equals(messageDay)) {
+
+			DayBox dayBox = new DayBox(messageDay);
+			dayBox.addMessageBalloonToBottom(messageBalloon);
+			dayBoxes.add(dayBox);
+			centerPane.getChildren().add(dayBox);
+
+		} else {
+
+			dayBoxes.get(dayBoxes.size() - 1).addMessageBalloonToBottom(messageBalloon);
+
+		}
 
 		if (messageDirection.equals(MessageDirection.OUTGOING))
 			scrollPaneToBottom();
@@ -320,8 +344,7 @@ class MessagePane extends BorderPane {
 		private static final double RADIUS = 3.0;
 		private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
 
-		private final Date date;
-		private final MessageDirection messageDirection;
+		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
 		private final Label messageLbl;
@@ -332,15 +355,14 @@ class MessagePane extends BorderPane {
 
 		private final Region gap = new Region();
 
-		MessageBalloon(String message, Date date, MessageDirection messageDirection) {
+		MessageBalloon(String message, MessageInfo messageInfo) {
 
 			super();
 
-			this.date = date;
-			this.messageDirection = messageDirection;
+			this.messageInfo = messageInfo;
 
 			messageLbl = new Label(message);
-			timeLbl = new Label(HOUR_MIN.format(date));
+			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
 
 			init();
 
@@ -360,7 +382,7 @@ class MessagePane extends BorderPane {
 
 			HBox.setHgrow(gap, Priority.ALWAYS);
 
-			switch (messageDirection) {
+			switch (messageInfo.messageDirection) {
 
 			case INCOMING:
 
@@ -407,9 +429,9 @@ class MessagePane extends BorderPane {
 
 		}
 
-		Date getDate() {
+		MessageInfo getMessageInfo() {
 
-			return date;
+			return messageInfo;
 
 		}
 
@@ -456,39 +478,82 @@ class MessagePane extends BorderPane {
 
 	}
 
+	private static class MessageGroup extends BorderPane {
+
+		private final MessageInfo messageInfo;
+
+		private final Label nameLabel;
+		private final VBox messageBox = new VBox(SMALL_GAP);
+
+		MessageGroup(MessageInfo messageInfo) {
+
+			super();
+
+			this.messageInfo = messageInfo;
+
+			nameLabel = new Label(messageInfo.name);
+
+			init();
+
+		}
+
+		private void init() {
+
+			// init nameLabel
+			if (!(messageInfo.name == null || messageInfo.name.isEmpty())) {
+				nameLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
+				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
+				nameLabel.setTextFill(Color.GRAY);
+				BorderPane.setAlignment(nameLabel,
+						messageInfo.messageDirection.equals(MessageDirection.INCOMING) ? Pos.CENTER_LEFT
+								: Pos.CENTER_RIGHT);
+				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, GAP, 0.0));
+
+				setTop(nameLabel);
+
+			}
+			setCenter(messageBox);
+
+		}
+
+		void addMessageBalloonToTop(MessageBalloon messageBalloon) {
+
+			messageBox.getChildren().add(0, messageBalloon);
+
+		}
+
+		void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
+
+			messageBox.getChildren().add(messageBalloon);
+
+		}
+
+		MessageInfo getMessageInfo() {
+
+			return messageInfo;
+
+		}
+
+	}
+
 	private static class DayBox extends BorderPane {
 
 		private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
-		private final LocalDate date;
+		private final LocalDate day;
 
 		private final Label dateLabel;
-		private final VBox messageBox = new VBox(GAP);
+		private final VBox messageGroupBox = new VBox(GAP);
 
-		private final Comparator<Node> messageBalloonsSorter = new Comparator<Node>() {
+		private final List<MessageGroup> messageGroups = Collections.synchronizedList(new ArrayList<MessageGroup>());
 
-			@Override
-			public int compare(Node arg0, Node arg1) {
-
-				if (!(arg0 instanceof MessageBalloon && arg1 instanceof MessageBalloon))
-					return 0;
-
-				MessageBalloon messageBalloon0 = (MessageBalloon) arg0;
-				MessageBalloon messageBalloon1 = (MessageBalloon) arg1;
-
-				return messageBalloon0.getDate().compareTo(messageBalloon1.getDate());
-
-			}
-
-		};
-
-		DayBox(LocalDate date) {
+		DayBox(LocalDate day) {
 
 			super();
 
-			this.date = date;
+			this.day = day;
 
-			dateLabel = new Label(DAY_MONTH_YEAR.format(date));
+			dateLabel = new Label(DAY_MONTH_YEAR.format(day));
 
 			init();
 
@@ -508,21 +573,59 @@ class MessagePane extends BorderPane {
 			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, GAP, 0.0));
 
 			setTop(dateLabel);
-			setCenter(messageBox);
+			setCenter(messageGroupBox);
 
 		}
 
-		void addMessageBalloon(MessageBalloon messageBalloon) {
+		void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
-			messageBox.getChildren().add(messageBalloon);
-
-			FXCollections.sort(messageBox.getChildren(), messageBalloonsSorter);
+			if (messageGroups.isEmpty()
+					|| !messageGroups.get(0).getMessageInfo().uuid.equals(messageBalloon.getMessageInfo().uuid)) {
+				MessageGroup messageGroup = new MessageGroup(messageBalloon.getMessageInfo());
+				messageGroup.addMessageBalloonToTop(messageBalloon);
+				messageGroups.add(0, messageGroup);
+				messageGroupBox.getChildren().add(0, messageGroup);
+			} else {
+				messageGroups.get(0).addMessageBalloonToTop(messageBalloon);
+			}
 
 		}
 
-		LocalDate getDate() {
+		void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
-			return date;
+			if (messageGroups.isEmpty() || !messageGroups.get(messageGroups.size() - 1).getMessageInfo().uuid
+					.equals(messageBalloon.getMessageInfo().uuid)) {
+				MessageGroup messageGroup = new MessageGroup(messageBalloon.getMessageInfo());
+				messageGroup.addMessageBalloonToBottom(messageBalloon);
+				messageGroups.add(messageGroup);
+				messageGroupBox.getChildren().add(messageGroup);
+			} else {
+				messageGroups.get(messageGroups.size() - 1).addMessageBalloonToBottom(messageBalloon);
+			}
+
+		}
+
+		LocalDate getDay() {
+
+			return day;
+
+		}
+
+	}
+
+	private static class MessageInfo {
+
+		final String uuid;
+		final String name;
+		final Date date;
+		final MessageDirection messageDirection;
+
+		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection) {
+
+			this.uuid = uuid;
+			this.name = name;
+			this.date = date;
+			this.messageDirection = messageDirection;
 
 		}
 

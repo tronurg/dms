@@ -81,15 +81,29 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	public void addMessage(Message message, MessageDirection messageDirection, String uuid) {
+	public void addPrivateMessageToTop(Message message, String senderName, MessageDirection messageDirection,
+			String uuid) {
 
-		contactsPane.addMessage(message, messageDirection, uuid);
+		contactsPane.addMessageToTop(message, senderName, messageDirection, uuid);
 
 	}
 
-	public void updateMessage(Message message, String uuid) {
+	public void addPrivateMessageToBottom(Message message, String senderName, MessageDirection messageDirection,
+			String uuid) {
+
+		contactsPane.addMessageToBottom(message, senderName, messageDirection, uuid);
+
+	}
+
+	public void updatePrivateMessage(Message message, String uuid) {
 
 		contactsPane.updateMessage(message, uuid);
+
+	}
+
+	public void addGroupMessage(Message message, MessageDirection messageDirection, String uuid) {
+
+		// TODO
 
 	}
 
@@ -141,15 +155,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	private void sendMessageClickedToListeners(final String message, final String uuid) {
+	private void sendPrivateMessageClickedToListeners(final String message, final String uuid) {
 
-		listeners.forEach(listener -> listener.sendMessageClicked(message, uuid));
+		listeners.forEach(listener -> listener.sendPrivateMessageClicked(message, uuid));
 
 	}
 
-	private void paneScrolledToTopToListeners(final String uuid) {
+	private void contactPaneScrolledToTopToListeners(final String uuid) {
 
-		listeners.forEach(listener -> listener.paneScrolledToTop(uuid));
+		listeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
 
 	}
 
@@ -174,7 +188,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void showMessagePane(final MessagePane messagePane, final String uuid) {
+	public void showContactMessagePane(final MessagePane messagePane, final String uuid) {
 
 		getChildren().add(messagePane);
 
@@ -183,7 +197,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void hideMessagePane(MessagePane messagePane, String uuid) {
+	public void hideContactMessagePane(MessagePane messagePane, String uuid) {
 
 		contactMessagePaneClosedToListeners(uuid);
 
@@ -192,16 +206,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void sendMessageClicked(String messageTxt, String uuid) {
+	public void sendPrivateMessageClicked(String messageTxt, String uuid) {
 
-		sendMessageClickedToListeners(messageTxt, uuid);
+		sendPrivateMessageClickedToListeners(messageTxt, uuid);
 
 	}
 
 	@Override
-	public void paneScrolledToTop(String uuid) {
+	public void contactPaneScrolledToTop(String uuid) {
 
-		paneScrolledToTopToListeners(uuid);
+		contactPaneScrolledToTopToListeners(uuid);
 
 	}
 

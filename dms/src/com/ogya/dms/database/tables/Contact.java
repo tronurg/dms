@@ -13,6 +13,8 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
+import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.ContactStatus;
 
 @Entity
@@ -111,6 +113,14 @@ public class Contact {
 
 	public void setGroups(Set<Dgroup> groups) {
 		this.groups = groups;
+	}
+
+	public String toJson() {
+		return CommonMethods.toDbJson(this);
+	}
+
+	public static Contact fromJson(String json) throws JsonSyntaxException {
+		return CommonMethods.fromDbJson(json, Contact.class);
 	}
 
 }

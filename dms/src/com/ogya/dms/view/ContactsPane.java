@@ -2,11 +2,10 @@ package com.ogya.dms.view;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
@@ -28,7 +27,7 @@ class ContactsPane extends TitledPane {
 
 	private final List<IContactsPane> listeners = Collections.synchronizedList(new ArrayList<IContactsPane>());
 
-	private final AtomicReference<Date> currentDate = new AtomicReference<Date>(new Date(0));
+	private final AtomicLong currentId = new AtomicLong(0);
 
 	ContactsPane() {
 
@@ -67,17 +66,36 @@ class ContactsPane extends TitledPane {
 
 	}
 
-	void addMessage(Message message, MessageDirection messageDirection, String uuid) {
+	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection, String uuid) {
 
 		ContactPane contactPane = getContactPane(uuid);
 
-		contactPane.addMessage(message, messageDirection);
+		contactPane.addMessageToTop(message, senderName, messageDirection);
 
-		Date messageDate = message.getDate();
+		Long messageId = message.getId();
 
-		if (currentDate.get().compareTo(messageDate) < 0) {
+		if (currentId.get() < messageId) {
 
-			currentDate.set(messageDate);
+			currentId.set(messageId);
+
+			contacts.getChildren().remove(contactPane);
+			contacts.getChildren().add(0, contactPane);
+
+		}
+
+	}
+
+	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection, String uuid) {
+
+		ContactPane contactPane = getContactPane(uuid);
+
+		contactPane.addMessageToBottom(message, senderName, messageDirection);
+
+		Long messageId = message.getId();
+
+		if (currentId.get() < messageId) {
+
+			currentId.set(messageId);
 
 			contacts.getChildren().remove(contactPane);
 			contacts.getChildren().add(0, contactPane);
@@ -126,25 +144,25 @@ class ContactsPane extends TitledPane {
 
 			contactPane.setOnShowMessagePane(messagePane -> {
 
-				listeners.forEach(listener -> listener.showMessagePane(messagePane, uuid));
+				listeners.forEach(listener -> listener.showContactMessagePane(messagePane, uuid));
 
 			});
 
 			contactPane.setOnHideMessagePane(messagePane -> {
 
-				listeners.forEach(listener -> listener.hideMessagePane(messagePane, uuid));
+				listeners.forEach(listener -> listener.hideContactMessagePane(messagePane, uuid));
 
 			});
 
 			contactPane.setOnSendMessageAction(messageTxt -> {
 
-				listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, uuid));
+				listeners.forEach(listener -> listener.sendPrivateMessageClicked(messageTxt, uuid));
 
 			});
 
 			contactPane.setOnPaneScrolledToTop(() -> {
 
-				listeners.forEach(listener -> listener.paneScrolledToTop(uuid));
+				listeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
 
 			});
 
@@ -164,12 +182,12 @@ class ContactsPane extends TitledPane {
 
 interface IContactsPane {
 
-	void showMessagePane(MessagePane messagePane, String uuid);
+	void showContactMessagePane(MessagePane messagePane, String uuid);
 
-	void hideMessagePane(MessagePane messagePane, String uuid);
+	void hideContactMessagePane(MessagePane messagePane, String uuid);
 
-	void sendMessageClicked(String messageTxt, String uuid);
+	void sendPrivateMessageClicked(String messageTxt, String uuid);
 
-	void paneScrolledToTop(String uuid);
+	void contactPaneScrolledToTop(String uuid);
 
 }

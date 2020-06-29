@@ -12,9 +12,9 @@ public interface AppListener {
 
 	void contactMessagePaneClosed(String uuid);
 
-	void sendMessageClicked(String messageTxt, String receiverUuid);
+	void sendPrivateMessageClicked(String messageTxt, String receiverUuid);
 
-	void paneScrolledToTop(String uuid);
+	void contactPaneScrolledToTop(String uuid);
 
 	void createGroupRequested(String groupName, List<String> selectedUuids);
 

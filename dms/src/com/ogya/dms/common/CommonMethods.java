@@ -20,11 +20,72 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+
 public class CommonMethods {
 
 	private static Document confDoc;
 
 	private static ResourceBundle langFile;
+
+	private static Gson gson = new Gson();
+
+	private static Gson gsonDb = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
+
+		@Override
+		public boolean shouldSkipField(FieldAttributes arg0) {
+			return arg0.getName().equals("id") || arg0.getName().equals("messageStatus")
+					|| arg0.getName().equals("statusReportStr") || arg0.getName().equals("date");
+		}
+
+		@Override
+		public boolean shouldSkipClass(Class<?> arg0) {
+			return false;
+		}
+
+	}).create();
+
+	public static String translate(String arg0) {
+
+		try {
+
+			return getLangFile().getString(arg0);
+
+		} catch (Exception e) {
+
+		}
+
+		return arg0;
+
+	}
+
+	public static String toJson(Object src) {
+
+		return gson.toJson(src);
+
+	}
+
+	public static <T> T fromJson(String json, Class<T> classOfT) throws JsonSyntaxException {
+
+		return gson.fromJson(json, classOfT);
+
+	}
+
+	public static String toDbJson(Object src) {
+
+		return gsonDb.toJson(src);
+
+	}
+
+	public static <T> T fromDbJson(String json, Class<T> classOfT) throws JsonSyntaxException {
+
+		return gsonDb.fromJson(json, classOfT);
+
+	}
 
 	static String getServerIp() {
 
@@ -103,20 +164,6 @@ public class CommonMethods {
 		}
 
 		return beaconIntervalMs;
-
-	}
-
-	public static String translate(String arg0) {
-
-		try {
-
-			return getLangFile().getString(arg0);
-
-		} catch (Exception e) {
-
-		}
-
-		return arg0;
 
 	}
 

@@ -3,6 +3,9 @@ package com.ogya.dms.structures;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.CommonMethods;
+
 public class StatusReport {
 
 	public final Map<String, MessageStatus> uuidStatus = new HashMap<String, MessageStatus>();
@@ -19,6 +22,14 @@ public class StatusReport {
 
 		return MessageStatus.getMessageStatusByLogicalOrder(minOrder);
 
+	}
+
+	public String toJson() {
+		return CommonMethods.toJson(this);
+	}
+
+	public static StatusReport fromJson(String json) throws JsonSyntaxException {
+		return CommonMethods.fromJson(json, StatusReport.class);
 	}
 
 }

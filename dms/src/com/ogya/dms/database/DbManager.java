@@ -2,13 +2,7 @@ package com.ogya.dms.database;
 
 import java.io.File;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -23,6 +17,7 @@ import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.structures.MessageStatus;
+import com.ogya.dms.structures.ReceiverType;
 
 public class DbManager {
 
@@ -296,9 +291,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where receiverUuid like :receiverUuid and (messageStatus like :created or messageStatus like :sent or messageStatus like :reached)",
+				"from Message where receiverUuid like :receiverUuid and (messageStatus like :created or messageStatus like :sent or messageStatus like :received)",
 				Message.class).setParameter("receiverUuid", receiverUuid).setParameter("created", MessageStatus.CREATED)
-				.setParameter("sent", MessageStatus.SENT).setParameter("reached", MessageStatus.RECEIVED).list();
+				.setParameter("sent", MessageStatus.SENT).setParameter("received", MessageStatus.RECEIVED).list();
 
 		session.close();
 
@@ -311,9 +306,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session
-				.createQuery("from Message where senderUuid like :senderUuid and messageStatus like :reached",
+				.createQuery("from Message where senderUuid like :senderUuid and messageStatus like :received",
 						Message.class)
-				.setParameter("senderUuid", senderUuid).setParameter("reached", MessageStatus.RECEIVED).list();
+				.setParameter("senderUuid", senderUuid).setParameter("received", MessageStatus.RECEIVED).list();
 
 		session.close();
 
@@ -321,35 +316,16 @@ public class DbManager {
 
 	}
 
-	public Set<String> getAllUuidsMessagingWithUuid(String uuid) {
-
-		Set<String> dbUuids = new HashSet<String>();
-
-		Session session = factory.openSession();
-
-		CriteriaBuilder cb = session.getCriteriaBuilder();
-		CriteriaQuery<String> cq = cb.createQuery(String.class);
-		Root<Message> root = cq.from(Message.class);
-		cq.select(root.get("senderUuid")).where(cb.like(root.get("receiverUuid"), uuid)).distinct(true);
-		dbUuids.addAll(session.createQuery(cq).list());
-		cq.select(root.get("receiverUuid")).where(cb.like(root.get("senderUuid"), uuid)).distinct(true);
-		dbUuids.addAll(session.createQuery(cq).list());
-
-		session.close();
-
-		return dbUuids;
-
-	}
-
-	public List<Message> getAllMessagesSinceFirstUnreadMessage(String localUuid, String remoteUuid)
+	public List<Message> getAllPrivateMessagesSinceFirstUnreadMessage(String localUuid, String remoteUuid)
 			throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Message> dbFirstUnreadMessage = session.createQuery(
-				"from Message where senderUuid like :remoteUuid and receiverUuid like :localUuid and messageStatus not like :read",
+				"from Message where senderUuid like :remoteUuid and receiverUuid like :localUuid and receiverType like :receiverType and messageStatus not like :read",
 				Message.class).setParameter("localUuid", localUuid).setParameter("remoteUuid", remoteUuid)
-				.setParameter("read", MessageStatus.READ).setMaxResults(1).list();
+				.setParameter("receiverType", ReceiverType.PRIVATE).setParameter("read", MessageStatus.READ)
+				.setMaxResults(1).list();
 
 		if (dbFirstUnreadMessage.size() == 0) {
 
@@ -360,9 +336,9 @@ public class DbManager {
 		Long firstId = dbFirstUnreadMessage.get(0).getId();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where id>=:firstId and ((senderUuid like :localUuid and receiverUuid like :remoteUuid) or (senderUuid like :remoteUuid and receiverUuid like :localUuid))",
+				"from Message where id>=:firstId and ((senderUuid like :localUuid and receiverUuid like :remoteUuid) or (senderUuid like :remoteUuid and receiverUuid like :localUuid)) and receiverType like :receiverType",
 				Message.class).setParameter("firstId", firstId).setParameter("localUuid", localUuid)
-				.setParameter("remoteUuid", remoteUuid).list();
+				.setParameter("remoteUuid", remoteUuid).setParameter("receiverType", ReceiverType.PRIVATE).list();
 
 		session.close();
 
@@ -370,15 +346,15 @@ public class DbManager {
 
 	}
 
-	public List<Message> getLastMessages(String localUuid, String remoteUuid, int messageCount)
+	public List<Message> getLastPrivateMessages(String localUuid, String remoteUuid, int messageCount)
 			throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where (senderUuid like :localUuid and receiverUuid like :remoteUuid) or (senderUuid like :remoteUuid and receiverUuid like :localUuid) order by id desc",
+				"from Message where ((senderUuid like :localUuid and receiverUuid like :remoteUuid) or (senderUuid like :remoteUuid and receiverUuid like :localUuid)) and receiverType like :receiverType order by id desc",
 				Message.class).setParameter("localUuid", localUuid).setParameter("remoteUuid", remoteUuid)
-				.setMaxResults(messageCount).list();
+				.setParameter("receiverType", ReceiverType.PRIVATE).setMaxResults(messageCount).list();
 
 		session.close();
 
@@ -386,15 +362,16 @@ public class DbManager {
 
 	}
 
-	public List<Message> getLastMessagesBeforeId(String localUuid, String remoteUuid, long id, int messageCount)
+	public List<Message> getLastPrivateMessagesBeforeId(String localUuid, String remoteUuid, long id, int messageCount)
 			throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where id<:id and ((senderUuid like :localUuid and receiverUuid like :remoteUuid) or (senderUuid like :remoteUuid and receiverUuid like :localUuid)) order by id desc",
+				"from Message where id<:id and ((senderUuid like :localUuid and receiverUuid like :remoteUuid) or (senderUuid like :remoteUuid and receiverUuid like :localUuid)) and receiverType like :receiverType order by id desc",
 				Message.class).setParameter("id", id).setParameter("localUuid", localUuid)
-				.setParameter("remoteUuid", remoteUuid).setMaxResults(messageCount).list();
+				.setParameter("remoteUuid", remoteUuid).setParameter("receiverType", ReceiverType.PRIVATE)
+				.setMaxResults(messageCount).list();
 
 		session.close();
 

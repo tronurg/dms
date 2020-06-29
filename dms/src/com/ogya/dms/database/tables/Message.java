@@ -13,8 +13,11 @@ import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
+import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
+import com.ogya.dms.structures.ReceiverType;
 
 @Entity
 @Table(name = "message")
@@ -33,6 +36,10 @@ public class Message {
 	@Column(name = "receiver_uuid", nullable = false, updatable = false)
 	private String receiverUuid;
 
+	@Column(name = "receiver_type", nullable = false, updatable = false)
+	@Enumerated(EnumType.STRING)
+	private ReceiverType receiverType;
+
 	@Column(name = "message_type", nullable = false, updatable = false)
 	@Enumerated(EnumType.STRING)
 	private MessageType messageType;
@@ -47,8 +54,8 @@ public class Message {
 	@Enumerated(EnumType.STRING)
 	private MessageStatus messageStatus;
 
-	@Column(name = "status_report")
-	private String statusReport;
+	@Column(name = "status_report_str")
+	private String statusReportStr;
 
 	@Column(name = "date", nullable = false, updatable = false)
 	private Date date;
@@ -57,9 +64,11 @@ public class Message {
 		super();
 	}
 
-	public Message(String senderUuid, String receiverUuid, MessageType messageType, String content) {
+	public Message(String senderUuid, String receiverUuid, ReceiverType receiverType, MessageType messageType,
+			String content) {
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
+		this.receiverType = receiverType;
 		this.messageType = messageType;
 		this.content = content;
 	}
@@ -96,6 +105,14 @@ public class Message {
 		this.receiverUuid = receiverUuid;
 	}
 
+	public ReceiverType getReceiverType() {
+		return receiverType;
+	}
+
+	public void setReceiverType(ReceiverType receiverType) {
+		this.receiverType = receiverType;
+	}
+
 	public MessageType getMessageType() {
 		return messageType;
 	}
@@ -128,12 +145,12 @@ public class Message {
 		this.messageStatus = messageStatus;
 	}
 
-	public String getStatusReport() {
-		return statusReport;
+	public String getStatusReportStr() {
+		return statusReportStr;
 	}
 
-	public void setStatusReport(String statusReport) {
-		this.statusReport = statusReport;
+	public void setStatusReportStr(String statusReportStr) {
+		this.statusReportStr = statusReportStr;
 	}
 
 	public Date getDate() {
@@ -154,6 +171,14 @@ public class Message {
 		if (this.messageId != null)
 			return;
 		this.messageId = this.id;
+	}
+
+	public String toJson() {
+		return CommonMethods.toDbJson(this);
+	}
+
+	public static Message fromJson(String json) throws JsonSyntaxException {
+		return CommonMethods.fromDbJson(json, Message.class);
 	}
 
 }

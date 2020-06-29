@@ -143,13 +143,23 @@ class ContactPane extends GridPane {
 
 	}
 
-	void addMessage(Message message, MessageDirection messageDirection) {
+	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection) {
 
 		if (messageDirection.equals(MessageDirection.INCOMING)
 				&& !message.getMessageStatus().equals(MessageStatus.READ))
 			unreadMessages.add(message.getId());
 
-		messagePane.addMessage(message, messageDirection);
+		messagePane.addMessageToTop(message, senderName, messageDirection);
+
+	}
+
+	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection) {
+
+		if (messageDirection.equals(MessageDirection.INCOMING)
+				&& !message.getMessageStatus().equals(MessageStatus.READ))
+			unreadMessages.add(message.getId());
+
+		messagePane.addMessageToBottom(message, senderName, messageDirection);
 
 	}
 

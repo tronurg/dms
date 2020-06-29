@@ -12,6 +12,8 @@ import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
+import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.ContactStatus;
 
 @Entity
@@ -111,6 +113,14 @@ public class Identity {
 	private void onCreate() {
 		this.uuid = UUID.randomUUID().toString();
 		this.status = ContactStatus.AVAILABLE;
+	}
+
+	public String toJson() {
+		return CommonMethods.toDbJson(this);
+	}
+
+	public static Identity fromJson(String json) throws JsonSyntaxException {
+		return CommonMethods.fromDbJson(json, Identity.class);
 	}
 
 }

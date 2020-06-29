@@ -3,6 +3,9 @@ package com.ogya.dms.structures;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.CommonMethods;
+
 public class GroupUpdate {
 
 	public final String groupUuid;
@@ -14,6 +17,14 @@ public class GroupUpdate {
 
 		this.groupUuid = groupUuid;
 
+	}
+
+	public String toJson() {
+		return CommonMethods.toJson(this);
+	}
+
+	public static GroupUpdate fromJson(String json) throws JsonSyntaxException {
+		return CommonMethods.fromJson(json, GroupUpdate.class);
 	}
 
 }
