@@ -414,13 +414,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			// It's my group, so I have to send this message to all the members except the
 			// original sender.
 
-			group.getContacts().forEach(contact -> {
+			int receivers = 0;
+
+			for (Contact contact : group.getContacts()) {
 
 				String receiverUuid = contact.getUuid();
 
 				// Skip the original sender
 				if (message.getSenderUuid().equals(receiverUuid))
-					return;
+					continue;
+
+				++receivers;
 
 				if (!model.isContactOnline(receiverUuid)) {
 
@@ -440,10 +444,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				}
 
-			});
+			}
 
 			if (onlineUuids.size() > 0)
 				dmsClient.sendMessage(message.toJson(), onlineUuids);
+
+			message.setWaiting(receivers > 0);
 
 		} else {
 			// It's not my group, so I will send this message to the group owner only, but
@@ -481,18 +487,16 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
+			message.setWaiting(true);
+
 		}
 
 		message.setStatusReportStr(statusReport.toJson());
 
-		MessageStatus overallMessageStatus = statusReport.getOverallStatus();
-
 		// If I am the sender, I shall keep the message status updated from the status
 		// report.
 		if (model.getLocalUuid().equals(message.getSenderUuid()))
-			message.setMessageStatus(overallMessageStatus);
-
-		message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+			message.setMessageStatus(statusReport.getOverallStatus());
 
 		try {
 
@@ -532,7 +536,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (model.getLocalUuid().equals(message.getSenderUuid()))
 			message.setMessageStatus(overallMessageStatus);
 
-		message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+		message.setWaiting(true);
 
 		try {
 
@@ -928,8 +932,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					// If I am the group owner and the message is not received remotely, I will have
 					// to re-send it.
 
-					model.updateWaitingGroupMessageToContact(receiverUuid, senderUuid, messageId, messageStatus);
-
 					String groupUuid = outgoingMessage.getReceiverUuid();
 
 					Dgroup group = model.getGroup(groupUuid);
@@ -945,8 +947,22 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					MessageStatus overallMessageStatus = statusReport.getOverallStatus();
 
+					if (model.isMyGroup(groupUuid)) {
+
+						model.updateWaitingGroupMessageToContact(receiverUuid, senderUuid, messageId, messageStatus);
+
+						outgoingMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+
+					} else if (senderUuid.equals(model.getLocalUuid()) && receiverUuid.equals(group.getUuidOwner())) {
+
+						model.updateWaitingGroupMessageToContact(receiverUuid, senderUuid, messageId, messageStatus);
+
+						outgoingMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
+
+					}
+
 					// If I am the sender, update the message status too
-					if (model.getLocalUuid().equals(senderUuid))
+					if (senderUuid.equals(model.getLocalUuid()))
 						outgoingMessage.setMessageStatus(overallMessageStatus);
 
 					if (messageStatus.equals(MessageStatus.FRESH) && (model.getLocalUuid().equals(group.getUuidOwner())
@@ -963,8 +979,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, groupUuid));
 
 					} else {
-
-						outgoingMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
@@ -1077,7 +1091,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				outgoingMessage.setStatusReportStr(statusReport.toJson());
 				outgoingMessage.setMessageStatus(overallMessageStatus);
-				outgoingMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 				final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
