@@ -12,7 +12,10 @@ public class StatusReport {
 
 	public MessageStatus getOverallStatus() {
 
-		int minOrder = 0;
+		if (uuidStatus.size() == 0)
+			return MessageStatus.READ;
+
+		int minOrder = Integer.MAX_VALUE;
 
 		for (MessageStatus messageStatus : uuidStatus.values()) {
 

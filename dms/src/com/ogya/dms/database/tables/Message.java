@@ -57,6 +57,9 @@ public class Message {
 	@Column(name = "status_report_str")
 	private String statusReportStr;
 
+	@Column(name = "waiting", nullable = false)
+	private Boolean waiting;
+
 	@Column(name = "date", nullable = false, updatable = false)
 	private Date date;
 
@@ -151,6 +154,14 @@ public class Message {
 
 	public void setStatusReportStr(String statusReportStr) {
 		this.statusReportStr = statusReportStr;
+	}
+
+	public Boolean isWaiting() {
+		return waiting;
+	}
+
+	public void setWaiting(Boolean waiting) {
+		this.waiting = waiting;
 	}
 
 	public Date getDate() {

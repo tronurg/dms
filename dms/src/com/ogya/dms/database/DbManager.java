@@ -245,33 +245,6 @@ public class DbManager {
 
 	}
 
-//	public Message updateMessageStatus(String senderUuid, long messageId, MessageStatus messageStatus)
-//			throws HibernateException {
-//
-//		Session session = factory.openSession();
-//
-//		Message dbMessage = session
-//				.createQuery("from Message where senderUuid like :senderUuid and messageId=:messageId", Message.class)
-//				.setParameter("senderUuid", senderUuid).setParameter("messageId", messageId).uniqueResult();
-//
-//		if (dbMessage != null) {
-//
-//			dbMessage.setMessageStatus(messageStatus);
-//
-//			session.beginTransaction();
-//
-//			dbMessage = (Message) session.merge(dbMessage);
-//
-//			session.getTransaction().commit();
-//
-//		}
-//
-//		session.close();
-//
-//		return dbMessage;
-//
-//	}
-
 	public Message getMessage(String senderUuid, long messageId) throws HibernateException {
 
 		Session session = factory.openSession();
@@ -290,10 +263,10 @@ public class DbManager {
 
 		Session session = factory.openSession();
 
-		List<Message> dbMessages = session.createQuery(
-				"from Message where receiverUuid like :receiverUuid and (messageStatus like :created or messageStatus like :sent or messageStatus like :received)",
-				Message.class).setParameter("receiverUuid", receiverUuid).setParameter("created", MessageStatus.CREATED)
-				.setParameter("sent", MessageStatus.SENT).setParameter("received", MessageStatus.RECEIVED).list();
+		List<Message> dbMessages = session
+				.createQuery("from Message where receiverUuid like :receiverUuid and messageStatus not like :read",
+						Message.class)
+				.setParameter("receiverUuid", receiverUuid).setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 

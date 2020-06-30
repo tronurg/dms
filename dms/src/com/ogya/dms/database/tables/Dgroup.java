@@ -33,6 +33,9 @@ public class Dgroup {
 	@Column(name = "uuid_owner", nullable = false, updatable = false)
 	private String uuidOwner;
 
+	@Column(name = "active", nullable = false)
+	private Boolean active;
+
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "dgroup_contacts", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "contact_id") })
@@ -77,6 +80,14 @@ public class Dgroup {
 
 	public void setUuidOwner(String uuidOwner) {
 		this.uuidOwner = uuidOwner;
+	}
+
+	public Boolean isActive() {
+		return active;
+	}
+
+	public void setActive(Boolean active) {
+		this.active = active;
 	}
 
 	public Set<Contact> getContacts() {

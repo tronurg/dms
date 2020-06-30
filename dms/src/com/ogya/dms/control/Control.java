@@ -30,6 +30,7 @@ import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.ContactStatus;
 import com.ogya.dms.structures.GroupUpdate;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.MessageIdentifier;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageStatusUpdate;
 import com.ogya.dms.structures.MessageType;
@@ -123,6 +124,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		dbManager.fetchAllContacts().forEach(contact -> model.addContact(contact));
 		dbManager.fetchAllGroups().forEach(group -> model.addGroup(group));
+
+		// TODO: Add waiting group messages
 
 	}
 
@@ -261,7 +264,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		Message incomingMessage = Message.fromJson(message);
 
-		incomingMessage.setMessageStatus(messageStatusFunction.apply(incomingMessage));
+		MessageStatus messageStatus = messageStatusFunction.apply(incomingMessage);
+
+		incomingMessage.setMessageStatus(messageStatus);
+
+		incomingMessage.setWaiting(false);
 
 		Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
@@ -274,7 +281,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		Message outgoingMessage = new Message(model.getLocalUuid(), receiverUuid, receiverType, messageType, message);
 
-		outgoingMessage.setMessageStatus(MessageStatus.CREATED);
+		outgoingMessage.setMessageStatus(MessageStatus.FRESH);
+
+		outgoingMessage.setWaiting(true);
 
 		Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
@@ -292,6 +301,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		dmsClient.sendMessage(message.toJson(), receiverUuid);
 
 		message.setMessageStatus(MessageStatus.SENT);
+
+		message.setWaiting(true);
 
 		try {
 
@@ -412,13 +423,22 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					return;
 
 				if (!model.isContactOnline(receiverUuid)) {
-					statusReport.uuidStatus.put(receiverUuid, MessageStatus.CREATED);
-					return;
-				}
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT); // Assuming that the message will be
-																				// sent...
-				onlineUuids.add(receiverUuid);
+					statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
+
+					model.updateWaitingGroupMessageToContact(receiverUuid, message.getSenderUuid(),
+							message.getMessageId(), MessageStatus.FRESH);
+
+				} else {
+
+					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT); // Assuming that the message will be
+																					// sent...
+					onlineUuids.add(receiverUuid);
+
+					model.updateWaitingGroupMessageToContact(receiverUuid, message.getSenderUuid(),
+							message.getMessageId(), MessageStatus.SENT);
+
+				}
 
 			});
 
@@ -437,29 +457,44 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (message.getSenderUuid().equals(receiverUuid))
 					return;
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.CREATED);
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
 			});
 
 			String receiverUuid = group.getUuidOwner();
 
-			if (!model.isContactOnline(receiverUuid))
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.CREATED);
+			if (!model.isContactOnline(receiverUuid)) {
 
-			dmsClient.sendMessage(message.toJson(), receiverUuid);
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-			statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+				model.updateWaitingGroupMessageToContact(receiverUuid, message.getSenderUuid(), message.getMessageId(),
+						MessageStatus.FRESH);
+
+			} else {
+
+				dmsClient.sendMessage(message.toJson(), receiverUuid);
+
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+
+				model.updateWaitingGroupMessageToContact(receiverUuid, message.getSenderUuid(), message.getMessageId(),
+						MessageStatus.SENT);
+
+			}
 
 		}
 
+		message.setStatusReportStr(statusReport.toJson());
+
+		MessageStatus overallMessageStatus = statusReport.getOverallStatus();
+
+		// If I am the sender, I shall keep the message status updated from the status
+		// report.
+		if (model.getLocalUuid().equals(message.getSenderUuid()))
+			message.setMessageStatus(overallMessageStatus);
+
+		message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+
 		try {
-
-			message.setStatusReportStr(statusReport.toJson());
-
-			// If I am the sender, I shall keep the message status updated from the status
-			// report.
-			if (model.getLocalUuid().equals(message.getSenderUuid()))
-				message.setMessageStatus(statusReport.getOverallStatus());
 
 			Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -482,15 +517,22 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		dmsClient.sendMessage(message.toJson(), receiverUuid);
 
+		model.updateWaitingGroupMessageToContact(receiverUuid, message.getSenderUuid(), message.getMessageId(),
+				MessageStatus.SENT);
+
 		StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
 
 		statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
 		message.setStatusReportStr(statusReport.toJson());
 
+		MessageStatus overallMessageStatus = statusReport.getOverallStatus();
+
 		// If I am the sender, update the message status too
 		if (model.getLocalUuid().equals(message.getSenderUuid()))
-			message.setMessageStatus(statusReport.getOverallStatus());
+			message.setMessageStatus(overallMessageStatus);
+
+		message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 		try {
 
@@ -647,7 +689,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 								switch (waitingMessage.getMessageStatus()) {
 
-								case CREATED:
+								case FRESH:
 
 									final Message newMessage = sendMessage(waitingMessage);
 
@@ -655,6 +697,51 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 										break;
 
 									Platform.runLater(() -> dmsPanel.updatePrivateMessage(newMessage, uuid));
+
+									break;
+
+								case SENT:
+								case RECEIVED:
+
+									dmsClient.claimMessageStatus(new MessageStatusUpdate(waitingMessage.getSenderUuid(),
+											waitingMessage.getReceiverUuid(), waitingMessage.getMessageId()).toJson(),
+											uuid);
+
+									break;
+
+								default:
+
+									break;
+
+								}
+
+							}
+
+						} catch (HibernateException e) {
+
+							e.printStackTrace();
+
+						}
+
+						// SEND WAITING GROUP MESSAGES
+
+						try {
+
+							for (MessageIdentifier messageIdentifier : model.getGroupMessagesWaitingToContact(uuid)) {
+
+								Message waitingMessage = dbManager.getMessage(messageIdentifier.senderUuid,
+										messageIdentifier.messageId);
+
+								switch (messageIdentifier.messageStatus) {
+
+								case FRESH:
+
+									final Message newMessage = sendGroupMessage(waitingMessage, uuid);
+
+									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT))
+										break;
+
+									Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, uuid));
 
 									break;
 
@@ -793,7 +880,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (incomingMessage == null) {
 
 					// Not received
-					messageStatusUpdate.messageStatus = MessageStatus.CREATED;
+					messageStatusUpdate.messageStatus = MessageStatus.FRESH;
 
 				} else {
 
@@ -824,12 +911,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				String senderUuid = messageStatusUpdate.senderUuid;
 				String receiverUuid = messageStatusUpdate.receiverUuid;
+				Long messageId = messageStatusUpdate.messageId;
+				MessageStatus messageStatus = messageStatusUpdate.messageStatus;
 
 				// Send this report to the original sender too.
 				if (!model.getLocalUuid().equals(senderUuid) && model.isContactOnline(senderUuid))
 					dmsClient.feedMessageStatus(message, senderUuid);
 
-				final Message outgoingMessage = dbManager.getMessage(senderUuid, messageStatusUpdate.messageId);
+				final Message outgoingMessage = dbManager.getMessage(senderUuid, messageId);
 
 				if (outgoingMessage == null)
 					return;
@@ -838,6 +927,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					// This is a group message. I am either the group owner or the message sender.
 					// If I am the group owner and the message is not received remotely, I will have
 					// to re-send it.
+
+					model.updateWaitingGroupMessageToContact(receiverUuid, senderUuid, messageId, messageStatus);
 
 					String groupUuid = outgoingMessage.getReceiverUuid();
 
@@ -848,34 +939,32 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					StatusReport statusReport = StatusReport.fromJson(outgoingMessage.getStatusReportStr());
 
-					statusReport.uuidStatus.put(receiverUuid, messageStatusUpdate.messageStatus);
+					statusReport.uuidStatus.put(receiverUuid, messageStatus);
 
 					outgoingMessage.setStatusReportStr(statusReport.toJson());
 
+					MessageStatus overallMessageStatus = statusReport.getOverallStatus();
+
 					// If I am the sender, update the message status too
-					if (model.getLocalUuid().equals(messageStatusUpdate.senderUuid))
-						outgoingMessage.setMessageStatus(statusReport.getOverallStatus());
+					if (model.getLocalUuid().equals(senderUuid))
+						outgoingMessage.setMessageStatus(overallMessageStatus);
 
-					if (messageStatusUpdate.messageStatus.equals(MessageStatus.CREATED)
-							&& model.getLocalUuid().equals(group.getUuidOwner())) {
-						// If the message is not received remotely and I am the group owner, then
-						// re-send this message.
-
-						final Message newMessage = sendGroupMessage(outgoingMessage, receiverUuid);
-
-						Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, groupUuid));
-
-					} else if (messageStatusUpdate.messageStatus.equals(MessageStatus.CREATED)
-							&& receiverUuid.equals(group.getUuidOwner())
-							&& model.getLocalUuid().equals(messageStatusUpdate.senderUuid)) {
-						// If the message is not received remotely by the group owner and I am the
-						// message sender, then re-send this message to the group owner.
+					if (messageStatus.equals(MessageStatus.FRESH) && (model.getLocalUuid().equals(group.getUuidOwner())
+							|| (model.getLocalUuid().equals(senderUuid)
+									&& receiverUuid.equals(group.getUuidOwner())))) {
+						// If the message is not received remotely and;
+						// I am the group owner
+						// or
+						// I am the message owner and receiver is the group owner
+						// then re-send this message.
 
 						final Message newMessage = sendGroupMessage(outgoingMessage, receiverUuid);
 
 						Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, groupUuid));
 
 					} else {
+
+						outgoingMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
@@ -885,15 +974,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				} else if (outgoingMessage.getReceiverType().equals(ReceiverType.PRIVATE)) {
 
-					outgoingMessage.setMessageStatus(messageStatusUpdate.messageStatus);
+					outgoingMessage.setMessageStatus(messageStatus);
 
-					if (messageStatusUpdate.messageStatus.equals(MessageStatus.CREATED)) {
+					if (messageStatus.equals(MessageStatus.FRESH)) {
 
 						final Message newMessage = sendMessage(outgoingMessage);
 
 						Platform.runLater(() -> dmsPanel.updatePrivateMessage(newMessage, receiverUuid));
 
 					} else {
+
+						outgoingMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
@@ -931,7 +1022,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(statusReportUpdate.senderUuid,
 							model.getLocalUuid(), statusReportUpdate.messageId);
-					messageStatusUpdate.messageStatus = MessageStatus.CREATED;
+					messageStatusUpdate.messageStatus = MessageStatus.FRESH;
 
 					dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), remoteUuid);
 
@@ -982,8 +1073,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				// I just update my db and view. I don't do anything else like re-sending the
 				// message etc.
 
+				MessageStatus overallMessageStatus = statusReport.getOverallStatus();
+
 				outgoingMessage.setStatusReportStr(statusReport.toJson());
-				outgoingMessage.setMessageStatus(statusReport.getOverallStatus());
+				outgoingMessage.setMessageStatus(overallMessageStatus);
+				outgoingMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 				final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 

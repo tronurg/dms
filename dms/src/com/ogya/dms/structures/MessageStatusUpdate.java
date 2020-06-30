@@ -7,11 +7,11 @@ public class MessageStatusUpdate {
 
 	public final String senderUuid;
 	public final String receiverUuid;
-	public final long messageId;
+	public final Long messageId;
 
 	public MessageStatus messageStatus;
 
-	public MessageStatusUpdate(String senderUuid, String receiverUuid, long messageId) {
+	public MessageStatusUpdate(String senderUuid, String receiverUuid, Long messageId) {
 
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;

@@ -11,6 +11,8 @@ import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.structures.ContactStatus;
+import com.ogya.dms.structures.MessageIdentifier;
+import com.ogya.dms.structures.MessageStatus;
 
 public class Model {
 
@@ -26,6 +28,9 @@ public class Model {
 	private final List<String> openUuids = Collections.synchronizedList(new ArrayList<String>());
 
 	private final Map<String, Long> minMessageIds = Collections.synchronizedMap(new HashMap<String, Long>());
+
+	private final Map<String, List<MessageIdentifier>> groupMessagesWaitingToContact = Collections
+			.synchronizedMap(new HashMap<String, List<MessageIdentifier>>());
 
 	public Model(Identity identity) {
 
@@ -152,6 +157,50 @@ public class Model {
 			return -1L;
 
 		return minMessageIds.get(uuid);
+
+	}
+
+	public void updateWaitingGroupMessageToContact(String contactUuid, String senderUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		if (messageStatus.equals(MessageStatus.READ)) {
+
+			removeWaitingGroupMessageToContact(contactUuid, senderUuid, messageId, messageStatus);
+
+		} else {
+
+			addWaitingGroupMessageToContact(contactUuid, senderUuid, messageId, messageStatus);
+
+		}
+
+	}
+
+	private void addWaitingGroupMessageToContact(String contactUuid, String senderUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		groupMessagesWaitingToContact.putIfAbsent(contactUuid, new ArrayList<MessageIdentifier>());
+
+		groupMessagesWaitingToContact.get(contactUuid).add(new MessageIdentifier(senderUuid, messageId, messageStatus));
+
+	}
+
+	private void removeWaitingGroupMessageToContact(String contactUuid, String senderUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		if (!groupMessagesWaitingToContact.containsKey(contactUuid))
+			return;
+
+		groupMessagesWaitingToContact.get(contactUuid)
+				.remove(new MessageIdentifier(senderUuid, messageId, messageStatus));
+
+		if (groupMessagesWaitingToContact.get(contactUuid).isEmpty())
+			groupMessagesWaitingToContact.remove(contactUuid);
+
+	}
+
+	public List<MessageIdentifier> getGroupMessagesWaitingToContact(String uuid) {
+
+		return groupMessagesWaitingToContact.get(uuid);
 
 	}
 
