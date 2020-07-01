@@ -2,10 +2,16 @@ package com.ogya.dms.view;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
+import com.ogya.dms.database.tables.Dgroup;
+import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.geometry.Insets;
@@ -24,7 +30,11 @@ class GroupsPane extends TitledPane {
 
 	private final CreateGroupPane createGroupPane = new CreateGroupPane();
 
+	private final Map<String, GroupPane> uuidGroupPane = Collections.synchronizedMap(new HashMap<String, GroupPane>());
+
 	private final List<IGroupsPane> listeners = Collections.synchronizedList(new ArrayList<IGroupsPane>());
+
+	private final AtomicLong currentId = new AtomicLong(0);
 
 	GroupsPane() {
 
@@ -41,7 +51,7 @@ class GroupsPane extends TitledPane {
 		createGroupPane.setOnCreateGroupAction(
 				() -> listeners.forEach(listener -> listener.createGroupClicked(createGroupPane)));
 
-		initGrupOlusturBtn();
+		initCreateGroupBtn();
 
 		setText(CommonMethods.translate("GROUPS"));
 
@@ -71,7 +81,7 @@ class GroupsPane extends TitledPane {
 
 	}
 
-	private void initGrupOlusturBtn() {
+	private void initCreateGroupBtn() {
 
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
@@ -79,6 +89,124 @@ class GroupsPane extends TitledPane {
 		createGroupBtn.setPadding(new Insets(10.0));
 
 		createGroupBtn.setOnAction(e -> listeners.forEach(listener -> listener.showCreateGroupPane(createGroupPane)));
+
+	}
+
+	void updateGroup(Dgroup group) {
+
+		getGroupPane(group.getUuid()).updateGroup(group);
+
+	}
+
+	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection, String groupUuid) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.addMessageToTop(message, senderName, messageDirection);
+
+		Long messageId = message.getId();
+
+		if (currentId.get() < messageId) {
+
+			currentId.set(messageId);
+
+			groups.getChildren().remove(groupPane);
+			groups.getChildren().add(0, groupPane);
+
+		}
+
+	}
+
+	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection, String groupUuid) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.addMessageToBottom(message, senderName, messageDirection);
+
+		Long messageId = message.getId();
+
+		if (currentId.get() < messageId) {
+
+			currentId.set(messageId);
+
+			groups.getChildren().remove(groupPane);
+			groups.getChildren().add(0, groupPane);
+
+		}
+
+	}
+
+	void updateMessage(Message message, String groupUuid) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.updateMessage(message);
+
+	}
+
+	void scrollPaneToMessage(String groupUuid, Long mesajId) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.scrollPaneToMessage(mesajId);
+
+	}
+
+	void savePosition(String groupUuid, Long mesajId) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.savePosition(mesajId);
+
+	}
+
+	void scrollToSavedPosition(String groupUuid) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.scrollToSavedPosition();
+
+	}
+
+	private GroupPane getGroupPane(final String groupUuid) {
+
+		if (!uuidGroupPane.containsKey(groupUuid)) {
+
+			GroupPane groupPane = new GroupPane();
+
+			groupPane.setOnShowMessagePane(messagePane -> {
+
+				listeners.forEach(listener -> listener.showGroupMessagePane(messagePane, groupUuid));
+
+			});
+
+			groupPane.setOnHideMessagePane(messagePane -> {
+
+				listeners.forEach(listener -> listener.hideGroupMessagePane(messagePane, groupUuid));
+
+			});
+
+			groupPane.setOnSendMessageAction(messageTxt -> {
+
+				listeners.forEach(listener -> listener.sendGroupMessageClicked(messageTxt, groupUuid));
+
+			});
+
+			groupPane.setOnPaneScrolledToTop(() -> {
+
+				listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
+
+			});
+
+			uuidGroupPane.put(groupUuid, groupPane);
+
+			groups.getChildren().add(0, groupPane);
+
+			setExpanded(true);
+
+		}
+
+		return uuidGroupPane.get(groupUuid);
 
 	}
 
@@ -92,12 +220,12 @@ interface IGroupsPane {
 
 	void createGroupClicked(CreateGroupPane createGroupPane);
 
-	void showGroupMessagePane(MessagePane messagePane, String uuid);
+	void showGroupMessagePane(MessagePane messagePane, String groupUuid);
 
-	void hideGroupMessagePane(MessagePane messagePane, String uuid);
+	void hideGroupMessagePane(MessagePane messagePane, String groupUuid);
 
-	void sendGroupMessageClicked(String messageTxt, String uuid);
+	void sendGroupMessageClicked(String messageTxt, String groupUuid);
 
-	void groupPaneScrolledToTop(String uuid);
+	void groupPaneScrolledToTop(String groupUuid);
 
 }

@@ -27,7 +27,7 @@ import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.model.Model;
-import com.ogya.dms.structures.ContactStatus;
+import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.GroupUpdate;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageIdentifier;
@@ -114,7 +114,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void initDatabase() {
 
 		dbManager.fetchAllContacts().forEach(contact -> {
-			contact.setStatus(ContactStatus.OFFLINE);
+			contact.setStatus(Availability.OFFLINE);
 			dbManager.addUpdateContact(contact);
 		});
 
@@ -125,7 +125,72 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		dbManager.fetchAllContacts().forEach(contact -> model.addContact(contact));
 		dbManager.fetchAllGroups().forEach(group -> model.addGroup(group));
 
-		// TODO: Add waiting group messages
+		// Add waiting group messages
+		dbManager.getAllWaitingGroupMessages().forEach(message -> {
+
+			String groupUuid = message.getReceiverUuid();
+			Dgroup group = model.getGroup(groupUuid);
+
+			if (group == null)
+				return;
+
+			try {
+
+				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
+
+				if (model.isMyGroup(groupUuid)) {
+
+					statusReport.uuidStatus.forEach((receiverUuid, messageStatus) -> {
+
+						model.updateWaitingGroupMessageToContact(receiverUuid, message.getSenderUuid(),
+								message.getMessageId(), messageStatus);
+
+					});
+
+				} else {
+
+					String uuidOwner = group.getUuidOwner();
+
+					model.updateWaitingGroupMessageToContact(uuidOwner, message.getSenderUuid(), message.getMessageId(),
+							statusReport.uuidStatus.get(uuidOwner));
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+		// Add messages waiting for status report
+		dbManager.getAllGroupMessagesNotRead(model.getLocalUuid()).forEach(message -> {
+
+			String groupUuid = message.getReceiverUuid();
+
+			if (model.isMyGroup(groupUuid))
+				return;
+
+			Dgroup group = model.getGroup(groupUuid);
+			String uuidOwner = group.getUuidOwner();
+
+			try {
+
+				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
+
+				statusReport.uuidStatus.remove(uuidOwner);
+
+				model.updateGroupMessageWaitingForStatusReport(uuidOwner, message.getMessageId(),
+						statusReport.getOverallStatus());
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 
@@ -166,9 +231,29 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		model.getGroups().forEach((uuid, group) -> {
 
+			String groupUuid = uuid;
+
 			Platform.runLater(() -> dmsPanel.updateGroup(group));
 
-			//
+			List<Message> dbMessages = new ArrayList<Message>();
+
+			dbMessages.addAll(dbManager.getAllGroupMessagesSinceFirstUnreadMessage(model.getLocalUuid(), groupUuid));
+
+			if (dbMessages.size() == 0) {
+
+				dbManager.getLastGroupMessages(groupUuid, MIN_MESSAGES_PER_PAGE)
+						.forEach(message -> dbMessages.add(0, message)); // inverse order
+
+			} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+
+				dbManager
+						.getLastGroupMessagesBeforeId(groupUuid, dbMessages.get(0).getId(),
+								MIN_MESSAGES_PER_PAGE - dbMessages.size())
+						.forEach(message -> dbMessages.add(0, message)); // inverse order
+
+			}
+
+			dbMessages.forEach(message -> addGroupMessageToPane(message, true));
 
 		});
 
@@ -184,9 +269,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			Platform.runLater(() -> {
 				if (newMessageToBottom)
-					dmsPanel.addPrivateMessageToBottom(message, "", MessageDirection.OUTGOING, remoteUuid);
+					dmsPanel.addMessageToBottom(message, "", MessageDirection.OUTGOING, remoteUuid);
 				else
-					dmsPanel.addPrivateMessageToTop(message, "", MessageDirection.OUTGOING, remoteUuid);
+					dmsPanel.addMessageToTop(message, "", MessageDirection.OUTGOING, remoteUuid);
 			});
 
 		} else if (model.getLocalUuid().equals(message.getReceiverUuid())) {
@@ -197,18 +282,44 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			Platform.runLater(() -> {
 				if (newMessageToBottom)
-					dmsPanel.addPrivateMessageToBottom(message, "", MessageDirection.INCOMING, remoteUuid);
+					dmsPanel.addMessageToBottom(message, "", MessageDirection.INCOMING, remoteUuid);
 				else
-					dmsPanel.addPrivateMessageToTop(message, "", MessageDirection.INCOMING, remoteUuid);
+					dmsPanel.addMessageToTop(message, "", MessageDirection.INCOMING, remoteUuid);
 			});
 
 		}
 
 	}
 
-	private void addGroupMessageToPane(Message message) {
+	private void addGroupMessageToPane(Message message, final boolean newMessageToBottom) {
 
-		// TODO
+		final String groupUuid = message.getReceiverUuid();
+
+		model.addMessageId(groupUuid, message.getId());
+
+		if (model.getLocalUuid().equals(message.getSenderUuid())) {
+
+			Platform.runLater(() -> {
+				if (newMessageToBottom)
+					dmsPanel.addMessageToBottom(message, "", MessageDirection.OUTGOING, groupUuid);
+				else
+					dmsPanel.addMessageToTop(message, "", MessageDirection.OUTGOING, groupUuid);
+			});
+
+		} else {
+
+			Contact sender = model.getContact(message.getSenderUuid());
+
+			Platform.runLater(() -> {
+				if (newMessageToBottom)
+					dmsPanel.addMessageToBottom(message, sender == null ? "" : sender.getName(),
+							MessageDirection.INCOMING, groupUuid);
+				else
+					dmsPanel.addMessageToTop(message, sender == null ? "" : sender.getName(), MessageDirection.INCOMING,
+							groupUuid);
+			});
+
+		}
 
 	}
 
@@ -239,7 +350,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
-			contact.setStatus(ContactStatus.OFFLINE);
+			contact.setStatus(Availability.OFFLINE);
 
 			try {
 
@@ -276,10 +387,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Message createOutgoingMessage(String message, String receiverUuid, ReceiverType receiverType,
+	private Message createOutgoingMessage(String messageTxt, String receiverUuid, ReceiverType receiverType,
 			MessageType messageType) throws Exception {
 
-		Message outgoingMessage = new Message(model.getLocalUuid(), receiverUuid, receiverType, messageType, message);
+		Message outgoingMessage = new Message(model.getLocalUuid(), receiverUuid, receiverType, messageType,
+				messageTxt);
 
 		outgoingMessage.setMessageStatus(MessageStatus.FRESH);
 
@@ -330,22 +442,24 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			group.setUuid(groupUuid);
 		}
 
+		group.setActive(true);
+
 		if (contactsToBeAdded != null) {
 
 			for (String uuid : contactsToBeAdded) {
 
-				try {
+				if (uuid.equals(model.getLocalUuid())) {
 
-					Contact contact = model.getContact(uuid);
+					group.setActive(true);
 
-					if (contact != null)
-						group.getContacts().add(contact);
-
-				} catch (HibernateException e) {
-
-					e.printStackTrace();
+					continue;
 
 				}
+
+				Contact contact = model.getContact(uuid);
+
+				if (contact != null)
+					group.getContacts().add(contact);
 
 			}
 
@@ -355,22 +469,38 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			for (String uuid : contactsToBeRemoved) {
 
-				try {
+				if (uuid.equals(model.getLocalUuid())) {
 
-					Contact contact = model.getContact(uuid);
+					group.setActive(false);
 
-					if (contact != null)
-						group.getContacts().remove(contact);
-
-				} catch (HibernateException e) {
-
-					e.printStackTrace();
+					continue;
 
 				}
+
+				Contact contact = model.getContact(uuid);
+
+				if (contact != null)
+					group.getContacts().remove(contact);
 
 			}
 
 		}
+
+		// GROUP NOT ADDED TO MODEL YET. DO NOT USE IS_MY_GROUP METHOD !!!
+		if (uuidOwner.equals(model.getLocalUuid()))
+			group.setStatus(Availability.AVAILABLE);
+		else
+			group.setStatus(model.getContact(group.getUuidOwner()).getStatus().equals(Availability.OFFLINE)
+					? Availability.OFFLINE
+					: Availability.AVAILABLE);
+
+		List<String> contactNames = new ArrayList<String>();
+		group.getContacts().forEach(contact -> contactNames.add(contact.getName()));
+		Collections.sort(contactNames);
+		// GROUP NOT ADDED TO MODEL YET. DO NOT USE IS_MY_GROUP METHOD !!!
+		if (!uuidOwner.equals(model.getLocalUuid()))
+			contactNames.add(0, model.getContact(group.getUuidOwner()).getName());
+		group.setComment(String.join(",", contactNames));
 
 		Dgroup newGroup = dbManager.addUpdateGroup(group);
 
@@ -467,6 +597,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			});
 
+			boolean waitingForStatusReport = statusReport.uuidStatus.size() > 0;
+
 			String receiverUuid = group.getUuidOwner();
 
 			if (!model.isContactOnline(receiverUuid)) {
@@ -486,6 +618,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						MessageStatus.SENT);
 
 			}
+
+			if (waitingForStatusReport)
+				model.updateGroupMessageWaitingForStatusReport(receiverUuid, message.getMessageId(),
+						MessageStatus.FRESH);
 
 			message.setWaiting(true);
 
@@ -571,7 +707,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			if (model.isMyGroup(message.getReceiverUuid()))
 				sendGroupMessage(message);
 
-			addGroupMessageToPane(message);
+			addGroupMessageToPane(message, true);
 
 			break;
 
@@ -600,6 +736,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					groupUpdate.contactUuidNameToBeAdded.forEach((uuid, name) -> {
 
+						contactsToBeAdded.add(uuid);
+
 						if (model.getLocalUuid().equals(uuid))
 							return;
 
@@ -608,15 +746,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 							contact = new Contact();
 							contact.setUuid(uuid);
 							contact.setName(name);
-							contact.setStatus(ContactStatus.OFFLINE);
-						}
-
-						try {
-							Contact newContact = dbManager.addUpdateContact(contact);
-							model.addContact(newContact);
-							contactsToBeAdded.add(uuid);
-						} catch (Exception e) {
-							e.printStackTrace();
+							contact.setStatus(Availability.OFFLINE);
+							try {
+								Contact newContact = dbManager.addUpdateContact(contact);
+								model.addContact(newContact);
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
 
 					});
@@ -627,6 +763,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					groupUpdate.contactUuidNameToBeRemoved.forEach((uuid, name) -> {
 
+						contactsToBeRemoved.add(uuid);
+
 						if (model.getLocalUuid().equals(uuid))
 							return;
 
@@ -635,11 +773,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 							contact = new Contact();
 							contact.setUuid(uuid);
 							contact.setName(name);
-							contact.setStatus(ContactStatus.OFFLINE);
+							contact.setStatus(Availability.OFFLINE);
 							try {
 								Contact newContact = dbManager.addUpdateContact(contact);
 								model.addContact(newContact);
-								contactsToBeRemoved.add(uuid);
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
@@ -683,13 +820,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
 				if (!wasOnline) {
-					// Simdi cevrimici olduysa bekleyen mesajlarini gonder
 
+					// If the contact has just been online, send all things waiting for it.
 					taskQueue.execute(() -> {
 
+						// START WITH PRIVATE MESSAGES
 						try {
 
-							for (final Message waitingMessage : dbManager.getMessagesWaitingToContact(uuid)) {
+							for (final Message waitingMessage : dbManager.getMessagesWaitingToUuid(uuid)) {
 
 								switch (waitingMessage.getMessageStatus()) {
 
@@ -700,7 +838,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT))
 										break;
 
-									Platform.runLater(() -> dmsPanel.updatePrivateMessage(newMessage, uuid));
+									Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
 
 									break;
 
@@ -728,7 +866,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						}
 
 						// SEND WAITING GROUP MESSAGES
-
 						try {
 
 							for (MessageIdentifier messageIdentifier : model.getGroupMessagesWaitingToContact(uuid)) {
@@ -745,7 +882,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT))
 										break;
 
-									Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, uuid));
+									Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
 
 									break;
 
@@ -763,6 +900,23 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 									break;
 
 								}
+
+							}
+
+						} catch (HibernateException e) {
+
+							e.printStackTrace();
+
+						}
+
+						// CLAIM WAITING STATUS REPORTS
+						try {
+
+							for (MessageIdentifier messageIdentifier : model
+									.getGroupMessagesWaitingForStatusReport(uuid)) {
+
+								dmsClient.claimStatusReport(new StatusReportUpdate(messageIdentifier.senderUuid,
+										messageIdentifier.messageId).toJson(), uuid);
 
 							}
 
@@ -976,13 +1130,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = sendGroupMessage(outgoingMessage, receiverUuid);
 
-						Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, groupUuid));
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
 
 					} else {
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-						Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, groupUuid));
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
 
 					}
 
@@ -994,7 +1148,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = sendMessage(outgoingMessage);
 
-						Platform.runLater(() -> dmsPanel.updatePrivateMessage(newMessage, receiverUuid));
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, receiverUuid));
 
 					} else {
 
@@ -1002,7 +1156,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-						Platform.runLater(() -> dmsPanel.updatePrivateMessage(newMessage, receiverUuid));
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, receiverUuid));
 
 					}
 
@@ -1069,11 +1223,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				StatusReportUpdate statusReportUpdate = StatusReportUpdate.fromJson(message);
 
+				Long messageId = statusReportUpdate.messageId;
+
 				// A status report can only be claimed by a group message owner. So at this
 				// point, I must be a group message owner. Let's find that message.
 
-				Message outgoingMessage = dbManager.getMessage(statusReportUpdate.senderUuid,
-						statusReportUpdate.messageId);
+				Message outgoingMessage = dbManager.getMessage(statusReportUpdate.senderUuid, messageId);
 
 				if (outgoingMessage == null)
 					return;
@@ -1087,6 +1242,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				// I just update my db and view. I don't do anything else like re-sending the
 				// message etc.
 
+				Dgroup group = model.getGroup(groupUuid);
+				if (group != null)
+					model.updateGroupMessageWaitingForStatusReport(group.getUuidOwner(), messageId,
+							statusReportUpdate.statusReport.getOverallStatus());
+
 				MessageStatus overallMessageStatus = statusReport.getOverallStatus();
 
 				outgoingMessage.setStatusReportStr(statusReport.toJson());
@@ -1094,7 +1254,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-				Platform.runLater(() -> dmsPanel.updateGroupMessage(newMessage, groupUuid));
+				Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
 
 			} catch (Exception e) {
 
@@ -1158,13 +1318,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Identity identity = model.getIdentity();
 
-				if (identity.getStatus().equals(ContactStatus.AVAILABLE)) {
+				if (identity.getStatus().equals(Availability.AVAILABLE)) {
 
-					identity.setStatus(ContactStatus.BUSY);
+					identity.setStatus(Availability.BUSY);
 
-				} else if (identity.getStatus().equals(ContactStatus.BUSY)) {
+				} else if (identity.getStatus().equals(Availability.BUSY)) {
 
-					identity.setStatus(ContactStatus.AVAILABLE);
+					identity.setStatus(Availability.AVAILABLE);
 
 				}
 
@@ -1199,7 +1359,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				List<Message> messagesWaitingFromContact = dbManager.getMessagesWaitingFromContact(uuid);
+				List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(uuid);
 
 				for (final Message incomingMessage : messagesWaitingFromContact) {
 
@@ -1209,7 +1369,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-						Platform.runLater(() -> dmsPanel.updatePrivateMessage(newMessage, uuid));
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
 
 						MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(newMessage.getSenderUuid(),
 								model.getLocalUuid(), newMessage.getMessageId());
@@ -1226,7 +1386,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				}
 
 				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(uuid,
-						messagesWaitingFromContact.size() > 0 ? messagesWaitingFromContact.get(0).getId() : -1L));
+						messagesWaitingFromContact.size() > 0 ? messagesWaitingFromContact.get(0).getId() : -1L,
+						ReceiverType.PRIVATE));
 
 			} catch (HibernateException e) {
 
@@ -1250,14 +1411,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void sendPrivateMessageClicked(final String message, final String receiverUuid) {
+	public void sendPrivateMessageClicked(final String messageTxt, final String receiverUuid) {
 
 		taskQueue.execute(() -> {
 
 			try {
 
 				final Message newMessage = sendMessage(
-						createOutgoingMessage(message, receiverUuid, ReceiverType.PRIVATE, MessageType.TEXT));
+						createOutgoingMessage(messageTxt, receiverUuid, ReceiverType.PRIVATE, MessageType.TEXT));
 
 				addPrivateMessageToPane(newMessage, true);
 
@@ -1287,11 +1448,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			if (lastMessagesBeforeId.size() == 0)
 				return;
 
-			Platform.runLater(() -> dmsPanel.savePosition(uuid, previousMinMessageId));
+			Platform.runLater(() -> dmsPanel.savePosition(uuid, previousMinMessageId, ReceiverType.PRIVATE));
 
 			lastMessagesBeforeId.forEach(message -> addPrivateMessageToPane(message, false));
 
-			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(uuid));
+			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(uuid, ReceiverType.PRIVATE));
 
 		});
 
@@ -1323,6 +1484,128 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				e.printStackTrace();
 
 			}
+
+		});
+
+	}
+
+	@Override
+	public void groupMessagePaneOpened(String groupUuid) {
+
+		taskQueue.execute(() -> {
+
+			model.messagePaneOpened(groupUuid);
+
+			try {
+
+				List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(model.getLocalUuid(),
+						groupUuid);
+
+				for (final Message incomingMessage : messagesWaitingFromGroup) {
+
+					try {
+
+						incomingMessage.setMessageStatus(MessageStatus.READ);
+
+						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
+
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+
+						Dgroup group = model.getGroup(groupUuid);
+
+						if (group == null)
+							return;
+
+						MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(newMessage.getSenderUuid(),
+								model.getLocalUuid(), newMessage.getMessageId());
+						messageStatusUpdate.messageStatus = MessageStatus.READ;
+
+						if (model.isMyGroup(groupUuid)) {
+
+							dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), newMessage.getSenderUuid());
+
+						} else {
+
+							dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), group.getUuidOwner());
+
+						}
+
+					} catch (JsonSyntaxException | HibernateException e) {
+
+						e.printStackTrace();
+
+					}
+
+				}
+
+				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(groupUuid,
+						messagesWaitingFromGroup.size() > 0 ? messagesWaitingFromGroup.get(0).getId() : -1L,
+						ReceiverType.GROUP));
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void groupMessagePaneClosed(String groupUuid) {
+
+		taskQueue.execute(() -> {
+
+			model.messagePaneClosed(groupUuid);
+
+		});
+
+	}
+
+	@Override
+	public void sendGroupMessageClicked(String messageTxt, String groupUuid) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				final Message newMessage = sendGroupMessage(
+						createOutgoingMessage(messageTxt, groupUuid, ReceiverType.GROUP, MessageType.TEXT));
+
+				addGroupMessageToPane(newMessage, true);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void groupPaneScrolledToTop(String groupUuid) {
+
+		taskQueue.execute(() -> {
+
+			Long previousMinMessageId = model.getMinMessageId(groupUuid);
+
+			if (previousMinMessageId < 0)
+				return;
+
+			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(groupUuid, previousMinMessageId,
+					MIN_MESSAGES_PER_PAGE);
+
+			if (lastMessagesBeforeId.size() == 0)
+				return;
+
+			Platform.runLater(() -> dmsPanel.savePosition(groupUuid, previousMinMessageId, ReceiverType.GROUP));
+
+			lastMessagesBeforeId.forEach(message -> addGroupMessageToPane(message, false));
+
+			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(groupUuid, ReceiverType.GROUP));
 
 		});
 

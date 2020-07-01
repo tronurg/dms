@@ -18,4 +18,12 @@ public interface AppListener {
 
 	void createGroupRequested(String groupName, List<String> selectedUuids);
 
+	void groupMessagePaneOpened(String groupUuid);
+
+	void groupMessagePaneClosed(String groupUuid);
+
+	void sendGroupMessageClicked(String messageTxt, String groupUuid);
+
+	void groupPaneScrolledToTop(String groupUuid);
+
 }

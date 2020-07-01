@@ -6,6 +6,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -15,6 +17,8 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+
+import com.ogya.dms.structures.Availability;
 
 @Entity
 @Table(name = "dgroup")
@@ -30,8 +34,15 @@ public class Dgroup {
 	@Column(name = "name", nullable = false, updatable = false)
 	private String name;
 
+	@Column(name = "comment")
+	private String comment;
+
 	@Column(name = "uuid_owner", nullable = false, updatable = false)
 	private String uuidOwner;
+
+	@Column(name = "status", nullable = false)
+	@Enumerated(EnumType.STRING)
+	private Availability status;
 
 	@Column(name = "active", nullable = false)
 	private Boolean active;
@@ -74,12 +85,28 @@ public class Dgroup {
 		this.name = name;
 	}
 
+	public String getComment() {
+		return comment;
+	}
+
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+
 	public String getUuidOwner() {
 		return uuidOwner;
 	}
 
 	public void setUuidOwner(String uuidOwner) {
 		this.uuidOwner = uuidOwner;
+	}
+
+	public Availability getStatus() {
+		return status;
+	}
+
+	public void setStatus(Availability status) {
+		this.status = status;
 	}
 
 	public Boolean isActive() {

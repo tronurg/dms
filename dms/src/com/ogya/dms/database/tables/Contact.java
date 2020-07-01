@@ -15,7 +15,7 @@ import javax.persistence.Table;
 
 import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
-import com.ogya.dms.structures.ContactStatus;
+import com.ogya.dms.structures.Availability;
 
 @Entity
 @Table(name = "contact")
@@ -36,7 +36,7 @@ public class Contact {
 
 	@Column(name = "status", nullable = false)
 	@Enumerated(EnumType.STRING)
-	private ContactStatus status;
+	private Availability status;
 
 	@Column(name = "lattitude")
 	private Double lattitude;
@@ -83,11 +83,11 @@ public class Contact {
 		this.comment = comment;
 	}
 
-	public ContactStatus getStatus() {
+	public Availability getStatus() {
 		return status;
 	}
 
-	public void setStatus(ContactStatus status) {
+	public void setStatus(Availability status) {
 		this.status = status;
 	}
 

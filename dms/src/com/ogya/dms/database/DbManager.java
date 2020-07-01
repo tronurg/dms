@@ -17,6 +17,7 @@ import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.structures.MessageStatus;
+import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
 
 public class DbManager {
@@ -43,7 +44,7 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			throw new DbException("Veritabanina erisilemiyor. Sifre hatali veya hesap kullanimda olabilir.");
+			throw new DbException("Database cannot be accessed. Wrong password or account in use.");
 
 		}
 
@@ -259,14 +260,13 @@ public class DbManager {
 
 	}
 
-	public List<Message> getMessagesWaitingToContact(String receiverUuid) throws HibernateException {
+	public List<Message> getMessagesWaitingToUuid(String receiverUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session
-				.createQuery("from Message where receiverUuid like :receiverUuid and messageStatus not like :read",
-						Message.class)
-				.setParameter("receiverUuid", receiverUuid).setParameter("read", MessageStatus.READ).list();
+				.createQuery("from Message where receiverUuid like :receiverUuid and waiting=:waiting", Message.class)
+				.setParameter("receiverUuid", receiverUuid).setParameter("waiting", true).list();
 
 		session.close();
 
@@ -274,14 +274,14 @@ public class DbManager {
 
 	}
 
-	public List<Message> getMessagesWaitingFromContact(String senderUuid) throws HibernateException {
+	public List<Message> getPrivateMessagesWaitingFromContact(String senderUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		List<Message> dbMessages = session
-				.createQuery("from Message where senderUuid like :senderUuid and messageStatus like :received",
-						Message.class)
-				.setParameter("senderUuid", senderUuid).setParameter("received", MessageStatus.RECEIVED).list();
+		List<Message> dbMessages = session.createQuery(
+				"from Message where senderUuid like :senderUuid and messageStatus like :received and receiverType like :receiverType",
+				Message.class).setParameter("senderUuid", senderUuid).setParameter("received", MessageStatus.RECEIVED)
+				.setParameter("receiverType", ReceiverType.PRIVATE).list();
 
 		session.close();
 
@@ -362,6 +362,114 @@ public class DbManager {
 		session.close();
 
 		return dbContact;
+
+	}
+
+	public List<Message> getAllWaitingGroupMessages() {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session
+				.createQuery("from Message where receiverType like :receiverType and waiting=:waiting", Message.class)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("waiting", true).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getMessagesWaitingFromGroup(String localUuid, String groupUuid) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where senderUuid not like :localUuid and receiverUuid like :groupUuid and receiverType like :receiverType and messageStatus not like :read and messageType not like :messageType",
+				Message.class).setParameter("localUuid", localUuid).setParameter("groupUuid", groupUuid)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ)
+				.setParameter("messageType", MessageType.UPDATE).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getAllGroupMessagesNotRead(String senderUuid) {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where senderUuid like :senderUuid and receiverType like :receiverType and messageStatus not like :read",
+				Message.class).setParameter("senderUuid", senderUuid).setParameter("receiverType", ReceiverType.GROUP)
+				.setParameter("read", MessageStatus.READ).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getAllGroupMessagesSinceFirstUnreadMessage(String localUuid, String groupUuid)
+			throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbFirstUnreadMessage = session.createQuery(
+				"from Message where senderUuid not like :localUuid and receiverUuid like :groupUuid and receiverType like :receiverType and messageStatus not like :read and messageType not like :messageType",
+				Message.class).setParameter("localUuid", localUuid).setParameter("groupUuid", groupUuid)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ)
+				.setParameter("messageType", MessageType.UPDATE).setMaxResults(1).list();
+
+		if (dbFirstUnreadMessage.size() == 0) {
+
+			return Collections.emptyList();
+
+		}
+
+		Long firstId = dbFirstUnreadMessage.get(0).getId();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where id>=:firstId and receiverUuid like :groupUuid and receiverType like :receiverType and messageType not like :messageType",
+				Message.class).setParameter("firstId", firstId).setParameter("groupUuid", groupUuid)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("messageType", MessageType.UPDATE)
+				.list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getLastGroupMessages(String groupUuid, int messageCount) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where receiverUuid like :groupUuid and receiverType like :receiverType and messageType not like :messageType order by id desc",
+				Message.class).setParameter("groupUuid", groupUuid).setParameter("receiverType", ReceiverType.GROUP)
+				.setParameter("messageType", MessageType.UPDATE).setMaxResults(messageCount).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getLastGroupMessagesBeforeId(String groupUuid, long id, int messageCount)
+			throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where id<:id and receiverUuid like :groupUuid and receiverType like :receiverType and messageType not like :messageType order by id desc",
+				Message.class).setParameter("id", id).setParameter("groupUuid", groupUuid)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("messageType", MessageType.UPDATE)
+				.setMaxResults(messageCount).list();
+
+		session.close();
+
+		return dbMessages;
 
 	}
 

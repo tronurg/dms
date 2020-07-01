@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
-import com.ogya.dms.structures.ContactStatus;
+import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.MessageIdentifier;
 import com.ogya.dms.structures.MessageStatus;
 
@@ -30,6 +30,9 @@ public class Model {
 	private final Map<String, Long> minMessageIds = Collections.synchronizedMap(new HashMap<String, Long>());
 
 	private final Map<String, List<MessageIdentifier>> groupMessagesWaitingToContact = Collections
+			.synchronizedMap(new HashMap<String, List<MessageIdentifier>>());
+
+	private final Map<String, List<MessageIdentifier>> groupMessagesWaitingForStatusReport = Collections
 			.synchronizedMap(new HashMap<String, List<MessageIdentifier>>());
 
 	public Model(Identity identity) {
@@ -58,7 +61,7 @@ public class Model {
 
 	}
 
-	public void updateStatus(ContactStatus status) {
+	public void updateStatus(Availability status) {
 
 		identity.setStatus(status);
 
@@ -90,7 +93,7 @@ public class Model {
 
 	public boolean isContactOnline(String uuid) {
 
-		return contacts.containsKey(uuid) && !getContact(uuid).getStatus().equals(ContactStatus.OFFLINE);
+		return contacts.containsKey(uuid) && !getContact(uuid).getStatus().equals(Availability.OFFLINE);
 
 	}
 
@@ -193,14 +196,57 @@ public class Model {
 		groupMessagesWaitingToContact.get(contactUuid)
 				.remove(new MessageIdentifier(senderUuid, messageId, messageStatus));
 
-		if (groupMessagesWaitingToContact.get(contactUuid).isEmpty())
-			groupMessagesWaitingToContact.remove(contactUuid);
-
 	}
 
 	public List<MessageIdentifier> getGroupMessagesWaitingToContact(String uuid) {
 
+		groupMessagesWaitingToContact.putIfAbsent(uuid, new ArrayList<MessageIdentifier>());
+
 		return groupMessagesWaitingToContact.get(uuid);
+
+	}
+
+	public void updateGroupMessageWaitingForStatusReport(String contactUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		if (messageStatus.equals(MessageStatus.READ)) {
+
+			removeGroupMessageWaitingForStatusReport(contactUuid, localUuid, messageId, messageStatus);
+
+		} else {
+
+			addGroupMessageWaitingForStatusReport(contactUuid, localUuid, messageId, messageStatus);
+
+		}
+
+	}
+
+	private void addGroupMessageWaitingForStatusReport(String contactUuid, String senderUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		groupMessagesWaitingForStatusReport.putIfAbsent(contactUuid, new ArrayList<MessageIdentifier>());
+
+		groupMessagesWaitingForStatusReport.get(contactUuid)
+				.add(new MessageIdentifier(senderUuid, messageId, messageStatus));
+
+	}
+
+	private void removeGroupMessageWaitingForStatusReport(String contactUuid, String senderUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		if (!groupMessagesWaitingForStatusReport.containsKey(contactUuid))
+			return;
+
+		groupMessagesWaitingForStatusReport.get(contactUuid)
+				.remove(new MessageIdentifier(senderUuid, messageId, messageStatus));
+
+	}
+
+	public List<MessageIdentifier> getGroupMessagesWaitingForStatusReport(String uuid) {
+
+		groupMessagesWaitingForStatusReport.putIfAbsent(uuid, new ArrayList<MessageIdentifier>());
+
+		return groupMessagesWaitingForStatusReport.get(uuid);
 
 	}
 

@@ -9,6 +9,7 @@ import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.intf.AppListener;
 
 import javafx.geometry.Insets;
@@ -75,59 +76,139 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	public void updateGroup(Dgroup group) {
 
-		// TODO
-
-		group.getContacts().forEach(contact -> System.out.println(contact.getName()));
+		groupsPane.updateGroup(group);
 
 	}
 
-	public void addPrivateMessageToTop(Message message, String senderName, MessageDirection messageDirection,
-			String uuid) {
+	public void addMessageToTop(Message message, String senderName, MessageDirection messageDirection, String uuid) {
 
-		contactsPane.addMessageToTop(message, senderName, messageDirection, uuid);
+		switch (message.getReceiverType()) {
 
-	}
+		case PRIVATE:
 
-	public void addPrivateMessageToBottom(Message message, String senderName, MessageDirection messageDirection,
-			String uuid) {
+			contactsPane.addMessageToTop(message, senderName, messageDirection, uuid);
 
-		contactsPane.addMessageToBottom(message, senderName, messageDirection, uuid);
+			break;
 
-	}
+		case GROUP:
 
-	public void updatePrivateMessage(Message message, String uuid) {
+			groupsPane.addMessageToTop(message, senderName, messageDirection, uuid);
 
-		contactsPane.updateMessage(message, uuid);
+			break;
 
-	}
+		default:
 
-	public void addGroupMessage(Message message, MessageDirection messageDirection, String uuid) {
-
-		// TODO
+		}
 
 	}
 
-	public void updateGroupMessage(Message message, String groupUuid) {
+	public void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection, String uuid) {
 
-		// TODO
+		switch (message.getReceiverType()) {
+
+		case PRIVATE:
+
+			contactsPane.addMessageToBottom(message, senderName, messageDirection, uuid);
+
+			break;
+
+		case GROUP:
+
+			groupsPane.addMessageToBottom(message, senderName, messageDirection, uuid);
+
+			break;
+
+		default:
+
+		}
 
 	}
 
-	public void scrollPaneToMessage(String uuid, Long messageId) {
+	public void updateMessage(Message message, String uuid) {
 
-		contactsPane.scrollPaneToMessage(uuid, messageId);
+		switch (message.getReceiverType()) {
+
+		case PRIVATE:
+
+			contactsPane.updateMessage(message, uuid);
+
+			break;
+
+		case GROUP:
+
+			groupsPane.updateMessage(message, uuid);
+
+			break;
+
+		default:
+
+		}
 
 	}
 
-	public void savePosition(String uuid, Long messageId) {
+	public void scrollPaneToMessage(String uuid, Long messageId, ReceiverType receiverType) {
 
-		contactsPane.savePosition(uuid, messageId);
+		switch (receiverType) {
+
+		case PRIVATE:
+
+			contactsPane.scrollPaneToMessage(uuid, messageId);
+
+			break;
+
+		case GROUP:
+
+			groupsPane.scrollPaneToMessage(uuid, messageId);
+
+			break;
+
+		default:
+
+		}
 
 	}
 
-	public void scrollToSavedPosition(String uuid) {
+	public void savePosition(String uuid, Long messageId, ReceiverType receiverType) {
 
-		contactsPane.scrollToSavedPosition(uuid);
+		switch (receiverType) {
+
+		case PRIVATE:
+
+			contactsPane.savePosition(uuid, messageId);
+
+			break;
+
+		case GROUP:
+
+			groupsPane.savePosition(uuid, messageId);
+
+			break;
+
+		default:
+
+		}
+
+	}
+
+	public void scrollToSavedPosition(String uuid, ReceiverType receiverType) {
+
+		switch (receiverType) {
+
+		case PRIVATE:
+
+			contactsPane.scrollToSavedPosition(uuid);
+
+			break;
+
+		case GROUP:
+
+			groupsPane.scrollToSavedPosition(uuid);
+
+			break;
+
+		default:
+
+		}
 
 	}
 
@@ -170,6 +251,30 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private void createGroupRequestedToListeners(final String groupName, final List<String> selectedUuids) {
 
 		listeners.forEach(listener -> listener.createGroupRequested(groupName, selectedUuids));
+
+	}
+
+	private void groupMessagePaneOpenedToListeners(final String groupUuid) {
+
+		listeners.forEach(listener -> listener.groupMessagePaneOpened(groupUuid));
+
+	}
+
+	private void groupMessagePaneClosedToListeners(final String groupUuid) {
+
+		listeners.forEach(listener -> listener.groupMessagePaneClosed(groupUuid));
+
+	}
+
+	private void sendGroupMessageClickedToListeners(final String message, final String groupUuid) {
+
+		listeners.forEach(listener -> listener.sendGroupMessageClicked(message, groupUuid));
+
+	}
+
+	private void groupPaneScrolledToTopToListeners(final String groupUuid) {
+
+		listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
 
 	}
 
@@ -243,26 +348,34 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void showGroupMessagePane(MessagePane messagePane, String uuid) {
-		// TODO Auto-generated method stub
+	public void showGroupMessagePane(MessagePane messagePane, String groupUuid) {
+
+		getChildren().add(messagePane);
+
+		groupMessagePaneOpenedToListeners(groupUuid);
 
 	}
 
 	@Override
-	public void hideGroupMessagePane(MessagePane messagePane, String uuid) {
-		// TODO Auto-generated method stub
+	public void hideGroupMessagePane(MessagePane messagePane, String groupUuid) {
+
+		groupMessagePaneClosedToListeners(groupUuid);
+
+		getChildren().remove(messagePane);
 
 	}
 
 	@Override
-	public void sendGroupMessageClicked(String messageTxt, String uuid) {
-		// TODO Auto-generated method stub
+	public void sendGroupMessageClicked(String messageTxt, String groupUuid) {
+
+		sendGroupMessageClickedToListeners(messageTxt, groupUuid);
 
 	}
 
 	@Override
-	public void groupPaneScrolledToTop(String uuid) {
-		// TODO Auto-generated method stub
+	public void groupPaneScrolledToTop(String groupUuid) {
+
+		groupPaneScrolledToTopToListeners(groupUuid);
 
 	}
 

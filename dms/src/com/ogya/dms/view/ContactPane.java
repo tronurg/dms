@@ -77,7 +77,7 @@ class ContactPane extends GridPane {
 		initProfileLabel();
 		initNameLabel();
 		initCommentLabel();
-		initKonumLabel();
+		initCoordinatesLabel();
 		initUnreadMessagesLabel();
 
 		setHgap(5.0);
@@ -236,7 +236,7 @@ class ContactPane extends GridPane {
 
 	}
 
-	private void initKonumLabel() {
+	private void initCoordinatesLabel() {
 
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
