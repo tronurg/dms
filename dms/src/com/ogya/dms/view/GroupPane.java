@@ -103,6 +103,7 @@ class GroupPane extends GridPane {
 
 		messagePane.setStatusColor(group.getStatus().getStatusColor());
 		messagePane.setName(group.getName());
+		messagePane.setActive(group.isActive());
 
 	}
 

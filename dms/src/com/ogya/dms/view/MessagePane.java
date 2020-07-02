@@ -19,6 +19,8 @@ import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.factory.ViewFactory;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -70,6 +72,8 @@ class MessagePane extends BorderPane {
 	private final Label nameLabel = new Label();
 	private final TextArea messageArea = new TextArea();
 	private final Button sendBtn = ViewFactory.newSendBtn();
+
+	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
@@ -129,6 +133,9 @@ class MessagePane extends BorderPane {
 		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
 		bottomPane.getChildren().addAll(messageArea, sendBtn);
 
+		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
+		bottomPane.visibleProperty().bind(activeProperty);
+
 		setTop(topPane);
 		setCenter(scrollPane);
 		setBottom(bottomPane);
@@ -157,6 +164,12 @@ class MessagePane extends BorderPane {
 	void setName(String name) {
 
 		nameLabel.setText(name);
+
+	}
+
+	void setActive(boolean active) {
+
+		activeProperty.setValue(active);
 
 	}
 
