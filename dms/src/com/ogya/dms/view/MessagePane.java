@@ -19,6 +19,7 @@ import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.factory.ViewFactory;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.HPos;
@@ -74,6 +75,7 @@ class MessagePane extends BorderPane {
 	private final Button sendBtn = ViewFactory.newSendBtn();
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
+	private final BooleanProperty editableProperty = new SimpleBooleanProperty(true);
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
@@ -107,6 +109,8 @@ class MessagePane extends BorderPane {
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
+
+		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
 
 		messageArea.setPrefRowCount(1);
 		messageArea.setWrapText(true);
@@ -170,6 +174,12 @@ class MessagePane extends BorderPane {
 	void setActive(boolean active) {
 
 		activeProperty.setValue(active);
+
+	}
+
+	void setEditable(boolean editable) {
+
+		editableProperty.set(editable);
 
 	}
 
@@ -294,6 +304,15 @@ class MessagePane extends BorderPane {
 	void setOnBackAction(final Runnable runnable) {
 
 		backBtn.setOnAction(e -> runnable.run());
+
+	}
+
+	void setOnEditAction(final Runnable runnable) {
+
+		nameLabel.setOnMouseClicked(e -> {
+			if (editableProperty.get())
+				runnable.run();
+		});
 
 	}
 

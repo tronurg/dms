@@ -352,7 +352,7 @@ public class DbManager {
 
 	}
 
-	public Contact getContact(String uuid) {
+	public Contact getContact(String uuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
@@ -365,7 +365,7 @@ public class DbManager {
 
 	}
 
-	public List<Message> getAllWaitingGroupMessages() {
+	public List<Message> getAllWaitingGroupMessages() throws HibernateException {
 
 		Session session = factory.openSession();
 
@@ -395,7 +395,7 @@ public class DbManager {
 
 	}
 
-	public List<Message> getAllGroupMessagesNotRead(String senderUuid) {
+	public List<Message> getAllGroupMessagesNotRead(String senderUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
@@ -470,6 +470,20 @@ public class DbManager {
 		session.close();
 
 		return dbMessages;
+
+	}
+
+	public List<Dgroup> getAllActiveGroupsOfUuid(String uuidOwner) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Dgroup> dbGroups = session
+				.createQuery("from Dgroup where uuidOwner like :uuidOwner and active=true", Dgroup.class)
+				.setParameter("uuidOwner", uuidOwner).list();
+
+		session.close();
+
+		return dbGroups;
 
 	}
 

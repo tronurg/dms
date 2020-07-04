@@ -9,13 +9,15 @@ import com.ogya.dms.common.CommonMethods;
 public class GroupUpdate {
 
 	public final String groupUuid;
+	public final boolean isActive;
 	public String groupName;
 	public final Map<String, String> contactUuidNameToBeAdded = new HashMap<String, String>();
 	public final Map<String, String> contactUuidNameToBeRemoved = new HashMap<String, String>();
 
-	public GroupUpdate(String groupUuid) {
+	public GroupUpdate(String groupUuid, boolean isActive) {
 
 		this.groupUuid = groupUuid;
+		this.isActive = isActive;
 
 	}
 

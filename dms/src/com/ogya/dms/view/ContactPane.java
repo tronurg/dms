@@ -37,7 +37,7 @@ class ContactPane extends GridPane {
 	private final Group profilePicture = new Group();
 	private final Circle statusCircle = new Circle(SIZE);
 	private final Circle profileRound = new Circle(SIZE * 0.8);
-	private final Label profileLabel = new Label();
+	private final Label initialLabel = new Label();
 
 	private final Label nameLabel = new Label();
 	private final Label commentLabel = new Label();
@@ -74,7 +74,7 @@ class ContactPane extends GridPane {
 		initProfilePicture();
 		initStatusCircle();
 		initProfileRound();
-		initProfileLabel();
+		initInitialLabel();
 		initNameLabel();
 		initCommentLabel();
 		initCoordinatesLabel();
@@ -99,7 +99,7 @@ class ContactPane extends GridPane {
 			return;
 
 		statusCircle.setStroke(contact.getStatus().getStatusColor());
-		profileLabel.setText(contact.getName().substring(0, 1).toUpperCase());
+		initialLabel.setText(contact.getName().substring(0, 1).toUpperCase());
 
 		nameLabel.setText(contact.getName());
 		commentLabel.setText(contact.getComment());
@@ -192,7 +192,7 @@ class ContactPane extends GridPane {
 
 	private void initProfilePicture() {
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLabel);
 
 	}
 
@@ -209,16 +209,16 @@ class ContactPane extends GridPane {
 
 	}
 
-	private void initProfileLabel() {
+	private void initInitialLabel() {
 
-		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		initialLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		profileLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
+		initialLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
 
-		profileLabel.translateXProperty().bind(Bindings
-				.createDoubleBinding(() -> -profileLabel.widthProperty().get() / 2, profileLabel.widthProperty()));
-		profileLabel.translateYProperty().bind(Bindings
-				.createDoubleBinding(() -> -profileLabel.heightProperty().get() / 2, profileLabel.heightProperty()));
+		initialLabel.translateXProperty().bind(Bindings
+				.createDoubleBinding(() -> -initialLabel.widthProperty().get() / 2, initialLabel.widthProperty()));
+		initialLabel.translateYProperty().bind(Bindings
+				.createDoubleBinding(() -> -initialLabel.heightProperty().get() / 2, initialLabel.heightProperty()));
 
 	}
 

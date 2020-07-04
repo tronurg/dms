@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
@@ -28,12 +30,14 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class CreateGroupPane extends BorderPane {
+public class AddUpdateGroupPane extends BorderPane {
 
 	private static final double GAP = 5.0;
 
@@ -52,7 +56,7 @@ public class CreateGroupPane extends BorderPane {
 	private final VBox notAddedContactsPane = new VBox();
 	private final TextField searchContactTextField = new TextField();
 
-	private final Button createGroupBtn = new Button();
+	private final Button addUpdateGroupBtn = new Button();
 
 	private final List<String> uuids = Collections.synchronizedList(new ArrayList<String>());
 	private final ObservableSet<String> selectedUuids = FXCollections.observableSet(new HashSet<String>());
@@ -74,7 +78,7 @@ public class CreateGroupPane extends BorderPane {
 
 	};
 
-	CreateGroupPane() {
+	AddUpdateGroupPane() {
 
 		super();
 
@@ -88,9 +92,9 @@ public class CreateGroupPane extends BorderPane {
 
 	}
 
-	void setOnCreateGroupAction(final Runnable runnable) {
+	void setOnAddUpdateGroupAction(final Runnable runnable) {
 
-		createGroupBtn.setOnAction(e -> runnable.run());
+		addUpdateGroupBtn.setOnAction(e -> runnable.run());
 
 	}
 
@@ -146,17 +150,25 @@ public class CreateGroupPane extends BorderPane {
 
 	}
 
-	List<String> getSelectedUuids() {
+	Set<String> getSelectedUuids() {
 
-		return new ArrayList<String>(selectedUuids);
+		return new LinkedHashSet<String>(selectedUuids);
 
 	}
 
-	void reset() {
+	void resetContent(String groupName, Set<String> newSelectedUuids, boolean isNewGroup) {
 
 		searchContactTextField.setText("");
-		groupNameTextField.setText("");
+		groupNameTextField.setText(groupName == null ? "" : groupName);
 		selectedUuids.clear();
+		if (newSelectedUuids != null) {
+			newSelectedUuids.forEach(uuid -> {
+				if (uuids.contains(uuid))
+					selectedUuids.add(uuid);
+			});
+		}
+		addUpdateGroupBtn.setText(
+				isNewGroup ? CommonMethods.translate("CREATE_GROUP") : CommonMethods.translate("UPDATE_GROUP"));
 
 	}
 
@@ -173,13 +185,19 @@ public class CreateGroupPane extends BorderPane {
 
 		initTopPane();
 		initScrollableContent();
-		initCreateGroupBtn();
+		initAddUpdateGroupBtn();
 
 		scrollPane.setFitToWidth(true);
 
+		StackPane bottomPane = new StackPane();
+		Pane emptyPane = new Pane();
+		emptyPane.setOpacity(1.0);
+		emptyPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
+		bottomPane.getChildren().addAll(emptyPane, addUpdateGroupBtn);
+
 		setTop(topPane);
 		setCenter(scrollPane);
-		setBottom(createGroupBtn);
+		setBottom(bottomPane);
 
 	}
 
@@ -249,18 +267,18 @@ public class CreateGroupPane extends BorderPane {
 
 	}
 
-	private void initCreateGroupBtn() {
+	private void initAddUpdateGroupBtn() {
 
-		createGroupBtn.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));
-		createGroupBtn.setTextFill(Color.ANTIQUEWHITE);
-		createGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+		addUpdateGroupBtn
+				.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));
+		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
+		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 
-		createGroupBtn.setMnemonicParsing(false);
-		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
+		addUpdateGroupBtn.setMnemonicParsing(false);
 
-		createGroupBtn.setMaxWidth(Double.MAX_VALUE);
+		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
-		createGroupBtn.disableProperty()
+		addUpdateGroupBtn.disableProperty()
 				.bind(Bindings.size(selectedUuids).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty()));
 
 	}

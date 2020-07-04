@@ -1,6 +1,6 @@
 package com.ogya.dms.view.intf;
 
-import java.util.List;
+import java.util.Set;
 
 public interface AppListener {
 
@@ -16,7 +16,9 @@ public interface AppListener {
 
 	void contactPaneScrolledToTop(String uuid);
 
-	void createGroupRequested(String groupName, List<String> selectedUuids);
+	void showAddUpdateGroupClicked(String groupUuid);
+
+	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);
 
 	void groupMessagePaneOpened(String groupUuid);
 

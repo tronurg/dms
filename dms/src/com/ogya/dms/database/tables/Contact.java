@@ -123,4 +123,17 @@ public class Contact {
 		return CommonMethods.fromDbJson(json, Contact.class);
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Contact))
+			return false;
+		Contact contact = (Contact) obj;
+		return this.uuid.equals(contact.uuid);
+	}
+
+	@Override
+	public int hashCode() {
+		return uuid.hashCode();
+	}
+
 }

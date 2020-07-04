@@ -4,6 +4,7 @@ import java.util.HashSet;
 
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 
@@ -37,7 +38,7 @@ class GroupPane extends GridPane {
 	private final Group profilePicture = new Group();
 	private final Circle statusCircle = new Circle(SIZE);
 	private final Circle profileRound = new Circle(SIZE * 0.8);
-	private final Label profileLabel = new Label();
+	private final Label initialLabel = new Label();
 
 	private final Label nameLabel = new Label();
 	private final Label commentLabel = new Label();
@@ -73,7 +74,7 @@ class GroupPane extends GridPane {
 		initProfilePicture();
 		initStatusCircle();
 		initProfileRound();
-		initProfileLabel();
+		initInitialLabel();
 		initNameLabel();
 		initCommentLabel();
 		initUnreadMessagesLabel();
@@ -96,14 +97,15 @@ class GroupPane extends GridPane {
 			return;
 
 		statusCircle.setStroke(group.getStatus().getStatusColor());
-		profileLabel.setText(group.getName().substring(0, 1).toUpperCase());
+		initialLabel.setText(group.getName().substring(0, 1).toUpperCase());
 
 		nameLabel.setText(group.getName());
 		commentLabel.setText(group.getComment());
 
 		messagePane.setStatusColor(group.getStatus().getStatusColor());
 		messagePane.setName(group.getName());
-		messagePane.setActive(group.isActive());
+		messagePane.setActive(!group.getStatus().equals(Availability.OFFLINE));
+		messagePane.setEditable(group.getStatus().equals(Availability.AVAILABLE));
 
 	}
 
@@ -126,6 +128,12 @@ class GroupPane extends GridPane {
 
 	}
 
+	void setOnEditGroupAction(Runnable runnable) {
+
+		messagePane.setOnEditAction(() -> runnable.run());
+
+	}
+
 	void setOnSendMessageAction(Consumer<String> consumer) {
 
 		messagePane.setOnSendMessageAction(messageTxt -> consumer.accept(messageTxt));
@@ -135,6 +143,10 @@ class GroupPane extends GridPane {
 	void setOnPaneScrolledToTop(Runnable runnable) {
 
 		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
+
+	}
+
+	void setOnUpdateGroupClicked() {
 
 	}
 
@@ -187,7 +199,7 @@ class GroupPane extends GridPane {
 
 	private void initProfilePicture() {
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLabel);
 
 	}
 
@@ -204,16 +216,16 @@ class GroupPane extends GridPane {
 
 	}
 
-	private void initProfileLabel() {
+	private void initInitialLabel() {
 
-		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		initialLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		profileLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
+		initialLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
 
-		profileLabel.translateXProperty().bind(Bindings
-				.createDoubleBinding(() -> -profileLabel.widthProperty().get() / 2, profileLabel.widthProperty()));
-		profileLabel.translateYProperty().bind(Bindings
-				.createDoubleBinding(() -> -profileLabel.heightProperty().get() / 2, profileLabel.heightProperty()));
+		initialLabel.translateXProperty().bind(Bindings
+				.createDoubleBinding(() -> -initialLabel.widthProperty().get() / 2, initialLabel.widthProperty()));
+		initialLabel.translateYProperty().bind(Bindings
+				.createDoubleBinding(() -> -initialLabel.heightProperty().get() / 2, initialLabel.heightProperty()));
 
 	}
 

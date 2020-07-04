@@ -31,7 +31,7 @@ public class Dgroup {
 	@Column(name = "uuid", nullable = false, updatable = false)
 	private String uuid;
 
-	@Column(name = "name", nullable = false, updatable = false)
+	@Column(name = "name", nullable = false)
 	private String name;
 
 	@Column(name = "comment")
@@ -56,8 +56,7 @@ public class Dgroup {
 		super();
 	}
 
-	public Dgroup(String name, String uuidOwner) {
-		this.name = name;
+	public Dgroup(String uuidOwner) {
 		this.uuidOwner = uuidOwner;
 	}
 

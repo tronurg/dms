@@ -3,6 +3,7 @@ package com.ogya.dms.control;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,6 +117,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		dbManager.fetchAllContacts().forEach(contact -> {
 			contact.setStatus(Availability.OFFLINE);
 			dbManager.addUpdateContact(contact);
+		});
+
+		dbManager.fetchAllGroups().forEach(group -> {
+			if (!model.getLocalUuid().equals(group.getUuidOwner())) {
+				group.setStatus(Availability.OFFLINE);
+				dbManager.addUpdateGroup(group);
+			}
 		});
 
 	}
@@ -366,6 +374,34 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
+			try {
+
+				dbManager.getAllActiveGroupsOfUuid(contact.getUuid()).forEach(group -> {
+
+					group.setStatus(Availability.OFFLINE);
+
+					try {
+
+						final Dgroup newGroup = dbManager.addUpdateGroup(group);
+
+						model.addGroup(newGroup);
+
+						Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+					} catch (HibernateException e) {
+
+						e.printStackTrace();
+
+					}
+
+				});
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
 		});
 
 	}
@@ -432,57 +468,35 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Dgroup createUpdateGroup(String groupUuid, String groupName, String uuidOwner,
-			List<String> contactsToBeAdded, List<String> contactsToBeRemoved) throws Exception {
+	private Dgroup createUpdateGroup(String groupUuid, String groupName, String uuidOwner, boolean isActive,
+			Set<Contact> contactsToBeAdded, Set<Contact> contactsToBeRemoved) throws Exception {
 
 		Dgroup group = model.getGroup(groupUuid);
 
 		if (group == null) {
-			group = new Dgroup(groupName, uuidOwner);
+			if (groupName == null || uuidOwner == null)
+				return null;
+			group = new Dgroup(uuidOwner);
 			group.setUuid(groupUuid);
 		}
 
-		group.setActive(true);
+		if (groupName != null)
+			group.setName(groupName);
 
-		if (contactsToBeAdded != null) {
+		group.setActive(isActive);
 
-			for (String uuid : contactsToBeAdded) {
+		if (!isActive)
+			group.getContacts().clear();
 
-				if (uuid.equals(model.getLocalUuid())) {
+		if (isActive && contactsToBeAdded != null) {
 
-					group.setActive(true);
-
-					continue;
-
-				}
-
-				Contact contact = model.getContact(uuid);
-
-				if (contact != null)
-					group.getContacts().add(contact);
-
-			}
+			group.getContacts().addAll(contactsToBeAdded);
 
 		}
 
-		if (contactsToBeRemoved != null) {
+		if (isActive && contactsToBeRemoved != null) {
 
-			for (String uuid : contactsToBeRemoved) {
-
-				if (uuid.equals(model.getLocalUuid())) {
-
-					group.setActive(false);
-
-					continue;
-
-				}
-
-				Contact contact = model.getContact(uuid);
-
-				if (contact != null)
-					group.getContacts().remove(contact);
-
-			}
+			group.getContacts().removeAll(contactsToBeRemoved);
 
 		}
 
@@ -490,9 +504,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (uuidOwner.equals(model.getLocalUuid()))
 			group.setStatus(Availability.AVAILABLE);
 		else
-			group.setStatus(model.getContact(group.getUuidOwner()).getStatus().equals(Availability.OFFLINE)
-					? Availability.OFFLINE
-					: Availability.AVAILABLE);
+			group.setStatus(
+					!group.isActive() || model.getContact(group.getUuidOwner()).getStatus().equals(Availability.OFFLINE)
+							? Availability.OFFLINE
+							: Availability.LIMITED);
 
 		List<String> contactNames = new ArrayList<String>();
 		group.getContacts().forEach(contact -> contactNames.add(contact.getName()));
@@ -508,13 +523,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private String getGroupUpdate(String groupUuid, String groupName, Set<Contact> contactsToBeAdded,
+	private String getGroupUpdate(String groupUuid, String groupName, boolean isActive, Set<Contact> contactsToBeAdded,
 			Set<Contact> contactsToBeRemoved) {
 
-		GroupUpdate groupUpdate = new GroupUpdate(groupUuid);
+		GroupUpdate groupUpdate = new GroupUpdate(groupUuid, isActive);
 
-		if (groupName != null)
-			groupUpdate.groupName = groupName;
+		groupUpdate.groupName = groupName;
 
 		if (contactsToBeAdded != null)
 			contactsToBeAdded
@@ -537,14 +551,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (group == null)
 			return message;
 
-		final StatusReport statusReport = new StatusReport();
+		String statusReportStr = message.getStatusReportStr();
+		final StatusReport statusReport = statusReportStr == null ? new StatusReport()
+				: StatusReport.fromJson(statusReportStr);
+
 		final List<String> onlineUuids = new ArrayList<String>();
 
 		if (model.isMyGroup(groupUuid)) {
 			// It's my group, so I have to send this message to all the members except the
 			// original sender.
-
-			int receivers = 0;
 
 			for (Contact contact : group.getContacts()) {
 
@@ -553,8 +568,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				// Skip the original sender
 				if (message.getSenderUuid().equals(receiverUuid))
 					continue;
-
-				++receivers;
 
 				if (!model.isContactOnline(receiverUuid)) {
 
@@ -565,9 +578,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				} else {
 
+					onlineUuids.add(receiverUuid);
+
 					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT); // Assuming that the message will be
 																					// sent...
-					onlineUuids.add(receiverUuid);
 
 					model.updateWaitingGroupMessageToContact(receiverUuid,
 							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
@@ -578,8 +592,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			if (onlineUuids.size() > 0)
 				dmsClient.sendMessage(message.toJson(), onlineUuids);
-
-			message.setWaiting(receivers > 0);
 
 		} else {
 			// It's not my group, so I will send this message to the group owner only, but
@@ -623,11 +635,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				model.updateGroupMessageWaitingForStatusReport(receiverUuid,
 						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
-			message.setWaiting(true);
-
 		}
 
 		message.setStatusReportStr(statusReport.toJson());
+
+		message.setWaiting(statusReport.uuidStatus.size() > 0);
 
 		// If I am the sender, I shall keep the message status updated from the status
 		// report.
@@ -652,27 +664,94 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private Message sendGroupMessage(Message message, String receiverUuid) {
 
-		if (!model.isContactOnline(receiverUuid))
-			return message;
+		String statusReportStr = message.getStatusReportStr();
+		StatusReport statusReport = statusReportStr == null ? new StatusReport()
+				: StatusReport.fromJson(statusReportStr);
 
-		dmsClient.sendMessage(message.toJson(), receiverUuid);
+		if (!model.isContactOnline(receiverUuid)) {
 
-		model.updateWaitingGroupMessageToContact(receiverUuid,
-				new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+			statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-		StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
+			model.updateWaitingGroupMessageToContact(receiverUuid,
+					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
-		statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+		} else {
+
+			dmsClient.sendMessage(message.toJson(), receiverUuid);
+
+			statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+
+			model.updateWaitingGroupMessageToContact(receiverUuid,
+					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+
+		}
 
 		message.setStatusReportStr(statusReport.toJson());
 
-		MessageStatus overallMessageStatus = statusReport.getOverallStatus();
+		message.setWaiting(true);
 
 		// If I am the sender, update the message status too
 		if (model.getLocalUuid().equals(message.getSenderUuid()))
-			message.setMessageStatus(overallMessageStatus);
+			message.setMessageStatus(statusReport.getOverallStatus());
+
+		try {
+
+			Message newMessage = dbManager.addUpdateMessage(message);
+
+			return newMessage;
+
+		} catch (HibernateException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return message;
+
+	}
+
+	private Message sendGroupMessage(Message message, Set<Contact> receivers) {
+
+		String statusReportStr = message.getStatusReportStr();
+		StatusReport statusReport = statusReportStr == null ? new StatusReport()
+				: StatusReport.fromJson(statusReportStr);
+
+		final List<String> onlineUuids = new ArrayList<String>();
+
+		for (Contact receiver : receivers) {
+
+			String receiverUuid = receiver.getUuid();
+
+			if (!model.isContactOnline(receiverUuid)) {
+
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
+
+				model.updateWaitingGroupMessageToContact(receiverUuid,
+						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
+
+			} else {
+
+				onlineUuids.add(receiverUuid);
+
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+
+				model.updateWaitingGroupMessageToContact(receiverUuid,
+						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+
+			}
+
+		}
+
+		if (onlineUuids.size() > 0)
+			dmsClient.sendMessage(message.toJson(), onlineUuids);
+
+		message.setStatusReportStr(statusReport.toJson());
 
 		message.setWaiting(true);
+
+		// If I am the sender, update the message status too
+		if (model.getLocalUuid().equals(message.getSenderUuid()))
+			message.setMessageStatus(statusReport.getOverallStatus());
 
 		try {
 
@@ -729,14 +808,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final List<String> contactsToBeAdded = new ArrayList<String>();
-				final List<String> contactsToBeRemoved = new ArrayList<String>();
+				final Set<Contact> contactsToBeAdded = new HashSet<Contact>();
+				final Set<Contact> contactsToBeRemoved = new HashSet<Contact>();
 
 				if (groupUpdate.contactUuidNameToBeAdded != null) {
 
 					groupUpdate.contactUuidNameToBeAdded.forEach((uuid, name) -> {
-
-						contactsToBeAdded.add(uuid);
 
 						if (model.getLocalUuid().equals(uuid))
 							return;
@@ -750,9 +827,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 							try {
 								Contact newContact = dbManager.addUpdateContact(contact);
 								model.addContact(newContact);
+								contactsToBeAdded.add(newContact);
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
+						} else {
+							contactsToBeAdded.add(contact);
 						}
 
 					});
@@ -763,8 +843,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					groupUpdate.contactUuidNameToBeRemoved.forEach((uuid, name) -> {
 
-						contactsToBeRemoved.add(uuid);
-
 						if (model.getLocalUuid().equals(uuid))
 							return;
 
@@ -777,9 +855,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 							try {
 								Contact newContact = dbManager.addUpdateContact(contact);
 								model.addContact(newContact);
+								contactsToBeRemoved.add(newContact);
 							} catch (Exception e) {
 								e.printStackTrace();
 							}
+						} else {
+							contactsToBeRemoved.add(contact);
 						}
 
 					});
@@ -787,7 +868,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				}
 
 				final Dgroup newGroup = createUpdateGroup(groupUpdate.groupUuid, groupUpdate.groupName, uuidOwner,
-						contactsToBeAdded, contactsToBeRemoved);
+						groupUpdate.isActive, contactsToBeAdded, contactsToBeRemoved);
+
+				if (newGroup == null)
+					return;
 
 				model.addGroup(newGroup);
 
@@ -821,13 +905,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				if (!wasOnline) {
 
-					// If the contact has just been online, send all things waiting for it.
+					// If the contact has just been online, send all things waiting for it, adjust
+					// its groups' availability.
 					taskQueue.execute(() -> {
 
 						// START WITH PRIVATE MESSAGES
 						try {
 
-							for (final Message waitingMessage : dbManager.getMessagesWaitingToUuid(uuid)) {
+							for (Message waitingMessage : dbManager.getMessagesWaitingToUuid(uuid)) {
 
 								switch (waitingMessage.getMessageStatus()) {
 
@@ -917,6 +1002,35 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 								dmsClient.claimStatusReport(new StatusReportUpdate(messageIdentifier.senderUuid,
 										messageIdentifier.messageId).toJson(), uuid);
+
+							}
+
+						} catch (HibernateException e) {
+
+							e.printStackTrace();
+
+						}
+
+						// MODIFY GROUP STATUS
+						try {
+
+							for (Dgroup group : dbManager.getAllActiveGroupsOfUuid(uuid)) {
+
+								group.setStatus(Availability.LIMITED);
+
+								try {
+
+									final Dgroup newGroup = dbManager.addUpdateGroup(group);
+
+									model.addGroup(newGroup);
+
+									Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+								} catch (HibernateException e) {
+
+									e.printStackTrace();
+
+								}
 
 							}
 
@@ -1364,7 +1478,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(uuid);
 
-				for (final Message incomingMessage : messagesWaitingFromContact) {
+				for (Message incomingMessage : messagesWaitingFromContact) {
 
 					try {
 
@@ -1462,29 +1576,136 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void createGroupRequested(String groupName, List<String> selectedUuids) {
+	public void showAddUpdateGroupClicked(String groupUuid) {
+
+		Dgroup group = model.getGroup(groupUuid);
+
+		model.setGroupToBeUpdated(group);
+
+		if (group == null) {
+			// New group
+
+			Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(null, null, true));
+
+		} else {
+			// Update group
+
+			Set<String> uuids = new HashSet<String>();
+			group.getContacts().forEach(contact -> uuids.add(contact.getUuid()));
+
+			Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(group.getName(), uuids, false));
+
+		}
+
+	}
+
+	@Override
+	public void addUpdateGroupRequested(String groupName, Set<String> selectedUuids) {
 
 		taskQueue.execute(() -> {
 
-			try {
+			Dgroup group = model.getGroupToBeUpdated();
 
-				final Dgroup newGroup = createUpdateGroup(null, groupName, model.getLocalUuid(), selectedUuids, null);
+			Set<Contact> selectedContacts = new HashSet<Contact>();
+			selectedUuids.forEach(uuid -> {
+				Contact contact = model.getContact(uuid);
+				if (contact != null)
+					selectedContacts.add(contact);
+			});
 
-				model.addGroup(newGroup);
+			if (group == null) {
+				// New group
 
-				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+				try {
 
-				// Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
+					final Dgroup newGroup = createUpdateGroup(null, groupName, model.getLocalUuid(), true,
+							selectedContacts, null);
 
-				String groupUpdate = getGroupUpdate(newGroup.getUuid(), newGroup.getName(), newGroup.getContacts(),
-						null);
+					if (newGroup == null)
+						return;
 
-				sendGroupMessage(
-						createOutgoingMessage(groupUpdate, newGroup.getUuid(), ReceiverType.GROUP, MessageType.UPDATE));
+					model.addGroup(newGroup);
 
-			} catch (Exception e) {
+					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-				e.printStackTrace();
+					// Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
+
+					String groupUpdate = getGroupUpdate(newGroup.getUuid(), newGroup.getName(), true,
+							newGroup.getContacts(), null);
+
+					sendGroupMessage(createOutgoingMessage(groupUpdate, newGroup.getUuid(), ReceiverType.GROUP,
+							MessageType.UPDATE));
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			} else {
+				// Update group
+
+				Set<Contact> residentContacts = new HashSet<Contact>(group.getContacts());
+				Set<Contact> contactsToBeAdded = new HashSet<Contact>(selectedContacts);
+				Set<Contact> contactsToBeRemoved = new HashSet<Contact>(group.getContacts());
+
+				contactsToBeAdded.removeAll(residentContacts);
+				contactsToBeRemoved.removeAll(selectedContacts);
+				residentContacts.removeAll(contactsToBeRemoved);
+
+				// The group hasn't changed, nothing to do:
+				if (group.getName().equals(groupName) && contactsToBeAdded.isEmpty() && contactsToBeRemoved.isEmpty())
+					return;
+
+				String newGroupName = group.getName().equals(groupName) ? null : groupName;
+
+				try {
+
+					Dgroup newGroup = createUpdateGroup(group.getUuid(), newGroupName, group.getUuidOwner(),
+							group.isActive(), contactsToBeAdded, contactsToBeRemoved);
+
+					if (newGroup == null)
+						return;
+
+					model.addGroup(newGroup);
+
+					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+					if (!contactsToBeAdded.isEmpty()) {
+
+						String groupUpdateToAddedContacts = getGroupUpdate(newGroup.getUuid(), newGroup.getName(), true,
+								newGroup.getContacts(), null);
+
+						sendGroupMessage(createOutgoingMessage(groupUpdateToAddedContacts, newGroup.getUuid(),
+								ReceiverType.GROUP, MessageType.UPDATE), contactsToBeAdded);
+
+					}
+
+					if (!contactsToBeRemoved.isEmpty()) {
+
+						String groupUpdateToRemovedContacts = getGroupUpdate(newGroup.getUuid(), null, false, null,
+								null);
+
+						sendGroupMessage(createOutgoingMessage(groupUpdateToRemovedContacts, newGroup.getUuid(),
+								ReceiverType.GROUP, MessageType.UPDATE), contactsToBeRemoved);
+
+					}
+
+					if (!residentContacts.isEmpty()) {
+
+						String groupUpdateToResidentContacts = getGroupUpdate(newGroup.getUuid(), newGroup.getName(),
+								true, contactsToBeAdded, contactsToBeRemoved);
+
+						sendGroupMessage(createOutgoingMessage(groupUpdateToResidentContacts, newGroup.getUuid(),
+								ReceiverType.GROUP, MessageType.UPDATE), residentContacts);
+
+					}
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
 
 			}
 
@@ -1504,7 +1725,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(model.getLocalUuid(),
 						groupUuid);
 
-				for (final Message incomingMessage : messagesWaitingFromGroup) {
+				for (Message incomingMessage : messagesWaitingFromGroup) {
 
 					try {
 

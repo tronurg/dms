@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.ogya.dms.common.CommonMethods;
@@ -28,7 +29,7 @@ class GroupsPane extends TitledPane {
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
 	private final VBox groups = new VBox();
 
-	private final CreateGroupPane createGroupPane = new CreateGroupPane();
+	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane();
 
 	private final Map<String, GroupPane> uuidGroupPane = Collections.synchronizedMap(new HashMap<String, GroupPane>());
 
@@ -46,10 +47,10 @@ class GroupsPane extends TitledPane {
 
 	private void init() {
 
-		createGroupPane
-				.setOnBackAction(() -> listeners.forEach(listener -> listener.hideCreateGroupPane(createGroupPane)));
-		createGroupPane.setOnCreateGroupAction(
-				() -> listeners.forEach(listener -> listener.createGroupClicked(createGroupPane)));
+		addUpdateGroupPane.setOnBackAction(
+				() -> listeners.forEach(listener -> listener.hideAddUpdateGroupPane(addUpdateGroupPane)));
+		addUpdateGroupPane.setOnAddUpdateGroupAction(
+				() -> listeners.forEach(listener -> listener.addUpdateGroupClicked(addUpdateGroupPane)));
 
 		initCreateGroupBtn();
 
@@ -75,9 +76,17 @@ class GroupsPane extends TitledPane {
 
 	}
 
-	void createGroupPaneUpdateContact(Contact contact) {
+	void addUpdateGroupPaneUpdateContact(Contact contact) {
 
-		createGroupPane.updateContact(contact);
+		addUpdateGroupPane.updateContact(contact);
+
+	}
+
+	AddUpdateGroupPane getAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
+
+		addUpdateGroupPane.resetContent(groupName, selectedUuids, isNewGroup);
+
+		return addUpdateGroupPane;
 
 	}
 
@@ -88,7 +97,7 @@ class GroupsPane extends TitledPane {
 		createGroupBtn.setTextFill(Color.GRAY);
 		createGroupBtn.setPadding(new Insets(10.0));
 
-		createGroupBtn.setOnAction(e -> listeners.forEach(listener -> listener.showCreateGroupPane(createGroupPane)));
+		createGroupBtn.setOnAction(e -> listeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(null)));
 
 	}
 
@@ -186,6 +195,12 @@ class GroupsPane extends TitledPane {
 
 			});
 
+			groupPane.setOnEditGroupAction(() -> {
+
+				listeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(groupUuid));
+
+			});
+
 			groupPane.setOnSendMessageAction(messageTxt -> {
 
 				listeners.forEach(listener -> listener.sendGroupMessageClicked(messageTxt, groupUuid));
@@ -214,11 +229,11 @@ class GroupsPane extends TitledPane {
 
 interface IGroupsPane {
 
-	void showCreateGroupPane(CreateGroupPane createGroupPane);
+	void showAddUpdateGroupPaneClicked(String groupUuid);
 
-	void hideCreateGroupPane(CreateGroupPane createGroupPane);
+	void hideAddUpdateGroupPane(AddUpdateGroupPane addUpdateGroupPane);
 
-	void createGroupClicked(CreateGroupPane createGroupPane);
+	void addUpdateGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
 	void showGroupMessagePane(MessagePane messagePane, String groupUuid);
 

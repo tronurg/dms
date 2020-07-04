@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
@@ -36,6 +37,8 @@ public class Model {
 
 	private final Map<String, Map<MessageIdentifier, MessageIdentifier>> groupMessagesWaitingForStatusReport = Collections
 			.synchronizedMap(new HashMap<String, Map<MessageIdentifier, MessageIdentifier>>());
+
+	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
 	public Model(Identity identity) {
 
@@ -112,6 +115,9 @@ public class Model {
 	}
 
 	public Dgroup getGroup(String uuid) {
+
+		if (uuid == null)
+			return null;
 
 		return groups.get(uuid);
 
@@ -243,6 +249,18 @@ public class Model {
 				new LinkedHashMap<MessageIdentifier, MessageIdentifier>());
 
 		return groupMessagesWaitingForStatusReport.get(uuid).values();
+
+	}
+
+	public void setGroupToBeUpdated(Dgroup group) {
+
+		groupToBeUpdated.set(group);
+
+	}
+
+	public Dgroup getGroupToBeUpdated() {
+
+		return groupToBeUpdated.get();
 
 	}
 

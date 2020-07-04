@@ -3,6 +3,7 @@ package com.ogya.dms.view;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
@@ -70,7 +71,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void updateContact(Contact contact) {
 
 		contactsPane.updateContact(contact);
-		groupsPane.createGroupPaneUpdateContact(contact);
+		groupsPane.addUpdateGroupPaneUpdateContact(contact);
 
 	}
 
@@ -212,6 +213,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void showAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
+
+		getChildren().add(groupsPane.getAddUpdateGroupPane(groupName, selectedUuids, isNewGroup));
+
+	}
+
 	private void commentUpdatedToListeners(final String comment) {
 
 		listeners.forEach(listener -> listener.commentUpdated(comment));
@@ -248,9 +255,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	private void createGroupRequestedToListeners(final String groupName, final List<String> selectedUuids) {
+	private void showAddUpdateGroupClickedToListeners(final String groupUuid) {
 
-		listeners.forEach(listener -> listener.createGroupRequested(groupName, selectedUuids));
+		listeners.forEach(listener -> listener.showAddUpdateGroupClicked(groupUuid));
+
+	}
+
+	private void addUpdateGroupRequestedToListeners(final String groupName, final Set<String> selectedUuids) {
+
+		listeners.forEach(listener -> listener.addUpdateGroupRequested(groupName, selectedUuids));
 
 	}
 
@@ -325,25 +338,24 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void showCreateGroupPane(CreateGroupPane createGroupPane) {
+	public void showAddUpdateGroupPaneClicked(String groupUuid) {
 
-		getChildren().add(createGroupPane);
-
-	}
-
-	@Override
-	public void hideCreateGroupPane(CreateGroupPane createGroupPane) {
-
-		getChildren().remove(createGroupPane);
+		showAddUpdateGroupClickedToListeners(groupUuid);
 
 	}
 
 	@Override
-	public void createGroupClicked(CreateGroupPane createGroupPane) {
+	public void hideAddUpdateGroupPane(AddUpdateGroupPane addUpdateGroupPane) {
 
-		getChildren().remove(createGroupPane);
-		createGroupRequestedToListeners(createGroupPane.getGroupName(), createGroupPane.getSelectedUuids());
-		createGroupPane.reset();
+		getChildren().remove(addUpdateGroupPane);
+
+	}
+
+	@Override
+	public void addUpdateGroupClicked(AddUpdateGroupPane addUpdateGroupPane) {
+
+		getChildren().remove(addUpdateGroupPane);
+		addUpdateGroupRequestedToListeners(addUpdateGroupPane.getGroupName(), addUpdateGroupPane.getSelectedUuids());
 
 	}
 
