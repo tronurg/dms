@@ -51,6 +51,8 @@ class GroupsPane extends TitledPane {
 				() -> listeners.forEach(listener -> listener.hideAddUpdateGroupPane(addUpdateGroupPane)));
 		addUpdateGroupPane.setOnAddUpdateGroupAction(
 				() -> listeners.forEach(listener -> listener.addUpdateGroupClicked(addUpdateGroupPane)));
+		addUpdateGroupPane.setOnDeleteGroupAction(
+				() -> listeners.forEach(listener -> listener.deleteGroupClicked(addUpdateGroupPane)));
 
 		initCreateGroupBtn();
 
@@ -234,6 +236,8 @@ interface IGroupsPane {
 	void hideAddUpdateGroupPane(AddUpdateGroupPane addUpdateGroupPane);
 
 	void addUpdateGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
+
+	void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
 	void showGroupMessagePane(MessagePane messagePane, String groupUuid);
 

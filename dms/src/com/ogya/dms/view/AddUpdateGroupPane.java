@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
@@ -14,6 +14,8 @@ import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
@@ -25,12 +27,14 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -45,6 +49,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final Button backBtn = ViewFactory.newBackBtn();
 	private final TextField groupNameTextField = new TextField();
+	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
 	private final VBox scrollableContent = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
@@ -60,6 +65,12 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final List<String> uuids = Collections.synchronizedList(new ArrayList<String>());
 	private final ObservableSet<String> selectedUuids = FXCollections.observableSet(new HashSet<String>());
+
+	private final BooleanProperty updateMode = new SimpleBooleanProperty();
+	private final BooleanProperty deleteMode = new SimpleBooleanProperty();
+
+	private final AtomicReference<Runnable> addUpdateGroupAction = new AtomicReference<Runnable>();
+	private final AtomicReference<Runnable> deleteGroupAction = new AtomicReference<Runnable>();
 
 	private final Comparator<Node> contactsSorter = new Comparator<Node>() {
 
@@ -94,7 +105,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	void setOnAddUpdateGroupAction(final Runnable runnable) {
 
-		addUpdateGroupBtn.setOnAction(e -> runnable.run());
+		addUpdateGroupAction.set(runnable);
+
+	}
+
+	void setOnDeleteGroupAction(final Runnable runnable) {
+
+		deleteGroupAction.set(runnable);
 
 	}
 
@@ -152,7 +169,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	Set<String> getSelectedUuids() {
 
-		return new LinkedHashSet<String>(selectedUuids);
+		return new HashSet<String>(selectedUuids);
 
 	}
 
@@ -167,8 +184,9 @@ public class AddUpdateGroupPane extends BorderPane {
 					selectedUuids.add(uuid);
 			});
 		}
-		addUpdateGroupBtn.setText(
-				isNewGroup ? CommonMethods.translate("CREATE_GROUP") : CommonMethods.translate("UPDATE_GROUP"));
+
+		deleteMode.set(false);
+		updateMode.set(!isNewGroup);
 
 	}
 
@@ -186,6 +204,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		initTopPane();
 		initScrollableContent();
 		initAddUpdateGroupBtn();
+		initDeleteBtn();
 
 		scrollPane.setFitToWidth(true);
 
@@ -209,11 +228,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		initGroupNameTextField();
 
-		topPane.getChildren().addAll(backBtn, groupNameTextField);
+		topPane.getChildren().addAll(backBtn, groupNameTextField, deleteBtn);
 
 	}
 
 	private void initGroupNameTextField() {
+
+		HBox.setHgrow(groupNameTextField, Priority.ALWAYS);
 
 		groupNameTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
@@ -222,6 +243,20 @@ public class AddUpdateGroupPane extends BorderPane {
 		groupNameTextField.setFocusTraversable(false);
 		groupNameTextField.setBackground(Background.EMPTY);
 		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+
+	}
+
+	private void initDeleteBtn() {
+
+		DropShadow shadow = new DropShadow();
+
+		deleteBtn.effectProperty()
+				.bind(Bindings.createObjectBinding(() -> deleteMode.get() ? shadow : null, deleteMode));
+
+		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
+		deleteBtn.visibleProperty().bind(updateMode);
+
+		deleteBtn.setOnAction(e -> deleteMode.set(!deleteMode.get()));
 
 	}
 
@@ -269,17 +304,48 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initAddUpdateGroupBtn() {
 
-		addUpdateGroupBtn
-				.setBackground(new Background(new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY)));
+		final Background deleteBackgroud = new Background(
+				new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
+		final Background nonDeleteBackgroud = new Background(
+				new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY));
+
+		addUpdateGroupBtn.backgroundProperty().bind(Bindings
+				.createObjectBinding(() -> deleteMode.get() ? deleteBackgroud : nonDeleteBackgroud, deleteMode));
 		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
+
+		addUpdateGroupBtn.textProperty().bind(Bindings.createStringBinding(() -> {
+
+			if (updateMode.get())
+				return deleteMode.get() ? CommonMethods.translate("DELETE_GROUP")
+						: CommonMethods.translate("UPDATE_GROUP");
+			return CommonMethods.translate("CREATE_GROUP");
+
+		}, updateMode, deleteMode));
+
 		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 
 		addUpdateGroupBtn.setMnemonicParsing(false);
 
 		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
-		addUpdateGroupBtn.disableProperty()
-				.bind(Bindings.size(selectedUuids).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty()));
+		addUpdateGroupBtn.disableProperty().bind(deleteMode.not()
+				.and(Bindings.size(selectedUuids).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty())));
+
+		addUpdateGroupBtn.setOnAction(e -> {
+
+			if (deleteMode.get()) {
+
+				if (deleteGroupAction.get() != null)
+					deleteGroupAction.get().run();
+
+			} else {
+
+				if (addUpdateGroupAction.get() != null)
+					addUpdateGroupAction.get().run();
+
+			}
+
+		});
 
 	}
 

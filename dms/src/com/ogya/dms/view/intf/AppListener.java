@@ -20,6 +20,8 @@ public interface AppListener {
 
 	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);
 
+	void deleteGroupRequested();
+
 	void groupMessagePaneOpened(String groupUuid);
 
 	void groupMessagePaneClosed(String groupUuid);

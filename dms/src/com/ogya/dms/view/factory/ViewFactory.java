@@ -9,6 +9,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeLineCap;
 
 public class ViewFactory {
@@ -101,6 +102,37 @@ public class ViewFactory {
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
 		line.strokeProperty()
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
+
+		return btn;
+
+	}
+
+	public static Button newDeleteBtn() {
+
+		Button btn = new Button();
+
+		Rectangle rectangle = new Rectangle(12.0, 20.0);
+		rectangle.setArcWidth(4.0);
+		rectangle.setArcHeight(4.0);
+		rectangle.setStrokeWidth(2.0);
+		rectangle.setStroke(Color.RED);
+		rectangle.setFill(Color.TRANSPARENT);
+		Line line1 = new Line(0.0, 4.0, 12.0, 4.0);
+		line1.setStrokeWidth(2.0);
+		line1.setStroke(Color.RED);
+		Line line2 = new Line(4.0, 7.0, 4.0, 17.0);
+		line2.setStrokeLineCap(StrokeLineCap.ROUND);
+		line2.setStrokeWidth(2.0);
+		line2.setStroke(Color.RED);
+		Line line3 = new Line(8.0, 7.0, 8.0, 17.0);
+		line3.setStrokeLineCap(StrokeLineCap.ROUND);
+		line3.setStrokeWidth(2.0);
+		line3.setStroke(Color.RED);
+		Group group = new Group(rectangle, line1, line2, line3);
+		btn.setGraphic(group);
+		btn.setBackground(Background.EMPTY);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
 
 		return btn;
 

@@ -49,7 +49,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private static final Map<String, Control> INSTANCES = Collections.synchronizedMap(new HashMap<String, Control>());
 
-	private static final int MIN_MESSAGES_PER_PAGE = 10;
+	private static final int MIN_MESSAGES_PER_PAGE = 50;
 
 	private final DbManager dbManager;
 
@@ -501,7 +501,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		}
 
 		// GROUP NOT ADDED TO MODEL YET. DO NOT USE IS_MY_GROUP METHOD !!!
-		if (uuidOwner.equals(model.getLocalUuid()))
+		if (!isActive)
+			group.setStatus(Availability.OFFLINE);
+		else if (group.getUuidOwner().equals(model.getLocalUuid()))
 			group.setStatus(Availability.AVAILABLE);
 		else
 			group.setStatus(
@@ -513,7 +515,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		group.getContacts().forEach(contact -> contactNames.add(contact.getName()));
 		Collections.sort(contactNames);
 		// GROUP NOT ADDED TO MODEL YET. DO NOT USE IS_MY_GROUP METHOD !!!
-		if (!uuidOwner.equals(model.getLocalUuid()))
+		if (!group.getUuidOwner().equals(model.getLocalUuid()))
 			contactNames.add(0, model.getContact(group.getUuidOwner()).getName());
 		group.setComment(String.join(",", contactNames));
 
@@ -1706,6 +1708,47 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					e.printStackTrace();
 
 				}
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void deleteGroupRequested() {
+
+		taskQueue.execute(() -> {
+
+			Dgroup group = model.getGroupToBeUpdated();
+
+			if (group == null)
+				return;
+
+			group.setActive(false);
+
+			Set<Contact> contacts = new HashSet<Contact>(group.getContacts());
+
+			try {
+
+				Dgroup newGroup = createUpdateGroup(group.getUuid(), null, null, group.isActive(), null, null);
+
+				if (newGroup == null)
+					return;
+
+				model.addGroup(newGroup);
+
+				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+				String groupUpdate = getGroupUpdate(newGroup.getUuid(), null, newGroup.isActive(), null, null);
+
+				sendGroupMessage(
+						createOutgoingMessage(groupUpdate, newGroup.getUuid(), ReceiverType.GROUP, MessageType.UPDATE),
+						contacts);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 

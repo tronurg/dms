@@ -267,6 +267,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void deleteGroupRequestedToListeners() {
+
+		listeners.forEach(listener -> listener.deleteGroupRequested());
+
+	}
+
 	private void groupMessagePaneOpenedToListeners(final String groupUuid) {
 
 		listeners.forEach(listener -> listener.groupMessagePaneOpened(groupUuid));
@@ -356,6 +362,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		getChildren().remove(addUpdateGroupPane);
 		addUpdateGroupRequestedToListeners(addUpdateGroupPane.getGroupName(), addUpdateGroupPane.getSelectedUuids());
+
+	}
+
+	@Override
+	public void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane) {
+
+		getChildren().remove(addUpdateGroupPane);
+		deleteGroupRequestedToListeners();
 
 	}
 
