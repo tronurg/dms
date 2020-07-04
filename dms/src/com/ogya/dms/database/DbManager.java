@@ -384,10 +384,10 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where senderUuid not like :localUuid and receiverUuid like :groupUuid and receiverType like :receiverType and messageStatus not like :read and messageType not like :messageType",
+				"from Message where senderUuid not like :localUuid and receiverUuid like :groupUuid and receiverType like :receiverType and messageStatus not like :read and messageType like :messageType",
 				Message.class).setParameter("localUuid", localUuid).setParameter("groupUuid", groupUuid)
 				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ)
-				.setParameter("messageType", MessageType.UPDATE).list();
+				.setParameter("messageType", MessageType.INSTANT).list();
 
 		session.close();
 
@@ -416,10 +416,10 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbFirstUnreadMessage = session.createQuery(
-				"from Message where senderUuid not like :localUuid and receiverUuid like :groupUuid and receiverType like :receiverType and messageStatus not like :read and messageType not like :messageType",
+				"from Message where senderUuid not like :localUuid and receiverUuid like :groupUuid and receiverType like :receiverType and messageStatus not like :read and messageType like :messageType",
 				Message.class).setParameter("localUuid", localUuid).setParameter("groupUuid", groupUuid)
 				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ)
-				.setParameter("messageType", MessageType.UPDATE).setMaxResults(1).list();
+				.setParameter("messageType", MessageType.INSTANT).setMaxResults(1).list();
 
 		if (dbFirstUnreadMessage.size() == 0) {
 
@@ -430,9 +430,9 @@ public class DbManager {
 		Long firstId = dbFirstUnreadMessage.get(0).getId();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where id>=:firstId and receiverUuid like :groupUuid and receiverType like :receiverType and messageType not like :messageType",
+				"from Message where id>=:firstId and receiverUuid like :groupUuid and receiverType like :receiverType and messageType like :messageType",
 				Message.class).setParameter("firstId", firstId).setParameter("groupUuid", groupUuid)
-				.setParameter("receiverType", ReceiverType.GROUP).setParameter("messageType", MessageType.UPDATE)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("messageType", MessageType.INSTANT)
 				.list();
 
 		session.close();
@@ -446,9 +446,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where receiverUuid like :groupUuid and receiverType like :receiverType and messageType not like :messageType order by id desc",
+				"from Message where receiverUuid like :groupUuid and receiverType like :receiverType and messageType like :messageType order by id desc",
 				Message.class).setParameter("groupUuid", groupUuid).setParameter("receiverType", ReceiverType.GROUP)
-				.setParameter("messageType", MessageType.UPDATE).setMaxResults(messageCount).list();
+				.setParameter("messageType", MessageType.INSTANT).setMaxResults(messageCount).list();
 
 		session.close();
 
@@ -462,9 +462,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where id<:id and receiverUuid like :groupUuid and receiverType like :receiverType and messageType not like :messageType order by id desc",
+				"from Message where id<:id and receiverUuid like :groupUuid and receiverType like :receiverType and messageType like :messageType order by id desc",
 				Message.class).setParameter("id", id).setParameter("groupUuid", groupUuid)
-				.setParameter("receiverType", ReceiverType.GROUP).setParameter("messageType", MessageType.UPDATE)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("messageType", MessageType.INSTANT)
 				.setMaxResults(messageCount).list();
 
 		session.close();
