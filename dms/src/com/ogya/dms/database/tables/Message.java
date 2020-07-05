@@ -44,7 +44,7 @@ public class Message {
 	@Enumerated(EnumType.STRING)
 	private MessageType messageType;
 
-	@Column(name = "message_code", nullable = false, updatable = false)
+	@Column(name = "message_code", updatable = false)
 	private Integer messageCode;
 
 	@Column(name = "content", nullable = false, updatable = false)
@@ -68,12 +68,11 @@ public class Message {
 	}
 
 	public Message(String senderUuid, String receiverUuid, ReceiverType receiverType, MessageType messageType,
-			Integer messageCode, String content) {
+			String content) {
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
 		this.receiverType = receiverType;
 		this.messageType = messageType;
-		this.messageCode = messageCode;
 		this.content = content;
 	}
 

@@ -430,7 +430,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			MessageType messageType, Integer messageCode) throws Exception {
 
 		Message outgoingMessage = new Message(model.getLocalUuid(), receiverUuid, receiverType, messageType,
-				messageCode, messageTxt);
+				messageTxt);
+
+		if (messageCode != null)
+			outgoingMessage.setMessageCode(messageCode);
 
 		if (outgoingMessage.getMessageType().equals(MessageType.TRANSIENT))
 			return outgoingMessage;
@@ -781,13 +784,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		switch (message.getMessageType()) {
 
-		case INSTANT:
+		case TEXT:
+		case FILE:
 
 			addPrivateMessageToPane(message, true);
-
-			break;
-
-		case UPDATE:
 
 			break;
 
@@ -803,7 +803,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		switch (message.getMessageType()) {
 
-		case INSTANT:
+		case TEXT:
+		case FILE:
 
 			// If it's my group, I'm supposed to send this message to all group members
 			// (except the original sender).
@@ -1586,8 +1587,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message newMessage = sendMessage(createOutgoingMessage(messageTxt, receiverUuid,
-						ReceiverType.PRIVATE, MessageType.INSTANT, CommonConstants.CODE_INSTANT_TEXT));
+				final Message newMessage = sendMessage(
+						createOutgoingMessage(messageTxt, receiverUuid, ReceiverType.PRIVATE, MessageType.TEXT, null));
 
 				addPrivateMessageToPane(newMessage, true);
 
@@ -1892,8 +1893,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message newMessage = sendGroupMessage(createOutgoingMessage(messageTxt, groupUuid,
-						ReceiverType.GROUP, MessageType.INSTANT, CommonConstants.CODE_INSTANT_TEXT));
+				final Message newMessage = sendGroupMessage(
+						createOutgoingMessage(messageTxt, groupUuid, ReceiverType.GROUP, MessageType.TEXT, null));
 
 				addGroupMessageToPane(newMessage, true);
 
