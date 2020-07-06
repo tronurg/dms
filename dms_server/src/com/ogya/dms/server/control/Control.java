@@ -165,7 +165,10 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		} catch (Exception e) {
 
-			System.out.println("Port (" + routerPort + ") in use. Unable to communicate with clients!");
+			System.out.println(
+					"Port (" + routerPort + ") in use. Unable to communicate with clients! Program will exit.");
+
+			System.exit(-1);
 
 		}
 
