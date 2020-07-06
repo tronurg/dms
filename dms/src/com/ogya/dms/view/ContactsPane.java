@@ -160,6 +160,12 @@ class ContactsPane extends TitledPane {
 
 			});
 
+			contactPane.setOnShowFoldersAction(() -> {
+
+				listeners.forEach(listener -> listener.privateShowFoldersClicked(uuid));
+
+			});
+
 			contactPane.setOnPaneScrolledToTop(() -> {
 
 				listeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
@@ -187,6 +193,8 @@ interface IContactsPane {
 	void hideContactMessagePane(MessagePane messagePane, String uuid);
 
 	void sendPrivateMessageClicked(String messageTxt, String uuid);
+
+	void privateShowFoldersClicked(String uuid);
 
 	void contactPaneScrolledToTop(String uuid);
 

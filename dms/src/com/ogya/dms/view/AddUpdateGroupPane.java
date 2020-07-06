@@ -69,8 +69,8 @@ public class AddUpdateGroupPane extends BorderPane {
 	private final BooleanProperty updateMode = new SimpleBooleanProperty();
 	private final BooleanProperty deleteMode = new SimpleBooleanProperty();
 
-	private final AtomicReference<Runnable> addUpdateGroupAction = new AtomicReference<Runnable>();
-	private final AtomicReference<Runnable> deleteGroupAction = new AtomicReference<Runnable>();
+	private final AtomicReference<Runnable> addUpdateGroupActionRef = new AtomicReference<Runnable>();
+	private final AtomicReference<Runnable> deleteGroupActionRef = new AtomicReference<Runnable>();
 
 	private final Comparator<Node> contactsSorter = new Comparator<Node>() {
 
@@ -105,13 +105,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	void setOnAddUpdateGroupAction(final Runnable runnable) {
 
-		addUpdateGroupAction.set(runnable);
+		addUpdateGroupActionRef.set(runnable);
 
 	}
 
 	void setOnDeleteGroupAction(final Runnable runnable) {
 
-		deleteGroupAction.set(runnable);
+		deleteGroupActionRef.set(runnable);
 
 	}
 
@@ -335,13 +335,17 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			if (deleteMode.get()) {
 
-				if (deleteGroupAction.get() != null)
-					deleteGroupAction.get().run();
+				Runnable deleteGroupAction = deleteGroupActionRef.get();
+
+				if (deleteGroupAction != null)
+					deleteGroupAction.run();
 
 			} else {
 
-				if (addUpdateGroupAction.get() != null)
-					addUpdateGroupAction.get().run();
+				Runnable addUpdateGroupAction = addUpdateGroupActionRef.get();
+
+				if (addUpdateGroupAction != null)
+					addUpdateGroupAction.run();
 
 			}
 

@@ -1,10 +1,13 @@
 package com.ogya.dms.view;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
@@ -25,6 +28,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private final ContactsPane contactsPane = new ContactsPane();
 	private final GroupsPane groupsPane = new GroupsPane();
 	private final VBox contactsGroupsPane = new VBox();
+
+	private final FoldersPane foldersPane = new FoldersPane(Paths.get(CommonConstants.FILE_EXPLORER_PATH));
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -47,6 +52,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		identityPane.addListener(this);
 		contactsPane.addListener(this);
 		groupsPane.addListener(this);
+		foldersPane.setOnFileSelected(this::fileSelected);
+		foldersPane.setOnBackAction(this::backFromFoldersPane);
 
 		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
 
@@ -219,6 +226,22 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void fileSelected(Path file) {
+
+		getChildren().remove(foldersPane);
+
+		fileSelectedToListeners(file);
+
+	}
+
+	private void backFromFoldersPane() {
+
+		getChildren().remove(foldersPane);
+
+		showFoldersCanceledToListeners();
+
+	}
+
 	private void commentUpdatedToListeners(final String comment) {
 
 		listeners.forEach(listener -> listener.commentUpdated(comment));
@@ -246,6 +269,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private void sendPrivateMessageClickedToListeners(final String message, final String uuid) {
 
 		listeners.forEach(listener -> listener.sendPrivateMessageClicked(message, uuid));
+
+	}
+
+	private void privateShowFoldersClickedToListeners(final String uuid) {
+
+		listeners.forEach(listener -> listener.privateShowFoldersClicked(uuid));
 
 	}
 
@@ -291,9 +320,27 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void groupShowFoldersClickedToListeners(final String groupUuid) {
+
+		listeners.forEach(listener -> listener.groupShowFoldersClicked(groupUuid));
+
+	}
+
 	private void groupPaneScrolledToTopToListeners(final String groupUuid) {
 
 		listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
+
+	}
+
+	private void showFoldersCanceledToListeners() {
+
+		listeners.forEach(listener -> listener.showFoldersCanceled());
+
+	}
+
+	private void fileSelectedToListeners(final Path file) {
+
+		listeners.forEach(listener -> listener.fileSelected(file));
 
 	}
 
@@ -333,6 +380,17 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void sendPrivateMessageClicked(String messageTxt, String uuid) {
 
 		sendPrivateMessageClickedToListeners(messageTxt, uuid);
+
+	}
+
+	@Override
+	public void privateShowFoldersClicked(String uuid) {
+
+		foldersPane.reset();
+
+		getChildren().add(foldersPane);
+
+		privateShowFoldersClickedToListeners(uuid);
 
 	}
 
@@ -395,6 +453,17 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void sendGroupMessageClicked(String messageTxt, String groupUuid) {
 
 		sendGroupMessageClickedToListeners(messageTxt, groupUuid);
+
+	}
+
+	@Override
+	public void groupShowFoldersClicked(String groupUuid) {
+
+		foldersPane.reset();
+
+		getChildren().add(foldersPane);
+
+		groupShowFoldersClickedToListeners(groupUuid);
 
 	}
 

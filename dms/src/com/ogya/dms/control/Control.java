@@ -1,5 +1,6 @@
 package com.ogya.dms.control;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -1603,6 +1604,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void privateShowFoldersClicked(String uuid) {
+
+		// TODO Auto-generated method stub
+
+		System.out.println("Control.privateShowFoldersClicked() " + uuid);
+
+	}
+
+	@Override
 	public void contactPaneScrolledToTop(final String uuid) {
 
 		taskQueue.execute(() -> {
@@ -1658,6 +1668,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		taskQueue.execute(() -> {
 
 			Dgroup group = model.getGroupToBeUpdated();
+			model.setGroupToBeUpdated(null);
 
 			Set<Contact> selectedContacts = new HashSet<Contact>();
 			selectedUuids.forEach(uuid -> {
@@ -1778,6 +1789,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		taskQueue.execute(() -> {
 
 			Dgroup group = model.getGroupToBeUpdated();
+			model.setGroupToBeUpdated(null);
 
 			if (group == null)
 				return;
@@ -1909,6 +1921,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void groupShowFoldersClicked(String groupUuid) {
+
+		// TODO Auto-generated method stub
+
+		System.out.println("Control.groupShowFoldersClicked() " + groupUuid);
+
+	}
+
+	@Override
 	public void groupPaneScrolledToTop(String groupUuid) {
 
 		taskQueue.execute(() -> {
@@ -1931,6 +1952,24 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(groupUuid, ReceiverType.GROUP));
 
 		});
+
+	}
+
+	@Override
+	public void showFoldersCanceled() {
+
+		// TODO Auto-generated method stub
+
+		System.out.println("Control.showFoldersCanceled()");
+
+	}
+
+	@Override
+	public void fileSelected(Path file) {
+
+		// TODO Auto-generated method stub
+
+		System.out.println("Control.fileSelected() " + file);
 
 	}
 

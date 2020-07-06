@@ -118,7 +118,8 @@ public class CommonMethods {
 
 			serverPort = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
+				| NumberFormatException e) {
 
 			e.printStackTrace();
 
@@ -158,13 +159,35 @@ public class CommonMethods {
 
 			beaconIntervalMs = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
+				| NumberFormatException e) {
 
 			e.printStackTrace();
 
 		}
 
 		return beaconIntervalMs;
+
+	}
+
+	static String getFileExplorerPath() {
+
+		String fileExplorerPath = "./";
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/FILE_EXPLORER_PATH")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			fileExplorerPath = node.getTextContent();
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return fileExplorerPath;
 
 	}
 

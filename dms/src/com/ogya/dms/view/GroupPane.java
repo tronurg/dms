@@ -140,6 +140,12 @@ class GroupPane extends GridPane {
 
 	}
 
+	void setOnShowFoldersAction(Runnable runnable) {
+
+		messagePane.setOnShowFoldersAction(runnable);
+
+	}
+
 	void setOnPaneScrolledToTop(Runnable runnable) {
 
 		messagePane.setOnPaneScrolledToTop(() -> runnable.run());

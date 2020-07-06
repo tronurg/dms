@@ -73,6 +73,7 @@ class MessagePane extends BorderPane {
 	private final Label nameLabel = new Label();
 	private final TextArea messageArea = new TextArea();
 	private final Button sendBtn = ViewFactory.newSendBtn();
+	private final Button showFoldersBtn = ViewFactory.newSendBtn();
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(true);
@@ -343,6 +344,12 @@ class MessagePane extends BorderPane {
 			consumer.accept(mesajTxt);
 
 		});
+
+	}
+
+	void setOnShowFoldersAction(Runnable runnable) {
+
+		showFoldersBtn.setOnAction(e -> runnable.run());
 
 	}
 

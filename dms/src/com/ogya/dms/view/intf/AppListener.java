@@ -1,5 +1,6 @@
 package com.ogya.dms.view.intf;
 
+import java.nio.file.Path;
 import java.util.Set;
 
 public interface AppListener {
@@ -13,6 +14,8 @@ public interface AppListener {
 	void contactMessagePaneClosed(String uuid);
 
 	void sendPrivateMessageClicked(String messageTxt, String receiverUuid);
+
+	void privateShowFoldersClicked(String uuid);
 
 	void contactPaneScrolledToTop(String uuid);
 
@@ -28,6 +31,12 @@ public interface AppListener {
 
 	void sendGroupMessageClicked(String messageTxt, String groupUuid);
 
+	void groupShowFoldersClicked(String groupUuid);
+
 	void groupPaneScrolledToTop(String groupUuid);
+
+	void showFoldersCanceled();
+
+	void fileSelected(Path file);
 
 }
