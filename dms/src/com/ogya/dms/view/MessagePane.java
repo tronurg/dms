@@ -19,6 +19,8 @@ import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.factory.ViewFactory;
 
+import javafx.animation.Interpolator;
+import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -34,6 +36,7 @@ import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -47,12 +50,14 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.util.Duration;
 
 class MessagePane extends BorderPane {
 
@@ -73,7 +78,8 @@ class MessagePane extends BorderPane {
 	private final Label nameLabel = new Label();
 	private final TextArea messageArea = new TextArea();
 	private final Button sendBtn = ViewFactory.newSendBtn();
-	private final Button showFoldersBtn = ViewFactory.newSendBtn();
+	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
+	private final StackPane btnPane = new StackPane();
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(true);
@@ -136,7 +142,10 @@ class MessagePane extends BorderPane {
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
-		bottomPane.getChildren().addAll(messageArea, sendBtn);
+
+		initBtnPane();
+
+		bottomPane.getChildren().addAll(messageArea, btnPane);
 
 		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
 		bottomPane.visibleProperty().bind(activeProperty);
@@ -375,6 +384,51 @@ class MessagePane extends BorderPane {
 	private void scrollPaneToBottom() {
 
 		scrollPane.setVvalue(scrollPane.getVmax());
+
+	}
+
+	private void initBtnPane() {
+
+		btnPane.getChildren().addAll(showFoldersBtn, sendBtn);
+
+		Interpolator interpolator = Interpolator.EASE_BOTH;
+
+		Transition transition = new Transition() {
+
+			{
+				setCycleDuration(Duration.millis(100.0));
+			}
+
+			private double start;
+			private double end;
+			private int direction = -1;
+
+			@Override
+			protected void interpolate(double arg0) {
+
+				showFoldersBtn.setTranslateY(interpolator.interpolate(start, end, arg0));
+
+			}
+
+			@Override
+			public void play() {
+				start = showFoldersBtn.getTranslateY();
+				end = start + (GAP + showFoldersBtn.getHeight()) * direction;
+				direction = -direction;
+				super.play();
+			}
+
+		};
+
+		sendBtn.setOnMouseClicked(e -> {
+			if (e.getButton().equals(MouseButton.SECONDARY))
+				transition.play();
+		});
+
+		showFoldersBtn.setOnMouseClicked(e -> {
+			if (e.getButton().equals(MouseButton.PRIMARY))
+				transition.play();
+		});
 
 	}
 

@@ -9,5 +9,6 @@ public class CommonConstants {
 	public static final String FILE_EXPLORER_PATH = CommonMethods.getFileExplorerPath();
 
 	public static final Integer CODE_UPDATE_GROUP = 0;
+	public static final Integer CODE_UPDATE_MESSAGE = 1;
 
 }

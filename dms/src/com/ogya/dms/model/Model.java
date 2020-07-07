@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -16,6 +17,7 @@ import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.MessageIdentifier;
 import com.ogya.dms.structures.MessageStatus;
+import com.ogya.dms.structures.ReceiverType;
 
 public class Model {
 
@@ -39,6 +41,8 @@ public class Model {
 			.synchronizedMap(new HashMap<String, Map<MessageIdentifier, MessageIdentifier>>());
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
+
+	private final AtomicReference<Entry<ReceiverType, String>> fileSelectionUuid = new AtomicReference<Entry<ReceiverType, String>>();
 
 	public Model(Identity identity) {
 
@@ -261,6 +265,18 @@ public class Model {
 	public Dgroup getGroupToBeUpdated() {
 
 		return groupToBeUpdated.get();
+
+	}
+
+	public void setFileSelectionUuid(Entry<ReceiverType, String> entry) {
+
+		fileSelectionUuid.set(entry);
+
+	}
+
+	public Entry<ReceiverType, String> getFileSelectionUuid() {
+
+		return fileSelectionUuid.get();
 
 	}
 

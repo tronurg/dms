@@ -18,4 +18,6 @@ public interface DmsClientListener {
 
 	void statusReportFed(String message, String remoteUuid);
 
+	void transientMessageReceived(String message, String remoteUuid);
+
 }

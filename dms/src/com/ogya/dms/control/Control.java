@@ -1,12 +1,18 @@
 package com.ogya.dms.control;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,6 +23,8 @@ import javax.swing.JComponent;
 
 import org.hibernate.HibernateException;
 
+import com.github.luben.zstd.Zstd;
+import com.github.luben.zstd.ZstdException;
 import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.DbManager;
@@ -30,6 +38,7 @@ import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.Availability;
+import com.ogya.dms.structures.FilePojo;
 import com.ogya.dms.structures.GroupUpdate;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageIdentifier;
@@ -412,9 +421,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		Message incomingMessage = Message.fromJson(message);
 
-		if (incomingMessage.getMessageType().equals(MessageType.TRANSIENT))
-			return incomingMessage;
-
 		MessageStatus messageStatus = messageStatusFunction.apply(incomingMessage);
 
 		incomingMessage.setMessageStatus(messageStatus);
@@ -436,9 +442,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (messageCode != null)
 			outgoingMessage.setMessageCode(messageCode);
 
-		if (outgoingMessage.getMessageType().equals(MessageType.TRANSIENT))
-			return outgoingMessage;
-
 		outgoingMessage.setMessageStatus(MessageStatus.FRESH);
 
 		outgoingMessage.setWaiting(true);
@@ -456,9 +459,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (!model.isContactOnline(receiverUuid))
 			return message;
 
-		dmsClient.sendMessage(message.toJson(), receiverUuid);
+		try {
 
-		message.setMessageStatus(MessageStatus.SENT);
+			dmsSendMessage(message, receiverUuid);
+
+			message.setMessageStatus(MessageStatus.SENT);
+
+		} catch (ZstdException | IOException e) {
+
+			e.printStackTrace();
+
+		}
 
 		message.setWaiting(true);
 
@@ -581,29 +592,38 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (message.getSenderUuid().equals(receiverUuid))
 					continue;
 
-				if (!model.isContactOnline(receiverUuid)) {
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-					statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
+				model.updateWaitingGroupMessageToContact(receiverUuid,
+						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
-					model.updateWaitingGroupMessageToContact(receiverUuid, new MessageIdentifier(
-							message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
-
-				} else {
-
+				if (model.isContactOnline(receiverUuid))
 					onlineUuids.add(receiverUuid);
 
-					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT); // Assuming that the message will be
-																					// sent...
+			}
 
-					model.updateWaitingGroupMessageToContact(receiverUuid,
-							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+			if (onlineUuids.size() > 0) {
+
+				try {
+
+					dmsSendMessage(message, onlineUuids);
+
+					onlineUuids.forEach(receiverUuid -> {
+
+						statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+
+						model.updateWaitingGroupMessageToContact(receiverUuid, new MessageIdentifier(
+								message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+
+					});
+
+				} catch (ZstdException | IOException e) {
+
+					e.printStackTrace();
 
 				}
 
 			}
-
-			if (onlineUuids.size() > 0)
-				dmsClient.sendMessage(message.toJson(), onlineUuids);
 
 		} else {
 			// It's not my group, so I will send this message to the group owner only, but
@@ -625,21 +645,27 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			String receiverUuid = group.getUuidOwner();
 
-			if (!model.isContactOnline(receiverUuid)) {
+			statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
+			model.updateWaitingGroupMessageToContact(receiverUuid,
+					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
+			if (model.isContactOnline(receiverUuid)) {
 
-			} else {
+				try {
 
-				dmsClient.sendMessage(message.toJson(), receiverUuid);
+					dmsSendMessage(message, receiverUuid);
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+					model.updateWaitingGroupMessageToContact(receiverUuid,
+							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+
+				} catch (ZstdException | IOException e) {
+
+					e.printStackTrace();
+
+				}
 
 			}
 
@@ -680,21 +706,27 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		StatusReport statusReport = statusReportStr == null ? new StatusReport()
 				: StatusReport.fromJson(statusReportStr);
 
-		if (!model.isContactOnline(receiverUuid)) {
+		statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-			statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
+		model.updateWaitingGroupMessageToContact(receiverUuid,
+				new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
-			model.updateWaitingGroupMessageToContact(receiverUuid,
-					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
+		if (model.isContactOnline(receiverUuid)) {
 
-		} else {
+			try {
 
-			dmsClient.sendMessage(message.toJson(), receiverUuid);
+				dmsSendMessage(message, receiverUuid);
 
-			statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-			model.updateWaitingGroupMessageToContact(receiverUuid,
-					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+				model.updateWaitingGroupMessageToContact(receiverUuid,
+						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+
+			} catch (ZstdException | IOException e) {
+
+				e.printStackTrace();
+
+			}
 
 		}
 
@@ -734,28 +766,38 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			String receiverUuid = receiver.getUuid();
 
-			if (!model.isContactOnline(receiverUuid)) {
+			statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
+			model.updateWaitingGroupMessageToContact(receiverUuid,
+					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
-
-			} else {
-
+			if (model.isContactOnline(receiverUuid))
 				onlineUuids.add(receiverUuid);
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+		}
 
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+		if (onlineUuids.size() > 0) {
+
+			try {
+
+				dmsSendMessage(message, onlineUuids);
+
+				onlineUuids.forEach(receiverUuid -> {
+
+					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+
+					model.updateWaitingGroupMessageToContact(receiverUuid,
+							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
+
+				});
+
+			} catch (ZstdException | IOException e) {
+
+				e.printStackTrace();
 
 			}
 
 		}
-
-		if (onlineUuids.size() > 0)
-			dmsClient.sendMessage(message.toJson(), onlineUuids);
 
 		message.setStatusReportStr(statusReport.toJson());
 
@@ -778,6 +820,72 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		}
 
 		return message;
+
+	}
+
+	private void dmsSendMessage(Message message, String receiverUuid) throws ZstdException, IOException {
+
+		String messageContent = message.getContent();
+
+		if (message.getMessageType().equals(MessageType.FILE)) {
+
+			Path path = Paths.get(messageContent);
+
+			try {
+
+				message.setContent(new FilePojo(path.getFileName().toString(),
+						Base64.getEncoder().encodeToString(Zstd.compress(Files.readAllBytes(path)))).toJson());
+
+			} catch (ZstdException | IOException e) {
+
+				message.setContent(messageContent);
+
+				throw e;
+
+			}
+
+		}
+
+		dmsClient.sendMessage(message.toJson(), receiverUuid);
+
+		if (message.getMessageType().equals(MessageType.FILE)) {
+
+			message.setContent(messageContent);
+
+		}
+
+	}
+
+	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) throws ZstdException, IOException {
+
+		String messageContent = message.getContent();
+
+		if (message.getMessageType().equals(MessageType.FILE)) {
+
+			Path path = Paths.get(messageContent);
+
+			try {
+
+				message.setContent(new FilePojo(path.getFileName().toString(),
+						Base64.getEncoder().encodeToString(Zstd.compress(Files.readAllBytes(path)))).toJson());
+
+			} catch (ZstdException | IOException e) {
+
+				message.setContent(messageContent);
+
+				throw e;
+
+			}
+
+		}
+
+		dmsClient.sendMessage(message.toJson(), receiverUuids);
+
+		if (message.getMessageType().equals(MessageType.FILE)) {
+
+			message.setContent(messageContent);
+
+		}
 
 	}
 
@@ -912,12 +1020,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
-	}
-
-	private void transientMessageReceived(Message message) {
-
-		// TODO
 
 	}
 
@@ -1119,14 +1221,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			try {
 
 				final Message newMessage = createIncomingMessage(message, this::computeMessageStatus);
-
-				if (newMessage.getMessageType().equals(MessageType.TRANSIENT)) {
-
-					transientMessageReceived(newMessage);
-
-					return;
-
-				}
 
 				switch (newMessage.getReceiverType()) {
 				case PRIVATE:
@@ -1438,6 +1532,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void transientMessageReceived(String message, String remoteUuid) {
+
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
 	public JComponent getDmsPanel() {
 
 		return dmsPanelSwing;
@@ -1606,9 +1707,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	@Override
 	public void privateShowFoldersClicked(String uuid) {
 
-		// TODO Auto-generated method stub
+		taskQueue.execute(() -> {
 
-		System.out.println("Control.privateShowFoldersClicked() " + uuid);
+			model.setFileSelectionUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.PRIVATE, uuid));
+
+		});
 
 	}
 
@@ -1923,9 +2026,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	@Override
 	public void groupShowFoldersClicked(String groupUuid) {
 
-		// TODO Auto-generated method stub
+		taskQueue.execute(() -> {
 
-		System.out.println("Control.groupShowFoldersClicked() " + groupUuid);
+			model.setFileSelectionUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.GROUP, groupUuid));
+
+		});
 
 	}
 
@@ -1958,18 +2063,28 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	@Override
 	public void showFoldersCanceled() {
 
-		// TODO Auto-generated method stub
+		taskQueue.execute(() -> {
 
-		System.out.println("Control.showFoldersCanceled()");
+			model.setFileSelectionUuid(null);
+
+		});
 
 	}
 
 	@Override
 	public void fileSelected(Path file) {
 
-		// TODO Auto-generated method stub
+		taskQueue.execute(() -> {
 
-		System.out.println("Control.fileSelected() " + file);
+			Entry<ReceiverType, String> fileSelectionUuid = model.getFileSelectionUuid();
+			model.setFileSelectionUuid(null);
+
+			if (fileSelectionUuid == null)
+				return;
+
+			// TODO
+
+		});
 
 	}
 

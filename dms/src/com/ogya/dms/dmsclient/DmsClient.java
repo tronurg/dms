@@ -131,6 +131,19 @@ public class DmsClient {
 
 	}
 
+	public void sendTransientMessage(String message, String receiverUuid) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.TRANSIENT)));
+
+	}
+
+	public void sendTransientMessage(String message, Iterable<String> receiverUuids) {
+
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT)));
+
+	}
+
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
@@ -279,6 +292,12 @@ public class DmsClient {
 
 				break;
 
+			case TRANSIENT:
+
+				transientMessageReceivedToListener(messagePojo.message, messagePojo.senderUuid);
+
+				break;
+
 			default:
 
 			}
@@ -366,6 +385,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.statusReportFed(message, remoteUuid);
+
+		});
+
+	}
+
+	private void transientMessageReceivedToListener(final String message, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.transientMessageReceived(message, remoteUuid);
 
 		});
 

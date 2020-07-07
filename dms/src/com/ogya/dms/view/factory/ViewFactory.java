@@ -138,4 +138,30 @@ public class ViewFactory {
 
 	}
 
+	public static Button newAttachBtn() {
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(16.0);
+		circle.setFill(Color.GREEN);
+		Rectangle rectangle = new Rectangle(-12.0, -5.0, 24.0, 10.0);
+		rectangle.setArcWidth(6.0);
+		rectangle.setArcHeight(6.0);
+		rectangle.setStrokeWidth(2.0);
+		rectangle.setStroke(Color.ANTIQUEWHITE);
+		rectangle.setRotate(-45.0);
+		rectangle.setFill(Color.TRANSPARENT);
+		Line line = new Line(-6.0, 6.0, 3.0, -3.0);
+		line.setStroke(Color.ANTIQUEWHITE);
+		line.setStrokeWidth(2.0);
+		Group group = new Group(circle, rectangle, line);
+		btn.setGraphic(group);
+		btn.setBackground(Background.EMPTY);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
 }
