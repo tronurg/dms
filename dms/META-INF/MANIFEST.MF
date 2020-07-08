@@ -4,7 +4,8 @@ Bundle-Name: Dms
 Bundle-SymbolicName: dms
 Bundle-Version: 1.0.0.qualifier
 Export-Package: com.ogya.dms.intf,
- com.ogya.dms.intf.exceptions
+ com.ogya.dms.intf.exceptions,
+ com.ogya.dms.intf.listeners
 Automatic-Module-Name: dms
 Import-Package: org.osgi.service.component.annotations
 Service-Component: OSGI-INF/com.ogya.dms.main.Dms.xml

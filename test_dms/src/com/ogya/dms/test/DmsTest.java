@@ -1,6 +1,8 @@
 package com.ogya.dms.test;
 
 import java.awt.BorderLayout;
+import java.io.IOException;
+import java.nio.file.Path;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -11,11 +13,13 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 
+import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.DmsService;
 import com.ogya.dms.intf.exceptions.DbException;
+import com.ogya.dms.intf.listeners.DmsListener;
 
 @Component(immediate = true)
-public class DmsTest {
+public class DmsTest implements DmsListener {
 
 	private DmsService dmsService;
 
@@ -23,7 +27,12 @@ public class DmsTest {
 	protected void activate() {
 
 		try {
-			JComponent mcPanel = dmsService.login("elma", "elma").getDmsPanel();
+
+			DmsHandle handle = dmsService.login("elma", "elma");
+
+			handle.addListener(this);
+
+			JComponent mcPanel = handle.getDmsPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -41,12 +50,18 @@ public class DmsTest {
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
 		} catch (DbException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
+
 		}
 
 		try {
-			JComponent mcPanel = dmsService.login("armut", "armut").getDmsPanel();
+
+			DmsHandle handle = dmsService.login("armut", "armut");
+
+			handle.addListener(this);
+
+			JComponent mcPanel = handle.getDmsPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -63,12 +78,18 @@ public class DmsTest {
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
 		} catch (DbException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
+
 		}
 
 		try {
-			JComponent mcPanel = dmsService.login("kiraz", "kiraz").getDmsPanel();
+
+			DmsHandle handle = dmsService.login("kiraz", "kiraz");
+
+			handle.addListener(this);
+
+			JComponent mcPanel = handle.getDmsPanel();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -86,8 +107,9 @@ public class DmsTest {
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
 		} catch (DbException e) {
-			// TODO Auto-generated catch block
+
 			e.printStackTrace();
+
 		}
 
 	}
@@ -102,6 +124,22 @@ public class DmsTest {
 	protected void removeDmsService(DmsService dmsService) {
 
 		this.dmsService = null;
+
+	}
+
+	@Override
+	public void fileClicked(Path file) {
+
+		try {
+
+			new ProcessBuilder().directory(file.getParent().toFile())
+					.command("cmd", "/C", file.getFileName().toString()).start();
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 

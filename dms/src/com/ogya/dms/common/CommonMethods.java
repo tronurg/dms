@@ -191,6 +191,70 @@ public class CommonMethods {
 
 	}
 
+	static long getMaxFileLenght() {
+
+		long maxFileLenght = 1000000;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/MAX_FILE_LENGHT")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			maxFileLenght = Long.parseLong(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
+				| NumberFormatException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return maxFileLenght;
+
+	}
+
+	static String getSendFolder() {
+
+		String sendFolder = "./sent";
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/SEND_FOLDER").evaluate(getConfDoc(),
+					XPathConstants.NODE);
+
+			sendFolder = node.getTextContent();
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return sendFolder;
+
+	}
+
+	static String getReceiveFolder() {
+
+		String receiveFolder = "./receive";
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/RECEIVE_FOLDER")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			receiveFolder = node.getTextContent();
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return receiveFolder;
+
+	}
+
 	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
 
 		if (confDoc == null) {

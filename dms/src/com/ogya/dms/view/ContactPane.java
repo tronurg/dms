@@ -1,6 +1,7 @@
 package com.ogya.dms.view;
 
 import java.util.HashSet;
+import java.util.function.BiConsumer;
 
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Message;
@@ -131,6 +132,12 @@ class ContactPane extends GridPane {
 
 	}
 
+	void setOnPaneScrolledToTop(Runnable runnable) {
+
+		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
+
+	}
+
 	void setOnSendMessageAction(Consumer<String> consumer) {
 
 		messagePane.setOnSendMessageAction(messageTxt -> consumer.accept(messageTxt));
@@ -143,9 +150,9 @@ class ContactPane extends GridPane {
 
 	}
 
-	void setOnPaneScrolledToTop(Runnable runnable) {
+	void setOnMessageClickedAction(BiConsumer<String, Long> biConsumer) {
 
-		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
+		messagePane.setOnMessageClickedAction(biConsumer);
 
 	}
 

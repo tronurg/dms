@@ -29,7 +29,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private final GroupsPane groupsPane = new GroupsPane();
 	private final VBox contactsGroupsPane = new VBox();
 
-	private final FoldersPane foldersPane = new FoldersPane(Paths.get(CommonConstants.FILE_EXPLORER_PATH));
+	private final FoldersPane foldersPane = new FoldersPane(
+			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath());
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -344,6 +345,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void messageClickedToListeners(final String senderUuid, final Long messageId) {
+
+		listeners.forEach(listener -> listener.messageClicked(senderUuid, messageId));
+
+	}
+
 	@Override
 	public void commentUpdated(String comment) {
 
@@ -377,6 +384,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
+	public void contactPaneScrolledToTop(String uuid) {
+
+		contactPaneScrolledToTopToListeners(uuid);
+
+	}
+
+	@Override
 	public void sendPrivateMessageClicked(String messageTxt, String uuid) {
 
 		sendPrivateMessageClickedToListeners(messageTxt, uuid);
@@ -391,13 +405,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		getChildren().add(foldersPane);
 
 		privateShowFoldersClickedToListeners(uuid);
-
-	}
-
-	@Override
-	public void contactPaneScrolledToTop(String uuid) {
-
-		contactPaneScrolledToTopToListeners(uuid);
 
 	}
 
@@ -450,6 +457,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
+	public void groupPaneScrolledToTop(String groupUuid) {
+
+		groupPaneScrolledToTopToListeners(groupUuid);
+
+	}
+
+	@Override
 	public void sendGroupMessageClicked(String messageTxt, String groupUuid) {
 
 		sendGroupMessageClickedToListeners(messageTxt, groupUuid);
@@ -468,9 +482,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void groupPaneScrolledToTop(String groupUuid) {
+	public void messageClicked(String senderUuid, Long messageId) {
 
-		groupPaneScrolledToTopToListeners(groupUuid);
+		messageClickedToListeners(senderUuid, messageId);
 
 	}
 

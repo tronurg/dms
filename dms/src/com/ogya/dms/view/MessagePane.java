@@ -13,10 +13,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.animation.Interpolator;
@@ -27,6 +29,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -35,6 +38,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
@@ -82,7 +86,7 @@ class MessagePane extends BorderPane {
 	private final StackPane btnPane = new StackPane();
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
-	private final BooleanProperty editableProperty = new SimpleBooleanProperty(true);
+	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
@@ -93,6 +97,8 @@ class MessagePane extends BorderPane {
 
 	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
+
+	private final AtomicReference<BiConsumer<String, Long>> messageClickedActionRef = new AtomicReference<BiConsumer<String, Long>>();
 
 	MessagePane() {
 
@@ -199,11 +205,13 @@ class MessagePane extends BorderPane {
 			return;
 
 		Date messageDate = message.getDate();
-		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection);
 
-		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageInfo);
-		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
-				message.getMessageStatus().getTransmittedColor());
+		boolean isClickable = message.getMessageType().equals(MessageType.FILE);
+
+		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection,
+				isClickable);
+
+		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
 		messageBalloons.put(message.getId(), messageBalloon);
 
@@ -233,11 +241,13 @@ class MessagePane extends BorderPane {
 			return;
 
 		Date messageDate = message.getDate();
-		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection);
 
-		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageInfo);
-		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
-				message.getMessageStatus().getTransmittedColor());
+		boolean isClickable = message.getMessageType().equals(MessageType.FILE);
+
+		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection,
+				isClickable);
+
+		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
 		messageBalloons.put(message.getId(), messageBalloon);
 
@@ -362,6 +372,12 @@ class MessagePane extends BorderPane {
 
 	}
 
+	void setOnMessageClickedAction(BiConsumer<String, Long> biConsumer) {
+
+		messageClickedActionRef.set(biConsumer);
+
+	}
+
 	private void scrollPane(Node kaydirilacakNode, double bias) {
 
 		scrollPane.applyCss();
@@ -429,6 +445,36 @@ class MessagePane extends BorderPane {
 			if (e.getButton().equals(MouseButton.PRIMARY))
 				transition.play();
 		});
+
+	}
+
+	private MessageBalloon newMessageBalloon(Message message, MessageInfo messageInfo) {
+
+		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageInfo);
+		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
+				message.getMessageStatus().getTransmittedColor());
+
+		if (messageInfo.isClickable) {
+
+			messageBalloon.setCursor(Cursor.HAND);
+
+			final DropShadow dropShadow = new DropShadow();
+
+			messageBalloon.effectProperty().bind(Bindings.createObjectBinding(
+					() -> messageBalloon.isHover() ? dropShadow : null, messageBalloon.hoverProperty()));
+
+			messageBalloon.setOnMouseClicked(e -> {
+
+				BiConsumer<String, Long> messageClickedAction = messageClickedActionRef.get();
+
+				if (messageClickedAction != null)
+					messageClickedAction.accept(message.getSenderUuid(), message.getMessageId());
+
+			});
+
+		}
+
+		return messageBalloon;
 
 	}
 
@@ -554,8 +600,8 @@ class MessagePane extends BorderPane {
 
 			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
 
-			messagePane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
+			messagePane.setBorder(new Border(new BorderStroke(messageInfo.isClickable ? Color.BLUE : Color.DARKGRAY,
+					BorderStrokeStyle.SOLID, new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
 
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setHgap(GAP);
@@ -712,13 +758,15 @@ class MessagePane extends BorderPane {
 		final String name;
 		final Date date;
 		final MessageDirection messageDirection;
+		final boolean isClickable;
 
-		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection) {
+		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, boolean isClickable) {
 
 			this.uuid = uuid;
 			this.name = name;
 			this.date = date;
 			this.messageDirection = messageDirection;
+			this.isClickable = isClickable;
 
 		}
 

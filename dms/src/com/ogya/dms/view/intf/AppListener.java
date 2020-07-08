@@ -39,4 +39,6 @@ public interface AppListener {
 
 	void fileSelected(Path file);
 
+	void messageClicked(String senderUuid, Long messageId);
+
 }

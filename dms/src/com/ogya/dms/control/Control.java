@@ -36,6 +36,7 @@ import com.ogya.dms.dmsclient.DmsClient;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
+import com.ogya.dms.intf.listeners.DmsListener;
 import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.FilePojo;
@@ -71,6 +72,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private final DmsClient dmsClient;
 
 	private final Object beaconSyncObj = new Object();
+
+	private final List<DmsListener> dmsListeners = Collections.synchronizedList(new ArrayList<DmsListener>());
 
 	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -277,7 +280,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void addPrivateMessageToPane(Message message, final boolean newMessageToBottom) {
+	private void addPrivateMessageToPane(final Message message, final boolean newMessageToBottom) {
+
+		if (message.getMessageType().equals(MessageType.FILE)) {
+
+			String fileName = Paths.get(message.getContent()).getFileName().toString();
+
+			message.setContent(fileName);
+
+		}
 
 		if (model.getLocalUuid().equals(message.getSenderUuid())) {
 
@@ -309,7 +320,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void addGroupMessageToPane(Message message, final boolean newMessageToBottom) {
+	private void addGroupMessageToPane(final Message message, final boolean newMessageToBottom) {
+
+		if (message.getMessageType().equals(MessageType.FILE)) {
+
+			String fileName = Paths.get(message.getContent()).getFileName().toString();
+
+			message.setContent(fileName);
+
+		}
 
 		final String groupUuid = message.getReceiverUuid();
 
@@ -421,6 +440,33 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		Message incomingMessage = Message.fromJson(message);
 
+		if (incomingMessage.getMessageType().equals(MessageType.FILE)) {
+
+			FilePojo filePojo = FilePojo.fromJson(incomingMessage.getContent());
+
+			try {
+
+				Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
+
+				String fileName = filePojo.fileName;
+
+				Path dstFile = getDstFile(dstFolder, fileName);
+
+				Files.write(dstFile,
+						Zstd.decompress(Base64.getDecoder().decode(filePojo.fileContent), filePojo.originalLength));
+
+				incomingMessage.setContent(dstFile.toString());
+
+			} catch (Exception e) {
+
+				incomingMessage.setContent("");
+
+				e.printStackTrace();
+
+			}
+
+		}
+
 		MessageStatus messageStatus = messageStatusFunction.apply(incomingMessage);
 
 		incomingMessage.setMessageStatus(messageStatus);
@@ -459,17 +505,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (!model.isContactOnline(receiverUuid))
 			return message;
 
-		try {
+		dmsSendMessage(message, receiverUuid);
 
-			dmsSendMessage(message, receiverUuid);
-
-			message.setMessageStatus(MessageStatus.SENT);
-
-		} catch (ZstdException | IOException e) {
-
-			e.printStackTrace();
-
-		}
+		message.setMessageStatus(MessageStatus.SENT);
 
 		message.setWaiting(true);
 
@@ -604,24 +642,16 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			if (onlineUuids.size() > 0) {
 
-				try {
+				dmsSendMessage(message, onlineUuids);
 
-					dmsSendMessage(message, onlineUuids);
+				onlineUuids.forEach(receiverUuid -> {
 
-					onlineUuids.forEach(receiverUuid -> {
+					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-						statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+					model.updateWaitingGroupMessageToContact(receiverUuid,
+							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
-						model.updateWaitingGroupMessageToContact(receiverUuid, new MessageIdentifier(
-								message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
-
-					});
-
-				} catch (ZstdException | IOException e) {
-
-					e.printStackTrace();
-
-				}
+				});
 
 			}
 
@@ -652,20 +682,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			if (model.isContactOnline(receiverUuid)) {
 
-				try {
+				dmsSendMessage(message, receiverUuid);
 
-					dmsSendMessage(message, receiverUuid);
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
-
-					model.updateWaitingGroupMessageToContact(receiverUuid,
-							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
-
-				} catch (ZstdException | IOException e) {
-
-					e.printStackTrace();
-
-				}
+				model.updateWaitingGroupMessageToContact(receiverUuid,
+						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
 			}
 
@@ -713,20 +735,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		if (model.isContactOnline(receiverUuid)) {
 
-			try {
+			dmsSendMessage(message, receiverUuid);
 
-				dmsSendMessage(message, receiverUuid);
+			statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
-
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
-
-			} catch (ZstdException | IOException e) {
-
-				e.printStackTrace();
-
-			}
+			model.updateWaitingGroupMessageToContact(receiverUuid,
+					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
 		}
 
@@ -778,24 +792,16 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		if (onlineUuids.size() > 0) {
 
-			try {
+			dmsSendMessage(message, onlineUuids);
 
-				dmsSendMessage(message, onlineUuids);
+			onlineUuids.forEach(receiverUuid -> {
 
-				onlineUuids.forEach(receiverUuid -> {
+				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
+				model.updateWaitingGroupMessageToContact(receiverUuid,
+						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
-					model.updateWaitingGroupMessageToContact(receiverUuid,
-							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
-
-				});
-
-			} catch (ZstdException | IOException e) {
-
-				e.printStackTrace();
-
-			}
+			});
 
 		}
 
@@ -823,40 +829,19 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void dmsSendMessage(Message message, String receiverUuid) throws ZstdException, IOException {
+	private void dmsSendMessage(Message message, String receiverUuid) {
 
-		String messageContent = message.getContent();
-
-		if (message.getMessageType().equals(MessageType.FILE)) {
-
-			Path path = Paths.get(messageContent);
-
-			try {
-
-				message.setContent(new FilePojo(path.getFileName().toString(),
-						Base64.getEncoder().encodeToString(Zstd.compress(Files.readAllBytes(path)))).toJson());
-
-			} catch (ZstdException | IOException e) {
-
-				message.setContent(messageContent);
-
-				throw e;
-
-			}
-
-		}
-
-		dmsClient.sendMessage(message.toJson(), receiverUuid);
-
-		if (message.getMessageType().equals(MessageType.FILE)) {
-
-			message.setContent(messageContent);
-
-		}
+		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuid));
 
 	}
 
-	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) throws ZstdException, IOException {
+	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) {
+
+		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuids));
+
+	}
+
+	private void dmsSendMessage(Message message, Runnable runnable) {
 
 		String messageContent = message.getContent();
 
@@ -866,20 +851,22 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
+				byte[] fileBytes = Files.readAllBytes(path);
+
 				message.setContent(new FilePojo(path.getFileName().toString(),
-						Base64.getEncoder().encodeToString(Zstd.compress(Files.readAllBytes(path)))).toJson());
+						Base64.getEncoder().encodeToString(Zstd.compress(fileBytes)), fileBytes.length).toJson());
 
 			} catch (ZstdException | IOException e) {
 
-				message.setContent(messageContent);
+				message.setContent("");
 
-				throw e;
+				e.printStackTrace();
 
 			}
 
 		}
 
-		dmsClient.sendMessage(message.toJson(), receiverUuids);
+		runnable.run();
 
 		if (message.getMessageType().equals(MessageType.FILE)) {
 
@@ -1041,6 +1028,29 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		}
 
 		return MessageStatus.READ;
+
+	}
+
+	private Path getDstFile(Path dstFolder, String fileName) throws IOException {
+
+		if (Files.notExists(dstFolder))
+			Files.createDirectories(dstFolder);
+
+		int lastDotIndex = fileName.lastIndexOf('.');
+		String fileNameBase = lastDotIndex < 0 ? fileName : fileName.substring(0, lastDotIndex);
+		String extension = lastDotIndex < 0 ? "" : fileName.substring(lastDotIndex);
+
+		int fileIndex = 1;
+
+		while (Files.exists(dstFolder.resolve(fileName))) {
+
+			fileName = fileNameBase + " (" + ++fileIndex + ")" + extension;
+
+		}
+
+		Path dstFile = dstFolder.resolve(fileName);
+
+		return dstFile;
 
 	}
 
@@ -1689,7 +1699,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message newMessage = sendMessage(
+				Message newMessage = sendMessage(
 						createOutgoingMessage(messageTxt, receiverUuid, ReceiverType.PRIVATE, MessageType.TEXT, null));
 
 				addPrivateMessageToPane(newMessage, true);
@@ -2008,7 +2018,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				final Message newMessage = sendGroupMessage(
+				Message newMessage = sendGroupMessage(
 						createOutgoingMessage(messageTxt, groupUuid, ReceiverType.GROUP, MessageType.TEXT, null));
 
 				addGroupMessageToPane(newMessage, true);
@@ -2082,9 +2092,91 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			if (fileSelectionUuid == null)
 				return;
 
-			// TODO
+			try {
+
+				Path srcFile = file;
+				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+
+				String fileName = srcFile.getFileName().toString();
+
+				Path dstFile = getDstFile(dstFolder, fileName);
+
+				Files.copy(srcFile, dstFile);
+
+				// Now to the send operations
+
+				Message newMessage;
+
+				switch (fileSelectionUuid.getKey()) {
+
+				case PRIVATE:
+
+					newMessage = sendMessage(createOutgoingMessage(dstFile.toString(), fileSelectionUuid.getValue(),
+							ReceiverType.PRIVATE, MessageType.FILE, null));
+
+					addPrivateMessageToPane(newMessage, true);
+
+					break;
+
+				case GROUP:
+
+					newMessage = sendGroupMessage(createOutgoingMessage(dstFile.toString(),
+							fileSelectionUuid.getValue(), ReceiverType.GROUP, MessageType.FILE, null));
+
+					addGroupMessageToPane(newMessage, true);
+
+					break;
+
+				default:
+
+					break;
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
+
+	}
+
+	@Override
+	public void messageClicked(String senderUuid, Long messageId) {
+
+		try {
+
+			Message message = dbManager.getMessage(senderUuid, messageId);
+
+			if (message.getMessageType().equals(MessageType.FILE)) {
+
+				Path file = Paths.get(message.getContent());
+
+				dmsListeners.forEach(listener -> listener.fileClicked(file));
+
+			}
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	@Override
+	public void addListener(DmsListener listener) {
+
+		dmsListeners.add(listener);
+
+	}
+
+	@Override
+	public void removeListener(DmsListener listener) {
+
+		dmsListeners.remove(listener);
 
 	}
 

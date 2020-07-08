@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="true" name="com.ogya.dms.test.DmsTest">
+   <service>
+      <provide interface="com.ogya.dms.intf.listeners.DmsListener"/>
+   </service>
    <reference bind="addDmsService" interface="com.ogya.dms.intf.DmsService" name="DmsService" unbind="removeDmsService"/>
    <implementation class="com.ogya.dms.test.DmsTest"/>
 </scr:component>

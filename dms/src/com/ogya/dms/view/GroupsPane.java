@@ -203,6 +203,12 @@ class GroupsPane extends TitledPane {
 
 			});
 
+			groupPane.setOnPaneScrolledToTop(() -> {
+
+				listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
+
+			});
+
 			groupPane.setOnSendMessageAction(messageTxt -> {
 
 				listeners.forEach(listener -> listener.sendGroupMessageClicked(messageTxt, groupUuid));
@@ -215,9 +221,9 @@ class GroupsPane extends TitledPane {
 
 			});
 
-			groupPane.setOnPaneScrolledToTop(() -> {
+			groupPane.setOnMessageClickedAction((senderUuid, messageId) -> {
 
-				listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
+				listeners.forEach(listener -> listener.messageClicked(senderUuid, messageId));
 
 			});
 
@@ -249,10 +255,12 @@ interface IGroupsPane {
 
 	void hideGroupMessagePane(MessagePane messagePane, String groupUuid);
 
+	void groupPaneScrolledToTop(String groupUuid);
+
 	void sendGroupMessageClicked(String messageTxt, String groupUuid);
 
 	void groupShowFoldersClicked(String groupUuid);
 
-	void groupPaneScrolledToTop(String groupUuid);
+	void messageClicked(String senderUuid, Long messageId);
 
 }

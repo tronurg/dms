@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.view.factory.ViewFactory;
 
@@ -96,15 +97,8 @@ public class FoldersPane extends BorderPane {
 
 	public void reset() {
 
-		int size;
-
-		while ((size = centerPane.getChildren().size()) > 1) {
-
-			centerPane.getChildren().remove(size - 1);
-
-		}
-
-		centerPane.getChildren().get(0).setVisible(true);
+		while (centerPane.getChildren().size() > 1)
+			back();
 
 	}
 
@@ -222,7 +216,12 @@ public class FoldersPane extends BorderPane {
 					if (Files.isDirectory(path))
 						folders.add(path);
 					else
-						files.add(path);
+						try {
+							if (Files.size(path) <= CommonConstants.MAX_FILE_LENGHT)
+								files.add(path);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 
 				});
 

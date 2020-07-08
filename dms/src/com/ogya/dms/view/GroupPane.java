@@ -1,6 +1,7 @@
 package com.ogya.dms.view;
 
 import java.util.HashSet;
+import java.util.function.BiConsumer;
 
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
@@ -134,6 +135,12 @@ class GroupPane extends GridPane {
 
 	}
 
+	void setOnPaneScrolledToTop(Runnable runnable) {
+
+		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
+
+	}
+
 	void setOnSendMessageAction(Consumer<String> consumer) {
 
 		messagePane.setOnSendMessageAction(messageTxt -> consumer.accept(messageTxt));
@@ -146,13 +153,9 @@ class GroupPane extends GridPane {
 
 	}
 
-	void setOnPaneScrolledToTop(Runnable runnable) {
+	void setOnMessageClickedAction(BiConsumer<String, Long> biConsumer) {
 
-		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
-
-	}
-
-	void setOnUpdateGroupClicked() {
+		messagePane.setOnMessageClickedAction(biConsumer);
 
 	}
 
