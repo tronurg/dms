@@ -8,11 +8,13 @@ import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -122,7 +124,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 			if (!connections.containsKey(address)) {
 
-				Connection connection = new Connection();
+				Connection connection = new Connection(address);
 				connection.dmsServer = dmsServer;
 
 				connections.put(address, connection);
@@ -460,7 +462,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 			serverIdAddress.put(id, address);
 
-			connections.putIfAbsent(address, new Connection());
+			connections.putIfAbsent(address, new Connection(address));
 
 			Connection connection = connections.get(address);
 
@@ -497,9 +499,28 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 	private class Connection {
 
+		final InetAddress remoteAddress;
+
 		DmsServer dmsServer;
 
 		Function<String, Boolean> sendMethod;
+
+		Connection(InetAddress remoteAddress) {
+			this.remoteAddress = remoteAddress;
+		}
+
+		int getPingTime() {
+			int pingTime = 1000;
+			try {
+				long startTimeMillis = System.currentTimeMillis();
+				remoteAddress.isReachable(pingTime);
+				long endTimeMillis = System.currentTimeMillis();
+				pingTime = (int) (endTimeMillis - startTimeMillis);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return pingTime;
+		}
 
 	}
 
@@ -508,7 +529,15 @@ public class TcpManager implements TcpSunucuDinleyici {
 		final String dmsUuid;
 
 		final List<User> users = Collections.synchronizedList(new ArrayList<User>());
-		final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
+		final Set<Connection> connections = Collections
+				.synchronizedSet(new TreeSet<Connection>(new Comparator<Connection>() {
+
+					@Override
+					public int compare(Connection arg0, Connection arg1) {
+						return arg0.getPingTime() - arg1.getPingTime();
+					}
+
+				}));
 
 		final AtomicBoolean isConnected = new AtomicBoolean(false);
 
