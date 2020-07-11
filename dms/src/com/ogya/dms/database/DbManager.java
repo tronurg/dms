@@ -44,6 +44,8 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
+			e.printStackTrace();
+
 			throw new DbException("Database cannot be accessed. Wrong password or account in use.");
 
 		}
