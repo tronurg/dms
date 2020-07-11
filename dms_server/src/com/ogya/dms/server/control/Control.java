@@ -15,11 +15,11 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
-import com.ogya.dms.server.comm.intf.TcpManagerListener;
-import com.ogya.dms.server.comm.tcp.TcpConnectionType;
-import com.ogya.dms.server.comm.tcp.TcpManager;
-import com.ogya.dms.server.comm.udp.MulticastManager;
 import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.communications.intf.TcpManagerListener;
+import com.ogya.dms.server.communications.tcp.TcpConnectionType;
+import com.ogya.dms.server.communications.tcp.TcpManager;
+import com.ogya.dms.server.communications.udp.MulticastManager;
 import com.ogya.dms.server.model.Model;
 import com.ogya.dms.server.model.intf.ModelListener;
 

@@ -1,4 +1,4 @@
-package com.ogya.dms.server.comm.intf;
+package com.ogya.dms.server.communications.intf;
 
 public interface TcpManagerListener {
 

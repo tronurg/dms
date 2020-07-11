@@ -1,4 +1,4 @@
-package com.ogya.dms.server.comm.tcp;
+package com.ogya.dms.server.communications.tcp;
 
 public enum TcpConnectionType {
 

@@ -1,4 +1,4 @@
-package com.ogya.dms.server.comm.tcp;
+package com.ogya.dms.server.communications.tcp;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -26,8 +26,8 @@ import com.ogya.communications.tcp.TcpClient;
 import com.ogya.communications.tcp.TcpClientListener;
 import com.ogya.communications.tcp.TcpServer;
 import com.ogya.communications.tcp.TcpServerListener;
-import com.ogya.dms.server.comm.intf.TcpManagerListener;
 import com.ogya.dms.server.common.Encryption;
+import com.ogya.dms.server.communications.intf.TcpManagerListener;
 
 public class TcpManager implements TcpServerListener {
 

@@ -1014,7 +1014,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 									final Message newMessage = sendMessage(waitingMessage);
 
-									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT))
+									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT)
+											|| newMessage.getMessageType().equals(MessageType.UPDATE))
 										break;
 
 									Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
@@ -1074,7 +1075,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 									final Message newMessage = sendGroupMessage(waitingMessage, uuid);
 
-									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT))
+									if (!newMessage.getMessageStatus().equals(MessageStatus.SENT)
+											|| newMessage.getMessageType().equals(MessageType.UPDATE))
 										break;
 
 									Platform.runLater(
@@ -1339,13 +1341,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = sendGroupMessage(outgoingMessage, receiverUuid);
 
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+						if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+							Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
 
 					} else {
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+						if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+							Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
 
 					}
 
@@ -1357,7 +1361,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = sendMessage(outgoingMessage);
 
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, receiverUuid));
+						if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+							Platform.runLater(() -> dmsPanel.updateMessage(newMessage, receiverUuid));
 
 					} else {
 
@@ -1365,7 +1370,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, receiverUuid));
+						if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+							Platform.runLater(() -> dmsPanel.updateMessage(newMessage, receiverUuid));
 
 					}
 
@@ -1445,7 +1451,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
-				Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+					Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
 
 			} catch (Exception e) {
 

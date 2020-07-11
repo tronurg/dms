@@ -1,4 +1,4 @@
-package com.ogya.dms.server.comm.udp;
+package com.ogya.dms.server.communications.udp;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
