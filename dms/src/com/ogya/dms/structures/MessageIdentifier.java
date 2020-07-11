@@ -5,12 +5,9 @@ public class MessageIdentifier {
 	public final String senderUuid;
 	public final Long messageId;
 
-	public final MessageStatus messageStatus;
-
-	public MessageIdentifier(String senderUuid, Long messageId, MessageStatus messageStatus) {
+	public MessageIdentifier(String senderUuid, Long messageId) {
 		this.senderUuid = senderUuid;
 		this.messageId = messageId;
-		this.messageStatus = messageStatus;
 	}
 
 	@Override

@@ -39,16 +39,12 @@ public class TcpManager implements TcpServerListener {
 
 	private final TcpServer tcpServer;
 
-	//
-
 	private final Map<Integer, InetAddress> serverIdAddress = Collections
 			.synchronizedMap(new HashMap<Integer, InetAddress>());
 	private final Map<String, User> users = Collections.synchronizedMap(new HashMap<String, User>());
 	private final Map<String, DmsServer> dmsServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 	private final Map<InetAddress, Connection> connections = Collections
 			.synchronizedMap(new HashMap<InetAddress, Connection>());
-
-	//
 
 	private final List<TcpManagerListener> listeners = Collections
 			.synchronizedList(new ArrayList<TcpManagerListener>());
