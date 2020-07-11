@@ -13,7 +13,6 @@ import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
@@ -188,7 +187,7 @@ public class Message {
 		return CommonMethods.toDbJson(this);
 	}
 
-	public static Message fromJson(String json) throws JsonSyntaxException {
+	public static Message fromJson(String json) throws Exception {
 		return CommonMethods.fromDbJson(json, Message.class);
 	}
 

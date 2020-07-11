@@ -24,7 +24,6 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
 
 public class CommonMethods {
 
@@ -70,9 +69,14 @@ public class CommonMethods {
 
 	}
 
-	public static <T> T fromJson(String json, Class<T> classOfT) throws JsonSyntaxException {
+	public static <T> T fromJson(String json, Class<T> classOfT) throws Exception {
 
-		return gson.fromJson(json, classOfT);
+		T result = gson.fromJson(json, classOfT);
+
+		if (result == null)
+			throw new Exception();
+
+		return result;
 
 	}
 
@@ -82,9 +86,14 @@ public class CommonMethods {
 
 	}
 
-	public static <T> T fromDbJson(String json, Class<T> classOfT) throws JsonSyntaxException {
+	public static <T> T fromDbJson(String json, Class<T> classOfT) throws Exception {
 
-		return gsonDb.fromJson(json, classOfT);
+		T result = gsonDb.fromJson(json, classOfT);
+
+		if (result == null)
+			throw new Exception();
+
+		return result;
 
 	}
 

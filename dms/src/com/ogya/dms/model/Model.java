@@ -1,10 +1,8 @@
 package com.ogya.dms.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -15,8 +13,6 @@ import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.structures.Availability;
-import com.ogya.dms.structures.MessageIdentifier;
-import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
 
 public class Model {
@@ -33,12 +29,6 @@ public class Model {
 	private final List<String> openUuids = Collections.synchronizedList(new ArrayList<String>());
 
 	private final Map<String, Long> minMessageIds = Collections.synchronizedMap(new HashMap<String, Long>());
-
-	private final Map<String, Map<MessageIdentifier, MessageIdentifier>> groupMessagesWaitingToContact = Collections
-			.synchronizedMap(new HashMap<String, Map<MessageIdentifier, MessageIdentifier>>());
-
-	private final Map<String, Map<MessageIdentifier, MessageIdentifier>> groupMessagesWaitingForStatusReport = Collections
-			.synchronizedMap(new HashMap<String, Map<MessageIdentifier, MessageIdentifier>>());
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
@@ -172,87 +162,6 @@ public class Model {
 			return -1L;
 
 		return minMessageIds.get(uuid);
-
-	}
-
-	public void updateWaitingGroupMessageToContact(String contactUuid, MessageIdentifier messageIdentifier) {
-
-		if (messageIdentifier.messageStatus.equals(MessageStatus.READ)) {
-
-			removeWaitingGroupMessageToContact(contactUuid, messageIdentifier);
-
-		} else {
-
-			addWaitingGroupMessageToContact(contactUuid, messageIdentifier);
-
-		}
-
-	}
-
-	private void addWaitingGroupMessageToContact(String contactUuid, MessageIdentifier messageIdentifier) {
-
-		groupMessagesWaitingToContact.putIfAbsent(contactUuid,
-				new LinkedHashMap<MessageIdentifier, MessageIdentifier>());
-
-		groupMessagesWaitingToContact.get(contactUuid).put(messageIdentifier, messageIdentifier);
-
-	}
-
-	private void removeWaitingGroupMessageToContact(String contactUuid, MessageIdentifier messageIdentifier) {
-
-		if (!groupMessagesWaitingToContact.containsKey(contactUuid))
-			return;
-
-		groupMessagesWaitingToContact.get(contactUuid).remove(messageIdentifier);
-
-	}
-
-	public Collection<MessageIdentifier> getGroupMessagesWaitingToContact(String uuid) {
-
-		groupMessagesWaitingToContact.putIfAbsent(uuid, new LinkedHashMap<MessageIdentifier, MessageIdentifier>());
-
-		return groupMessagesWaitingToContact.get(uuid).values();
-
-	}
-
-	public void updateGroupMessageWaitingForStatusReport(String contactUuid, MessageIdentifier messageIdentifier) {
-
-		if (messageIdentifier.messageStatus.equals(MessageStatus.READ)) {
-
-			removeGroupMessageWaitingForStatusReport(contactUuid, messageIdentifier);
-
-		} else {
-
-			addGroupMessageWaitingForStatusReport(contactUuid, messageIdentifier);
-
-		}
-
-	}
-
-	private void addGroupMessageWaitingForStatusReport(String contactUuid, MessageIdentifier messageIdentifier) {
-
-		groupMessagesWaitingForStatusReport.putIfAbsent(contactUuid,
-				new LinkedHashMap<MessageIdentifier, MessageIdentifier>());
-
-		groupMessagesWaitingForStatusReport.get(contactUuid).put(messageIdentifier, messageIdentifier);
-
-	}
-
-	private void removeGroupMessageWaitingForStatusReport(String contactUuid, MessageIdentifier messageIdentifier) {
-
-		if (!groupMessagesWaitingForStatusReport.containsKey(contactUuid))
-			return;
-
-		groupMessagesWaitingForStatusReport.get(contactUuid).remove(messageIdentifier);
-
-	}
-
-	public Collection<MessageIdentifier> getGroupMessagesWaitingForStatusReport(String uuid) {
-
-		groupMessagesWaitingForStatusReport.putIfAbsent(uuid,
-				new LinkedHashMap<MessageIdentifier, MessageIdentifier>());
-
-		return groupMessagesWaitingForStatusReport.get(uuid).values();
 
 	}
 

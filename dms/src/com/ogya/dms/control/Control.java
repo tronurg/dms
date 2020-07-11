@@ -42,7 +42,6 @@ import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.FilePojo;
 import com.ogya.dms.structures.GroupUpdate;
 import com.ogya.dms.structures.MessageDirection;
-import com.ogya.dms.structures.MessageIdentifier;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageStatusUpdate;
 import com.ogya.dms.structures.MessageType;
@@ -145,73 +144,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		dbManager.fetchAllContacts().forEach(contact -> model.addContact(contact));
 		dbManager.fetchAllGroups().forEach(group -> model.addGroup(group));
-
-		// Add waiting group messages
-		dbManager.getAllWaitingGroupMessages().forEach(message -> {
-
-			String groupUuid = message.getReceiverUuid();
-			Dgroup group = model.getGroup(groupUuid);
-
-			if (group == null)
-				return;
-
-			try {
-
-				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
-
-				if (model.isMyGroup(groupUuid)) {
-
-					statusReport.uuidStatus.forEach((receiverUuid, messageStatus) -> {
-
-						model.updateWaitingGroupMessageToContact(receiverUuid,
-								new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), messageStatus));
-
-					});
-
-				} else {
-
-					String uuidOwner = group.getUuidOwner();
-
-					model.updateWaitingGroupMessageToContact(uuidOwner, new MessageIdentifier(message.getSenderUuid(),
-							message.getMessageId(), statusReport.uuidStatus.get(uuidOwner)));
-
-				}
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-		// Add messages waiting for status report
-		dbManager.getAllGroupMessagesNotRead(model.getLocalUuid()).forEach(message -> {
-
-			String groupUuid = message.getReceiverUuid();
-
-			if (model.isMyGroup(groupUuid))
-				return;
-
-			Dgroup group = model.getGroup(groupUuid);
-			String uuidOwner = group.getUuidOwner();
-
-			try {
-
-				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
-
-				statusReport.uuidStatus.remove(uuidOwner);
-
-				model.updateGroupMessageWaitingForStatusReport(uuidOwner, new MessageIdentifier(message.getSenderUuid(),
-						message.getMessageId(), statusReport.getOverallStatus()));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
 
 	}
 
@@ -612,9 +544,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (group == null)
 			return message;
 
-		String statusReportStr = message.getStatusReportStr();
-		final StatusReport statusReport = statusReportStr == null ? new StatusReport()
-				: StatusReport.fromJson(statusReportStr);
+		final StatusReport statusReport;
+		StatusReport newStatusReport;
+		try {
+			newStatusReport = StatusReport.fromJson(message.getStatusReportStr());
+		} catch (Exception e) {
+			newStatusReport = new StatusReport();
+		}
+		statusReport = newStatusReport;
 
 		final List<String> onlineUuids = new ArrayList<String>();
 
@@ -632,9 +569,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
 
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
-
 				if (model.isContactOnline(receiverUuid))
 					onlineUuids.add(receiverUuid);
 
@@ -647,9 +581,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				onlineUuids.forEach(receiverUuid -> {
 
 					statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
-
-					model.updateWaitingGroupMessageToContact(receiverUuid,
-							new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
 				});
 
@@ -671,14 +602,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			});
 
-			boolean waitingForStatusReport = statusReport.uuidStatus.size() > 0;
-
 			String receiverUuid = group.getUuidOwner();
 
 			statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
-
-			model.updateWaitingGroupMessageToContact(receiverUuid,
-					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
 			if (model.isContactOnline(receiverUuid)) {
 
@@ -686,14 +612,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
 
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
-
 			}
-
-			if (waitingForStatusReport)
-				model.updateGroupMessageWaitingForStatusReport(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
 		}
 
@@ -724,23 +643,22 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private Message sendGroupMessage(Message message, String receiverUuid) {
 
-		String statusReportStr = message.getStatusReportStr();
-		StatusReport statusReport = statusReportStr == null ? new StatusReport()
-				: StatusReport.fromJson(statusReportStr);
+		final StatusReport statusReport;
+		StatusReport newStatusReport;
+		try {
+			newStatusReport = StatusReport.fromJson(message.getStatusReportStr());
+		} catch (Exception e) {
+			newStatusReport = new StatusReport();
+		}
+		statusReport = newStatusReport;
 
 		statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
-
-		model.updateWaitingGroupMessageToContact(receiverUuid,
-				new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
 		if (model.isContactOnline(receiverUuid)) {
 
 			dmsSendMessage(message, receiverUuid);
 
 			statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
-
-			model.updateWaitingGroupMessageToContact(receiverUuid,
-					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
 		}
 
@@ -770,9 +688,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private Message sendGroupMessage(Message message, Set<Contact> receivers) {
 
-		String statusReportStr = message.getStatusReportStr();
-		StatusReport statusReport = statusReportStr == null ? new StatusReport()
-				: StatusReport.fromJson(statusReportStr);
+		final StatusReport statusReport;
+		StatusReport newStatusReport;
+		try {
+			newStatusReport = StatusReport.fromJson(message.getStatusReportStr());
+		} catch (Exception e) {
+			newStatusReport = new StatusReport();
+		}
+		statusReport = newStatusReport;
 
 		final List<String> onlineUuids = new ArrayList<String>();
 
@@ -781,9 +704,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			String receiverUuid = receiver.getUuid();
 
 			statusReport.uuidStatus.put(receiverUuid, MessageStatus.FRESH);
-
-			model.updateWaitingGroupMessageToContact(receiverUuid,
-					new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.FRESH));
 
 			if (model.isContactOnline(receiverUuid))
 				onlineUuids.add(receiverUuid);
@@ -797,9 +717,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			onlineUuids.forEach(receiverUuid -> {
 
 				statusReport.uuidStatus.put(receiverUuid, MessageStatus.SENT);
-
-				model.updateWaitingGroupMessageToContact(receiverUuid,
-						new MessageIdentifier(message.getSenderUuid(), message.getMessageId(), MessageStatus.SENT));
 
 			});
 
@@ -915,9 +832,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			if (message.getMessageCode() == CommonConstants.CODE_UPDATE_GROUP) {
 
-				GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
+				try {
 
-				groupUpdateReceived(groupUpdate, message.getSenderUuid());
+					GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
+
+					groupUpdateReceived(groupUpdate, message.getSenderUuid());
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
 
 			}
 
@@ -1081,7 +1006,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						// START WITH PRIVATE MESSAGES
 						try {
 
-							for (Message waitingMessage : dbManager.getMessagesWaitingToUuid(uuid)) {
+							for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(uuid)) {
 
 								switch (waitingMessage.getMessageStatus()) {
 
@@ -1122,12 +1047,28 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						// SEND WAITING GROUP MESSAGES
 						try {
 
-							for (MessageIdentifier messageIdentifier : model.getGroupMessagesWaitingToContact(uuid)) {
+							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToContact(uuid)) {
 
-								Message waitingMessage = dbManager.getMessage(messageIdentifier.senderUuid,
-										messageIdentifier.messageId);
+								StatusReport statusReport;
 
-								switch (messageIdentifier.messageStatus) {
+								try {
+									statusReport = StatusReport.fromJson(waitingMessage.getStatusReportStr());
+								} catch (Exception e) {
+									continue;
+								}
+
+								MessageStatus messageStatus = statusReport.uuidStatus.get(uuid);
+
+								Dgroup group = model.getGroup(waitingMessage.getReceiverUuid());
+
+								if (group == null)
+									continue;
+
+								if (!(group.getUuidOwner().equals(model.getLocalUuid())
+										|| group.getUuidOwner().equals(uuid)))
+									continue;
+
+								switch (messageStatus) {
 
 								case FRESH:
 
@@ -1166,11 +1107,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						// CLAIM WAITING STATUS REPORTS
 						try {
 
-							for (MessageIdentifier messageIdentifier : model
-									.getGroupMessagesWaitingForStatusReport(uuid)) {
+							for (Message waitingMessage : dbManager
+									.getGroupMessagesNotReadToItsGroup(model.getLocalUuid(), uuid)) {
 
-								dmsClient.claimStatusReport(new StatusReportUpdate(messageIdentifier.senderUuid,
-										messageIdentifier.messageId).toJson(), uuid);
+								dmsClient.claimStatusReport(new StatusReportUpdate(waitingMessage.getSenderUuid(),
+										waitingMessage.getMessageId()).toJson(), uuid);
 
 							}
 
@@ -1213,7 +1154,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				}
 
-			} catch (JsonSyntaxException | HibernateException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -1375,15 +1316,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					if (model.isMyGroup(groupUuid)) {
 
-						model.updateWaitingGroupMessageToContact(receiverUuid,
-								new MessageIdentifier(senderUuid, messageId, messageStatus));
-
 						outgoingMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 					} else if (senderUuid.equals(model.getLocalUuid()) && receiverUuid.equals(group.getUuidOwner())) {
-
-						model.updateWaitingGroupMessageToContact(receiverUuid,
-								new MessageIdentifier(senderUuid, messageId, messageStatus));
 
 						outgoingMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
 
@@ -1458,25 +1393,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				Message incomingMessage = dbManager.getMessage(statusReportUpdate.senderUuid,
 						statusReportUpdate.messageId);
 
-				if (incomingMessage == null) {
+				if (incomingMessage == null)
+					return;
 
-					// Not received. Send back a message status update instead.
+				StatusReport statusReport = StatusReport.fromJson(incomingMessage.getStatusReportStr());
 
-					MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(statusReportUpdate.senderUuid,
-							model.getLocalUuid(), statusReportUpdate.messageId);
-					messageStatusUpdate.messageStatus = MessageStatus.FRESH;
+				statusReportUpdate.statusReport = statusReport;
 
-					dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), remoteUuid);
-
-				} else {
-
-					StatusReport statusReport = StatusReport.fromJson(incomingMessage.getStatusReportStr());
-
-					statusReportUpdate.statusReport = statusReport;
-
-					dmsClient.feedStatusReport(statusReportUpdate.toJson(), remoteUuid);
-
-				}
+				dmsClient.feedStatusReport(statusReportUpdate.toJson(), remoteUuid);
 
 			} catch (Exception e) {
 
@@ -1516,16 +1440,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				// I just update my db and view. I don't do anything else like re-sending the
 				// message etc.
 
-				Dgroup group = model.getGroup(groupUuid);
-				if (group != null)
-					model.updateGroupMessageWaitingForStatusReport(group.getUuidOwner(),
-							new MessageIdentifier(outgoingMessage.getSenderUuid(), messageId,
-									statusReportUpdate.statusReport.getOverallStatus()));
-
-				MessageStatus overallMessageStatus = statusReport.getOverallStatus();
-
 				outgoingMessage.setStatusReportStr(statusReport.toJson());
-				outgoingMessage.setMessageStatus(overallMessageStatus);
+				outgoingMessage.setMessageStatus(statusReport.getOverallStatus());
 
 				final Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 

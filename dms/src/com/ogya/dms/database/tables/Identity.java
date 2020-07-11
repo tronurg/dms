@@ -12,7 +12,6 @@ import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.Availability;
 
@@ -119,7 +118,7 @@ public class Identity {
 		return CommonMethods.toDbJson(this);
 	}
 
-	public static Identity fromJson(String json) throws JsonSyntaxException {
+	public static Identity fromJson(String json) throws Exception {
 		return CommonMethods.fromDbJson(json, Identity.class);
 	}
 

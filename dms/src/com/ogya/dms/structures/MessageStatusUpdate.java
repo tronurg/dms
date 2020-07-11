@@ -1,6 +1,5 @@
 package com.ogya.dms.structures;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
 
 public class MessageStatusUpdate {
@@ -23,7 +22,7 @@ public class MessageStatusUpdate {
 		return CommonMethods.toJson(this);
 	}
 
-	public static MessageStatusUpdate fromJson(String json) throws JsonSyntaxException {
+	public static MessageStatusUpdate fromJson(String json) throws Exception {
 		return CommonMethods.fromJson(json, MessageStatusUpdate.class);
 	}
 

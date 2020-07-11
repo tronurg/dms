@@ -22,14 +22,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import com.ogya.communications.tcp.TcpClient;
+import com.ogya.communications.tcp.TcpClientListener;
+import com.ogya.communications.tcp.TcpServer;
+import com.ogya.communications.tcp.TcpServerListener;
 import com.ogya.dms.server.comm.intf.TcpManagerListener;
 import com.ogya.dms.server.common.Encryption;
-import com.onurg.haberlesme.tcp.TcpIstemci;
-import com.onurg.haberlesme.tcp.TcpIstemciDinleyici;
-import com.onurg.haberlesme.tcp.TcpSunucu;
-import com.onurg.haberlesme.tcp.TcpSunucuDinleyici;
 
-public class TcpManager implements TcpSunucuDinleyici {
+public class TcpManager implements TcpServerListener {
 
 	private final int serverPort;
 	private final int clientPortFrom;
@@ -37,7 +37,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 	private final AtomicInteger nextPort = new AtomicInteger(0);
 
-	private final TcpSunucu tcpServer;
+	private final TcpServer tcpServer;
 
 	//
 
@@ -78,13 +78,13 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 		nextPort.set(clientPortFrom);
 
-		tcpServer = new TcpSunucu(serverPort);
+		tcpServer = new TcpServer(serverPort);
 
 		tcpServer.setBlocking(true);
 
-		tcpServer.dinleyiciEkle(this);
+		tcpServer.addListener(this);
 
-		tcpServer.baglantiKabulEt();
+		tcpServer.acceptConnection();
 
 	}
 
@@ -135,14 +135,14 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 						int port = claimPort();
 
-						TcpIstemci tcpClient = new TcpIstemci(address, serverPort, null, port);
+						TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
 
 						tcpClient.setBlocking(true);
 
-						tcpClient.dinleyiciEkle(new TcpIstemciDinleyici() {
+						tcpClient.addListener(new TcpClientListener() {
 
 							@Override
-							public void yeniMesajAlindi(String arg0) {
+							public void messageReceived(String arg0) {
 
 								taskQueue.execute(() -> {
 
@@ -153,11 +153,11 @@ public class TcpManager implements TcpSunucuDinleyici {
 							}
 
 							@Override
-							public void baglantiKuruldu() {
+							public void connected() {
 
 								taskQueue.execute(() -> {
 
-									connection.sendMethod = tcpClient::mesajGonder;
+									connection.sendMethod = tcpClient::sendMessage;
 									dmsServer.connections.add(connection);
 
 									checkServer(dmsServer);
@@ -167,7 +167,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 							}
 
 							@Override
-							public void baglantiKurulamadi() {
+							public void couldNotConnect() {
 
 								taskQueue.execute(() -> {
 
@@ -178,7 +178,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 							}
 
 							@Override
-							public void baglantiKoptu() {
+							public void disconnected() {
 
 								taskQueue.execute(() -> {
 
@@ -193,7 +193,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 						});
 
-						tcpClient.baglan();
+						tcpClient.connect();
 
 					} catch (NoAvailablePortException e) {
 
@@ -422,7 +422,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 	}
 
 	@Override
-	public void baglantiKoptu(int id) {
+	public void disconnected(int id) {
 
 		taskQueue.execute(() -> {
 
@@ -454,11 +454,11 @@ public class TcpManager implements TcpSunucuDinleyici {
 	}
 
 	@Override
-	public void baglantiKuruldu(final int id) {
+	public void connected(final int id) {
 
 		taskQueue.execute(() -> {
 
-			InetAddress address = tcpServer.getUzakAdres(id);
+			InetAddress address = tcpServer.getRemoteAddress(id);
 
 			serverIdAddress.put(id, address);
 
@@ -466,7 +466,7 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 			Connection connection = connections.get(address);
 
-			connection.sendMethod = message -> tcpServer.mesajGonder(id, message);
+			connection.sendMethod = message -> tcpServer.sendMessage(id, message);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -482,12 +482,12 @@ public class TcpManager implements TcpSunucuDinleyici {
 
 		});
 
-		tcpServer.baglantiKabulEt();
+		tcpServer.acceptConnection();
 
 	}
 
 	@Override
-	public void yeniMesajAlindi(int arg0, String arg1) {
+	public void messageReceived(int arg0, String arg1) {
 
 		taskQueue.execute(() -> {
 

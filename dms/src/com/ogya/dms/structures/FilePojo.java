@@ -1,6 +1,5 @@
 package com.ogya.dms.structures;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
 
 public class FilePojo {
@@ -21,7 +20,7 @@ public class FilePojo {
 		return CommonMethods.toJson(this);
 	}
 
-	public static FilePojo fromJson(String json) throws JsonSyntaxException {
+	public static FilePojo fromJson(String json) throws Exception {
 		return CommonMethods.fromJson(json, FilePojo.class);
 	}
 

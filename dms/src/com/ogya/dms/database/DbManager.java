@@ -260,13 +260,14 @@ public class DbManager {
 
 	}
 
-	public List<Message> getMessagesWaitingToUuid(String receiverUuid) throws HibernateException {
+	public List<Message> getPrivateMessagesWaitingToContact(String receiverUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		List<Message> dbMessages = session
-				.createQuery("from Message where receiverUuid like :receiverUuid and waiting=:waiting", Message.class)
-				.setParameter("receiverUuid", receiverUuid).setParameter("waiting", true).list();
+		List<Message> dbMessages = session.createQuery(
+				"from Message where receiverUuid like :receiverUuid and receiverType like :receiverType and waiting=:waiting",
+				Message.class).setParameter("receiverUuid", receiverUuid)
+				.setParameter("receiverType", ReceiverType.PRIVATE).setParameter("waiting", true).list();
 
 		session.close();
 
@@ -365,13 +366,35 @@ public class DbManager {
 
 	}
 
-	public List<Message> getAllWaitingGroupMessages() throws HibernateException {
+	public List<Message> getGroupMessagesWaitingToContact(String receiverUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		List<Message> dbMessages = session
-				.createQuery("from Message where receiverType like :receiverType and waiting=:waiting", Message.class)
-				.setParameter("receiverType", ReceiverType.GROUP).setParameter("waiting", true).list();
+		List<Message> dbMessages = session.createQuery(
+				"from Message where receiverType like :receiverType and statusReportStr like :statusReportStr and waiting=:waiting",
+				Message.class).setParameter("receiverType", ReceiverType.GROUP)
+				.setParameter("statusReportStr", String.format("%%%s%%", receiverUuid)).setParameter("waiting", true)
+				.list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getGroupMessagesNotReadToItsGroup(String senderUuid, String uuidOwner)
+			throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<String> dbGroupUuids = session
+				.createQuery("select uuid from Dgroup where uuidOwner like :uuidOwner", String.class)
+				.setParameter("uuidOwner", uuidOwner).list();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where senderUuid like :senderUuid and receiverUuid in (:groupUuids) and receiverType like :receiverType and messageStatus not like :read",
+				Message.class).setParameter("senderUuid", senderUuid).setParameterList("groupUuids", dbGroupUuids)
+				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 
@@ -388,21 +411,6 @@ public class DbManager {
 				Message.class).setParameter("localUuid", localUuid).setParameter("groupUuid", groupUuid)
 				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ)
 				.setParameter("messageType", MessageType.UPDATE).list();
-
-		session.close();
-
-		return dbMessages;
-
-	}
-
-	public List<Message> getAllGroupMessagesNotRead(String senderUuid) throws HibernateException {
-
-		Session session = factory.openSession();
-
-		List<Message> dbMessages = session.createQuery(
-				"from Message where senderUuid like :senderUuid and receiverType like :receiverType and messageStatus not like :read",
-				Message.class).setParameter("senderUuid", senderUuid).setParameter("receiverType", ReceiverType.GROUP)
-				.setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 

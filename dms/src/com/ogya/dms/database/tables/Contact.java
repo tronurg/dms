@@ -13,7 +13,6 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.Availability;
 
@@ -119,7 +118,7 @@ public class Contact {
 		return CommonMethods.toDbJson(this);
 	}
 
-	public static Contact fromJson(String json) throws JsonSyntaxException {
+	public static Contact fromJson(String json) throws Exception {
 		return CommonMethods.fromDbJson(json, Contact.class);
 	}
 

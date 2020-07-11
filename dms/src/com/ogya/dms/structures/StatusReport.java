@@ -3,7 +3,6 @@ package com.ogya.dms.structures;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonMethods;
 
 public class StatusReport {
@@ -31,7 +30,7 @@ public class StatusReport {
 		return CommonMethods.toJson(this);
 	}
 
-	public static StatusReport fromJson(String json) throws JsonSyntaxException {
+	public static StatusReport fromJson(String json) throws Exception {
 		return CommonMethods.fromJson(json, StatusReport.class);
 	}
 
