@@ -29,7 +29,7 @@ public class DmsTest implements DmsListener {
 	@Activate
 	protected void activate() {
 
-		testTwo();
+		testOne();
 
 	}
 

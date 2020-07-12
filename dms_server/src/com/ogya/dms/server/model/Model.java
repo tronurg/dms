@@ -77,31 +77,64 @@ public class Model {
 
 			default:
 
-				String proxyUuid = messagePojo.proxyUuid;
+				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
-				if (proxyUuid == null || localUserBeacon.containsKey(proxyUuid)) {
+				List<String> localReceiverUuids = new ArrayList<String>();
+				List<String> remoteReceiverUuids = new ArrayList<String>();
 
-					String[] receiverUuids = messagePojo.receiverUuid.split(";");
+				for (String receiverUuid : receiverUuids) {
 
-					List<String> remoteReceiverUuids = new ArrayList<String>();
+					if (localUserBeacon.containsKey(receiverUuid)) {
 
-					for (String receiverUuid : receiverUuids) {
+						localReceiverUuids.add(receiverUuid);
+						listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
-						if (localUserBeacon.containsKey(receiverUuid))
-							listener.sendToLocalUser(receiverUuid, messagePojoStr);
-						else if (remoteUserBeacon.containsKey(receiverUuid))
-							remoteReceiverUuids.add(receiverUuid);
+					} else if (remoteUserBeacon.containsKey(receiverUuid)) {
+
+						remoteReceiverUuids.add(receiverUuid);
 
 					}
 
-					if (remoteReceiverUuids.size() == 1)
-						listener.sendToRemoteUser(remoteReceiverUuids.get(0), messagePojoStr);
-					else if (remoteReceiverUuids.size() > 0)
-						listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr);
+				}
 
-				} else if (remoteUserBeacon.containsKey(proxyUuid)) {
+				if (localReceiverUuids.size() > 0 && messagePojo.messageId != null) {
 
-					listener.sendToRemoteUser(proxyUuid, messagePojoStr);
+					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
+							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS,
+							messagePojo.messageId);
+
+					if (localUserBeacon.containsKey(senderUuid))
+						listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+
+				}
+
+				if (remoteReceiverUuids.size() == 1) {
+
+					listener.sendToRemoteUser(remoteReceiverUuids.get(0), messagePojoStr,
+							messagePojo.messageId == null ? null : progress -> {
+
+								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+										remoteReceiverUuids.get(0), senderUuid, ContentType.PROGRESS,
+										messagePojo.messageId);
+
+								if (localUserBeacon.containsKey(senderUuid))
+									listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+
+							});
+
+				} else if (remoteReceiverUuids.size() > 0) {
+
+					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr,
+							messagePojo.messageId == null ? null : (uuidList, progress) -> {
+
+								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+										String.join(";", uuidList), senderUuid, ContentType.PROGRESS,
+										messagePojo.messageId);
+
+								if (localUserBeacon.containsKey(senderUuid))
+									listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+
+							});
 
 				}
 
@@ -153,21 +186,12 @@ public class Model {
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
-				List<String> remoteReceiverUuids = new ArrayList<String>();
-
 				for (String receiverUuid : receiverUuids) {
 
 					if (localUserBeacon.containsKey(receiverUuid))
 						listener.sendToLocalUser(receiverUuid, messagePojoStr);
-					else if (remoteUserBeacon.containsKey(receiverUuid))
-						remoteReceiverUuids.add(receiverUuid);
 
 				}
-
-				if (remoteReceiverUuids.size() == 1)
-					listener.sendToRemoteUser(remoteReceiverUuids.get(0), messagePojoStr);
-				else if (remoteReceiverUuids.size() > 0)
-					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr);
 
 				break;
 
@@ -198,7 +222,7 @@ public class Model {
 		if (!remoteUserBeacon.containsKey(uuid))
 			return;
 
-		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED));
+		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
 
 		remoteUserBeacon.remove(uuid);
 
@@ -211,7 +235,7 @@ public class Model {
 		if (!localUserBeacon.containsKey(uuid))
 			return;
 
-		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED));
+		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
 
 		localUserBeacon.remove(uuid);
 

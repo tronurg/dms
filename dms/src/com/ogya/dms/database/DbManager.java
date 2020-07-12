@@ -262,6 +262,19 @@ public class DbManager {
 
 	}
 
+	public Message getMessage(long id) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		Message dbMessage = session.createQuery("from Message where id like :id", Message.class).setParameter("id", id)
+				.uniqueResult();
+
+		session.close();
+
+		return dbMessage;
+
+	}
+
 	public List<Message> getPrivateMessagesWaitingToContact(String receiverUuid) throws HibernateException {
 
 		Session session = factory.openSession();

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.ogya.communications.tcp.TcpClient;
@@ -218,7 +219,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToUser(String uuid, String message) {
+	public void sendMessageToUser(String uuid, String message, Consumer<Integer> progressMethod) {
 
 		taskQueue.execute(() -> {
 
@@ -232,17 +233,18 @@ public class TcpManager implements TcpServerListener {
 			if (dmsServer == null)
 				return;
 
-			sendMessageToServer(dmsServer, message);
+			sendMessageToServer(dmsServer, message, progressMethod);
 
 		});
 
 	}
 
-	public void sendMessageToUsers(List<String> uuids, String message) {
+	public void sendMessageToUsers(List<String> uuids, String message,
+			BiConsumer<List<String>, Integer> progressMethod) {
 
 		taskQueue.execute(() -> {
 
-			final Set<DmsServer> dmsServers = new HashSet<DmsServer>();
+			final Map<DmsServer, List<String>> dmsServers = new HashMap<DmsServer, List<String>>();
 
 			uuids.forEach(uuid -> {
 
@@ -256,11 +258,13 @@ public class TcpManager implements TcpServerListener {
 				if (dmsServer == null)
 					return;
 
-				dmsServers.add(dmsServer);
+				dmsServers.putIfAbsent(dmsServer, new ArrayList<String>());
+				dmsServers.get(dmsServer).add(uuid);
 
 			});
 
-			dmsServers.forEach(dmsServer -> sendMessageToServer(dmsServer, message));
+			dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, message,
+					progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
 
 		});
 
@@ -275,7 +279,7 @@ public class TcpManager implements TcpServerListener {
 			if (dmsServer == null)
 				return;
 
-			sendMessageToServer(dmsServer, message);
+			sendMessageToServer(dmsServer, message, null);
 
 		});
 
@@ -285,7 +289,7 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, message));
+			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, message, null));
 
 		});
 
@@ -323,14 +327,16 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void sendMessageToServer(DmsServer dmsServer, String message) {
+	private void sendMessageToServer(DmsServer dmsServer, String message, Consumer<Integer> progressMethod) {
 
 		try {
 
-			String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
+			final String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
 					encryptionCharset);
 
 			dmsServer.taskQueue.execute(() -> {
+
+				boolean isSent = false;
 
 				synchronized (dmsServer.connections) {
 
@@ -339,7 +345,7 @@ public class TcpManager implements TcpServerListener {
 						if (connection.sendMethod == null)
 							continue;
 
-						boolean isSent = connection.sendMethod.apply(encryptedMessage);
+						isSent = connection.sendMethod.apply(encryptedMessage);
 
 						if (isSent)
 							break;
@@ -347,6 +353,9 @@ public class TcpManager implements TcpServerListener {
 					}
 
 				}
+
+				if (isSent && progressMethod != null)
+					progressMethod.accept(100);
 
 			});
 

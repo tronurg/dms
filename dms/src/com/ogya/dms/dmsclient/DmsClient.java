@@ -10,7 +10,6 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
@@ -76,71 +75,67 @@ public class DmsClient {
 
 	public void sendBeacon(String message) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.BCON)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.BCON, null)));
 
 	}
 
 	public void claimAllBeacons() {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo("", uuid, ContentType.REQ_BCON)));
+		dealerQueue.offer(gson.toJson(new MessagePojo("", uuid, ContentType.REQ_BCON, null)));
 
 	}
 
-	public void sendMessage(String message, String receiverUuid) {
+	public void sendMessage(String message, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE)));
-
-	}
-
-	public void sendMessage(String message, Iterable<String> receiverUuids) {
-
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE, messageId)));
 
 	}
 
-	// PROVISIONARY
-//	public void sendMessage(String message, String proxyUuid, Iterable<String> receiverUuids) {
-//
-//		dealerQueue.offer(gson.toJson(
-//				new MessagePojo(message, uuid, proxyUuid, String.join(";", receiverUuids), ContentType.MESSAGE)));
-//
-//	}
+	public void sendMessage(String message, Iterable<String> receiverUuids, Long messageId) {
+
+		dealerQueue.offer(gson.toJson(
+				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)));
+
+	}
 
 	public void claimMessageStatus(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS)));
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, null)));
 
 	}
 
 	public void feedMessageStatus(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS)));
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS, null)));
 
 	}
 
 	public void claimStatusReport(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT)));
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, null)));
 
 	}
 
 	public void feedStatusReport(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT)));
+		dealerQueue
+				.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT, null)));
 
 	}
 
 	public void sendTransientMessage(String message, String receiverUuid) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.TRANSIENT)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.TRANSIENT, null)));
 
 	}
 
 	public void sendTransientMessage(String message, Iterable<String> receiverUuids) {
 
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT)));
+		dealerQueue.offer(gson
+				.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null)));
 
 	}
 
@@ -256,6 +251,13 @@ public class DmsClient {
 
 				break;
 
+			case PROGRESS:
+
+				progressReceivedToListener(messagePojo.messageId, messagePojo.senderUuid.split(";"),
+						Integer.parseInt(messagePojo.message));
+
+				break;
+
 			case MESSAGE:
 
 				messageReceivedToListener(messagePojo.message, messagePojo.senderUuid);
@@ -300,9 +302,11 @@ public class DmsClient {
 
 			default:
 
+				break;
+
 			}
 
-		} catch (JsonSyntaxException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 
@@ -315,6 +319,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.beaconReceived(message);
+
+		});
+
+	}
+
+	private void progressReceivedToListener(final Long messageId, final String[] uuids, int progress) {
+
+		taskQueue.execute(() -> {
+
+			listener.progressReceived(messageId, uuids, progress);
 
 		});
 

@@ -367,10 +367,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Message createIncomingMessage(String message, Function<Message, MessageStatus> messageStatusFunction)
-			throws Exception {
-
-		Message incomingMessage = Message.fromJson(message);
+	private Message createIncomingMessage(Message incomingMessage,
+			Function<Message, MessageStatus> messageStatusFunction) throws Exception {
 
 		if (incomingMessage.getMessageType().equals(MessageType.FILE)) {
 
@@ -748,13 +746,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private void dmsSendMessage(Message message, String receiverUuid) {
 
-		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuid));
+		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuid, message.getId()));
 
 	}
 
 	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) {
 
-		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuids));
+		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuids, message.getId()));
 
 	}
 
@@ -1167,13 +1165,53 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void progressReceived(Long messageId, String[] uuids, int progress) {
+
+		if (messageId == null)
+			return;
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Message message = dbManager.getMessage(messageId);
+
+				if (message == null)
+					return;
+
+				for (String uuid : uuids) {
+
+					System.out.println(String.format("Mesaj: %s\tAlici: %s\tDurum:%d", message.getContent(),
+							model.getContact(uuid).getName(), progress));
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public void messageReceived(final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
 			try {
 
-				final Message newMessage = createIncomingMessage(message, this::computeMessageStatus);
+				Message incomingMessage = Message.fromJson(message);
+
+				Message dbMessage = dbManager.getMessage(incomingMessage.getSenderUuid(),
+						incomingMessage.getMessageId());
+
+				if (dbMessage != null)
+					return;
+
+				final Message newMessage = createIncomingMessage(incomingMessage, this::computeMessageStatus);
 
 				switch (newMessage.getReceiverType()) {
 				case PRIVATE:

@@ -9,6 +9,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -269,11 +271,11 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteUser(String receiverUuid, String message) {
+	public void sendToRemoteUser(String receiverUuid, String message, Consumer<Integer> progressMethod) {
 
 		try {
 
-			getTcpManager().sendMessageToUser(receiverUuid, message);
+			getTcpManager().sendMessageToUser(receiverUuid, message, progressMethod);
 
 		} catch (IOException e) {
 
@@ -284,11 +286,12 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteUsers(List<String> receiverUuids, String message) {
+	public void sendToRemoteUsers(List<String> receiverUuids, String message,
+			BiConsumer<List<String>, Integer> progressMethod) {
 
 		try {
 
-			getTcpManager().sendMessageToUsers(receiverUuids, message);
+			getTcpManager().sendMessageToUsers(receiverUuids, message, progressMethod);
 
 		} catch (IOException e) {
 
