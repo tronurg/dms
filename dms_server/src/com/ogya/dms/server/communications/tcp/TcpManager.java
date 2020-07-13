@@ -35,7 +35,7 @@ import com.ogya.dms.server.communications.intf.TcpManagerListener;
 
 public class TcpManager implements TcpServerListener {
 
-	private static final String END_OF_LINE = "/n";
+	private static final String END_OF_TRANSMISSION = String.valueOf((char) 4);
 
 	private final int serverPort;
 	private final int clientPortFrom;
@@ -401,8 +401,6 @@ public class TcpManager implements TcpServerListener {
 
 		dmsServer.taskQueue.execute(() -> {
 
-			String messageWithEndOfLine = message + END_OF_LINE;
-
 			// Send a progress of zero before starting
 			progressMethod.accept(0);
 
@@ -418,7 +416,7 @@ public class TcpManager implements TcpServerListener {
 						if (connection.sendMethod == null)
 							continue;
 
-						isSent = connection.sendMethod.apply(messageWithEndOfLine);
+						isSent = connection.sendMethod.apply(message);
 
 						if (isSent)
 							break;
@@ -429,6 +427,21 @@ public class TcpManager implements TcpServerListener {
 
 				if (isSent && progressMethod != null)
 					progressMethod.accept(100);
+
+			}
+
+			// Send end of transmission
+			synchronized (dmsServer.connections) {
+
+				for (Connection connection : dmsServer.connections) {
+
+					if (connection.sendMethod == null)
+						continue;
+
+					if (connection.sendMethod.apply(END_OF_TRANSMISSION))
+						break;
+
+				}
 
 			}
 
@@ -667,7 +680,7 @@ public class TcpManager implements TcpServerListener {
 			try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
 					Scanner scanner = new Scanner(pipedInputStream)) {
 
-				scanner.useDelimiter(END_OF_LINE);
+				scanner.useDelimiter(END_OF_TRANSMISSION);
 
 				while (true) {
 
