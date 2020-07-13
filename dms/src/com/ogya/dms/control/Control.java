@@ -514,20 +514,23 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private String getGroupUpdate(String groupUuid, String groupName, boolean isActive, Set<Contact> contactsToBeAdded,
+	private String getGroupUpdate(String groupUuid, String groupName, boolean active, Set<Contact> contactsToBeAdded,
 			Set<Contact> contactsToBeRemoved) {
 
-		GroupUpdate groupUpdate = new GroupUpdate(groupUuid, isActive);
+		GroupUpdate groupUpdate = new GroupUpdate(groupUuid);
 
-		groupUpdate.groupName = groupName;
+		groupUpdate.name = groupName;
+		groupUpdate.active = active ? null : false;
 
-		if (contactsToBeAdded != null)
-			contactsToBeAdded
-					.forEach(contact -> groupUpdate.contactUuidNameToBeAdded.put(contact.getUuid(), contact.getName()));
+		if (!(contactsToBeAdded == null || contactsToBeAdded.isEmpty())) {
+			groupUpdate.add = new HashMap<String, String>();
+			contactsToBeAdded.forEach(contact -> groupUpdate.add.put(contact.getUuid(), contact.getName()));
+		}
 
-		if (contactsToBeRemoved != null)
-			contactsToBeRemoved.forEach(
-					contact -> groupUpdate.contactUuidNameToBeRemoved.put(contact.getUuid(), contact.getName()));
+		if (!(contactsToBeRemoved == null || contactsToBeRemoved.isEmpty())) {
+			groupUpdate.remove = new HashMap<String, String>();
+			contactsToBeRemoved.forEach(contact -> groupUpdate.remove.put(contact.getUuid(), contact.getName()));
+		}
 
 		return groupUpdate.toJson();
 
@@ -861,9 +864,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			final Set<Contact> contactsToBeAdded = new HashSet<Contact>();
 			final Set<Contact> contactsToBeRemoved = new HashSet<Contact>();
 
-			if (groupUpdate.contactUuidNameToBeAdded != null) {
+			if (groupUpdate.add != null) {
 
-				groupUpdate.contactUuidNameToBeAdded.forEach((uuid, name) -> {
+				groupUpdate.add.forEach((uuid, name) -> {
 
 					if (model.getLocalUuid().equals(uuid))
 						return;
@@ -889,9 +892,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
-			if (groupUpdate.contactUuidNameToBeRemoved != null) {
+			if (groupUpdate.remove != null) {
 
-				groupUpdate.contactUuidNameToBeRemoved.forEach((uuid, name) -> {
+				groupUpdate.remove.forEach((uuid, name) -> {
 
 					if (model.getLocalUuid().equals(uuid))
 						return;
@@ -917,8 +920,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
-			final Dgroup newGroup = createUpdateGroup(groupUpdate.groupUuid, groupUpdate.groupName, uuidOwner,
-					groupUpdate.isActive, contactsToBeAdded, contactsToBeRemoved);
+			final Dgroup newGroup = createUpdateGroup(groupUpdate.uuid, groupUpdate.name, uuidOwner,
+					groupUpdate.active == null ? true : groupUpdate.active, contactsToBeAdded, contactsToBeRemoved);
 
 			if (newGroup == null)
 				return;
@@ -1024,8 +1027,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 								case RECEIVED:
 
 									dmsClient.claimMessageStatus(new MessageStatusUpdate(waitingMessage.getSenderUuid(),
-											waitingMessage.getReceiverUuid(), waitingMessage.getMessageId()).toJson(),
-											uuid);
+											waitingMessage.getMessageId()).toJson(), uuid);
 
 									break;
 
@@ -1086,7 +1088,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 								case RECEIVED:
 
 									dmsClient.claimMessageStatus(new MessageStatusUpdate(waitingMessage.getSenderUuid(),
-											uuid, waitingMessage.getMessageId()).toJson(), uuid);
+											waitingMessage.getMessageId()).toJson(), uuid);
 
 									break;
 
@@ -1223,7 +1225,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				}
 
 				MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(newMessage.getSenderUuid(),
-						model.getLocalUuid(), newMessage.getMessageId());
+						newMessage.getMessageId());
 				messageStatusUpdate.messageStatus = newMessage.getMessageStatus();
 				dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), remoteUuid);
 
@@ -1320,14 +1322,20 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				MessageStatusUpdate messageStatusUpdate = MessageStatusUpdate.fromJson(message);
 
+				if (messageStatusUpdate.receiverUuid == null)
+					messageStatusUpdate.receiverUuid = remoteUuid;
+
 				String senderUuid = messageStatusUpdate.senderUuid;
 				String receiverUuid = messageStatusUpdate.receiverUuid;
 				Long messageId = messageStatusUpdate.messageId;
 				MessageStatus messageStatus = messageStatusUpdate.messageStatus;
 
-				// Send this report to the original sender too.
+				if (messageStatus == null)
+					return;
+
+				// Send this status to the original sender too.
 				if (!model.getLocalUuid().equals(senderUuid) && model.isContactOnline(senderUuid))
-					dmsClient.feedMessageStatus(message, senderUuid);
+					dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), senderUuid);
 
 				final Message outgoingMessage = dbManager.getMessage(senderUuid, messageId);
 
@@ -1615,7 +1623,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
 
 						MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(newMessage.getSenderUuid(),
-								model.getLocalUuid(), newMessage.getMessageId());
+								newMessage.getMessageId());
 						messageStatusUpdate.messageStatus = MessageStatus.READ;
 
 						dmsClient.feedMessageStatus(messageStatusUpdate.toJson(), newMessage.getSenderUuid());
@@ -1835,8 +1843,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					if (!residentContacts.isEmpty()) {
 
-						String groupUpdateToResidentContacts = getGroupUpdate(newGroup.getUuid(), newGroup.getName(),
-								true, contactsToBeAdded, contactsToBeRemoved);
+						String groupUpdateToResidentContacts = getGroupUpdate(newGroup.getUuid(), newGroupName, true,
+								contactsToBeAdded, contactsToBeRemoved);
 
 						sendGroupMessage(
 								createOutgoingMessage(groupUpdateToResidentContacts, newGroup.getUuid(),
@@ -1926,7 +1934,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 							return;
 
 						MessageStatusUpdate messageStatusUpdate = new MessageStatusUpdate(newMessage.getSenderUuid(),
-								model.getLocalUuid(), newMessage.getMessageId());
+								newMessage.getMessageId());
 						messageStatusUpdate.messageStatus = MessageStatus.READ;
 
 						if (model.isMyGroup(groupUuid)) {

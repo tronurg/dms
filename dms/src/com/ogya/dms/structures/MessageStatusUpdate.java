@@ -5,15 +5,14 @@ import com.ogya.dms.common.CommonMethods;
 public class MessageStatusUpdate {
 
 	public final String senderUuid;
-	public final String receiverUuid;
 	public final Long messageId;
 
+	public String receiverUuid;
 	public MessageStatus messageStatus;
 
-	public MessageStatusUpdate(String senderUuid, String receiverUuid, Long messageId) {
+	public MessageStatusUpdate(String senderUuid, Long messageId) {
 
 		this.senderUuid = senderUuid;
-		this.receiverUuid = receiverUuid;
 		this.messageId = messageId;
 
 	}

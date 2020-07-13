@@ -1,6 +1,8 @@
 package com.ogya.dms.server.communications.tcp;
 
 import java.io.IOException;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -12,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +34,8 @@ import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 
 public class TcpManager implements TcpServerListener {
+
+	private static final String END_OF_LINE = "/n";
 
 	private final int serverPort;
 	private final int clientPortFrom;
@@ -92,7 +97,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	public void addConnection(final String dmsUuid, final String uuid, final InetAddress address,
-			TcpConnectionType connectionType) {
+			final TcpConnectionType connectionType) {
 
 		taskQueue.execute(() -> {
 
@@ -143,7 +148,15 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
-									messageReceivedToListeners(arg0);
+									try {
+
+										dmsServer.messageFeed.write(arg0.getBytes());
+
+									} catch (IOException e) {
+
+										e.printStackTrace();
+
+									}
 
 								});
 
@@ -219,7 +232,8 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToUser(String uuid, String message, Consumer<Integer> progressMethod) {
+	public void sendMessageToUser(final String uuid, final String message, final AtomicBoolean sendStatus,
+			final Consumer<Integer> progressMethod) {
 
 		taskQueue.execute(() -> {
 
@@ -233,14 +247,27 @@ public class TcpManager implements TcpServerListener {
 			if (dmsServer == null)
 				return;
 
-			sendMessageToServer(dmsServer, message, progressMethod);
+			try {
+
+				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
+						encryptionCharset);
+
+				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod);
+
+			} catch (GeneralSecurityException | IOException e) {
+
+				progressMethod.accept(-1);
+
+				e.printStackTrace();
+
+			}
 
 		});
 
 	}
 
-	public void sendMessageToUsers(List<String> uuids, String message,
-			BiConsumer<List<String>, Integer> progressMethod) {
+	public void sendMessageToUsers(final List<String> uuids, final String message, final AtomicBoolean sendStatus,
+			final BiConsumer<List<String>, Integer> progressMethod) {
 
 		taskQueue.execute(() -> {
 
@@ -263,14 +290,30 @@ public class TcpManager implements TcpServerListener {
 
 			});
 
-			dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, message,
-					progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
+			if (dmsServers.isEmpty())
+				return;
+
+			try {
+
+				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
+						encryptionCharset);
+
+				dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, encryptedMessage, sendStatus,
+						progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
+
+			} catch (GeneralSecurityException | IOException e) {
+
+				progressMethod.accept(uuids, -1);
+
+				e.printStackTrace();
+
+			}
 
 		});
 
 	}
 
-	public void sendMessageToServer(String dmsUuid, String message) {
+	public void sendMessageToServer(final String dmsUuid, final String message) {
 
 		taskQueue.execute(() -> {
 
@@ -279,7 +322,18 @@ public class TcpManager implements TcpServerListener {
 			if (dmsServer == null)
 				return;
 
-			sendMessageToServer(dmsServer, message, null);
+			try {
+
+				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
+						encryptionCharset);
+
+				sendMessageToServer(dmsServer, encryptedMessage, null, null);
+
+			} catch (GeneralSecurityException | IOException e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
@@ -289,7 +343,22 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, message, null));
+			if (dmsServers.isEmpty())
+				return;
+
+			try {
+
+				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
+						encryptionCharset);
+
+				dmsServers
+						.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null));
+
+			} catch (GeneralSecurityException | IOException e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
@@ -327,14 +396,18 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void sendMessageToServer(DmsServer dmsServer, String message, Consumer<Integer> progressMethod) {
+	private void sendMessageToServer(final DmsServer dmsServer, final String message, final AtomicBoolean sendStatus,
+			final Consumer<Integer> progressMethod) {
 
-		try {
+		dmsServer.taskQueue.execute(() -> {
 
-			final String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
-					encryptionCharset);
+			String messageWithEndOfLine = message + END_OF_LINE;
 
-			dmsServer.taskQueue.execute(() -> {
+			// Send a progress of zero before starting
+			progressMethod.accept(0);
+
+			// Start sending...
+			for (int i = 0; i < 1 && (sendStatus == null || sendStatus.get()); ++i) {
 
 				boolean isSent = false;
 
@@ -345,7 +418,7 @@ public class TcpManager implements TcpServerListener {
 						if (connection.sendMethod == null)
 							continue;
 
-						isSent = connection.sendMethod.apply(encryptedMessage);
+						isSent = connection.sendMethod.apply(messageWithEndOfLine);
 
 						if (isSent)
 							break;
@@ -357,11 +430,12 @@ public class TcpManager implements TcpServerListener {
 				if (isSent && progressMethod != null)
 					progressMethod.accept(100);
 
-			});
+			}
 
-		} catch (GeneralSecurityException | IOException e1) {
+			// Sending finished, send a progress less than zero
+			progressMethod.accept(-1);
 
-		}
+		});
 
 	}
 
@@ -393,7 +467,7 @@ public class TcpManager implements TcpServerListener {
 
 			});
 
-			dmsServers.remove(dmsServer.dmsUuid);
+			dmsServers.remove(dmsServer.dmsUuid).close();
 
 		}
 
@@ -420,7 +494,9 @@ public class TcpManager implements TcpServerListener {
 
 			listeners.forEach(e -> e.messageReceived(decryptedMessage));
 
-		} catch (GeneralSecurityException | IOException e1) {
+		} catch (GeneralSecurityException | IOException e) {
+
+			e.printStackTrace();
 
 		}
 
@@ -436,7 +512,7 @@ public class TcpManager implements TcpServerListener {
 			if (address == null)
 				return;
 
-			Connection connection = connections.get(address);
+			Connection connection = connections.remove(address);
 
 			if (connection == null)
 				return;
@@ -496,7 +572,30 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			messageReceivedToListeners(arg1);
+			InetAddress address = serverIdAddress.get(arg0);
+
+			if (address == null)
+				return;
+
+			Connection connection = connections.get(address);
+
+			if (connection == null)
+				return;
+
+			DmsServer dmsServer = connection.dmsServer;
+
+			if (dmsServer == null)
+				return;
+
+			try {
+
+				dmsServer.messageFeed.write(arg1.getBytes());
+
+			} catch (IOException e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
@@ -561,8 +660,48 @@ public class TcpManager implements TcpServerListener {
 
 		});
 
+		final PipedOutputStream messageFeed = new PipedOutputStream();
+
+		private final Thread messageFeedThread = new Thread(() -> {
+
+			try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
+					Scanner scanner = new Scanner(pipedInputStream)) {
+
+				scanner.useDelimiter(END_OF_LINE);
+
+				while (true) {
+
+					messageReceivedToListeners(scanner.next());
+
+				}
+
+			} catch (IOException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
 		DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
+			messageFeedThread.start();
+		}
+
+		void close() {
+
+			taskQueue.shutdown();
+
+			try {
+
+				messageFeed.close();
+
+			} catch (IOException e) {
+
+				e.printStackTrace();
+
+			}
+
 		}
 
 	}

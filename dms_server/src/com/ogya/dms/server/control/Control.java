@@ -9,6 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -271,11 +272,12 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteUser(String receiverUuid, String message, Consumer<Integer> progressMethod) {
+	public void sendToRemoteUser(String receiverUuid, String message, AtomicBoolean sendStatus,
+			Consumer<Integer> progressMethod) {
 
 		try {
 
-			getTcpManager().sendMessageToUser(receiverUuid, message, progressMethod);
+			getTcpManager().sendMessageToUser(receiverUuid, message, sendStatus, progressMethod);
 
 		} catch (IOException e) {
 
@@ -286,12 +288,12 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteUsers(List<String> receiverUuids, String message,
+	public void sendToRemoteUsers(List<String> receiverUuids, String message, AtomicBoolean sendStatus,
 			BiConsumer<List<String>, Integer> progressMethod) {
 
 		try {
 
-			getTcpManager().sendMessageToUsers(receiverUuids, message, progressMethod);
+			getTcpManager().sendMessageToUsers(receiverUuids, message, sendStatus, progressMethod);
 
 		} catch (IOException e) {
 

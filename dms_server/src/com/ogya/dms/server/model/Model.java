@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import com.google.gson.Gson;
@@ -22,6 +23,9 @@ public class Model {
 	private final Map<String, String> localUserBeacon = Collections.synchronizedMap(new HashMap<String, String>());
 	private final Map<String, String> remoteUserBeacon = Collections.synchronizedMap(new HashMap<String, String>());
 
+	private final Map<String, Map<Long, AtomicBoolean>> senderStatusMap = Collections
+			.synchronizedMap(new HashMap<String, Map<Long, AtomicBoolean>>());
+
 	public Model(ModelListener listener) {
 
 		this.listener = listener;
@@ -35,6 +39,7 @@ public class Model {
 			MessagePojo messagePojo = gson.fromJson(messagePojoStr, MessagePojo.class);
 
 			String senderUuid = messagePojo.senderUuid;
+			Long messageId = messagePojo.messageId;
 
 			switch (messagePojo.contentType) {
 
@@ -75,6 +80,19 @@ public class Model {
 
 				break;
 
+			case CANCEL:
+
+				if (messageId == null)
+					break;
+
+				synchronized (senderStatusMap) {
+					if (senderStatusMap.containsKey(senderUuid)
+							&& senderStatusMap.get(senderUuid).containsKey(messageId))
+						senderStatusMap.get(senderUuid).get(messageId).set(false);
+				}
+
+				break;
+
 			default:
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
@@ -97,11 +115,10 @@ public class Model {
 
 				}
 
-				if (localReceiverUuids.size() > 0 && messagePojo.messageId != null) {
+				if (localReceiverUuids.size() > 0 && messageId != null) {
 
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
-							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS,
-							messagePojo.messageId);
+							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
 
 					if (localUserBeacon.containsKey(senderUuid))
 						listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
@@ -110,12 +127,27 @@ public class Model {
 
 				if (remoteReceiverUuids.size() == 1) {
 
-					listener.sendToRemoteUser(remoteReceiverUuids.get(0), messagePojoStr,
-							messagePojo.messageId == null ? null : progress -> {
+					AtomicBoolean sendStatus = new AtomicBoolean(true);
+
+					synchronized (senderStatusMap) {
+						senderStatusMap.putIfAbsent(senderUuid,
+								Collections.synchronizedMap(new HashMap<Long, AtomicBoolean>()));
+						senderStatusMap.get(senderUuid).put(messageId, sendStatus);
+					}
+
+					listener.sendToRemoteUser(remoteReceiverUuids.get(0), messagePojoStr, sendStatus,
+							messageId == null ? null : progress -> {
+
+								synchronized (senderStatusMap) {
+									if (progress < 0 && senderStatusMap.containsKey(senderUuid)) {
+										senderStatusMap.get(senderUuid).remove(messageId);
+										if (senderStatusMap.get(senderUuid).isEmpty())
+											senderStatusMap.remove(senderUuid);
+									}
+								}
 
 								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-										remoteReceiverUuids.get(0), senderUuid, ContentType.PROGRESS,
-										messagePojo.messageId);
+										remoteReceiverUuids.get(0), senderUuid, ContentType.PROGRESS, messageId);
 
 								if (localUserBeacon.containsKey(senderUuid))
 									listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
@@ -124,12 +156,27 @@ public class Model {
 
 				} else if (remoteReceiverUuids.size() > 0) {
 
-					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr,
-							messagePojo.messageId == null ? null : (uuidList, progress) -> {
+					AtomicBoolean sendStatus = new AtomicBoolean(true);
+
+					synchronized (senderStatusMap) {
+						senderStatusMap.putIfAbsent(senderUuid,
+								Collections.synchronizedMap(new HashMap<Long, AtomicBoolean>()));
+						senderStatusMap.get(senderUuid).put(messageId, sendStatus);
+					}
+
+					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr, sendStatus,
+							messageId == null ? null : (uuidList, progress) -> {
+
+								synchronized (senderStatusMap) {
+									if (progress < 0 && senderStatusMap.containsKey(senderUuid)) {
+										senderStatusMap.get(senderUuid).remove(messageId);
+										if (senderStatusMap.get(senderUuid).isEmpty())
+											senderStatusMap.remove(senderUuid);
+									}
+								}
 
 								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-										String.join(";", uuidList), senderUuid, ContentType.PROGRESS,
-										messagePojo.messageId);
+										String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
 
 								if (localUserBeacon.containsKey(senderUuid))
 									listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
