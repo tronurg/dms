@@ -37,8 +37,8 @@ public class Dgroup {
 	@Column(name = "comment")
 	private String comment;
 
-	@Column(name = "uuid_owner", nullable = false, updatable = false)
-	private String uuidOwner;
+	@Column(name = "owner_uuid", nullable = false, updatable = false)
+	private String ownerUuid;
 
 	@Column(name = "status", nullable = false)
 	@Enumerated(EnumType.STRING)
@@ -56,8 +56,8 @@ public class Dgroup {
 		super();
 	}
 
-	public Dgroup(String uuidOwner) {
-		this.uuidOwner = uuidOwner;
+	public Dgroup(String ownerUuid) {
+		this.ownerUuid = ownerUuid;
 	}
 
 	public Long getId() {
@@ -92,12 +92,12 @@ public class Dgroup {
 		this.comment = comment;
 	}
 
-	public String getUuidOwner() {
-		return uuidOwner;
+	public String getOwnerUuid() {
+		return ownerUuid;
 	}
 
-	public void setUuidOwner(String uuidOwner) {
-		this.uuidOwner = uuidOwner;
+	public void setOwnerUuid(String ownerUuid) {
+		this.ownerUuid = ownerUuid;
 	}
 
 	public Availability getStatus() {

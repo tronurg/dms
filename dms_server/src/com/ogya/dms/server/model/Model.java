@@ -139,7 +139,7 @@ public class Model {
 							messageId == null ? null : progress -> {
 
 								synchronized (senderStatusMap) {
-									if (progress < 0 && senderStatusMap.containsKey(senderUuid)) {
+									if ((progress < 0 || progress == 100) && senderStatusMap.containsKey(senderUuid)) {
 										senderStatusMap.get(senderUuid).remove(messageId);
 										if (senderStatusMap.get(senderUuid).isEmpty())
 											senderStatusMap.remove(senderUuid);
@@ -168,7 +168,7 @@ public class Model {
 							messageId == null ? null : (uuidList, progress) -> {
 
 								synchronized (senderStatusMap) {
-									if (progress < 0 && senderStatusMap.containsKey(senderUuid)) {
+									if ((progress < 0 || progress == 100) && senderStatusMap.containsKey(senderUuid)) {
 										senderStatusMap.get(senderUuid).remove(messageId);
 										if (senderStatusMap.get(senderUuid).isEmpty())
 											senderStatusMap.remove(senderUuid);

@@ -36,6 +36,7 @@ import com.ogya.dms.server.communications.intf.TcpManagerListener;
 public class TcpManager implements TcpServerListener {
 
 	private static final String END_OF_TRANSMISSION = String.valueOf((char) 4);
+	private static final int PACKET_SIZE = 1024;
 
 	private final int serverPort;
 	private final int clientPortFrom;
@@ -401,13 +402,24 @@ public class TcpManager implements TcpServerListener {
 
 		dmsServer.taskQueue.execute(() -> {
 
+			int totalProgress = 0;
+
 			// Send a progress of zero before starting
-			progressMethod.accept(0);
+			progressMethod.accept(totalProgress);
+
+			int messageLength = message.length();
+
+			int totalParts = (messageLength + PACKET_SIZE - 1) / PACKET_SIZE;
 
 			// Start sending...
-			for (int i = 0; i < 1 && (sendStatus == null || sendStatus.get()); ++i) {
+			for (int i = 0; i < totalParts && (sendStatus == null || sendStatus.get()); ++i) {
 
-				boolean isSent = false;
+				int fromIndex = i * PACKET_SIZE;
+				int toIndex = Math.min((i + 1) * PACKET_SIZE, messageLength);
+
+				String messagePart = message.substring(fromIndex, toIndex);
+
+				boolean sent = false;
 
 				synchronized (dmsServer.connections) {
 
@@ -416,21 +428,28 @@ public class TcpManager implements TcpServerListener {
 						if (connection.sendMethod == null)
 							continue;
 
-						isSent = connection.sendMethod.apply(message);
+						sent = connection.sendMethod.apply(messagePart);
 
-						if (isSent)
+						if (sent)
 							break;
 
 					}
 
 				}
 
-				if (isSent && progressMethod != null)
-					progressMethod.accept(100);
+				if (sent)
+					totalProgress = 100 * toIndex / messageLength;
+				else
+					break;
+
+				if (progressMethod != null && totalProgress < 100)
+					progressMethod.accept(totalProgress);
 
 			}
 
 			// Send end of transmission
+			boolean eotSent = false;
+
 			synchronized (dmsServer.connections) {
 
 				for (Connection connection : dmsServer.connections) {
@@ -438,15 +457,19 @@ public class TcpManager implements TcpServerListener {
 					if (connection.sendMethod == null)
 						continue;
 
-					if (connection.sendMethod.apply(END_OF_TRANSMISSION))
+					eotSent = connection.sendMethod.apply(END_OF_TRANSMISSION);
+
+					if (eotSent)
 						break;
 
 				}
 
 			}
 
-			// Sending finished, send a progress less than zero
-			progressMethod.accept(-1);
+			if (eotSent && totalProgress == 100)
+				progressMethod.accept(totalProgress);
+			else
+				progressMethod.accept(-1);
 
 		});
 

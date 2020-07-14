@@ -123,12 +123,6 @@ public class Model {
 
 	}
 
-	public boolean isMyGroup(String groupUuid) {
-
-		return groups.containsKey(groupUuid) && localUuid.equals(groups.get(groupUuid).getUuidOwner());
-
-	}
-
 	public void messagePaneOpened(String uuid) {
 
 		openUuids.add(uuid);

@@ -29,6 +29,9 @@ public class Message {
 	@Column(name = "message_id")
 	private Long messageId;
 
+	@Column(name = "owner_uuid", nullable = false, updatable = false)
+	private String ownerUuid;
+
 	@Column(name = "sender_uuid", nullable = false, updatable = false)
 	private String senderUuid;
 
@@ -66,9 +69,9 @@ public class Message {
 		super();
 	}
 
-	public Message(String senderUuid, String receiverUuid, ReceiverType receiverType, MessageType messageType,
+	public Message(String ownerUuid, String receiverUuid, ReceiverType receiverType, MessageType messageType,
 			String content) {
-		this.senderUuid = senderUuid;
+		this.ownerUuid = ownerUuid;
 		this.receiverUuid = receiverUuid;
 		this.receiverType = receiverType;
 		this.messageType = messageType;
@@ -89,6 +92,14 @@ public class Message {
 
 	public void setMessageId(Long messageId) {
 		this.messageId = messageId;
+	}
+
+	public String getOwnerUuid() {
+		return ownerUuid;
+	}
+
+	public void setOwnerUuid(String ownerUuid) {
+		this.ownerUuid = ownerUuid;
 	}
 
 	public String getSenderUuid() {
@@ -178,9 +189,8 @@ public class Message {
 
 	@PostPersist
 	protected void onPersist() {
-		if (this.messageId != null)
-			return;
-		this.messageId = this.id;
+		if (this.messageId == null)
+			this.messageId = this.id;
 	}
 
 	public String toJson() {

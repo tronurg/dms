@@ -1,5 +1,7 @@
 package com.ogya.dms.dmsclient.intf;
 
+import com.ogya.dms.structures.MessageStatus;
+
 public interface DmsClientListener {
 
 	void beaconReceived(String message);
@@ -12,13 +14,13 @@ public interface DmsClientListener {
 
 	void serverConnStatusUpdated(boolean connStatus);
 
-	void messageStatusClaimed(String message, String remoteUuid);
+	void messageStatusClaimed(Long messageId, String remoteUuid);
 
-	void messageStatusFed(String message, String remoteUuid);
+	void messageStatusFed(Long messageId, MessageStatus messageStatus, String remoteUuid);
 
-	void statusReportClaimed(String message, String remoteUuid);
+	void statusReportClaimed(Long messageId, String remoteUuid);
 
-	void statusReportFed(String message, String remoteUuid);
+	void statusReportFed(Long messageId, String message, String remoteUuid);
 
 	void transientMessageReceived(String message, String remoteUuid);
 

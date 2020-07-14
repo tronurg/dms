@@ -13,6 +13,7 @@ import com.google.gson.Gson;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
+import com.ogya.dms.structures.MessageStatus;
 
 public class DmsClient {
 
@@ -98,31 +99,31 @@ public class DmsClient {
 
 	}
 
-	public void claimMessageStatus(String message, String receiverUuid) {
+	public void claimMessageStatus(Long messageId, String receiverUuid) {
 
 		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, null)));
+				gson.toJson(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId)));
 
 	}
 
-	public void feedMessageStatus(String message, String receiverUuid) {
+	public void feedMessageStatus(String senderUuid, String receiverUuid, Long messageId, MessageStatus messageStatus) {
 
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS, null)));
-
-	}
-
-	public void claimStatusReport(String message, String receiverUuid) {
-
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, null)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(null, senderUuid, receiverUuid,
+				ContentType.valueOf(messageStatus.toString()), messageId)));
 
 	}
 
-	public void feedStatusReport(String message, String receiverUuid) {
+	public void claimStatusReport(Long messageId, String receiverUuid) {
 
-		dealerQueue
-				.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT, null)));
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId)));
+
+	}
+
+	public void feedStatusReport(Long messageId, String message, String receiverUuid) {
+
+		dealerQueue.offer(
+				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId)));
 
 	}
 
@@ -272,25 +273,28 @@ public class DmsClient {
 
 			case CLAIM_MESSAGE_STATUS:
 
-				messageStatusClaimedToListener(messagePojo.message, messagePojo.senderUuid);
+				messageStatusClaimedToListener(messagePojo.messageId, messagePojo.senderUuid);
 
 				break;
 
-			case FEED_MESSAGE_STATUS:
+			case FRESH:
+			case RECEIVED:
+			case READ:
 
-				messageStatusFedToListener(messagePojo.message, messagePojo.senderUuid);
+				messageStatusFedToListener(messagePojo.messageId,
+						MessageStatus.valueOf(messagePojo.contentType.toString()), messagePojo.senderUuid);
 
 				break;
 
 			case CLAIM_STATUS_REPORT:
 
-				statusReportClaimedToListener(messagePojo.message, messagePojo.senderUuid);
+				statusReportClaimedToListener(messagePojo.messageId, messagePojo.senderUuid);
 
 				break;
 
 			case FEED_STATUS_REPORT:
 
-				statusReportFedToListener(messagePojo.message, messagePojo.senderUuid);
+				statusReportFedToListener(messagePojo.messageId, messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
@@ -364,41 +368,42 @@ public class DmsClient {
 
 	}
 
-	private void messageStatusClaimedToListener(final String message, final String remoteUuid) {
+	private void messageStatusClaimedToListener(final Long messageId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusClaimed(message, remoteUuid);
+			listener.messageStatusClaimed(messageId, remoteUuid);
 
 		});
 
 	}
 
-	private void messageStatusFedToListener(final String message, final String remoteUuid) {
+	private void messageStatusFedToListener(final Long messageId, final MessageStatus messageStatus,
+			final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusFed(message, remoteUuid);
+			listener.messageStatusFed(messageId, messageStatus, remoteUuid);
 
 		});
 
 	}
 
-	private void statusReportClaimedToListener(final String message, final String remoteUuid) {
+	private void statusReportClaimedToListener(final Long messageId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.statusReportClaimed(message, remoteUuid);
+			listener.statusReportClaimed(messageId, remoteUuid);
 
 		});
 
 	}
 
-	private void statusReportFedToListener(final String message, final String remoteUuid) {
+	private void statusReportFedToListener(final Long messageId, final String message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.statusReportFed(message, remoteUuid);
+			listener.statusReportFed(messageId, message, remoteUuid);
 
 		});
 

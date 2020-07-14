@@ -397,14 +397,14 @@ public class DbManager {
 
 	}
 
-	public List<Message> getGroupMessagesNotReadToItsGroup(String senderUuid, String uuidOwner)
+	public List<Message> getGroupMessagesNotReadToItsGroup(String senderUuid, String ownerUuid)
 			throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<String> dbGroupUuids = session
-				.createQuery("select uuid from Dgroup where uuidOwner like :uuidOwner", String.class)
-				.setParameter("uuidOwner", uuidOwner).list();
+				.createQuery("select uuid from Dgroup where ownerUuid like :ownerUuid", String.class)
+				.setParameter("ownerUuid", ownerUuid).list();
 
 		List<Message> dbMessages = session.createQuery(
 				"from Message where senderUuid like :senderUuid and receiverUuid in (:groupUuids) and receiverType like :receiverType and messageStatus not like :read",
@@ -496,13 +496,13 @@ public class DbManager {
 
 	}
 
-	public List<Dgroup> getAllActiveGroupsOfUuid(String uuidOwner) throws HibernateException {
+	public List<Dgroup> getAllActiveGroupsOfUuid(String ownerUuid) throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Dgroup> dbGroups = session
-				.createQuery("from Dgroup where uuidOwner like :uuidOwner and active=true", Dgroup.class)
-				.setParameter("uuidOwner", uuidOwner).list();
+				.createQuery("from Dgroup where ownerUuid like :ownerUuid and active=true", Dgroup.class)
+				.setParameter("ownerUuid", ownerUuid).list();
 
 		session.close();
 

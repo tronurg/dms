@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
@@ -31,15 +33,16 @@ public class CommonMethods {
 
 	private static ResourceBundle langFile;
 
+	private static final List<String> gsonExcludedNames = Arrays.asList("id", "senderUuid", "messageStatus",
+			"statusReportStr", "waiting", "date");
+
 	private static Gson gson = new Gson();
 
 	private static Gson gsonDb = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
 
 		@Override
 		public boolean shouldSkipField(FieldAttributes arg0) {
-			return arg0.getName().equals("id") || arg0.getName().equals("messageStatus")
-					|| arg0.getName().equals("statusReportStr") || arg0.getName().equals("waiting")
-					|| arg0.getName().equals("date");
+			return gsonExcludedNames.contains(arg0.getName());
 		}
 
 		@Override

@@ -208,7 +208,7 @@ class MessagePane extends BorderPane {
 
 		boolean isClickable = message.getMessageType().equals(MessageType.FILE);
 
-		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection,
+		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
 				isClickable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
@@ -244,7 +244,7 @@ class MessagePane extends BorderPane {
 
 		boolean isClickable = message.getMessageType().equals(MessageType.FILE);
 
-		MessageInfo messageInfo = new MessageInfo(message.getSenderUuid(), senderName, messageDate, messageDirection,
+		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
 				isClickable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
@@ -468,7 +468,7 @@ class MessagePane extends BorderPane {
 				BiConsumer<String, Long> messageClickedAction = messageClickedActionRef.get();
 
 				if (messageClickedAction != null)
-					messageClickedAction.accept(message.getSenderUuid(), message.getMessageId());
+					messageClickedAction.accept(message.getOwnerUuid(), message.getMessageId());
 
 			});
 
