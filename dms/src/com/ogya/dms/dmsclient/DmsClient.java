@@ -113,6 +113,14 @@ public class DmsClient {
 
 	}
 
+	public void feedMessageStatus(String[] senderUuids, String receiverUuid, Long messageId,
+			MessageStatus messageStatus) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(null, String.join(";", senderUuids), receiverUuid,
+				ContentType.valueOf(messageStatus.toString()), messageId)));
+
+	}
+
 	public void claimStatusReport(Long messageId, String receiverUuid) {
 
 		dealerQueue.offer(
@@ -282,7 +290,7 @@ public class DmsClient {
 			case READ:
 
 				messageStatusFedToListener(messagePojo.messageId,
-						MessageStatus.valueOf(messagePojo.contentType.toString()), messagePojo.senderUuid);
+						MessageStatus.valueOf(messagePojo.contentType.toString()), messagePojo.senderUuid.split(";"));
 
 				break;
 
@@ -379,11 +387,11 @@ public class DmsClient {
 	}
 
 	private void messageStatusFedToListener(final Long messageId, final MessageStatus messageStatus,
-			final String remoteUuid) {
+			final String[] remoteUuids) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusFed(messageId, messageStatus, remoteUuid);
+			listener.messageStatusFed(messageId, messageStatus, remoteUuids);
 
 		});
 

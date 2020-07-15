@@ -115,7 +115,8 @@ public class Model {
 
 				}
 
-				if (localReceiverUuids.size() > 0 && messageId != null) {
+				if (messagePojo.contentType.equals(ContentType.MESSAGE) && localReceiverUuids.size() > 0
+						&& messageId != null) {
 
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
@@ -127,6 +128,8 @@ public class Model {
 
 				if (remoteReceiverUuids.size() == 1) {
 
+					final String remoteReceiverUuid = remoteReceiverUuids.get(0);
+
 					AtomicBoolean sendStatus = new AtomicBoolean(true);
 
 					synchronized (senderStatusMap) {
@@ -135,24 +138,26 @@ public class Model {
 						senderStatusMap.get(senderUuid).put(messageId, sendStatus);
 					}
 
-					listener.sendToRemoteUser(remoteReceiverUuids.get(0), messagePojoStr, sendStatus,
-							messageId == null ? null : progress -> {
+					listener.sendToRemoteUser(remoteReceiverUuid, messagePojoStr, sendStatus,
+							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
+									: progress -> {
 
-								synchronized (senderStatusMap) {
-									if ((progress < 0 || progress == 100) && senderStatusMap.containsKey(senderUuid)) {
-										senderStatusMap.get(senderUuid).remove(messageId);
-										if (senderStatusMap.get(senderUuid).isEmpty())
-											senderStatusMap.remove(senderUuid);
-									}
-								}
+										synchronized (senderStatusMap) {
+											if ((progress < 0 || progress == 100)
+													&& senderStatusMap.containsKey(senderUuid)) {
+												senderStatusMap.get(senderUuid).remove(messageId);
+												if (senderStatusMap.get(senderUuid).isEmpty())
+													senderStatusMap.remove(senderUuid);
+											}
+										}
 
-								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-										remoteReceiverUuids.get(0), senderUuid, ContentType.PROGRESS, messageId);
+										MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+												remoteReceiverUuid, senderUuid, ContentType.PROGRESS, messageId);
 
-								if (localUserBeacon.containsKey(senderUuid))
-									listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+										if (localUserBeacon.containsKey(senderUuid))
+											listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
 
-							});
+									});
 
 				} else if (remoteReceiverUuids.size() > 0) {
 
@@ -165,23 +170,26 @@ public class Model {
 					}
 
 					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr, sendStatus,
-							messageId == null ? null : (uuidList, progress) -> {
+							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
+									: (uuidList, progress) -> {
 
-								synchronized (senderStatusMap) {
-									if ((progress < 0 || progress == 100) && senderStatusMap.containsKey(senderUuid)) {
-										senderStatusMap.get(senderUuid).remove(messageId);
-										if (senderStatusMap.get(senderUuid).isEmpty())
-											senderStatusMap.remove(senderUuid);
-									}
-								}
+										synchronized (senderStatusMap) {
+											if ((progress < 0 || progress == 100)
+													&& senderStatusMap.containsKey(senderUuid)) {
+												senderStatusMap.get(senderUuid).remove(messageId);
+												if (senderStatusMap.get(senderUuid).isEmpty())
+													senderStatusMap.remove(senderUuid);
+											}
+										}
 
-								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-										String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
+										MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+												String.join(";", uuidList), senderUuid, ContentType.PROGRESS,
+												messageId);
 
-								if (localUserBeacon.containsKey(senderUuid))
-									listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+										if (localUserBeacon.containsKey(senderUuid))
+											listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
 
-							});
+									});
 
 				}
 

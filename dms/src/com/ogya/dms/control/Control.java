@@ -805,6 +805,109 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
+	private void updateMessageStatus(Long messageId, MessageStatus messageStatus, String[] remoteUuids,
+			boolean resendIfNecessary) {
+
+		try {
+
+			Message dbMessage = dbManager.getMessage(messageId);
+
+			if (dbMessage == null)
+				return;
+
+			String ownerUuid = dbMessage.getOwnerUuid();
+
+			// Send this status to the original sender too.
+			if (!model.getLocalUuid().equals(ownerUuid) && model.isContactOnline(ownerUuid))
+				dmsClient.feedMessageStatus(remoteUuids, ownerUuid, dbMessage.getMessageId(), messageStatus);
+
+			if (dbMessage.getReceiverType().equals(ReceiverType.GROUP)) {
+				// This is a group message. I am either the group owner or the message sender.
+				// If I am the group owner and the message is not received remotely, I will have
+				// to re-send it.
+
+				String groupUuid = dbMessage.getReceiverUuid();
+
+				Dgroup group = model.getGroup(groupUuid);
+
+				if (group == null)
+					return;
+
+				StatusReport statusReport = StatusReport.fromJson(dbMessage.getStatusReportStr());
+
+				for (String remoteUuid : remoteUuids) {
+
+					statusReport.uuidStatus.put(remoteUuid, messageStatus);
+
+					if (remoteUuid.equals(group.getOwnerUuid()) && ownerUuid.equals(model.getLocalUuid()))
+						dbMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
+
+				}
+
+				dbMessage.setStatusReportStr(statusReport.toJson());
+
+				MessageStatus overallMessageStatus = statusReport.getOverallStatus();
+
+				if (group.getOwnerUuid().equals(model.getLocalUuid()))
+					dbMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+
+				// If I am the owner, update the message status too
+				if (ownerUuid.equals(model.getLocalUuid()))
+					dbMessage.setMessageStatus(overallMessageStatus);
+
+				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
+
+				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+					Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+
+				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH)) {
+					// If the message is not received remotely and;
+					// I am the group owner
+					// or
+					// I am the message owner and receiver is the group owner
+					// then re-send this message (if flag set to true).
+
+					for (String remoteUuid : remoteUuids) {
+
+						if (group.getOwnerUuid().equals(model.getLocalUuid())
+								|| (ownerUuid.equals(model.getLocalUuid()) && remoteUuid.equals(group.getOwnerUuid())))
+							sendGroupMessage(newMessage, remoteUuid);
+
+					}
+
+				}
+
+			} else if (dbMessage.getReceiverType().equals(ReceiverType.PRIVATE)) {
+
+				for (String remoteUuid : remoteUuids) {
+
+					if (!remoteUuid.equals(dbMessage.getReceiverUuid()))
+						continue;
+
+					dbMessage.setMessageStatus(messageStatus);
+
+					dbMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
+
+					final Message newMessage = dbManager.addUpdateMessage(dbMessage);
+
+					if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, remoteUuid));
+
+					if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
+						sendMessage(newMessage);
+
+				}
+
+			}
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
 	@Override
 	public void beaconReceived(String message) {
 
@@ -976,32 +1079,43 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void progressReceived(Long id, String[] uuids, int progress) {
-		// id = local database id of the message (not the message id, which is the local
+	public void progressReceived(Long messageId, String[] remoteUuids, int progress) {
+		// messageId = local database id of the message (not the message id, which is
+		// the local
 		// database id of the sender)
 
-		if (id == null)
+		if (messageId == null)
 			return;
 
 		taskQueue.execute(() -> {
 
-			try {
+			if (progress == 100) {
 
-				Message message = dbManager.getMessage(id);
+				updateMessageStatus(messageId, MessageStatus.SENT, remoteUuids, false);
 
-				if (message == null)
-					return;
+			} else {
 
-				for (String uuid : uuids) {
+				try {
 
-					System.out.println(String.format("Mesaj: %s\tAlici: %s\tDurum:%d", message.getContent(),
-							model.getContact(uuid).getName(), progress));
+					Message message = dbManager.getMessage(messageId);
+
+					if (message == null)
+						return;
+
+					// TODO: Update view
+
+					for (String remoteUuid : remoteUuids) {
+
+						System.out.println(String.format("Mesaj: %s\tAlici: %s\tDurum:%d", message.getContent(),
+								model.getContact(remoteUuid).getName(), progress));
+
+					}
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
 
 				}
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
 
 			}
 
@@ -1103,7 +1217,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				}
 
-				dmsClient.feedMessageStatus(model.getLocalUuid(), remoteUuid, newMessage.getMessageId(),
+				dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(), newMessage.getMessageId(),
 						newMessage.getMessageStatus());
 
 				if (messageToBeRedirected) {
@@ -1193,98 +1307,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void messageStatusFed(final Long messageId, final MessageStatus messageStatus, final String remoteUuid) {
+	public void messageStatusFed(final Long messageId, final MessageStatus messageStatus, final String[] remoteUuids) {
 
 		taskQueue.execute(() -> {
 
-			try {
-
-				Message dbMessage = dbManager.getMessage(messageId);
-
-				if (dbMessage == null)
-					return;
-
-				String ownerUuid = dbMessage.getOwnerUuid();
-
-				// Send this status to the original sender too.
-				if (!model.getLocalUuid().equals(ownerUuid) && model.isContactOnline(ownerUuid))
-					dmsClient.feedMessageStatus(remoteUuid, ownerUuid, dbMessage.getMessageId(), messageStatus);
-
-				if (dbMessage.getReceiverType().equals(ReceiverType.GROUP)) {
-					// This is a group message. I am either the group owner or the message sender.
-					// If I am the group owner and the message is not received remotely, I will have
-					// to re-send it.
-
-					String groupUuid = dbMessage.getReceiverUuid();
-
-					Dgroup group = model.getGroup(groupUuid);
-
-					if (group == null)
-						return;
-
-					StatusReport statusReport = StatusReport.fromJson(dbMessage.getStatusReportStr());
-
-					statusReport.uuidStatus.put(remoteUuid, messageStatus);
-
-					dbMessage.setStatusReportStr(statusReport.toJson());
-
-					MessageStatus overallMessageStatus = statusReport.getOverallStatus();
-
-					if (group.getOwnerUuid().equals(model.getLocalUuid())) {
-
-						dbMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
-
-					} else if (ownerUuid.equals(model.getLocalUuid()) && remoteUuid.equals(group.getOwnerUuid())) {
-
-						dbMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
-
-					}
-
-					// If I am the owner, update the message status too
-					if (ownerUuid.equals(model.getLocalUuid()))
-						dbMessage.setMessageStatus(overallMessageStatus);
-
-					final Message newMessage = dbManager.addUpdateMessage(dbMessage);
-
-					if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
-
-					if (messageStatus.equals(MessageStatus.FRESH) && (group.getOwnerUuid().equals(model.getLocalUuid())
-							|| (ownerUuid.equals(model.getLocalUuid()) && remoteUuid.equals(group.getOwnerUuid())))) {
-						// If the message is not received remotely and;
-						// I am the group owner
-						// or
-						// I am the message owner and receiver is the group owner
-						// then re-send this message.
-
-						sendGroupMessage(newMessage, remoteUuid);
-
-					}
-
-				} else if (dbMessage.getReceiverType().equals(ReceiverType.PRIVATE)) {
-
-					dbMessage.setMessageStatus(messageStatus);
-
-					dbMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
-
-					final Message newMessage = dbManager.addUpdateMessage(dbMessage);
-
-					if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, remoteUuid));
-
-					if (messageStatus.equals(MessageStatus.FRESH)) {
-
-						sendMessage(newMessage);
-
-					}
-
-				}
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			updateMessageStatus(messageId, messageStatus, remoteUuids, true);
 
 		});
 
@@ -1297,7 +1324,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				Message dbMessage = dbManager.getMessage(messageId);
+				Message dbMessage = dbManager.getMessage(remoteUuid, messageId);
 
 				if (dbMessage == null)
 					return;

@@ -293,7 +293,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		scrollPane(messageBalloon, GAP);
+		scrollPane(messageBalloon, SMALL_GAP);
 
 	}
 

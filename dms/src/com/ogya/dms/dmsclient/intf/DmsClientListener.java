@@ -6,7 +6,7 @@ public interface DmsClientListener {
 
 	void beaconReceived(String message);
 
-	void progressReceived(Long messageId, String[] uuids, int progress);
+	void progressReceived(Long messageId, String[] remoteUuids, int progress);
 
 	void messageReceived(String message, String remoteUuid);
 
@@ -16,7 +16,7 @@ public interface DmsClientListener {
 
 	void messageStatusClaimed(Long messageId, String remoteUuid);
 
-	void messageStatusFed(Long messageId, MessageStatus messageStatus, String remoteUuid);
+	void messageStatusFed(Long messageId, MessageStatus messageStatus, String[] remoteUuids);
 
 	void statusReportClaimed(Long messageId, String remoteUuid);
 
