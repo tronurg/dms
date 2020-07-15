@@ -487,6 +487,7 @@ class MessagePane extends BorderPane {
 
 		private final GridPane messagePane = new GridPane();
 		private final Label messageLbl;
+		private final Label progressLbl;
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
 		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
@@ -501,6 +502,7 @@ class MessagePane extends BorderPane {
 			this.messageInfo = messageInfo;
 
 			messageLbl = new Label(message);
+			progressLbl = new Label();
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
 
 			init();
@@ -586,11 +588,13 @@ class MessagePane extends BorderPane {
 		private void initOutgoingMessagePane() {
 
 			initMessagePane();
+			initProgressLbl();
 			initInfoGrp();
 
-			messagePane.add(messageLbl, 0, 0, 2, 1);
-			messagePane.add(timeLbl, 0, 1, 1, 1);
-			messagePane.add(infoGrp, 1, 1, 1, 1);
+			messagePane.add(messageLbl, 0, 0, 3, 1);
+			messagePane.add(progressLbl, 0, 1, 1, 1);
+			messagePane.add(timeLbl, 1, 1, 1, 1);
+			messagePane.add(infoGrp, 2, 1, 1, 1);
 
 		}
 
@@ -605,6 +609,13 @@ class MessagePane extends BorderPane {
 
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setHgap(GAP);
+
+		}
+
+		private void initProgressLbl() {
+
+			progressLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
+			progressLbl.setTextFill(Color.DIMGRAY);
 
 		}
 
