@@ -257,7 +257,8 @@ public class TcpManager implements TcpServerListener {
 
 			} catch (GeneralSecurityException | IOException e) {
 
-				progressMethod.accept(-1);
+				if (progressMethod != null)
+					progressMethod.accept(-1);
 
 				e.printStackTrace();
 
@@ -304,7 +305,8 @@ public class TcpManager implements TcpServerListener {
 
 			} catch (GeneralSecurityException | IOException e) {
 
-				progressMethod.accept(uuids, -1);
+				if (progressMethod != null)
+					progressMethod.accept(uuids, -1);
 
 				e.printStackTrace();
 
@@ -405,7 +407,8 @@ public class TcpManager implements TcpServerListener {
 			int totalProgress = 0;
 
 			// Send a progress of zero before starting
-			progressMethod.accept(totalProgress);
+			if (progressMethod != null)
+				progressMethod.accept(totalProgress);
 
 			int messageLength = message.length();
 
@@ -465,6 +468,9 @@ public class TcpManager implements TcpServerListener {
 				}
 
 			}
+
+			if (progressMethod == null)
+				return;
 
 			if (eotSent && totalProgress == 100)
 				progressMethod.accept(totalProgress);

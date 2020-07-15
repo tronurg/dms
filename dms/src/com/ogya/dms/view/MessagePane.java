@@ -20,6 +20,7 @@ import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.view.factory.ViewFactory;
+import com.sun.javafx.tk.Toolkit;
 
 import javafx.animation.Interpolator;
 import javafx.animation.Transition;
@@ -273,11 +274,28 @@ class MessagePane extends BorderPane {
 
 	void updateMessage(Message message) {
 
-		if (!messageBalloons.containsKey(message.getId()))
+		MessageBalloon messageBalloon = messageBalloons.get(message.getId());
+
+		if (messageBalloon == null)
 			return;
 
-		messageBalloons.get(message.getId()).setMessageColors(message.getMessageStatus().getWaitingColor(),
+		messageBalloon.setProgressVisible(false);
+
+		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
 				message.getMessageStatus().getTransmittedColor());
+
+	}
+
+	void updateMessageProgress(Message message, int progress) {
+
+		MessageBalloon messageBalloon = messageBalloons.get(message.getId());
+
+		if (messageBalloon == null)
+			return;
+
+		messageBalloon.setProgress(progress);
+
+		messageBalloon.setProgressVisible(!(progress < 0));
 
 	}
 
@@ -563,6 +581,18 @@ class MessagePane extends BorderPane {
 
 		}
 
+		void setProgressVisible(boolean visible) {
+
+			progressLbl.setVisible(visible);
+
+		}
+
+		void setProgress(int progress) {
+
+			progressLbl.setText(String.format("%d%%", progress));
+
+		}
+
 		void setMessageColors(Paint waitingCircleColor, Paint transmittedCircleColor) {
 
 			waitingCircle.setFill(waitingCircleColor);
@@ -614,8 +644,12 @@ class MessagePane extends BorderPane {
 
 		private void initProgressLbl() {
 
+			progressLbl.setVisible(false);
 			progressLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
 			progressLbl.setTextFill(Color.DIMGRAY);
+
+			progressLbl.setMinWidth(
+					Toolkit.getToolkit().getFontLoader().computeStringWidth("100%", progressLbl.getFont()));
 
 		}
 

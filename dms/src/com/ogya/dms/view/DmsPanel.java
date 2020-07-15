@@ -155,6 +155,28 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void updateMessageProgress(Message message, String uuid, int progress) {
+
+		switch (message.getReceiverType()) {
+
+		case PRIVATE:
+
+			contactsPane.updateMessageProgress(message, uuid, progress);
+
+			break;
+
+		case GROUP:
+
+			groupsPane.updateMessageProgress(message, uuid, progress);
+
+			break;
+
+		default:
+
+		}
+
+	}
+
 	public void scrollPaneToMessage(String uuid, Long messageId, ReceiverType receiverType) {
 
 		switch (receiverType) {
