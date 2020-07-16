@@ -215,14 +215,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private void addPrivateMessageToPane(final Message message, final boolean newMessageToBottom) {
 
-		if (message.getMessageType().equals(MessageType.FILE)) {
-
-			String fileName = Paths.get(message.getContent()).getFileName().toString();
-
-			message.setContent(fileName);
-
-		}
-
 		if (model.getLocalUuid().equals(message.getOwnerUuid())) {
 
 			final String remoteUuid = message.getReceiverUuid();

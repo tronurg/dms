@@ -1,5 +1,6 @@
 package com.ogya.dms.view;
 
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -19,6 +20,7 @@ import java.util.function.Consumer;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageType;
+import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.factory.ViewFactory;
 import com.sun.javafx.tk.Toolkit;
 
@@ -207,10 +209,12 @@ class MessagePane extends BorderPane {
 
 		Date messageDate = message.getDate();
 
-		boolean isClickable = message.getMessageType().equals(MessageType.FILE);
+		boolean clickable = message.getMessageType().equals(MessageType.FILE);
+		boolean infoAvailable = message.getReceiverType().equals(ReceiverType.GROUP)
+				&& messageDirection.equals(MessageDirection.OUTGOING);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				isClickable);
+				clickable, infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -243,10 +247,12 @@ class MessagePane extends BorderPane {
 
 		Date messageDate = message.getDate();
 
-		boolean isClickable = message.getMessageType().equals(MessageType.FILE);
+		boolean clickable = message.getMessageType().equals(MessageType.FILE);
+		boolean infoAvailable = message.getReceiverType().equals(ReceiverType.GROUP)
+				&& messageDirection.equals(MessageDirection.OUTGOING);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				isClickable);
+				clickable, infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -468,20 +474,26 @@ class MessagePane extends BorderPane {
 
 	private MessageBalloon newMessageBalloon(Message message, MessageInfo messageInfo) {
 
-		MessageBalloon messageBalloon = new MessageBalloon(message.getContent(), messageInfo);
+		String content = message.getContent();
+		if (message.getMessageType().equals(MessageType.FILE))
+			content = Paths.get(content).getFileName().toString();
+
+		MessageBalloon messageBalloon = new MessageBalloon(content, messageInfo);
 		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
 				message.getMessageStatus().getTransmittedColor());
 
-		if (messageInfo.isClickable) {
+		if (messageInfo.clickable) {
 
-			messageBalloon.setCursor(Cursor.HAND);
+			messageBalloon.getMessagePane().setCursor(Cursor.HAND);
 
 			final DropShadow dropShadow = new DropShadow();
 
-			messageBalloon.effectProperty().bind(Bindings.createObjectBinding(
-					() -> messageBalloon.isHover() ? dropShadow : null, messageBalloon.hoverProperty()));
+			messageBalloon.effectProperty()
+					.bind(Bindings.createObjectBinding(
+							() -> messageBalloon.getMessagePane().isHover() ? dropShadow : null,
+							messageBalloon.getMessagePane().hoverProperty()));
 
-			messageBalloon.setOnMouseClicked(e -> {
+			messageBalloon.getMessagePane().setOnMouseClicked(e -> {
 
 				BiConsumer<String, Long> messageClickedAction = messageClickedActionRef.get();
 
@@ -529,8 +541,8 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			timeLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
-			timeLbl.setTextFill(Color.DIMGRAY);
+			initMessagePane();
+			initTimeLbl();
 
 			ColumnConstraints colNarrow = new ColumnConstraints();
 			colNarrow.setPercentWidth(20.0);
@@ -553,7 +565,7 @@ class MessagePane extends BorderPane {
 						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
 
 				GridPane.setHalignment(messagePane, HPos.LEFT);
-				GridPane.setHalignment(timeLbl, HPos.LEFT);
+				GridPane.setHalignment(messageLbl, HPos.LEFT);
 
 				add(messagePane, 0, 0, 1, 1);
 				add(gap, 1, 0, 1, 1);
@@ -570,7 +582,7 @@ class MessagePane extends BorderPane {
 						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
 
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
-				GridPane.setHalignment(timeLbl, HPos.RIGHT);
+				GridPane.setHalignment(messageLbl, HPos.RIGHT);
 
 				add(gap, 0, 0, 1, 1);
 				add(messagePane, 1, 0, 1, 1);
@@ -578,6 +590,12 @@ class MessagePane extends BorderPane {
 				break;
 
 			}
+
+		}
+
+		Region getMessagePane() {
+
+			return messagePane;
 
 		}
 
@@ -608,8 +626,6 @@ class MessagePane extends BorderPane {
 
 		private void initIncomingMessagePane() {
 
-			initMessagePane();
-
 			messagePane.add(messageLbl, 0, 0, 1, 1);
 			messagePane.add(timeLbl, 0, 1, 1, 1);
 
@@ -621,10 +637,10 @@ class MessagePane extends BorderPane {
 			initProgressLbl();
 			initInfoGrp();
 
-			messagePane.add(messageLbl, 0, 0, 3, 1);
+			messagePane.add(messageLbl, 0, 0, 2, 1);
+			messagePane.add(infoGrp, 0, 1, 1, 1);
 			messagePane.add(progressLbl, 0, 1, 1, 1);
 			messagePane.add(timeLbl, 1, 1, 1, 1);
-			messagePane.add(infoGrp, 2, 1, 1, 1);
 
 		}
 
@@ -632,9 +648,7 @@ class MessagePane extends BorderPane {
 
 			GridPane.setFillWidth(messagePane, false);
 
-			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
-
-			messagePane.setBorder(new Border(new BorderStroke(messageInfo.isClickable ? Color.BLUE : Color.DARKGRAY,
+			messagePane.setBorder(new Border(new BorderStroke(messageInfo.clickable ? Color.BLUE : Color.DARKGRAY,
 					BorderStrokeStyle.SOLID, new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
 
 			messagePane.setPadding(new Insets(GAP));
@@ -655,8 +669,20 @@ class MessagePane extends BorderPane {
 
 		private void initInfoGrp() {
 
+			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
+			GridPane.setHalignment(infoGrp, HPos.RIGHT);
+
+			infoGrp.visibleProperty().bind(progressLbl.visibleProperty().not());
+
 			transmittedCircle.setLayoutX(2 * RADIUS);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
+
+		}
+
+		private void initTimeLbl() {
+
+			timeLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
+			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
 
@@ -803,15 +829,18 @@ class MessagePane extends BorderPane {
 		final String name;
 		final Date date;
 		final MessageDirection messageDirection;
-		final boolean isClickable;
+		final boolean clickable;
+		final boolean infoAvailable;
 
-		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, boolean isClickable) {
+		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, boolean clickable,
+				boolean infoAvailable) {
 
 			this.uuid = uuid;
 			this.name = name;
 			this.date = date;
 			this.messageDirection = messageDirection;
-			this.isClickable = isClickable;
+			this.clickable = clickable;
+			this.infoAvailable = infoAvailable;
 
 		}
 
