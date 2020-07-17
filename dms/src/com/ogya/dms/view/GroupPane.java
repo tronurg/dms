@@ -1,7 +1,7 @@
 package com.ogya.dms.view;
 
 import java.util.HashSet;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
@@ -30,7 +30,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import zmq.util.function.Consumer;
 
 class GroupPane extends GridPane {
 
@@ -123,39 +122,15 @@ class GroupPane extends GridPane {
 
 	}
 
-	void setOnHideMessagePane(Consumer<MessagePane> consumer) {
+	void addMessagePaneListener(IMessagePane listener) {
 
-		messagePane.setOnBackAction(() -> consumer.accept(messagePane));
-
-	}
-
-	void setOnEditGroupAction(Runnable runnable) {
-
-		messagePane.setOnEditAction(() -> runnable.run());
+		messagePane.addListener(listener);
 
 	}
 
-	void setOnPaneScrolledToTop(Runnable runnable) {
+	MessagePane getMessagePane() {
 
-		messagePane.setOnPaneScrolledToTop(() -> runnable.run());
-
-	}
-
-	void setOnSendMessageAction(Consumer<String> consumer) {
-
-		messagePane.setOnSendMessageAction(messageTxt -> consumer.accept(messageTxt));
-
-	}
-
-	void setOnShowFoldersAction(Runnable runnable) {
-
-		messagePane.setOnShowFoldersAction(runnable);
-
-	}
-
-	void setOnMessageClickedAction(BiConsumer<String, Long> biConsumer) {
-
-		messagePane.setOnMessageClickedAction(biConsumer);
+		return messagePane;
 
 	}
 
@@ -179,12 +154,12 @@ class GroupPane extends GridPane {
 
 	}
 
-	void updateMessage(Message message) {
+	void updateMessageStatus(Message message) {
 
 		if (message.getMessageStatus().equals(MessageStatus.READ))
 			unreadMessages.remove(message.getId());
 
-		messagePane.updateMessage(message);
+		messagePane.updateMessageStatus(message);
 
 	}
 

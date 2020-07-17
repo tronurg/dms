@@ -247,14 +247,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private void addGroupMessageToPane(final Message message, final boolean newMessageToBottom) {
 
-		if (message.getMessageType().equals(MessageType.FILE)) {
-
-			String fileName = Paths.get(message.getContent()).getFileName().toString();
-
-			message.setContent(fileName);
-
-		}
-
 		final String groupUuid = message.getReceiverUuid();
 
 		model.addMessageId(groupUuid, message.getId());
@@ -835,7 +827,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
 
 				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-					Platform.runLater(() -> dmsPanel.updateMessage(newMessage, remoteUuid));
+					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
 
 				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
 					sendMessage(newMessage);
@@ -884,7 +876,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
 
 				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-					Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
 
 				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH)) {
 					// If the message is not received remotely and;
@@ -1406,7 +1398,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
 
 				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-					Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
 
 			} catch (Exception e) {
 
@@ -1528,7 +1520,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, uuid));
+						Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, uuid));
 
 						dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
 								newMessage.getMessageId(), MessageStatus.READ);
@@ -1833,7 +1825,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage, groupUuid));
+						Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
 
 						Dgroup group = model.getGroup(groupUuid);
 
@@ -2021,25 +2013,50 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void messageClicked(String senderUuid, Long messageId) {
+	public void messageClicked(Long messageId) {
 
-		try {
+		taskQueue.execute(() -> {
 
-			Message message = dbManager.getMessage(senderUuid, messageId);
+			try {
 
-			if (message.getMessageType().equals(MessageType.FILE)) {
+				Message message = dbManager.getMessage(messageId);
 
-				Path file = Paths.get(message.getContent());
+				if (message.getMessageType().equals(MessageType.FILE)) {
 
-				dmsListeners.forEach(listener -> listener.fileClicked(file));
+					Path file = Paths.get(message.getContent());
+
+					dmsListeners.forEach(listener -> listener.fileClicked(file));
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 
-		} catch (Exception e) {
+		});
 
-			e.printStackTrace();
+	}
 
-		}
+	@Override
+	public void infoClicked(Long messageId) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Message message = dbManager.getMessage(messageId);
+
+				System.out.println(message.getContent());
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 

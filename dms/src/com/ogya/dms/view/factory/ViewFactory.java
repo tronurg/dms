@@ -5,7 +5,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -169,20 +168,24 @@ public class ViewFactory {
 
 	}
 
-	public static Label newInfoLbl() {
+	public static Button newInfoBtn() {
 
-		Label lbl = new Label("i");
-		lbl.setPickOnBounds(false);
-		lbl.setTextFill(Color.WHITE);
-		lbl.setContentDisplay(ContentDisplay.CENTER);
-		Font defaultFont = lbl.getFont();
-		lbl.setFont(Font.font(defaultFont.getFamily(), FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0));
+		Button btn = new Button("i");
+		btn.setTextFill(Color.WHITE);
+		btn.setContentDisplay(ContentDisplay.CENTER);
+		Font defaultFont = btn.getFont();
+		btn.setFont(Font.font(defaultFont.getFamily(), FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0));
+
 		Circle circle = new Circle(12.0);
-		lbl.setGraphic(circle);
+		btn.setGraphic(circle);
 		circle.fillProperty().bind(Bindings
-				.createObjectBinding(() -> lbl.isHover() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY, lbl.hoverProperty()));
+				.createObjectBinding(() -> btn.isHover() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY, btn.hoverProperty()));
+		btn.setGraphic(circle);
+		btn.setBackground(Background.EMPTY);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
 
-		return lbl;
+		return btn;
 
 	}
 

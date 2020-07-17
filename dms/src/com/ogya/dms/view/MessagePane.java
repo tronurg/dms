@@ -14,11 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.factory.ViewFactory;
@@ -101,7 +100,7 @@ class MessagePane extends BorderPane {
 	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
 
-	private final AtomicReference<BiConsumer<String, Long>> messageClickedActionRef = new AtomicReference<BiConsumer<String, Long>>();
+	private final List<IMessagePane> listeners = Collections.synchronizedList(new ArrayList<IMessagePane>());
 
 	MessagePane() {
 
@@ -112,6 +111,8 @@ class MessagePane extends BorderPane {
 	}
 
 	private void init() {
+
+		registerListeners();
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 		bottomPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -175,6 +176,12 @@ class MessagePane extends BorderPane {
 			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
 
 		});
+
+	}
+
+	void addListener(IMessagePane listener) {
+
+		listeners.add(listener);
 
 	}
 
@@ -278,17 +285,14 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void updateMessage(Message message) {
+	void updateMessageStatus(Message message) {
 
 		MessageBalloon messageBalloon = messageBalloons.get(message.getId());
 
 		if (messageBalloon == null)
 			return;
 
-		messageBalloon.setProgressVisible(false);
-
-		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
-				message.getMessageStatus().getTransmittedColor());
+		messageBalloon.updateMessageStatus(message.getMessageStatus());
 
 	}
 
@@ -300,8 +304,6 @@ class MessagePane extends BorderPane {
 			return;
 
 		messageBalloon.setProgress(progress);
-
-		messageBalloon.setProgressVisible(!(progress < 0));
 
 	}
 
@@ -345,35 +347,23 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void setOnBackAction(final Runnable runnable) {
+	private void registerListeners() {
 
-		backBtn.setOnAction(e -> runnable.run());
-
-	}
-
-	void setOnEditAction(final Runnable runnable) {
+		backBtn.setOnAction(e -> listeners.forEach(listener -> listener.backClicked()));
 
 		nameLabel.setOnMouseClicked(e -> {
 			if (editableProperty.get())
-				runnable.run();
+				listeners.forEach(listener -> listener.editClicked());
 		});
-
-	}
-
-	void setOnPaneScrolledToTop(final Runnable runnable) {
 
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
 			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
 				return;
 
-			runnable.run();
+			listeners.forEach(listener -> listener.paneScrolledToTop());
 
 		});
-
-	}
-
-	void setOnSendMessageAction(final Consumer<String> consumer) {
 
 		sendBtn.setOnAction(e -> {
 
@@ -384,21 +374,11 @@ class MessagePane extends BorderPane {
 			if (mesajTxt.isEmpty())
 				return;
 
-			consumer.accept(mesajTxt);
+			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt));
 
 		});
 
-	}
-
-	void setOnShowFoldersAction(Runnable runnable) {
-
-		showFoldersBtn.setOnAction(e -> runnable.run());
-
-	}
-
-	void setOnMessageClickedAction(BiConsumer<String, Long> biConsumer) {
-
-		messageClickedActionRef.set(biConsumer);
+		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
 
 	}
 
@@ -479,8 +459,7 @@ class MessagePane extends BorderPane {
 			content = Paths.get(content).getFileName().toString();
 
 		MessageBalloon messageBalloon = new MessageBalloon(content, messageInfo);
-		messageBalloon.setMessageColors(message.getMessageStatus().getWaitingColor(),
-				message.getMessageStatus().getTransmittedColor());
+		messageBalloon.updateMessageStatus(message.getMessageStatus());
 
 		if (messageInfo.clickable) {
 
@@ -488,19 +467,20 @@ class MessagePane extends BorderPane {
 
 			final DropShadow dropShadow = new DropShadow();
 
-			messageBalloon.effectProperty()
+			messageBalloon.getMessagePane().effectProperty()
 					.bind(Bindings.createObjectBinding(
 							() -> messageBalloon.getMessagePane().isHover() ? dropShadow : null,
 							messageBalloon.getMessagePane().hoverProperty()));
 
-			messageBalloon.getMessagePane().setOnMouseClicked(e -> {
+			messageBalloon.getMessagePane()
+					.setOnMouseClicked(e -> listeners.forEach(listener -> listener.messageClicked(message.getId())));
 
-				BiConsumer<String, Long> messageClickedAction = messageClickedActionRef.get();
+		}
 
-				if (messageClickedAction != null)
-					messageClickedAction.accept(message.getOwnerUuid(), message.getMessageId());
+		if (messageInfo.infoAvailable) {
 
-			});
+			messageBalloon.getInfoBtn()
+					.setOnMouseClicked(e -> listeners.forEach(listener -> listener.infoClicked(message.getId())));
 
 		}
 
@@ -517,11 +497,12 @@ class MessagePane extends BorderPane {
 
 		private final GridPane messagePane = new GridPane();
 		private final Label messageLbl;
-		private final Label progressLbl;
+		private final Label progressLbl = new Label();
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
 		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
 		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
+		private final Button infoBtn = ViewFactory.newInfoBtn();
 
 		private final Region gap = new Region();
 
@@ -532,7 +513,6 @@ class MessagePane extends BorderPane {
 			this.messageInfo = messageInfo;
 
 			messageLbl = new Label(message);
-			progressLbl = new Label();
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
 
 			init();
@@ -545,13 +525,11 @@ class MessagePane extends BorderPane {
 			initTimeLbl();
 
 			ColumnConstraints colNarrow = new ColumnConstraints();
-			colNarrow.setPercentWidth(20.0);
 			ColumnConstraints colWide = new ColumnConstraints();
+			colNarrow.setHgrow(Priority.ALWAYS);
 			colWide.setPercentWidth(80.0);
 
 			messageLbl.setWrapText(true);
-
-			HBox.setHgrow(gap, Priority.ALWAYS);
 
 			switch (messageInfo.messageDirection) {
 
@@ -586,6 +564,10 @@ class MessagePane extends BorderPane {
 
 				add(gap, 0, 0, 1, 1);
 				add(messagePane, 1, 0, 1, 1);
+				if (messageInfo.infoAvailable) {
+					infoBtn.setPadding(new Insets(0.0, 0.0, 0.0, GAP));
+					add(infoBtn, 2, 0, 1, 1);
+				}
 
 				break;
 
@@ -599,9 +581,18 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void setProgressVisible(boolean visible) {
+		Button getInfoBtn() {
 
-			progressLbl.setVisible(visible);
+			return infoBtn;
+
+		}
+
+		void updateMessageStatus(MessageStatus messageStatus) {
+
+			progressLbl.setVisible(false);
+
+			waitingCircle.setFill(messageStatus.getWaitingColor());
+			transmittedCircle.setFill(messageStatus.getTransmittedColor());
 
 		}
 
@@ -609,12 +600,7 @@ class MessagePane extends BorderPane {
 
 			progressLbl.setText(String.format("%d%%", progress));
 
-		}
-
-		void setMessageColors(Paint waitingCircleColor, Paint transmittedCircleColor) {
-
-			waitingCircle.setFill(waitingCircleColor);
-			transmittedCircle.setFill(transmittedCircleColor);
+			progressLbl.setVisible(!(progress < 0));
 
 		}
 
@@ -658,7 +644,6 @@ class MessagePane extends BorderPane {
 
 		private void initProgressLbl() {
 
-			progressLbl.setVisible(false);
 			progressLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
@@ -845,5 +830,23 @@ class MessagePane extends BorderPane {
 		}
 
 	}
+
+}
+
+interface IMessagePane {
+
+	void backClicked();
+
+	void editClicked();
+
+	void paneScrolledToTop();
+
+	void sendMessageClicked(String message);
+
+	void showFoldersClicked();
+
+	void messageClicked(Long messageId);
+
+	void infoClicked(Long messageId);
 
 }

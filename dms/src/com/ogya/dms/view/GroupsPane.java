@@ -147,11 +147,11 @@ class GroupsPane extends TitledPane {
 
 	}
 
-	void updateMessage(Message message, String groupUuid) {
+	void updateMessageStatus(Message message, String groupUuid) {
 
 		GroupPane groupPane = getGroupPane(groupUuid);
 
-		groupPane.updateMessage(message);
+		groupPane.updateMessageStatus(message);
 
 	}
 
@@ -191,7 +191,7 @@ class GroupsPane extends TitledPane {
 
 		if (!uuidGroupPane.containsKey(groupUuid)) {
 
-			GroupPane groupPane = new GroupPane();
+			final GroupPane groupPane = new GroupPane();
 
 			groupPane.setOnShowMessagePane(messagePane -> {
 
@@ -199,39 +199,56 @@ class GroupsPane extends TitledPane {
 
 			});
 
-			groupPane.setOnHideMessagePane(messagePane -> {
+			groupPane.addMessagePaneListener(new IMessagePane() {
 
-				listeners.forEach(listener -> listener.hideGroupMessagePane(messagePane, groupUuid));
+				@Override
+				public void showFoldersClicked() {
 
-			});
+					listeners.forEach(listener -> listener.groupShowFoldersClicked(groupUuid));
 
-			groupPane.setOnEditGroupAction(() -> {
+				}
 
-				listeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(groupUuid));
+				@Override
+				public void sendMessageClicked(final String message) {
 
-			});
+					listeners.forEach(listener -> listener.sendGroupMessageClicked(message, groupUuid));
 
-			groupPane.setOnPaneScrolledToTop(() -> {
+				}
 
-				listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
+				@Override
+				public void paneScrolledToTop() {
 
-			});
+					listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
 
-			groupPane.setOnSendMessageAction(messageTxt -> {
+				}
 
-				listeners.forEach(listener -> listener.sendGroupMessageClicked(messageTxt, groupUuid));
+				@Override
+				public void messageClicked(Long messageId) {
 
-			});
+					listeners.forEach(listener -> listener.messageClicked(messageId));
 
-			groupPane.setOnShowFoldersAction(() -> {
+				}
 
-				listeners.forEach(listener -> listener.groupShowFoldersClicked(groupUuid));
+				@Override
+				public void infoClicked(Long messageId) {
 
-			});
+					listeners.forEach(listener -> listener.infoClicked(messageId));
 
-			groupPane.setOnMessageClickedAction((senderUuid, messageId) -> {
+				}
 
-				listeners.forEach(listener -> listener.messageClicked(senderUuid, messageId));
+				@Override
+				public void editClicked() {
+
+					listeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(groupUuid));
+
+				}
+
+				@Override
+				public void backClicked() {
+
+					listeners.forEach(listener -> listener.hideGroupMessagePane(groupPane.getMessagePane(), groupUuid));
+
+				}
 
 			});
 
@@ -269,6 +286,8 @@ interface IGroupsPane {
 
 	void groupShowFoldersClicked(String groupUuid);
 
-	void messageClicked(String senderUuid, Long messageId);
+	void messageClicked(Long messageId);
+
+	void infoClicked(Long messageId);
 
 }

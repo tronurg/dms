@@ -52,7 +52,7 @@ public class FoldersPane extends BorderPane {
 
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 
-	public FoldersPane(Path mainPath) {
+	FoldersPane(Path mainPath) {
 
 		super();
 
@@ -83,19 +83,19 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	public void setOnFileSelected(Consumer<Path> fileSelectedAction) {
+	void setOnFileSelected(Consumer<Path> fileSelectedAction) {
 
 		fileSelectedActionRef.set(fileSelectedAction);
 
 	}
 
-	public void setOnBackAction(final Runnable runnable) {
+	void setOnBackAction(final Runnable runnable) {
 
 		backBtn.setOnAction(e -> runnable.run());
 
 	}
 
-	public void reset() {
+	void reset() {
 
 		while (centerPane.getChildren().size() > 1)
 			back();

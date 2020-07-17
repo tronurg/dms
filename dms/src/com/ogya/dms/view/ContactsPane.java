@@ -104,11 +104,11 @@ class ContactsPane extends TitledPane {
 
 	}
 
-	void updateMessage(Message message, String uuid) {
+	void updateMessageStatus(Message message, String uuid) {
 
 		ContactPane contactPane = getContactPane(uuid);
 
-		contactPane.updateMessage(message);
+		contactPane.updateMessageStatus(message);
 
 	}
 
@@ -148,7 +148,7 @@ class ContactsPane extends TitledPane {
 
 		if (!uuidContactPane.containsKey(uuid)) {
 
-			ContactPane contactPane = new ContactPane();
+			final ContactPane contactPane = new ContactPane();
 
 			contactPane.setOnShowMessagePane(messagePane -> {
 
@@ -156,33 +156,56 @@ class ContactsPane extends TitledPane {
 
 			});
 
-			contactPane.setOnHideMessagePane(messagePane -> {
+			contactPane.addMessagePaneListener(new IMessagePane() {
 
-				listeners.forEach(listener -> listener.hideContactMessagePane(messagePane, uuid));
+				@Override
+				public void showFoldersClicked() {
 
-			});
+					listeners.forEach(listener -> listener.privateShowFoldersClicked(uuid));
 
-			contactPane.setOnPaneScrolledToTop(() -> {
+				}
 
-				listeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
+				@Override
+				public void sendMessageClicked(final String message) {
 
-			});
+					listeners.forEach(listener -> listener.sendPrivateMessageClicked(message, uuid));
 
-			contactPane.setOnSendMessageAction(messageTxt -> {
+				}
 
-				listeners.forEach(listener -> listener.sendPrivateMessageClicked(messageTxt, uuid));
+				@Override
+				public void paneScrolledToTop() {
 
-			});
+					listeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
 
-			contactPane.setOnShowFoldersAction(() -> {
+				}
 
-				listeners.forEach(listener -> listener.privateShowFoldersClicked(uuid));
+				@Override
+				public void messageClicked(Long messageId) {
 
-			});
+					listeners.forEach(listener -> listener.messageClicked(messageId));
 
-			contactPane.setOnMessageClickedAction((senderUuid, messageId) -> {
+				}
 
-				listeners.forEach(listener -> listener.messageClicked(senderUuid, messageId));
+				@Override
+				public void infoClicked(Long messageId) {
+
+					// NO ACTION HERE
+
+				}
+
+				@Override
+				public void editClicked() {
+
+					// NO ACTION HERE
+
+				}
+
+				@Override
+				public void backClicked() {
+
+					listeners.forEach(listener -> listener.hideContactMessagePane(contactPane.getMessagePane(), uuid));
+
+				}
 
 			});
 
@@ -212,6 +235,6 @@ interface IContactsPane {
 
 	void privateShowFoldersClicked(String uuid);
 
-	void messageClicked(String senderUuid, Long messageId);
+	void messageClicked(Long messageId);
 
 }

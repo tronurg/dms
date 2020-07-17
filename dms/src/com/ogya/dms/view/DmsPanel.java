@@ -32,6 +32,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private final FoldersPane foldersPane = new FoldersPane(
 			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath());
 
+	private final StatusInfoPane statusInfoPane = new StatusInfoPane();
+
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
 	public DmsPanel() {
@@ -55,6 +57,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		groupsPane.addListener(this);
 		foldersPane.setOnFileSelected(this::fileSelected);
 		foldersPane.setOnBackAction(this::backFromFoldersPane);
+		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
 
 		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
 
@@ -133,19 +136,19 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	public void updateMessage(Message message, String uuid) {
+	public void updateMessageStatus(Message message, String uuid) {
 
 		switch (message.getReceiverType()) {
 
 		case PRIVATE:
 
-			contactsPane.updateMessage(message, uuid);
+			contactsPane.updateMessageStatus(message, uuid);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.updateMessage(message, uuid);
+			groupsPane.updateMessageStatus(message, uuid);
 
 			break;
 
@@ -156,6 +159,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	public void updateMessageProgress(Message message, String uuid, int progress) {
+
+		statusInfoPane.updateMessageProgress(uuid, progress);
 
 		switch (message.getReceiverType()) {
 
@@ -261,7 +266,17 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		getChildren().remove(foldersPane);
 
+		foldersPane.reset();
+
 		showFoldersCanceledToListeners();
+
+	}
+
+	private void backFromStatusInfoPane() {
+
+		getChildren().remove(statusInfoPane);
+
+		statusInfoPane.reset();
 
 	}
 
@@ -367,9 +382,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	private void messageClickedToListeners(final String senderUuid, final Long messageId) {
+	private void messageClickedToListeners(final Long messageId) {
 
-		listeners.forEach(listener -> listener.messageClicked(senderUuid, messageId));
+		listeners.forEach(listener -> listener.messageClicked(messageId));
+
+	}
+
+	private void infoClickedToListeners(final Long messageId) {
+
+		listeners.forEach(listener -> listener.infoClicked(messageId));
 
 	}
 
@@ -421,8 +442,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	@Override
 	public void privateShowFoldersClicked(String uuid) {
-
-		foldersPane.reset();
 
 		getChildren().add(foldersPane);
 
@@ -495,8 +514,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	@Override
 	public void groupShowFoldersClicked(String groupUuid) {
 
-		foldersPane.reset();
-
 		getChildren().add(foldersPane);
 
 		groupShowFoldersClickedToListeners(groupUuid);
@@ -504,9 +521,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void messageClicked(String senderUuid, Long messageId) {
+	public void messageClicked(Long messageId) {
 
-		messageClickedToListeners(senderUuid, messageId);
+		messageClickedToListeners(messageId);
+
+	}
+
+	@Override
+	public void infoClicked(Long messageId) {
+
+		infoClickedToListeners(messageId);
 
 	}
 
