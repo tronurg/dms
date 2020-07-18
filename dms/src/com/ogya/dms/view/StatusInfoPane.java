@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.structures.MessageStatus;
@@ -143,8 +142,6 @@ public class StatusInfoPane extends BorderPane {
 		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
 		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
 
-		private final AtomicReference<MessageStatus> messageStatusRef = new AtomicReference<MessageStatus>();
-
 		Card() {
 
 			super();
@@ -184,10 +181,10 @@ public class StatusInfoPane extends BorderPane {
 
 		void updateMessageStatus(MessageStatus messageStatus) {
 
-			if (messageStatus.equals(messageStatusRef.getAndSet(messageStatus)))
-				return;
+			if (messageStatus.equals(MessageStatus.FRESH))
+				setProgress(-1);
 
-			progressLbl.setVisible(false);
+			infoGrp.setVisible(!messageStatus.equals(MessageStatus.FRESH));
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());
@@ -196,9 +193,7 @@ public class StatusInfoPane extends BorderPane {
 
 		void setProgress(int progress) {
 
-			progressLbl.setText(String.format("%d%%", progress));
-
-			progressLbl.setVisible(!(progress < 0));
+			progressLbl.setText(progress < 0 ? "" : String.format("%d%%", progress));
 
 		}
 
@@ -210,6 +205,8 @@ public class StatusInfoPane extends BorderPane {
 
 		private void initProgressLbl() {
 
+			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
+
 			progressLbl.setFont(Font.font(nameLabel.getFont().getSize() * 0.75));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
@@ -219,8 +216,6 @@ public class StatusInfoPane extends BorderPane {
 		}
 
 		private void initInfoGrp() {
-
-			infoGrp.visibleProperty().bind(progressLbl.visibleProperty().not());
 
 			transmittedCircle.setLayoutX(2 * RADIUS);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);

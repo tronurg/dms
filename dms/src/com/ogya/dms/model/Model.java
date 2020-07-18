@@ -34,9 +34,12 @@ public class Model {
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
-	private final AtomicLong messageWithDetailedInfo = new AtomicLong();
+	private final AtomicLong detailedGroupMessageId = new AtomicLong();
 
 	private final AtomicReference<Entry<ReceiverType, String>> fileSelectionUuid = new AtomicReference<Entry<ReceiverType, String>>();
+
+	private final Map<Long, Map<String, Integer>> groupMessageProgresses = Collections
+			.synchronizedMap(new HashMap<Long, Map<String, Integer>>());
 
 	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
 		@Override
@@ -182,15 +185,15 @@ public class Model {
 
 	}
 
-	public void setMessageWithDetailedInfo(long messageId) {
+	public void setDetailedGroupMessageId(long messageId) {
 
-		messageWithDetailedInfo.set(messageId);
+		detailedGroupMessageId.set(messageId);
 
 	}
 
-	public Long getMessageWithDetailedInfo() {
+	public Long getDetailedGroupMessageId() {
 
-		return messageWithDetailedInfo.get();
+		return detailedGroupMessageId.get();
 
 	}
 
@@ -209,6 +212,34 @@ public class Model {
 	public Comparator<Contact> getContactSorter() {
 
 		return contactSorter;
+
+	}
+
+	public void storeGroupMessageProgress(Long messageId, String uuid, int progress) {
+
+		if (progress < 0 || progress == 100) {
+
+			if (!groupMessageProgresses.containsKey(messageId))
+				return;
+
+			groupMessageProgresses.get(messageId).remove(uuid);
+
+			if (groupMessageProgresses.get(messageId).isEmpty())
+				groupMessageProgresses.remove(messageId);
+
+		} else {
+
+			groupMessageProgresses.putIfAbsent(messageId, Collections.synchronizedMap(new HashMap<String, Integer>()));
+
+			groupMessageProgresses.get(messageId).put(uuid, progress);
+
+		}
+
+	}
+
+	public Map<String, Integer> getGroupMessageProgresses(Long messageId) {
+
+		return groupMessageProgresses.get(messageId);
 
 	}
 

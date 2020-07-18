@@ -589,7 +589,10 @@ class MessagePane extends BorderPane {
 
 		void updateMessageStatus(MessageStatus messageStatus) {
 
-			progressLbl.setVisible(false);
+			if (messageStatus.equals(MessageStatus.FRESH))
+				setProgress(-1);
+
+			infoGrp.setVisible(!messageStatus.equals(MessageStatus.FRESH));
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());
@@ -598,9 +601,7 @@ class MessagePane extends BorderPane {
 
 		void setProgress(int progress) {
 
-			progressLbl.setText(String.format("%d%%", progress));
-
-			progressLbl.setVisible(!(progress < 0));
+			progressLbl.setText(progress < 0 ? "" : String.format("%d%%", progress));
 
 		}
 
@@ -644,6 +645,8 @@ class MessagePane extends BorderPane {
 
 		private void initProgressLbl() {
 
+			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
+
 			progressLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
@@ -656,8 +659,6 @@ class MessagePane extends BorderPane {
 
 			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
 			GridPane.setHalignment(infoGrp, HPos.RIGHT);
-
-			infoGrp.visibleProperty().bind(progressLbl.visibleProperty().not());
 
 			transmittedCircle.setLayoutX(2 * RADIUS);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);

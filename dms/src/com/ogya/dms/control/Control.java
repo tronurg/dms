@@ -793,23 +793,18 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void updateMessageStatus(Long messageId, MessageStatus messageStatus, String[] remoteUuids,
+	private void updateMessageStatus(Message message, String[] remoteUuids, MessageStatus messageStatus,
 			boolean resendIfNecessary) {
 
 		try {
 
-			Message dbMessage = dbManager.getMessage(messageId);
-
-			if (dbMessage == null)
-				return;
-
-			String ownerUuid = dbMessage.getOwnerUuid();
+			String ownerUuid = message.getOwnerUuid();
 
 			// Send this status to the original sender too.
 			if (!model.getLocalUuid().equals(ownerUuid) && model.isContactOnline(ownerUuid))
-				dmsClient.feedMessageStatus(remoteUuids, ownerUuid, dbMessage.getMessageId(), messageStatus);
+				dmsClient.feedMessageStatus(remoteUuids, ownerUuid, message.getMessageId(), messageStatus);
 
-			switch (dbMessage.getReceiverType()) {
+			switch (message.getReceiverType()) {
 
 			case PRIVATE:
 
@@ -820,11 +815,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				String remoteUuid = remoteUuids[0];
 
-				dbMessage.setMessageStatus(messageStatus);
+				message.setMessageStatus(messageStatus);
 
-				dbMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
+				message.setWaiting(!messageStatus.equals(MessageStatus.READ));
 
-				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
+				final Message newMessage = dbManager.addUpdateMessage(message);
 
 				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
@@ -844,36 +839,39 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				// If I am the group owner and the message is not received remotely, I will have
 				// to re-send it.
 
-				String groupUuid = dbMessage.getReceiverUuid();
+				String groupUuid = message.getReceiverUuid();
 
 				Dgroup group = model.getGroup(groupUuid);
 
 				if (group == null)
 					break;
 
-				StatusReport statusReport = StatusReport.fromJson(dbMessage.getStatusReportStr());
+				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
 
 				for (String remoteUuid : remoteUuids) {
 
 					statusReport.uuidStatus.put(remoteUuid, messageStatus);
 
 					if (remoteUuid.equals(group.getOwnerUuid()) && ownerUuid.equals(model.getLocalUuid()))
-						dbMessage.setWaiting(!messageStatus.equals(MessageStatus.READ));
+						message.setWaiting(!messageStatus.equals(MessageStatus.READ));
+
+					if (model.getDetailedGroupMessageId() == message.getId())
+						Platform.runLater(() -> dmsPanel.updateDetailedMessageStatus(remoteUuid, messageStatus));
 
 				}
 
-				dbMessage.setStatusReportStr(statusReport.toJson());
+				message.setStatusReportStr(statusReport.toJson());
 
 				MessageStatus overallMessageStatus = statusReport.getOverallStatus();
 
 				if (group.getOwnerUuid().equals(model.getLocalUuid()))
-					dbMessage.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+					message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
 				// If I am the owner, update the message status too
 				if (ownerUuid.equals(model.getLocalUuid()))
-					dbMessage.setMessageStatus(overallMessageStatus);
+					message.setMessageStatus(overallMessageStatus);
 
-				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
+				final Message newMessage = dbManager.addUpdateMessage(message);
 
 				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
@@ -1090,55 +1088,58 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
-			if (progress == 100) {
+			try {
 
-				updateMessageStatus(messageId, MessageStatus.SENT, remoteUuids, false);
+				Message message = dbManager.getMessage(messageId);
 
-			} else {
+				if (message == null)
+					return;
 
-				try {
+				if (progress == 100) {
 
-					Message message = dbManager.getMessage(messageId);
+					// Update status in database and view; send update to message owner if necessary
 
-					if (message == null || message.getMessageType().equals(MessageType.UPDATE)
-							|| !message.getOwnerUuid().equals(model.getLocalUuid()))
-						return;
+					updateMessageStatus(message, remoteUuids, MessageStatus.SENT, false);
 
-					switch (message.getReceiverType()) {
+				}
 
-					case PRIVATE:
+				// Update view only
 
-						if (remoteUuids.length != 1)
-							break;
+				if (message.getMessageType().equals(MessageType.UPDATE)
+						|| !message.getOwnerUuid().equals(model.getLocalUuid()))
+					return;
 
-						String remoteUuid = remoteUuids[0];
+				switch (message.getReceiverType()) {
 
-						Platform.runLater(() -> dmsPanel.updateMessageProgress(message, remoteUuid, progress));
+				case PRIVATE:
 
+					if (remoteUuids.length != 1)
 						break;
 
-					case GROUP:
+					String remoteUuid = remoteUuids[0];
 
-						String groupUuid = message.getReceiverUuid();
+					Platform.runLater(() -> dmsPanel.updateMessageProgress(message, remoteUuid, progress));
 
-						Dgroup group = model.getGroup(groupUuid);
+					break;
 
-						if (group == null)
-							break;
+				case GROUP:
 
-						// TODO: There is room for improvment.
+					for (String uuid : remoteUuids) {
 
-						Platform.runLater(() -> dmsPanel.updateMessageProgress(message, groupUuid, progress));
+						model.storeGroupMessageProgress(messageId, uuid, progress);
 
-						break;
+						if (model.getDetailedGroupMessageId() == messageId)
+							Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, progress));
 
 					}
 
-				} catch (Exception e) {
-
-					e.printStackTrace();
+					break;
 
 				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -1334,7 +1335,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
-			updateMessageStatus(messageId, messageStatus, remoteUuids, true);
+			Message message = dbManager.getMessage(messageId);
+
+			if (message == null)
+				return;
+
+			updateMessageStatus(message, remoteUuids, messageStatus, true);
 
 		});
 
@@ -2044,7 +2050,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
-			if (model.getMessageWithDetailedInfo() > 0)
+			if (model.getDetailedGroupMessageId() > 0)
 				return;
 
 			try {
@@ -2060,7 +2066,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (group == null)
 					return;
 
-				model.setMessageWithDetailedInfo(messageId);
+				model.setDetailedGroupMessageId(messageId);
 
 				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
 
@@ -2093,7 +2099,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Platform.runLater(() -> dmsPanel.showStatusInfoPane(contacts));
 
-				System.out.println(message.getContent());
+				statusReport.uuidStatus.forEach((uuid, messageStatus) -> Platform
+						.runLater(() -> dmsPanel.updateDetailedMessageStatus(uuid, messageStatus)));
+
+				if (model.getGroupMessageProgresses(messageId) != null)
+					model.getGroupMessageProgresses(messageId).forEach((uuid, progress) -> Platform
+							.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, progress)));
 
 			} catch (Exception e) {
 
@@ -2110,7 +2121,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
-			model.setMessageWithDetailedInfo(0);
+			model.setDetailedGroupMessageId(0);
 
 		});
 

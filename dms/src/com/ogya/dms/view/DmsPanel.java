@@ -13,6 +13,7 @@ import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.intf.AppListener;
 
@@ -178,6 +179,18 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		default:
 
 		}
+
+	}
+
+	public void updateDetailedMessageStatus(String uuid, MessageStatus messageStatus) {
+
+		statusInfoPane.updateMessageStatus(uuid, messageStatus);
+
+	}
+
+	public void updateDetailedMessageProgress(String uuid, int progress) {
+
+		statusInfoPane.updateMessageProgress(uuid, progress);
 
 	}
 
