@@ -155,14 +155,6 @@ class GroupsPane extends TitledPane {
 
 	}
 
-	void updateMessageProgress(Message message, String groupUuid, int progress) {
-
-		GroupPane groupPane = getGroupPane(groupUuid);
-
-		groupPane.updateMessageProgress(message, progress);
-
-	}
-
 	void scrollPaneToMessage(String groupUuid, Long mesajId) {
 
 		GroupPane groupPane = getGroupPane(groupUuid);

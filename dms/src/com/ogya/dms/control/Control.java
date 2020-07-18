@@ -304,6 +304,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
+			final String uuid = contact.getUuid();
+
 			contact.setStatus(Availability.OFFLINE);
 
 			try {
@@ -322,7 +324,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			try {
 
-				dbManager.getAllActiveGroupsOfUuid(contact.getUuid()).forEach(group -> {
+				dbManager.getAllActiveGroupsOfUuid(uuid).forEach(group -> {
 
 					group.setStatus(Availability.OFFLINE);
 
@@ -347,6 +349,28 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				e.printStackTrace();
 
 			}
+
+		});
+
+	}
+
+	private void clearMessageProgresses() {
+
+		taskQueue.execute(() -> {
+
+			model.getPrivateMessageProgresses()
+					.forEach((uuid, messageIdProgress) -> messageIdProgress.forEach((messageId, progress) -> Platform
+							.runLater(() -> dmsPanel.updatePrivateMessageProgress(uuid, messageId, -1))));
+
+			model.clearPrivateMessageProgresses();
+
+			Long detailedGroupMessageId = model.getDetailedGroupMessageId();
+
+			if (model.getGroupMessageProgresses(detailedGroupMessageId) != null)
+				model.getGroupMessageProgresses(detailedGroupMessageId).forEach(
+						(uuid, progress) -> Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, -1)));
+
+			model.clearGroupMessageProgresses();
 
 		});
 
@@ -1113,16 +1137,24 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				case PRIVATE:
 
+				{
+
 					if (remoteUuids.length != 1)
 						break;
 
-					String remoteUuid = remoteUuids[0];
+					String uuid = remoteUuids[0];
 
-					Platform.runLater(() -> dmsPanel.updateMessageProgress(message, remoteUuid, progress));
+					model.storePrivateMessageProgress(uuid, messageId, progress);
+
+					Platform.runLater(() -> dmsPanel.updatePrivateMessageProgress(uuid, messageId, progress));
 
 					break;
 
+				}
+
 				case GROUP:
+
+				{
 
 					for (String uuid : remoteUuids) {
 
@@ -1134,6 +1166,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					}
 
 					break;
+
+				}
 
 				}
 
@@ -1294,6 +1328,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				contactDisconnected(contact);
 
 			});
+
+			clearMessageProgresses();
 
 		}
 

@@ -296,9 +296,9 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void updateMessageProgress(Message message, int progress) {
+	void updateMessageProgress(Long messageId, int progress) {
 
-		MessageBalloon messageBalloon = messageBalloons.get(message.getId());
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
 		if (messageBalloon == null)
 			return;

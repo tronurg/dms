@@ -163,12 +163,6 @@ class GroupPane extends GridPane {
 
 	}
 
-	void updateMessageProgress(Message message, int progress) {
-
-		messagePane.updateMessageProgress(message, progress);
-
-	}
-
 	void scrollPaneToMessage(Long messageId) {
 
 		messagePane.scrollPaneToMessage(messageId);

@@ -166,9 +166,9 @@ class ContactPane extends GridPane {
 
 	}
 
-	void updateMessageProgress(Message message, int progress) {
+	void updateMessageProgress(Long messageId, int progress) {
 
-		messagePane.updateMessageProgress(message, progress);
+		messagePane.updateMessageProgress(messageId, progress);
 
 	}
 

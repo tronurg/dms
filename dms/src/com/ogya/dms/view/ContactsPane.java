@@ -112,11 +112,11 @@ class ContactsPane extends TitledPane {
 
 	}
 
-	void updateMessageProgress(Message message, String uuid, int progress) {
+	void updateMessageProgress(String uuid, Long messageId, int progress) {
 
 		ContactPane contactPane = getContactPane(uuid);
 
-		contactPane.updateMessageProgress(message, progress);
+		contactPane.updateMessageProgress(messageId, progress);
 
 	}
 
