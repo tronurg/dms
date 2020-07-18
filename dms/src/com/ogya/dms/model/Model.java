@@ -2,11 +2,13 @@ package com.ogya.dms.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.database.tables.Contact;
@@ -32,7 +34,16 @@ public class Model {
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
+	private final AtomicLong messageWithDetailedInfo = new AtomicLong();
+
 	private final AtomicReference<Entry<ReceiverType, String>> fileSelectionUuid = new AtomicReference<Entry<ReceiverType, String>>();
+
+	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
+		@Override
+		public int compare(Contact arg0, Contact arg1) {
+			return arg0.getName().compareTo(arg1.getName());
+		}
+	};
 
 	public Model(Identity identity) {
 
@@ -171,6 +182,18 @@ public class Model {
 
 	}
 
+	public void setMessageWithDetailedInfo(long messageId) {
+
+		messageWithDetailedInfo.set(messageId);
+
+	}
+
+	public Long getMessageWithDetailedInfo() {
+
+		return messageWithDetailedInfo.get();
+
+	}
+
 	public void setFileSelectionUuid(Entry<ReceiverType, String> entry) {
 
 		fileSelectionUuid.set(entry);
@@ -180,6 +203,12 @@ public class Model {
 	public Entry<ReceiverType, String> getFileSelectionUuid() {
 
 		return fileSelectionUuid.get();
+
+	}
+
+	public Comparator<Contact> getContactSorter() {
+
+		return contactSorter;
 
 	}
 

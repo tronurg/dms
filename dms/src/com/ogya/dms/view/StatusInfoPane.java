@@ -26,6 +26,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 
 public class StatusInfoPane extends BorderPane {
 
@@ -54,7 +55,7 @@ public class StatusInfoPane extends BorderPane {
 	private void init() {
 
 		topPane.setPadding(new Insets(GAP));
-		centerPane.setPadding(new Insets(GAP));
+		centerPane.setPadding(new Insets(2 * GAP));
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -82,6 +83,8 @@ public class StatusInfoPane extends BorderPane {
 			cards.put(contact.getUuid(), card);
 
 			updateContact(contact);
+
+			centerPane.getChildren().add(card);
 
 		});
 
@@ -152,8 +155,11 @@ public class StatusInfoPane extends BorderPane {
 
 		private void init() {
 
+			setHgap(GAP);
+
 			GridPane.setHgrow(nameLabel, Priority.ALWAYS);
 
+			initNameLabel();
 			initProgressLbl();
 			initInfoGrp();
 
@@ -193,6 +199,12 @@ public class StatusInfoPane extends BorderPane {
 			progressLbl.setText(String.format("%d%%", progress));
 
 			progressLbl.setVisible(!(progress < 0));
+
+		}
+
+		private void initNameLabel() {
+
+			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 
 		}
 

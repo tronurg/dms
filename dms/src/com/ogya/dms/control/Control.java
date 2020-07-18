@@ -2040,13 +2040,58 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public void infoClicked(Long messageId) {
+	public void infoClicked(final Long messageId) {
 
 		taskQueue.execute(() -> {
+
+			if (model.getMessageWithDetailedInfo() > 0)
+				return;
 
 			try {
 
 				Message message = dbManager.getMessage(messageId);
+
+				if (message == null || !message.getReceiverType().equals(ReceiverType.GROUP)
+						|| !message.getOwnerUuid().equals(model.getLocalUuid()))
+					return;
+
+				Dgroup group = model.getGroup(message.getReceiverUuid());
+
+				if (group == null)
+					return;
+
+				model.setMessageWithDetailedInfo(messageId);
+
+				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
+
+				List<Contact> contacts = new ArrayList<Contact>();
+
+				statusReport.uuidStatus.forEach((uuid, messageStatus) -> {
+
+					if (uuid.equals(group.getOwnerUuid()))
+						return;
+
+					Contact contact = model.getContact(uuid);
+
+					if (contact == null)
+						return;
+
+					contacts.add(contact);
+
+				});
+
+				contacts.sort(model.getContactSorter());
+
+				if (statusReport.uuidStatus.containsKey(group.getOwnerUuid())) {
+
+					Contact contact = model.getContact(group.getOwnerUuid());
+
+					if (contact != null)
+						contacts.add(0, contact);
+
+				}
+
+				Platform.runLater(() -> dmsPanel.showStatusInfoPane(contacts));
 
 				System.out.println(message.getContent());
 
@@ -2055,6 +2100,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				e.printStackTrace();
 
 			}
+
+		});
+
+	}
+
+	@Override
+	public void statusInfoClosed() {
+
+		taskQueue.execute(() -> {
+
+			model.setMessageWithDetailedInfo(0);
 
 		});
 

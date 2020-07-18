@@ -83,6 +83,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		contactsPane.updateContact(contact);
 		groupsPane.addUpdateGroupPaneUpdateContact(contact);
+		statusInfoPane.updateContact(contact);
 
 	}
 
@@ -159,8 +160,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	public void updateMessageProgress(Message message, String uuid, int progress) {
-
-		statusInfoPane.updateMessageProgress(uuid, progress);
 
 		switch (message.getReceiverType()) {
 
@@ -254,6 +253,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void showStatusInfoPane(List<Contact> contacts) {
+
+		statusInfoPane.addCards(contacts);
+
+		getChildren().add(statusInfoPane);
+
+	}
+
 	private void fileSelected(Path file) {
 
 		getChildren().remove(foldersPane);
@@ -277,6 +284,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		getChildren().remove(statusInfoPane);
 
 		statusInfoPane.reset();
+
+		statusInfoClosedToListeners();
 
 	}
 
@@ -373,6 +382,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private void showFoldersCanceledToListeners() {
 
 		listeners.forEach(listener -> listener.showFoldersCanceled());
+
+	}
+
+	private void statusInfoClosedToListeners() {
+
+		listeners.forEach(listener -> listener.statusInfoClosed());
 
 	}
 
