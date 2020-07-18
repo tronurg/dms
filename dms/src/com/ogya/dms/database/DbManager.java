@@ -381,13 +381,20 @@ public class DbManager {
 
 	}
 
-	public List<Message> getGroupMessagesWaitingToContact(String receiverUuid) throws HibernateException {
+	public List<Message> getGroupMessagesWaitingToContact(String localUuid, String receiverUuid)
+			throws HibernateException {
 
 		Session session = factory.openSession();
 
+		List<String> dbGroupUuids = session
+				.createQuery("select uuid from Dgroup where ownerUuid like :localUuid or ownerUuid like :receiverUuid",
+						String.class)
+				.setParameter("localUuid", localUuid).setParameter("receiverUuid", receiverUuid).list();
+
 		List<Message> dbMessages = session.createQuery(
-				"from Message where receiverType like :receiverType and statusReportStr like :statusReportStr and waiting=true",
-				Message.class).setParameter("receiverType", ReceiverType.GROUP)
+				"from Message where receiverUuid in (:groupUuids) and receiverType like :receiverType and statusReportStr like :statusReportStr and waiting=true",
+				Message.class).setParameterList("groupUuids", dbGroupUuids)
+				.setParameter("receiverType", ReceiverType.GROUP)
 				.setParameter("statusReportStr", String.format("%%%s%%", receiverUuid)).list();
 
 		session.close();

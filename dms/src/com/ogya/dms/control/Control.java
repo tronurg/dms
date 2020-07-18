@@ -992,7 +992,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						// SEND WAITING GROUP MESSAGES
 						try {
 
-							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToContact(uuid)) {
+							for (Message waitingMessage : dbManager
+									.getGroupMessagesWaitingToContact(model.getLocalUuid(), uuid)) {
 
 								StatusReport statusReport;
 
@@ -1003,15 +1004,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 								}
 
 								MessageStatus messageStatus = statusReport.uuidStatus.get(uuid);
-
-								Dgroup group = model.getGroup(waitingMessage.getReceiverUuid());
-
-								if (group == null)
-									continue;
-
-								if (!(group.getOwnerUuid().equals(model.getLocalUuid())
-										|| group.getOwnerUuid().equals(uuid)))
-									continue;
 
 								switch (messageStatus) {
 
