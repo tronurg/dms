@@ -10,7 +10,7 @@ public class MessagePojo {
 
 	public MessagePojo(String message, String senderUuid, ContentType contentType, Long messageId) {
 
-		this(message, senderUuid, "", contentType, messageId);
+		this(message, senderUuid, null, contentType, messageId);
 
 	}
 

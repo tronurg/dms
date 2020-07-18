@@ -95,6 +95,9 @@ public class Model {
 
 			default:
 
+				if (messagePojo.receiverUuid == null)
+					break;
+
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
 				List<String> localReceiverUuids = new ArrayList<String>();
@@ -238,6 +241,9 @@ public class Model {
 				break;
 
 			default:
+
+				if (messagePojo.receiverUuid == null)
+					break;
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 

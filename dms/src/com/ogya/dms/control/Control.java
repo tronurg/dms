@@ -419,15 +419,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private Dgroup createUpdateGroup(String groupUuid, String groupName, String masterUuid, boolean isActive,
+	private Dgroup createUpdateGroup(String groupUuid, String groupName, String ownerUuid, boolean isActive,
 			Set<Contact> contactsToBeAdded, Set<Contact> contactsToBeRemoved) throws Exception {
 
 		Dgroup group = model.getGroup(groupUuid);
 
 		if (group == null) {
-			if (groupName == null || masterUuid == null)
+			if (groupName == null || ownerUuid == null)
 				return null;
-			group = new Dgroup(masterUuid);
+			group = new Dgroup(ownerUuid);
 			group.setUuid(groupUuid);
 		}
 
@@ -474,10 +474,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private String getGroupUpdate(String groupUuid, String groupName, boolean active, Set<Contact> contactsToBeAdded,
+	private String getGroupUpdate(String groupName, boolean active, Set<Contact> contactsToBeAdded,
 			Set<Contact> contactsToBeRemoved) {
 
-		GroupUpdate groupUpdate = new GroupUpdate(groupUuid);
+		GroupUpdate groupUpdate = new GroupUpdate();
 
 		groupUpdate.name = groupName;
 		groupUpdate.active = active ? null : false;
@@ -496,7 +496,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void sendMessage(Message message) {
+	private void sendPrivateMessage(Message message) {
 
 		String receiverUuid = message.getReceiverUuid();
 
@@ -645,6 +645,28 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			break;
 
+		case UPDATE:
+
+			if (message.getMessageCode() == CommonConstants.CODE_CANCEL_MESSAGE) {
+
+				try {
+
+					Long messageId = Long.parseLong(message.getContent());
+
+					Message dbMessage = dbManager.getMessage(message.getSenderUuid(), messageId);
+
+					cancelMessage(dbMessage);
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			}
+
+			break;
+
 		default:
 
 			break;
@@ -672,7 +694,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
 
-					groupUpdateReceived(groupUpdate, message.getOwnerUuid());
+					groupUpdateReceived(message.getReceiverUuid(), groupUpdate, message.getOwnerUuid());
 
 				} catch (Exception e) {
 
@@ -692,7 +714,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void groupUpdateReceived(final GroupUpdate groupUpdate, String masterUuid) {
+	private void groupUpdateReceived(final String groupUuid, final GroupUpdate groupUpdate, String ownerUuid) {
 
 		try {
 
@@ -755,7 +777,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
-			final Dgroup newGroup = createUpdateGroup(groupUpdate.uuid, groupUpdate.name, masterUuid,
+			final Dgroup newGroup = createUpdateGroup(groupUuid, groupUpdate.name, ownerUuid,
 					groupUpdate.active == null ? true : groupUpdate.active, contactsToBeAdded, contactsToBeRemoved);
 
 			if (newGroup == null)
@@ -820,6 +842,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void updateMessageStatus(Message message, String[] remoteUuids, MessageStatus messageStatus,
 			boolean resendIfNecessary) {
 
+		if (message.isCancelled())
+			return;
+
 		try {
 
 			String ownerUuid = message.getOwnerUuid();
@@ -849,7 +874,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
 
 				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
-					sendMessage(newMessage);
+					sendPrivateMessage(newMessage);
 
 				break;
 
@@ -931,6 +956,37 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
+	private void cancelMessage(Message message) {
+
+		try {
+
+			message.setCancelled(true);
+			message.setWaiting(false);
+
+			if (model.isServerConnected())
+				dmsClient.cancelMessage(message.getId());
+
+			if (!message.getReceiverType().equals(ReceiverType.GROUP))
+				return;
+
+			Dgroup group = model.getGroup(message.getReceiverUuid());
+
+			String ownerUuid = group.getOwnerUuid();
+
+			if (group == null || ownerUuid.equals(model.getLocalUuid()))
+				return;
+
+			sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), ownerUuid, ReceiverType.PRIVATE,
+					MessageType.UPDATE, CommonConstants.CODE_CANCEL_MESSAGE));
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
 	@Override
 	public void beaconReceived(String message) {
 
@@ -964,7 +1020,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 								case FRESH:
 
-									sendMessage(waitingMessage);
+									sendPrivateMessage(waitingMessage);
 
 									break;
 
@@ -1192,9 +1248,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				if (incomingMessage.getMessageType().equals(MessageType.FILE)) {
 
-					FilePojo filePojo = FilePojo.fromJson(incomingMessage.getContent());
-
 					try {
+
+						FilePojo filePojo = FilePojo.fromJson(incomingMessage.getContent());
 
 						Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
 
@@ -1218,8 +1274,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				}
 
 				incomingMessage.setMessageStatus(computeMessageStatus(incomingMessage));
-
-				incomingMessage.setWaiting(false);
 
 				boolean messageToBeRedirected = false;
 
@@ -1414,7 +1468,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Message dbMessage = dbManager.getMessage(messageId);
 
-				if (dbMessage == null)
+				if (dbMessage == null || dbMessage.isCancelled())
 					return;
 
 				String groupUuid = dbMessage.getReceiverUuid();
@@ -1604,7 +1658,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				addPrivateMessageToPane(newMessage, true);
 
-				sendMessage(newMessage);
+				sendPrivateMessage(newMessage);
 
 			} catch (Exception e) {
 
@@ -1709,8 +1763,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					// Gruba eleman ekleme mesajini olusturup grup uyelerine gonder
 
-					String groupUpdate = getGroupUpdate(newGroup.getUuid(), newGroup.getName(), true,
-							newGroup.getContacts(), null);
+					String groupUpdate = getGroupUpdate(newGroup.getName(), true, newGroup.getContacts(), null);
 
 					sendGroupMessage(createOutgoingMessage(groupUpdate, newGroup.getUuid(), ReceiverType.GROUP,
 							MessageType.UPDATE, CommonConstants.CODE_UPDATE_GROUP));
@@ -1752,7 +1805,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					if (!contactsToBeAdded.isEmpty()) {
 
-						String groupUpdateToAddedContacts = getGroupUpdate(newGroup.getUuid(), newGroup.getName(), true,
+						String groupUpdateToAddedContacts = getGroupUpdate(newGroup.getName(), true,
 								newGroup.getContacts(), null);
 
 						sendGroupMessage(
@@ -1764,8 +1817,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					if (!contactsToBeRemoved.isEmpty()) {
 
-						String groupUpdateToRemovedContacts = getGroupUpdate(newGroup.getUuid(), null, false, null,
-								null);
+						String groupUpdateToRemovedContacts = getGroupUpdate(null, false, null, null);
 
 						sendGroupMessage(
 								createOutgoingMessage(groupUpdateToRemovedContacts, newGroup.getUuid(),
@@ -1776,8 +1828,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					if (!residentContacts.isEmpty()) {
 
-						String groupUpdateToResidentContacts = getGroupUpdate(newGroup.getUuid(), newGroupName, true,
-								contactsToBeAdded, contactsToBeRemoved);
+						String groupUpdateToResidentContacts = getGroupUpdate(newGroupName, true, contactsToBeAdded,
+								contactsToBeRemoved);
 
 						sendGroupMessage(
 								createOutgoingMessage(groupUpdateToResidentContacts, newGroup.getUuid(),
@@ -1824,7 +1876,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-				String groupUpdate = getGroupUpdate(newGroup.getUuid(), null, newGroup.isActive(), null, null);
+				String groupUpdate = getGroupUpdate(null, newGroup.isActive(), null, null);
 
 				sendGroupMessage(createOutgoingMessage(groupUpdate, newGroup.getUuid(), ReceiverType.GROUP,
 						MessageType.UPDATE, CommonConstants.CODE_UPDATE_GROUP), contacts);
@@ -2009,7 +2061,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					addPrivateMessageToPane(newMessage, true);
 
-					sendMessage(newMessage);
+					sendPrivateMessage(newMessage);
 
 					break;
 

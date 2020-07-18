@@ -292,7 +292,7 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		messageBalloon.updateMessageStatus(message.getMessageStatus());
+		messageBalloon.updateMessageStatus(message.getMessageStatus(), message.isCancelled());
 
 	}
 
@@ -459,7 +459,7 @@ class MessagePane extends BorderPane {
 			content = Paths.get(content).getFileName().toString();
 
 		MessageBalloon messageBalloon = new MessageBalloon(content, messageInfo);
-		messageBalloon.updateMessageStatus(message.getMessageStatus());
+		messageBalloon.updateMessageStatus(message.getMessageStatus(), message.isCancelled());
 
 		if (messageInfo.clickable) {
 
@@ -587,12 +587,15 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void updateMessageStatus(MessageStatus messageStatus) {
+		void updateMessageStatus(MessageStatus messageStatus, boolean cancelled) {
 
 			if (messageStatus.equals(MessageStatus.FRESH))
 				setProgress(-1);
 
 			infoGrp.setVisible(!messageStatus.equals(MessageStatus.FRESH));
+
+			if (cancelled)
+				messageLbl.setTextFill(Color.DARKGRAY);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());

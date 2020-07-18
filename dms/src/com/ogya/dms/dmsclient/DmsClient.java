@@ -82,7 +82,7 @@ public class DmsClient {
 
 	public void claimAllBeacons() {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo("", uuid, ContentType.REQ_BCON, null)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.REQ_BCON, null)));
 
 	}
 
@@ -96,6 +96,12 @@ public class DmsClient {
 
 		dealerQueue.offer(gson.toJson(
 				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)));
+
+	}
+
+	public void cancelMessage(Long messageId) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.CANCEL, messageId)));
 
 	}
 

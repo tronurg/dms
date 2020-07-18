@@ -60,7 +60,10 @@ public class Message {
 	private String statusReportStr;
 
 	@Column(name = "waiting", nullable = false)
-	private Boolean waiting;
+	private Boolean waiting = false;
+
+	@Column(name = "cancelled", nullable = false)
+	private Boolean cancelled = false;
 
 	@Column(name = "date", nullable = false, updatable = false)
 	private Date date;
@@ -172,6 +175,14 @@ public class Message {
 
 	public void setWaiting(Boolean waiting) {
 		this.waiting = waiting;
+	}
+
+	public Boolean isCancelled() {
+		return cancelled;
+	}
+
+	public void setCancelled(Boolean cancelled) {
+		this.cancelled = cancelled;
 	}
 
 	public Date getDate() {

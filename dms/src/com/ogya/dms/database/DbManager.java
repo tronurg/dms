@@ -413,7 +413,7 @@ public class DbManager {
 				.setParameter("ownerUuid", groupOwnerUuid).list();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where ownerUuid like :ownerUuid and receiverUuid in (:groupUuids) and receiverType like :receiverType and messageStatus not like :read",
+				"from Message where ownerUuid like :ownerUuid and receiverUuid in (:groupUuids) and receiverType like :receiverType and messageStatus not like :read and cancelled=false",
 				Message.class).setParameter("ownerUuid", messageOwnerUuid).setParameterList("groupUuids", dbGroupUuids)
 				.setParameter("receiverType", ReceiverType.GROUP).setParameter("read", MessageStatus.READ).list();
 
