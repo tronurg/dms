@@ -31,6 +31,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -480,7 +481,14 @@ class MessagePane extends BorderPane {
 		if (messageInfo.infoAvailable) {
 
 			messageBalloon.getInfoBtn()
-					.setOnMouseClicked(e -> listeners.forEach(listener -> listener.infoClicked(message.getId())));
+					.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(message.getId())));
+
+		}
+
+		if (messageInfo.messageDirection.equals(MessageDirection.OUTGOING)) {
+
+			messageBalloon.getCancelBtn()
+					.setOnAction(e -> listeners.forEach(listener -> listener.cancelClicked(message.getId())));
 
 		}
 
@@ -503,8 +511,11 @@ class MessagePane extends BorderPane {
 		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
 		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
 		private final Button infoBtn = ViewFactory.newInfoBtn();
+		private final Button cancelBtn = ViewFactory.newCancelBtn();
 
 		private final Region gap = new Region();
+
+		final BooleanProperty cancellableProperty = new SimpleBooleanProperty(false);
 
 		MessageBalloon(String message, MessageInfo messageInfo) {
 
@@ -587,7 +598,15 @@ class MessagePane extends BorderPane {
 
 		}
 
+		Button getCancelBtn() {
+
+			return cancelBtn;
+
+		}
+
 		void updateMessageStatus(MessageStatus messageStatus, boolean cancelled) {
+
+			cancellableProperty.set(messageStatus.equals(MessageStatus.FRESH) && !cancelled);
 
 			if (messageStatus.equals(MessageStatus.FRESH))
 				setProgress(-1);
@@ -626,11 +645,13 @@ class MessagePane extends BorderPane {
 			initMessagePane();
 			initProgressLbl();
 			initInfoGrp();
+			initCancelBtn();
 
 			messagePane.add(messageLbl, 0, 0, 2, 1);
 			messagePane.add(infoGrp, 0, 1, 1, 1);
 			messagePane.add(progressLbl, 0, 1, 1, 1);
 			messagePane.add(timeLbl, 1, 1, 1, 1);
+			messagePane.add(cancelBtn, 0, 0, 2, 1);
 
 		}
 
@@ -672,6 +693,15 @@ class MessagePane extends BorderPane {
 
 			timeLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
 			timeLbl.setTextFill(Color.DIMGRAY);
+
+		}
+
+		private void initCancelBtn() {
+
+			GridPane.setHalignment(cancelBtn, HPos.RIGHT);
+			GridPane.setValignment(cancelBtn, VPos.TOP);
+
+			cancelBtn.visibleProperty().bind(messagePane.hoverProperty().and(cancellableProperty));
 
 		}
 
@@ -852,5 +882,7 @@ interface IMessagePane {
 	void messageClicked(Long messageId);
 
 	void infoClicked(Long messageId);
+
+	void cancelClicked(Long messageId);
 
 }

@@ -406,6 +406,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void cancelClickedToListeners(final Long messageId) {
+
+		listeners.forEach(listener -> listener.cancelClicked(messageId));
+
+	}
+
 	@Override
 	public void commentUpdated(String comment) {
 
@@ -543,6 +549,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void infoClicked(Long messageId) {
 
 		infoClickedToListeners(messageId);
+
+	}
+
+	@Override
+	public void cancelClicked(Long messageId) {
+
+		cancelClickedToListeners(messageId);
 
 	}
 

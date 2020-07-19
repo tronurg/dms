@@ -207,6 +207,13 @@ class ContactsPane extends TitledPane {
 
 				}
 
+				@Override
+				public void cancelClicked(Long messageId) {
+
+					listeners.forEach(listener -> listener.cancelClicked(messageId));
+
+				}
+
 			});
 
 			uuidContactPane.put(uuid, contactPane);
@@ -236,5 +243,7 @@ interface IContactsPane {
 	void privateShowFoldersClicked(String uuid);
 
 	void messageClicked(Long messageId);
+
+	void cancelClicked(Long messageId);
 
 }

@@ -189,4 +189,28 @@ public class ViewFactory {
 
 	}
 
+	public static Button newCancelBtn() {
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(10.0);
+		circle.setFill(Color.RED);
+		Line line1 = new Line(-4.0, -4.0, 4.0, 4.0);
+		line1.setStrokeWidth(3.0);
+		line1.setStroke(Color.WHITE);
+		Line line2 = new Line(-4.0, 4.0, 4.0, -4.0);
+		line2.setStrokeLineCap(StrokeLineCap.ROUND);
+		line2.setStrokeWidth(3.0);
+		line2.setStroke(Color.WHITE);
+		Group group = new Group(circle, line1, line2);
+		btn.setGraphic(group);
+		btn.setBackground(Background.EMPTY);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+		btn.opacityProperty().bind(Bindings.createDoubleBinding(() -> btn.isHover() ? 1.0 : 0.5, btn.hoverProperty()));
+
+		return btn;
+
+	}
+
 }

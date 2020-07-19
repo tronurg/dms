@@ -242,6 +242,13 @@ class GroupsPane extends TitledPane {
 
 				}
 
+				@Override
+				public void cancelClicked(Long messageId) {
+
+					listeners.forEach(listener -> listener.cancelClicked(messageId));
+
+				}
+
 			});
 
 			uuidGroupPane.put(groupUuid, groupPane);
@@ -281,5 +288,7 @@ interface IGroupsPane {
 	void messageClicked(Long messageId);
 
 	void infoClicked(Long messageId);
+
+	void cancelClicked(Long messageId);
 
 }

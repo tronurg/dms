@@ -634,7 +634,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void privateMessageReceived(Message message) {
+	private void privateMessageReceived(Message message) throws Exception {
 
 		switch (message.getMessageType()) {
 
@@ -649,19 +649,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			if (message.getMessageCode() == CommonConstants.CODE_CANCEL_MESSAGE) {
 
-				try {
+				Long messageId = Long.parseLong(message.getContent());
 
-					Long messageId = Long.parseLong(message.getContent());
+				Message dbMessage = dbManager.getMessage(message.getSenderUuid(), messageId);
 
-					Message dbMessage = dbManager.getMessage(message.getSenderUuid(), messageId);
-
-					cancelMessage(dbMessage);
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
+				cancelMessage(dbMessage);
 
 			}
 
@@ -675,7 +667,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void groupMessageReceived(Message message) {
+	private void groupMessageReceived(Message message) throws Exception {
 
 		switch (message.getMessageType()) {
 
@@ -690,17 +682,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			if (message.getMessageCode() == CommonConstants.CODE_UPDATE_GROUP) {
 
-				try {
+				GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
 
-					GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
-
-					groupUpdateReceived(message.getReceiverUuid(), groupUpdate, message.getOwnerUuid());
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
+				groupUpdateReceived(message.getReceiverUuid(), groupUpdate, message.getOwnerUuid());
 
 			}
 
@@ -714,84 +698,69 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void groupUpdateReceived(final String groupUuid, final GroupUpdate groupUpdate, String ownerUuid) {
+	private void groupUpdateReceived(final String groupUuid, final GroupUpdate groupUpdate, String ownerUuid)
+			throws Exception {
 
-		try {
+		final Set<Contact> contactsToBeAdded = new HashSet<Contact>();
+		final Set<Contact> contactsToBeRemoved = new HashSet<Contact>();
 
-			final Set<Contact> contactsToBeAdded = new HashSet<Contact>();
-			final Set<Contact> contactsToBeRemoved = new HashSet<Contact>();
+		if (groupUpdate.add != null) {
 
-			if (groupUpdate.add != null) {
+			groupUpdate.add.forEach((uuid, name) -> {
 
-				groupUpdate.add.forEach((uuid, name) -> {
+				if (model.getLocalUuid().equals(uuid))
+					return;
 
-					if (model.getLocalUuid().equals(uuid))
-						return;
+				Contact contact = model.getContact(uuid);
+				if (contact == null) {
+					contact = new Contact();
+					contact.setUuid(uuid);
+					contact.setName(name);
+					contact.setStatus(Availability.OFFLINE);
+					Contact newContact = dbManager.addUpdateContact(contact);
+					model.addContact(newContact);
+					contactsToBeAdded.add(newContact);
+				} else {
+					contactsToBeAdded.add(contact);
+				}
 
-					Contact contact = model.getContact(uuid);
-					if (contact == null) {
-						contact = new Contact();
-						contact.setUuid(uuid);
-						contact.setName(name);
-						contact.setStatus(Availability.OFFLINE);
-						try {
-							Contact newContact = dbManager.addUpdateContact(contact);
-							model.addContact(newContact);
-							contactsToBeAdded.add(newContact);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					} else {
-						contactsToBeAdded.add(contact);
-					}
-
-				});
-
-			}
-
-			if (groupUpdate.remove != null) {
-
-				groupUpdate.remove.forEach((uuid, name) -> {
-
-					if (model.getLocalUuid().equals(uuid))
-						return;
-
-					Contact contact = model.getContact(uuid);
-					if (contact == null) {
-						contact = new Contact();
-						contact.setUuid(uuid);
-						contact.setName(name);
-						contact.setStatus(Availability.OFFLINE);
-						try {
-							Contact newContact = dbManager.addUpdateContact(contact);
-							model.addContact(newContact);
-							contactsToBeRemoved.add(newContact);
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					} else {
-						contactsToBeRemoved.add(contact);
-					}
-
-				});
-
-			}
-
-			final Dgroup newGroup = createUpdateGroup(groupUuid, groupUpdate.name, ownerUuid,
-					groupUpdate.active == null ? true : groupUpdate.active, contactsToBeAdded, contactsToBeRemoved);
-
-			if (newGroup == null)
-				return;
-
-			model.addGroup(newGroup);
-
-			Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
+			});
 
 		}
+
+		if (groupUpdate.remove != null) {
+
+			groupUpdate.remove.forEach((uuid, name) -> {
+
+				if (model.getLocalUuid().equals(uuid))
+					return;
+
+				Contact contact = model.getContact(uuid);
+				if (contact == null) {
+					contact = new Contact();
+					contact.setUuid(uuid);
+					contact.setName(name);
+					contact.setStatus(Availability.OFFLINE);
+					Contact newContact = dbManager.addUpdateContact(contact);
+					model.addContact(newContact);
+					contactsToBeRemoved.add(newContact);
+				} else {
+					contactsToBeRemoved.add(contact);
+				}
+
+			});
+
+		}
+
+		final Dgroup newGroup = createUpdateGroup(groupUuid, groupUpdate.name, ownerUuid,
+				groupUpdate.active == null ? true : groupUpdate.active, contactsToBeAdded, contactsToBeRemoved);
+
+		if (newGroup == null)
+			return;
+
+		model.addGroup(newGroup);
+
+		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
 	}
 
@@ -840,150 +809,141 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	private void updateMessageStatus(Message message, String[] remoteUuids, MessageStatus messageStatus,
-			boolean resendIfNecessary) {
+			boolean resendIfNecessary) throws Exception {
 
 		if (message.isCancelled())
 			return;
 
-		try {
+		String ownerUuid = message.getOwnerUuid();
 
-			String ownerUuid = message.getOwnerUuid();
+		// Send this status to the original sender too.
+		if (!model.getLocalUuid().equals(ownerUuid) && model.isContactOnline(ownerUuid))
+			dmsClient.feedMessageStatus(remoteUuids, ownerUuid, message.getMessageId(), messageStatus);
 
-			// Send this status to the original sender too.
-			if (!model.getLocalUuid().equals(ownerUuid) && model.isContactOnline(ownerUuid))
-				dmsClient.feedMessageStatus(remoteUuids, ownerUuid, message.getMessageId(), messageStatus);
+		switch (message.getReceiverType()) {
 
-			switch (message.getReceiverType()) {
+		case PRIVATE:
 
-			case PRIVATE:
+		{
 
-			{
-
-				if (remoteUuids.length != 1)
-					break;
-
-				String remoteUuid = remoteUuids[0];
-
-				message.setMessageStatus(messageStatus);
-
-				message.setWaiting(!messageStatus.equals(MessageStatus.READ));
-
-				final Message newMessage = dbManager.addUpdateMessage(message);
-
-				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
-
-				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
-					sendPrivateMessage(newMessage);
-
+			if (remoteUuids.length != 1)
 				break;
+
+			String remoteUuid = remoteUuids[0];
+
+			message.setMessageStatus(messageStatus);
+
+			message.setWaiting(!messageStatus.equals(MessageStatus.READ));
+
+			final Message newMessage = dbManager.addUpdateMessage(message);
+
+			if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
+
+			if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
+				sendPrivateMessage(newMessage);
+
+			break;
+
+		}
+
+		case GROUP:
+
+		{
+
+			// This is a group message. I am either the group owner or the message sender.
+			// If I am the group owner and the message is not received remotely, I will have
+			// to re-send it.
+
+			String groupUuid = message.getReceiverUuid();
+
+			Dgroup group = model.getGroup(groupUuid);
+
+			if (group == null)
+				break;
+
+			StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
+
+			for (String remoteUuid : remoteUuids) {
+
+				statusReport.uuidStatus.put(remoteUuid, messageStatus);
+
+				if (remoteUuid.equals(group.getOwnerUuid()) && ownerUuid.equals(model.getLocalUuid()))
+					message.setWaiting(!messageStatus.equals(MessageStatus.READ));
+
+				if (model.getDetailedGroupMessageId() == message.getId())
+					Platform.runLater(() -> dmsPanel.updateDetailedMessageStatus(remoteUuid, messageStatus));
 
 			}
 
-			case GROUP:
+			message.setStatusReportStr(statusReport.toJson());
 
-			{
+			MessageStatus overallMessageStatus = statusReport.getOverallStatus();
 
-				// This is a group message. I am either the group owner or the message sender.
-				// If I am the group owner and the message is not received remotely, I will have
-				// to re-send it.
+			if (group.getOwnerUuid().equals(model.getLocalUuid()))
+				message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
 
-				String groupUuid = message.getReceiverUuid();
+			// If I am the owner, update the message status too
+			if (ownerUuid.equals(model.getLocalUuid()))
+				message.setMessageStatus(overallMessageStatus);
 
-				Dgroup group = model.getGroup(groupUuid);
+			final Message newMessage = dbManager.addUpdateMessage(message);
 
-				if (group == null)
-					break;
+			if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
 
-				StatusReport statusReport = StatusReport.fromJson(message.getStatusReportStr());
+			if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH)) {
+				// If the message is not received remotely and;
+				// I am the group owner
+				// or
+				// I am the message owner and receiver is the group owner
+				// then re-send this message (if flag set to true).
 
 				for (String remoteUuid : remoteUuids) {
 
-					statusReport.uuidStatus.put(remoteUuid, messageStatus);
-
-					if (remoteUuid.equals(group.getOwnerUuid()) && ownerUuid.equals(model.getLocalUuid()))
-						message.setWaiting(!messageStatus.equals(MessageStatus.READ));
-
-					if (model.getDetailedGroupMessageId() == message.getId())
-						Platform.runLater(() -> dmsPanel.updateDetailedMessageStatus(remoteUuid, messageStatus));
+					if (group.getOwnerUuid().equals(model.getLocalUuid())
+							|| (ownerUuid.equals(model.getLocalUuid()) && remoteUuid.equals(group.getOwnerUuid())))
+						sendGroupMessage(newMessage, remoteUuid);
 
 				}
 
-				message.setStatusReportStr(statusReport.toJson());
-
-				MessageStatus overallMessageStatus = statusReport.getOverallStatus();
-
-				if (group.getOwnerUuid().equals(model.getLocalUuid()))
-					message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
-
-				// If I am the owner, update the message status too
-				if (ownerUuid.equals(model.getLocalUuid()))
-					message.setMessageStatus(overallMessageStatus);
-
-				final Message newMessage = dbManager.addUpdateMessage(message);
-
-				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
-
-				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH)) {
-					// If the message is not received remotely and;
-					// I am the group owner
-					// or
-					// I am the message owner and receiver is the group owner
-					// then re-send this message (if flag set to true).
-
-					for (String remoteUuid : remoteUuids) {
-
-						if (group.getOwnerUuid().equals(model.getLocalUuid())
-								|| (ownerUuid.equals(model.getLocalUuid()) && remoteUuid.equals(group.getOwnerUuid())))
-							sendGroupMessage(newMessage, remoteUuid);
-
-					}
-
-				}
-
-				break;
-
 			}
 
-			}
+			break;
 
-		} catch (Exception e) {
-
-			e.printStackTrace();
+		}
 
 		}
 
 	}
 
-	private void cancelMessage(Message message) {
+	private Message cancelMessage(Message message) throws Exception {
 
-		try {
+		if (!message.isWaiting() && message.isCancelled())
+			return message;
 
-			message.setCancelled(true);
-			message.setWaiting(false);
+		message.setCancelled(true);
+		message.setWaiting(false);
 
-			if (model.isServerConnected())
-				dmsClient.cancelMessage(message.getId());
+		Message newMessage = dbManager.addUpdateMessage(message);
 
-			if (!message.getReceiverType().equals(ReceiverType.GROUP))
-				return;
+		if (model.isServerConnected())
+			dmsClient.cancelMessage(message.getId());
 
-			Dgroup group = model.getGroup(message.getReceiverUuid());
+		if (!message.getReceiverType().equals(ReceiverType.GROUP))
+			return newMessage;
 
-			String ownerUuid = group.getOwnerUuid();
+		Dgroup group = model.getGroup(message.getReceiverUuid());
 
-			if (group == null || ownerUuid.equals(model.getLocalUuid()))
-				return;
+		String ownerUuid = group.getOwnerUuid();
 
-			sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), ownerUuid, ReceiverType.PRIVATE,
-					MessageType.UPDATE, CommonConstants.CODE_CANCEL_MESSAGE));
+		if (group == null || ownerUuid.equals(model.getLocalUuid()))
+			return newMessage;
 
-		} catch (Exception e) {
+		sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), ownerUuid, ReceiverType.PRIVATE,
+				MessageType.UPDATE, CommonConstants.CODE_CANCEL_MESSAGE));
 
-			e.printStackTrace();
-
-		}
+		return newMessage;
 
 	}
 
@@ -1417,12 +1377,20 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		taskQueue.execute(() -> {
 
-			Message message = dbManager.getMessage(messageId);
+			try {
 
-			if (message == null)
-				return;
+				Message message = dbManager.getMessage(messageId);
 
-			updateMessageStatus(message, remoteUuids, messageStatus, true);
+				if (message == null)
+					return;
+
+				updateMessageStatus(message, remoteUuids, messageStatus, true);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
@@ -2185,6 +2153,29 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (model.getGroupMessageProgresses(messageId) != null)
 					model.getGroupMessageProgresses(messageId).forEach((uuid, progress) -> Platform
 							.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, progress)));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void cancelClicked(Long messageId) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Message message = dbManager.getMessage(messageId);
+
+				Message newMessage = cancelMessage(message);
+
+				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, newMessage.getReceiverUuid()));
 
 			} catch (Exception e) {
 

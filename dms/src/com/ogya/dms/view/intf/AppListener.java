@@ -43,6 +43,8 @@ public interface AppListener {
 
 	void infoClicked(Long messageId);
 
+	void cancelClicked(Long messageId);
+
 	void statusInfoClosed();
 
 }
