@@ -34,7 +34,7 @@ public class CommonMethods {
 	private static ResourceBundle langFile;
 
 	private static final List<String> gsonExcludedNames = Arrays.asList("id", "senderUuid", "messageStatus",
-			"statusReportStr", "waiting", "date");
+			"statusReportStr", "waiting", "cancelled", "date");
 
 	private static Gson gson = new Gson();
 
