@@ -613,7 +613,7 @@ class MessagePane extends BorderPane {
 
 			infoGrp.setVisible(!messageStatus.equals(MessageStatus.FRESH));
 
-			if (cancelled)
+			if (cancelled && messageInfo.messageDirection.equals(MessageDirection.OUTGOING))
 				messageLbl.setTextFill(Color.DARKGRAY);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
