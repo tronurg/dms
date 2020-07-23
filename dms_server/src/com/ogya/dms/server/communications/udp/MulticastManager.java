@@ -69,8 +69,7 @@ public class MulticastManager {
 
 			try {
 
-				byte[] data = dataStr.getBytes("UTF-8");
-				byte[] encryptedData = Encryption.encrypt(data);
+				byte[] encryptedData = Encryption.encrypt(dataStr);
 
 				DatagramPacket sendPacket = new DatagramPacket(encryptedData, encryptedData.length, multicastAddress);
 
@@ -158,9 +157,9 @@ public class MulticastManager {
 				DatagramPacket receivePacket = receiveQueue.take();
 
 				InetAddress remoteAddress = receivePacket.getAddress();
-				byte[] data = Encryption.decrypt(Arrays.copyOf(receivePacket.getData(), receivePacket.getLength()));
+				String data = Encryption.decrypt(Arrays.copyOf(receivePacket.getData(), receivePacket.getLength()));
 
-				messageConsumer.accept(remoteAddress, new String(data, "UTF-8"));
+				messageConsumer.accept(remoteAddress, data);
 
 			} catch (InterruptedException e) {
 

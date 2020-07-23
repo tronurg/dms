@@ -353,6 +353,8 @@ class MessagePane extends BorderPane {
 		backBtn.setOnAction(e -> listeners.forEach(listener -> listener.backClicked()));
 
 		nameLabel.setOnMouseClicked(e -> {
+			if (!e.getButton().equals(MouseButton.PRIMARY))
+				return;
 			if (editableProperty.get())
 				listeners.forEach(listener -> listener.editClicked());
 		});
@@ -473,8 +475,11 @@ class MessagePane extends BorderPane {
 							() -> messageBalloon.getMessagePane().isHover() ? dropShadow : null,
 							messageBalloon.getMessagePane().hoverProperty()));
 
-			messageBalloon.getMessagePane()
-					.setOnMouseClicked(e -> listeners.forEach(listener -> listener.messageClicked(message.getId())));
+			messageBalloon.getMessagePane().setOnMouseClicked(e -> {
+				if (!e.getButton().equals(MouseButton.PRIMARY))
+					return;
+				listeners.forEach(listener -> listener.messageClicked(message.getId()));
+			});
 
 		}
 

@@ -6,7 +6,6 @@ import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,8 +54,6 @@ public class TcpManager implements TcpServerListener {
 
 	private final List<TcpManagerListener> listeners = Collections
 			.synchronizedList(new ArrayList<TcpManagerListener>());
-
-	private final Charset encryptionCharset = Charset.forName("UTF-8");
 
 	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -218,7 +215,7 @@ public class TcpManager implements TcpServerListener {
 
 			final Connection connection = connections.get(address);
 
-			if (connection.dmsServer == null) {
+			if (connection != null && connection.dmsServer == null) {
 				// Connection sunucu tarafindan olusturulmus
 				// Iliskiler guncellenecek
 
@@ -250,8 +247,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
-						encryptionCharset);
+				String encryptedMessage = Encryption.encryptToString(message);
 
 				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod);
 
@@ -297,8 +293,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
-						encryptionCharset);
+				String encryptedMessage = Encryption.encryptToString(message);
 
 				dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, encryptedMessage, sendStatus,
 						progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
@@ -327,8 +322,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
-						encryptionCharset);
+				String encryptedMessage = Encryption.encryptToString(message);
 
 				sendMessageToServer(dmsServer, encryptedMessage, null, null);
 
@@ -351,8 +345,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = new String(Encryption.encrypt(message.getBytes(encryptionCharset)),
-						encryptionCharset);
+				String encryptedMessage = Encryption.encryptToString(message);
 
 				dmsServers
 						.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null));
@@ -531,8 +524,7 @@ public class TcpManager implements TcpServerListener {
 
 		try {
 
-			String decryptedMessage = new String(Encryption.decrypt(message.getBytes(encryptionCharset)),
-					encryptionCharset);
+			String decryptedMessage = Encryption.decryptFromString(message);
 
 			listeners.forEach(e -> e.messageReceived(decryptedMessage));
 
