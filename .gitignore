@@ -1,7 +1,7 @@
 /.metadata/
 .settings
 bin
-h2
+database
 
 .classpath
 .project
