@@ -17,6 +17,7 @@ import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
+import com.ogya.dms.structures.WaitStatus;
 
 @Entity
 @Table(name = "message")
@@ -56,14 +57,12 @@ public class Message {
 	@Enumerated(EnumType.STRING)
 	private MessageStatus messageStatus;
 
+	@Column(name = "wait_status", nullable = false)
+	@Enumerated(EnumType.STRING)
+	private WaitStatus waitStatus;
+
 	@Column(name = "status_report_str")
 	private String statusReportStr;
-
-	@Column(name = "waiting", nullable = false)
-	private Boolean waiting = false;
-
-	@Column(name = "cancelled", nullable = false)
-	private Boolean cancelled = false;
 
 	@Column(name = "date", nullable = false, updatable = false)
 	private Date date;
@@ -161,28 +160,20 @@ public class Message {
 		this.messageStatus = messageStatus;
 	}
 
+	public WaitStatus getWaitStatus() {
+		return waitStatus;
+	}
+
+	public void setWaitStatus(WaitStatus waitStatus) {
+		this.waitStatus = waitStatus;
+	}
+
 	public String getStatusReportStr() {
 		return statusReportStr;
 	}
 
 	public void setStatusReportStr(String statusReportStr) {
 		this.statusReportStr = statusReportStr;
-	}
-
-	public Boolean isWaiting() {
-		return waiting;
-	}
-
-	public void setWaiting(Boolean waiting) {
-		this.waiting = waiting;
-	}
-
-	public Boolean isCancelled() {
-		return cancelled;
-	}
-
-	public void setCancelled(Boolean cancelled) {
-		this.cancelled = cancelled;
 	}
 
 	public Date getDate() {

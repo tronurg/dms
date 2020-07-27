@@ -20,6 +20,7 @@ import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
+import com.ogya.dms.structures.WaitStatus;
 import com.ogya.dms.view.factory.ViewFactory;
 import com.sun.javafx.tk.Toolkit;
 
@@ -293,7 +294,8 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		messageBalloon.updateMessageStatus(message.getMessageStatus(), message.isCancelled());
+		messageBalloon.updateMessageStatus(message.getMessageStatus(),
+				message.getWaitStatus().equals(WaitStatus.CANCELED));
 
 	}
 
@@ -462,7 +464,8 @@ class MessagePane extends BorderPane {
 			content = Paths.get(content).getFileName().toString();
 
 		MessageBalloon messageBalloon = new MessageBalloon(content, messageInfo);
-		messageBalloon.updateMessageStatus(message.getMessageStatus(), message.isCancelled());
+		messageBalloon.updateMessageStatus(message.getMessageStatus(),
+				message.getWaitStatus().equals(WaitStatus.CANCELED));
 
 		if (messageInfo.clickable) {
 

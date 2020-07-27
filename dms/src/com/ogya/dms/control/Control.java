@@ -45,6 +45,7 @@ import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.structures.StatusReport;
+import com.ogya.dms.structures.WaitStatus;
 import com.ogya.dms.view.DmsPanel;
 import com.ogya.dms.view.intf.AppListener;
 
@@ -411,7 +412,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		}
 
-		outgoingMessage.setWaiting(true);
+		outgoingMessage.setWaitStatus(WaitStatus.WAITING);
 
 		Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 
@@ -811,7 +812,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void updateMessageStatus(Message message, String[] remoteUuids, MessageStatus messageStatus,
 			boolean resendIfNecessary) throws Exception {
 
-		if (message.isCancelled())
+		if (message.getWaitStatus().equals(WaitStatus.CANCELED))
 			return;
 
 		String ownerUuid = message.getOwnerUuid();
@@ -833,7 +834,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			message.setMessageStatus(messageStatus);
 
-			message.setWaiting(!messageStatus.equals(MessageStatus.READ));
+			message.setWaitStatus(messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -869,7 +870,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				statusReport.uuidStatus.put(remoteUuid, messageStatus);
 
 				if (remoteUuid.equals(group.getOwnerUuid()) && ownerUuid.equals(model.getLocalUuid()))
-					message.setWaiting(!messageStatus.equals(MessageStatus.READ));
+					message.setWaitStatus(
+							messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
 				if (model.getDetailedGroupMessageId() == message.getId())
 					Platform.runLater(() -> dmsPanel.updateDetailedMessageStatus(remoteUuid, messageStatus));
@@ -881,7 +883,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			MessageStatus overallMessageStatus = statusReport.getOverallStatus();
 
 			if (group.getOwnerUuid().equals(model.getLocalUuid()))
-				message.setWaiting(!overallMessageStatus.equals(MessageStatus.READ));
+				message.setWaitStatus(
+						overallMessageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
 			// If I am the owner, update the message status too
 			if (ownerUuid.equals(model.getLocalUuid()))
@@ -919,11 +922,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private Message cancelMessage(Message message) throws Exception {
 
-		if (!message.isWaiting() && message.isCancelled())
+		if (message.getWaitStatus().equals(WaitStatus.CANCELED))
 			return message;
 
-		message.setCancelled(true);
-		message.setWaiting(false);
+		message.setWaitStatus(WaitStatus.CANCELED);
 
 		Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -1258,11 +1260,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						messageToBeRedirected = statusReport.uuidStatus.size() > 0;
 
-						incomingMessage.setWaiting(messageToBeRedirected);
-
 					}
 
 				}
+
+				incomingMessage.setWaitStatus(messageToBeRedirected ? WaitStatus.WAITING : WaitStatus.DONE);
 
 				Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
@@ -1436,7 +1438,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Message dbMessage = dbManager.getMessage(messageId);
 
-				if (dbMessage == null || dbMessage.isCancelled())
+				if (dbMessage == null || dbMessage.getWaitStatus().equals(WaitStatus.CANCELED))
 					return;
 
 				String groupUuid = dbMessage.getReceiverUuid();
