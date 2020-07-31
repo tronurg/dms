@@ -77,41 +77,79 @@ public class CommonMethods {
 
 	}
 
-	static int getComPortFrom() {
+	static int getServerPort() {
 
-		int comPort = -1;
+		int serverPort = -1;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/COM_PORT_FROM")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/SERVER_PORT")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			comPort = Integer.parseInt(node.getTextContent());
+			serverPort = Integer.parseInt(node.getTextContent());
 
 		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
 
 		}
 
-		return comPort;
+		return serverPort;
 
 	}
 
-	static int getComPortTo() {
+	static int getClientPortFrom() {
 
-		int comPort = -1;
+		int clientPortFrom = -1;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/COM_PORT_TO")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/CLIENT_PORT_FROM")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			comPort = Integer.parseInt(node.getTextContent());
+			clientPortFrom = Integer.parseInt(node.getTextContent());
 
 		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
 
 		}
 
-		return comPort;
+		return clientPortFrom;
+
+	}
+
+	static int getClientPortTo() {
+
+		int clientPortTo = -1;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/CLIENT_PORT_TO")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			clientPortTo = Integer.parseInt(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return clientPortTo;
+
+	}
+
+	static int getPacketSize() {
+
+		int packetSize = -1;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/PACKET_SIZE")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			packetSize = Integer.parseInt(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return packetSize;
 
 	}
 

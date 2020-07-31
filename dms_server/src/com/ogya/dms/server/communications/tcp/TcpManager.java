@@ -35,11 +35,11 @@ import com.ogya.dms.server.communications.intf.TcpManagerListener;
 public class TcpManager implements TcpServerListener {
 
 	private static final String END_OF_TRANSMISSION = String.valueOf((char) 4);
-	private static final int PACKET_SIZE = 1024;
 
 	private final int serverPort;
 	private final int clientPortFrom;
 	private final int clientPortTo;
+	private final int packetSize;
 
 	private final AtomicInteger nextPort = new AtomicInteger(0);
 
@@ -70,11 +70,12 @@ public class TcpManager implements TcpServerListener {
 
 	});
 
-	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo) throws IOException {
+	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, int packetSize) throws IOException {
 
 		this.serverPort = serverPort;
 		this.clientPortFrom = clientPortFrom;
 		this.clientPortTo = clientPortTo;
+		this.packetSize = packetSize;
 
 		nextPort.set(clientPortFrom);
 
@@ -405,13 +406,15 @@ public class TcpManager implements TcpServerListener {
 
 			int messageLength = message.length();
 
-			int totalParts = (messageLength + PACKET_SIZE - 1) / PACKET_SIZE;
+			int packetSize = this.packetSize > 0 ? this.packetSize : messageLength;
+
+			int totalParts = (messageLength + packetSize - 1) / packetSize;
 
 			// Start sending...
 			for (int i = 0; i < totalParts && (sendStatus == null || sendStatus.get()); ++i) {
 
-				int fromIndex = i * PACKET_SIZE;
-				int toIndex = Math.min((i + 1) * PACKET_SIZE, messageLength);
+				int fromIndex = i * packetSize;
+				int toIndex = Math.min((i + 1) * packetSize, messageLength);
 
 				String messagePart = message.substring(fromIndex, toIndex);
 
