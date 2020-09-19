@@ -64,6 +64,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		settingsPane.setOnBackAction(() -> getChildren().remove(settingsPane));
 		settingsPane.setOnSettingClickedAction(this::settingClicked);
 		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
+		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
 
 		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
 
@@ -417,6 +418,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void addIpClickedToListeners(final String ip) {
+
+		listeners.forEach(listener -> listener.addIpClicked(ip));
+
+	}
+
 	private void settingClicked(Settings setting) {
 
 		switch (setting) {
@@ -431,6 +438,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 			break;
 
 		}
+
+	}
+
+	private void addIpClicked(String ip) {
+
+		addIpClickedToListeners(ip);
+
+		remoteIpSettingsPane.clearIp();
 
 	}
 

@@ -47,4 +47,6 @@ public interface AppListener {
 
 	void statusInfoClosed();
 
+	void addIpClicked(String ip);
+
 }

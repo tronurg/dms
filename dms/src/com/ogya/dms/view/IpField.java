@@ -3,6 +3,8 @@ package com.ogya.dms.view;
 import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -21,6 +23,8 @@ public class IpField extends HBox {
 
 	private final TextField[] ipFields = new TextField[4];
 	private final Label[] dots = new Label[3];
+
+	private final BooleanProperty validProperty = new SimpleBooleanProperty(false);
 
 	public IpField() {
 
@@ -47,6 +51,12 @@ public class IpField extends HBox {
 					"-fx-text-box-border:transparent;-fx-focus-color:transparent;-fx-faint-focus-color:transparent");
 
 			ipField.setAlignment(Pos.CENTER);
+
+			ipField.textProperty().addListener((observable, oldValue, newValue) -> {
+
+				validProperty.set(getIP() != null);
+
+			});
 
 			StringConverter<String> formatter = new StringConverter<String>() {
 
@@ -227,10 +237,32 @@ public class IpField extends HBox {
 
 	}
 
+	public void clearIP() {
+
+		for (TextField ipField : ipFields) {
+
+			ipField.setText("");
+
+		}
+
+	}
+
 	public void setFont(Font font) {
 
 		Arrays.stream(ipFields).forEach(node -> node.setFont(font));
 		Arrays.stream(dots).forEach(node -> node.setFont(font));
+
+	}
+
+	public BooleanProperty validProperty() {
+
+		return validProperty;
+
+	}
+
+	public boolean isValid() {
+
+		return validProperty.get();
 
 	}
 

@@ -1,6 +1,5 @@
 package com.ogya.dms.view;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.ogya.dms.common.CommonMethods;
@@ -33,14 +32,16 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private final Label headingLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 
 	private final HBox addIpPane = new HBox(GAP);
+
+	private final IpField ipField = new IpField();
+	private final Button addIpButton = ViewFactory.newAddBtn();
+
 	private final VBox scrollableContent = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
 		@Override
 		public void requestFocus() {
 		}
 	};
-
-	private final AtomicReference<Consumer<Settings>> settingClickedActionRef = new AtomicReference<Consumer<Settings>>();
 
 	RemoteIpSettingsPane() {
 
@@ -68,9 +69,15 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	}
 
-	void setOnSettingClickedAction(Consumer<Settings> consumer) {
+	void setOnAddIpAction(Consumer<String> consumer) {
 
-		settingClickedActionRef.set(consumer);
+		addIpButton.setOnAction(e -> consumer.accept(ipField.getIP()));
+
+	}
+
+	void clearIp() {
+
+		ipField.clearIP();
 
 	}
 
@@ -105,16 +112,25 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initAddIpPane() {
 
+		initIpField();
+		initAddIpButton();
+
 		addIpPane.setPadding(new Insets(GAP));
 
-		IpField ipField = new IpField();
+		addIpPane.getChildren().addAll(ipField, addIpButton);
+
+	}
+
+	private void initIpField() {
+
 		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0));
 
-		Button addIpButton = ViewFactory.newAddBtn();
+	}
+
+	private void initAddIpButton() {
 
 		addIpButton.setMaxHeight(Double.MAX_VALUE);
-
-		addIpPane.getChildren().addAll(ipField, addIpButton);
+		addIpButton.disableProperty().bind(ipField.validProperty().not());
 
 	}
 

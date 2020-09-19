@@ -2201,6 +2201,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void addIpClicked(String ip) {
+
+		taskQueue.execute(() -> {
+
+			System.out.println(ip);
+
+		});
+
+	}
+
+	@Override
 	public void addListener(DmsListener listener) {
 
 		dmsListeners.add(listener);
