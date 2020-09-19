@@ -1,10 +1,14 @@
 package com.ogya.dms.view.factory;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Effect;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
@@ -208,6 +212,36 @@ public class ViewFactory {
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.opacityProperty().bind(Bindings.createDoubleBinding(() -> btn.isHover() ? 1.0 : 0.5, btn.hoverProperty()));
+
+		return btn;
+
+	}
+
+	public static Button newSettingsBtn() {
+
+		Button btn = new Button();
+
+		ObjectProperty<Color> colorProperty = new SimpleObjectProperty<Color>();
+
+		Circle circle = new Circle(12.0, Color.TRANSPARENT);
+		circle.strokeProperty().bind(colorProperty);
+		circle.setStrokeWidth(2.0);
+		Circle point0 = new Circle(-6.0, 0.0, 2.0);
+		point0.fillProperty().bind(colorProperty);
+		Circle point1 = new Circle(2.0);
+		point1.fillProperty().bind(colorProperty);
+		Circle point2 = new Circle(6.0, 0.0, 2.0);
+		point2.fillProperty().bind(colorProperty);
+		Group group = new Group(circle, point0, point1, point2);
+		btn.setGraphic(group);
+		btn.setBackground(Background.EMPTY);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+		final Effect dropShadow = new DropShadow(2.0, Color.DODGERBLUE);
+		colorProperty.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.DODGERBLUE : Color.DARKGRAY,
+				btn.hoverProperty()));
+		btn.effectProperty()
+				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? dropShadow : null, btn.hoverProperty()));
 
 		return btn;
 

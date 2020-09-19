@@ -7,11 +7,13 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Identity;
+import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
@@ -42,6 +44,7 @@ class IdentityPane extends GridPane {
 	private final Label profileLabel = new Label();
 
 	private final Label nameLabel = new Label();
+	private final Button settingsButton = ViewFactory.newSettingsBtn();
 	private final TextField commentTextField = new TextField();
 	private final Label coordinatesLabel = new Label();
 
@@ -62,6 +65,7 @@ class IdentityPane extends GridPane {
 		initProfileRound();
 		initProfileLabel();
 		initNameLabel();
+		initSettingsButton();
 		initCommentTextField();
 		initCoordinatesLabel();
 
@@ -72,6 +76,7 @@ class IdentityPane extends GridPane {
 		add(profilePicture, 0, 0, 1, 3);
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
 		add(nameLabel, 2, 0, 1, 1);
+		add(settingsButton, 3, 0, 1, 1);
 		add(commentTextField, 2, 1, 1, 1);
 		add(coordinatesLabel, 2, 2, 1, 1);
 
@@ -146,6 +151,12 @@ class IdentityPane extends GridPane {
 
 	}
 
+	private void initSettingsButton() {
+
+		settingsButton.setOnAction(e -> listeners.forEach(listener -> listener.settingsClicked()));
+
+	}
+
 	private void initCommentTextField() {
 
 		final AtomicReference<String> lastComment = new AtomicReference<String>();
@@ -208,5 +219,7 @@ interface IIdentityPane {
 	void commentUpdated(String comment);
 
 	void updateStatusClicked();
+
+	void settingsClicked();
 
 }

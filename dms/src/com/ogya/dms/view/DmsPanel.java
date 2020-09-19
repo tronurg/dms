@@ -34,6 +34,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath());
 
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane();
+	private final SettingsPane settingsPane = new SettingsPane();
+	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane();
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -59,6 +61,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		foldersPane.setOnFileSelected(this::fileSelected);
 		foldersPane.setOnBackAction(this::backFromFoldersPane);
 		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
+		settingsPane.setOnBackAction(() -> getChildren().remove(settingsPane));
+		settingsPane.setOnSettingClickedAction(this::settingClicked);
+		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
 
 		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
 
@@ -412,6 +417,23 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void settingClicked(Settings setting) {
+
+		switch (setting) {
+
+		case EDIT_REMOTE_IPS:
+
+			getChildren().add(remoteIpSettingsPane);
+
+			break;
+
+		default:
+			break;
+
+		}
+
+	}
+
 	@Override
 	public void commentUpdated(String comment) {
 
@@ -423,6 +445,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void updateStatusClicked() {
 
 		updateStatusClickedToListeners();
+
+	}
+
+	@Override
+	public void settingsClicked() {
+
+		getChildren().add(settingsPane);
 
 	}
 
