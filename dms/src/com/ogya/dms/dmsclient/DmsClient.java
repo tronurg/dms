@@ -86,6 +86,24 @@ public class DmsClient {
 
 	}
 
+	public void addRemoteIp(String message) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.ADD_IP, null)));
+
+	}
+
+	public void removeRemoteIp(String message) {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.REMOVE_IP, null)));
+
+	}
+
+	public void claimRemoteIps() {
+
+		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.REQ_IP, null)));
+
+	}
+
 	public void sendMessage(String message, String receiverUuid, Long messageId) {
 
 		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE, messageId)));
@@ -266,6 +284,12 @@ public class DmsClient {
 
 				break;
 
+			case IP:
+
+				remoteIpsReceivedToListener(messagePojo.message);
+
+				break;
+
 			case PROGRESS:
 
 				progressReceivedToListener(messagePojo.messageId, messagePojo.senderUuid.split(";"),
@@ -337,6 +361,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.beaconReceived(message);
+
+		});
+
+	}
+
+	private void remoteIpsReceivedToListener(final String message) {
+
+		taskQueue.execute(() -> {
+
+			listener.remoteIpsReceived(message);
 
 		});
 

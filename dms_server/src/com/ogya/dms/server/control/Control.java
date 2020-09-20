@@ -104,7 +104,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
-	private void receiveUdpMessage(InetAddress senderAddress, String message) {
+	private void receiveUdpMessage(InetAddress senderAddress, String message, boolean isUnicast) {
 
 		String[] uuids = message.split(" ");
 		if (uuids.length != 2 || DMS_UUID.equals(uuids[0]))
@@ -120,6 +120,9 @@ public class Control implements TcpManagerListener, ModelListener {
 			e.printStackTrace();
 
 		}
+
+		if (isUnicast)
+			taskQueue.execute(() -> model.addUnicastIp(senderAddress.getHostAddress()));
 
 	}
 
@@ -323,7 +326,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	@Override
 	public void publishUuid(String uuid) {
 
-		multicastManager.send(DMS_UUID + " " + uuid);
+		multicastManager.send(DMS_UUID + " " + uuid, model.getRemoteIps());
 
 	}
 

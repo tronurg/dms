@@ -107,14 +107,27 @@ public class IpField extends HBox {
 
 			ipField.setTextFormatter(new TextFormatter<String>(formatter, "", filter));
 
+			ipField.textProperty().addListener((observable, oldValue, newValue) -> {
+
+				if (ipField.getAnchor() != ipField.getCaretPosition())
+					return;
+
+				if (index < ipFields.length - 1 && newValue.length() == 3 && ipField.getCaretPosition() == 2) {
+
+					ipFields[index + 1].requestFocus();
+					ipFields[index + 1].selectAll();
+
+				}
+
+			});
+
 			ipField.setOnKeyTyped(e -> {
 
 				if (ipField.getAnchor() != ipField.getCaretPosition())
 					return;
 
 				if (index < ipFields.length - 1 && ipField.getCaretPosition() == ipField.getText().length()
-						&& (e.getCharacter().charAt(0) == '.' || (ipField.getCaretPosition() == 2
-								&& e.getCharacter().charAt(0) >= '0' && e.getCharacter().charAt(0) <= '9'))) {
+						&& e.getCharacter().charAt(0) == '.') {
 
 					ipFields[index + 1].requestFocus();
 					ipFields[index + 1].selectAll();

@@ -49,4 +49,6 @@ public interface AppListener {
 
 	void addIpClicked(String ip);
 
+	void removeIpClicked(String ip);
+
 }

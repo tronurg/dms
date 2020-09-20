@@ -1,5 +1,6 @@
 package com.ogya.dms.view;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.ogya.dms.common.CommonMethods;
@@ -36,12 +37,14 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private final IpField ipField = new IpField();
 	private final Button addIpButton = ViewFactory.newAddBtn();
 
-	private final VBox scrollableContent = new VBox();
+	private final VBox scrollableContent = new VBox(GAP);
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
 		@Override
 		public void requestFocus() {
 		}
 	};
+
+	private final AtomicReference<Consumer<String>> removeIpActionRef = new AtomicReference<Consumer<String>>();
 
 	RemoteIpSettingsPane() {
 
@@ -75,9 +78,59 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	}
 
-	void clearIp() {
+	void setOnRemoveIpAction(Consumer<String> consumer) {
+
+		removeIpActionRef.set(consumer);
+
+	}
+
+	void clearIpField() {
 
 		ipField.clearIP();
+
+	}
+
+	void clearAll() {
+
+		clearIpField();
+
+		scrollableContent.getChildren().clear();
+
+	}
+
+	void setDisableInput(boolean inputDisabled) {
+
+		ipField.setDisable(inputDisabled);
+
+	}
+
+	void updateIps(final String[] ips) {
+
+		scrollableContent.getChildren().clear();
+
+		for (String ip : ips) {
+
+			HBox ipField = new HBox(GAP);
+
+			Label ipLabel = new Label(ip);
+			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+
+			Button removeIpButton = ViewFactory.newRemoveBtn();
+
+			removeIpButton.setOnAction(e -> {
+
+				Consumer<String> removeIpAction = removeIpActionRef.get();
+
+				if (removeIpAction != null)
+					removeIpAction.accept(ip);
+
+			});
+
+			ipField.getChildren().addAll(removeIpButton, ipLabel);
+
+			scrollableContent.getChildren().add(ipField);
+
+		}
 
 	}
 
@@ -100,7 +153,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		centerPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		centerPane.getChildren().addAll(addIpPane, new Separator(), scrollableContent);
+		centerPane.getChildren().addAll(addIpPane, new Separator(), scrollPane);
 
 	}
 
@@ -121,7 +174,15 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	}
 
+	private void initScrollableContent() {
+
+		scrollableContent.setPadding(new Insets(GAP));
+
+	}
+
 	private void initIpField() {
+
+		ipField.setDisable(true);
 
 		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0));
 
@@ -131,10 +192,6 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		addIpButton.setMaxHeight(Double.MAX_VALUE);
 		addIpButton.disableProperty().bind(ipField.validProperty().not());
-
-	}
-
-	private void initScrollableContent() {
 
 	}
 

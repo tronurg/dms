@@ -65,6 +65,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		settingsPane.setOnSettingClickedAction(this::settingClicked);
 		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
 		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
+		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
 
 		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
 
@@ -264,6 +265,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void serverConnStatusUpdated(boolean connStatus) {
+
+		remoteIpSettingsPane.setDisableInput(!connStatus);
+		if (!connStatus)
+			remoteIpSettingsPane.clearAll();
+
+	}
+
+	public void updateRemoteIps(String[] ips) {
+
+		remoteIpSettingsPane.updateIps(ips);
+
+	}
+
 	private void fileSelected(Path file) {
 
 		getChildren().remove(foldersPane);
@@ -424,6 +439,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void removeIpClickedToListeners(final String ip) {
+
+		listeners.forEach(listener -> listener.removeIpClicked(ip));
+
+	}
+
 	private void settingClicked(Settings setting) {
 
 		switch (setting) {
@@ -445,7 +466,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		addIpClickedToListeners(ip);
 
-		remoteIpSettingsPane.clearIp();
+		remoteIpSettingsPane.clearIpField();
+
+	}
+
+	private void removeIpClicked(String ip) {
+
+		removeIpClickedToListeners(ip);
 
 	}
 

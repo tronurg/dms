@@ -1112,6 +1112,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public void remoteIpsReceived(String message) {
+
+		String[] remoteIps = message.isEmpty() ? new String[0] : message.split(";");
+
+		Platform.runLater(() -> dmsPanel.updateRemoteIps(remoteIps));
+
+	}
+
+	@Override
 	public void progressReceived(final Long messageId, final String[] remoteUuids, final int progress) {
 		// messageId = local database id of the message (not the message id, which is
 		// the local
@@ -1328,6 +1337,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			}
 
 			dmsClient.claimAllBeacons();
+			dmsClient.claimRemoteIps();
 
 		} else {
 
@@ -1340,6 +1350,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			clearMessageProgresses();
 
 		}
+
+		Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(connStatus));
 
 	}
 
@@ -2203,11 +2215,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	@Override
 	public void addIpClicked(String ip) {
 
-		taskQueue.execute(() -> {
+		dmsClient.addRemoteIp(ip);
 
-			System.out.println(ip);
+	}
 
-		});
+	@Override
+	public void removeIpClicked(String ip) {
+
+		dmsClient.removeRemoteIp(ip);
 
 	}
 

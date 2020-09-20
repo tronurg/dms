@@ -1,10 +1,18 @@
 package com.ogya.dms.server.model;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -26,9 +34,40 @@ public class Model {
 	private final Map<String, Map<Long, AtomicBoolean>> senderStatusMap = Collections
 			.synchronizedMap(new HashMap<String, Map<Long, AtomicBoolean>>());
 
+	private final Set<String> remoteIps = Collections.synchronizedSet(new HashSet<String>());
+
 	public Model(ModelListener listener) {
 
 		this.listener = listener;
+
+		init();
+
+	}
+
+	private void init() {
+
+		Path ipDatPath = Paths.get("./ip.dat");
+
+		if (Files.notExists(ipDatPath))
+			return;
+
+		try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(ipDatPath))) {
+
+			for (String ip : (String[]) ois.readObject()) {
+
+				remoteIps.add(ip);
+
+			}
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		} catch (ClassNotFoundException e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -64,8 +103,13 @@ public class Model {
 					});
 					listener.sendToAllRemoteUsers(messagePojoStr);
 
-					if (isNew)
+					if (isNew) {
+
 						sendAllBeaconsToLocalUser(senderUuid);
+
+						sendRemoteIpsToLocalUser(senderUuid);
+
+					}
 
 				}
 
@@ -77,6 +121,24 @@ public class Model {
 			case REQ_BCON:
 
 				sendAllBeaconsToLocalUser(senderUuid);
+
+				break;
+
+			case ADD_IP:
+
+				addRemoteIp(messagePojo.message);
+
+				break;
+
+			case REMOVE_IP:
+
+				removeRemoteIp(messagePojo.message);
+
+				break;
+
+			case REQ_IP:
+
+				sendRemoteIpsToLocalUser(senderUuid);
 
 				break;
 
@@ -306,6 +368,21 @@ public class Model {
 
 	}
 
+	public Set<String> getRemoteIps() {
+
+		return remoteIps;
+
+	}
+
+	public void addUnicastIp(String ip) {
+
+		if (remoteIps.contains(ip))
+			return;
+
+		addRemoteIp(ip);
+
+	}
+
 	private void sendAllBeaconsToLocalUser(String receiverUuid) {
 
 		localUserBeacon.forEach((uuid, beacon) -> {
@@ -320,6 +397,62 @@ public class Model {
 		remoteUserBeacon.forEach((uuid, beacon) -> {
 
 			listener.sendToLocalUser(receiverUuid, beacon);
+
+		});
+
+	}
+
+	private void addRemoteIp(String ip) {
+
+		remoteIps.add(ip);
+
+		persistRemoteIps();
+
+		sendRemoteIpsToAllLocalUsers();
+
+	}
+
+	private void removeRemoteIp(String ip) {
+
+		remoteIps.remove(ip);
+
+		persistRemoteIps();
+
+		sendRemoteIpsToAllLocalUsers();
+
+	}
+
+	private void persistRemoteIps() {
+
+		try (ObjectOutputStream ois = new ObjectOutputStream(Files.newOutputStream(Paths.get("./ip.dat")))) {
+
+			ois.writeObject(remoteIps.toArray(new String[remoteIps.size()]));
+
+			ois.flush();
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	private void sendRemoteIpsToLocalUser(String receiverUuid) {
+
+		String messagePojoStr = gson.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
+
+		listener.sendToLocalUser(receiverUuid, messagePojoStr);
+
+	}
+
+	private void sendRemoteIpsToAllLocalUsers() {
+
+		String messagePojoStr = gson.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
+
+		localUserBeacon.forEach((receiverUuid, message) -> {
+
+			listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
 		});
 

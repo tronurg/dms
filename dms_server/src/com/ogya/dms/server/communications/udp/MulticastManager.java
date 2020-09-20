@@ -8,15 +8,16 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.function.BiConsumer;
 
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.Encryption;
+import com.ogya.dms.server.communications.intf.MulticastManagerListener;
 
 public class MulticastManager {
 
@@ -28,7 +29,7 @@ public class MulticastManager {
 	private final int multicastPort;
 	private final InetSocketAddress multicastAddress;
 
-	private final BiConsumer<InetAddress, String> messageConsumer;
+	private final MulticastManagerListener listener;
 
 	private MulticastSocket multicastSocket;
 
@@ -49,13 +50,13 @@ public class MulticastManager {
 
 	});
 
-	public MulticastManager(String multicastGroup, int multicastPort, BiConsumer<InetAddress, String> messageConsumer) {
+	public MulticastManager(String multicastGroup, int multicastPort, MulticastManagerListener listener) {
 
 		this.multicastGroup = multicastGroup;
 		this.multicastPort = multicastPort;
 		this.multicastAddress = new InetSocketAddress(multicastGroup, multicastPort);
 
-		this.messageConsumer = messageConsumer;
+		this.listener = listener;
 
 		new Thread(this::receive).start();
 
@@ -63,21 +64,41 @@ public class MulticastManager {
 
 	}
 
-	public void send(final String dataStr) {
+	public void send(final String dataStr, final Set<String> unicastIps) {
 
 		taskQueue.execute(() -> {
 
 			try {
 
 				byte[] encryptedData = Encryption.encrypt(dataStr);
+				byte[] encryptedDataWithSuffix = Arrays.copyOf(encryptedData, encryptedData.length + 1);
 
-				DatagramPacket sendPacket = new DatagramPacket(encryptedData, encryptedData.length, multicastAddress);
+				DatagramPacket sendPacket = new DatagramPacket(encryptedDataWithSuffix, encryptedDataWithSuffix.length,
+						multicastAddress);
 
 				getMulticastSocket().send(sendPacket);
 
+				if (unicastIps.isEmpty())
+					return;
+
+				encryptedDataWithSuffix[encryptedDataWithSuffix.length - 1] = 1;
+
+				for (String unicastIp : unicastIps) {
+
+					DatagramPacket unicastSendPacket = new DatagramPacket(encryptedDataWithSuffix,
+							encryptedDataWithSuffix.length, new InetSocketAddress(unicastIp, multicastPort));
+
+					getMulticastSocket().send(unicastSendPacket);
+
+				}
+
 			} catch (UnsupportedEncodingException e) {
 
+				e.printStackTrace();
+
 			} catch (GeneralSecurityException e) {
+
+				e.printStackTrace();
 
 			} catch (IOException e) {
 
@@ -97,6 +118,7 @@ public class MulticastManager {
 
 			multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
 
+			multicastSocket.setTimeToLive(32);
 			multicastSocket.setSendBufferSize(SNDBUF_SIZE);
 			multicastSocket.setReceiveBufferSize(RCVBUF_SIZE);
 
@@ -156,16 +178,27 @@ public class MulticastManager {
 
 				DatagramPacket receivePacket = receiveQueue.take();
 
-				InetAddress remoteAddress = receivePacket.getAddress();
-				String data = Encryption.decrypt(Arrays.copyOf(receivePacket.getData(), receivePacket.getLength()));
+				byte[] encryptedDataWithSuffix = Arrays.copyOf(receivePacket.getData(), receivePacket.getLength());
+				boolean isUnicast = encryptedDataWithSuffix[encryptedDataWithSuffix.length - 1] == 1;
 
-				messageConsumer.accept(remoteAddress, data);
+				byte[] encryptedData = Arrays.copyOf(encryptedDataWithSuffix, encryptedDataWithSuffix.length - 1);
+
+				InetAddress remoteAddress = receivePacket.getAddress();
+				String data = Encryption.decrypt(encryptedData);
+
+				listener.udpMessageReceived(remoteAddress, data, isUnicast);
 
 			} catch (InterruptedException e) {
 
+				e.printStackTrace();
+
 			} catch (GeneralSecurityException e) {
 
+				e.printStackTrace();
+
 			} catch (IOException e) {
+
+				e.printStackTrace();
 
 			}
 

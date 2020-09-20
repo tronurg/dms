@@ -6,6 +6,8 @@ public interface DmsClientListener {
 
 	void beaconReceived(String message);
 
+	void remoteIpsReceived(String message);
+
 	void progressReceived(Long messageId, String[] remoteUuids, int progress);
 
 	void messageReceived(String message, String remoteUuid);
