@@ -374,15 +374,6 @@ public class Model {
 
 	}
 
-	public void addUnicastIp(String ip) {
-
-		if (remoteIps.contains(ip))
-			return;
-
-		addRemoteIp(ip);
-
-	}
-
 	private void sendAllBeaconsToLocalUser(String receiverUuid) {
 
 		localUserBeacon.forEach((uuid, beacon) -> {
@@ -402,7 +393,10 @@ public class Model {
 
 	}
 
-	private void addRemoteIp(String ip) {
+	public void addRemoteIp(String ip) {
+
+		if (remoteIps.contains(ip))
+			return;
 
 		remoteIps.add(ip);
 
@@ -413,6 +407,9 @@ public class Model {
 	}
 
 	private void removeRemoteIp(String ip) {
+
+		if (!remoteIps.contains(ip))
+			return;
 
 		remoteIps.remove(ip);
 
