@@ -6,6 +6,8 @@ import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -33,6 +35,8 @@ import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 
 public class TcpManager implements TcpServerListener {
+
+	private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
 
 	private static final String END_OF_TRANSMISSION = String.valueOf((char) 4);
 
@@ -149,7 +153,7 @@ public class TcpManager implements TcpServerListener {
 
 									try {
 
-										dmsServer.messageFeed.write(arg0.getBytes());
+										dmsServer.messageFeed.write(arg0.getBytes(CHARSET));
 
 									} catch (IOException e) {
 
@@ -626,7 +630,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				dmsServer.messageFeed.write(arg1.getBytes());
+				dmsServer.messageFeed.write(arg1.getBytes(CHARSET));
 
 			} catch (IOException e) {
 
@@ -702,7 +706,7 @@ public class TcpManager implements TcpServerListener {
 		private final Thread messageFeedThread = new Thread(() -> {
 
 			try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
-					Scanner scanner = new Scanner(pipedInputStream)) {
+					Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
 
 				scanner.useDelimiter(END_OF_TRANSMISSION);
 

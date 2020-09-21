@@ -3,6 +3,7 @@ package com.ogya.dms.server.common;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 
@@ -14,7 +15,7 @@ import com.google.crypto.tink.config.TinkConfig;
 
 public class Encryption {
 
-	private static final Charset CHARSET = Charset.forName("UTF-8");
+	private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
 
 	private static Aead aead;
 

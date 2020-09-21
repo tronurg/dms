@@ -654,7 +654,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Message dbMessage = dbManager.getMessage(message.getSenderUuid(), messageId);
 
-				cancelMessage(dbMessage);
+				if (dbMessage != null)
+					cancelMessage(dbMessage);
 
 			}
 
