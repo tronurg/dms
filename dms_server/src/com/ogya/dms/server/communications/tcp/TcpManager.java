@@ -36,7 +36,7 @@ import com.ogya.dms.server.communications.intf.TcpManagerListener;
 
 public class TcpManager implements TcpServerListener {
 
-	private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
+	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
 	private static final String END_OF_TRANSMISSION = String.valueOf((char) 4);
 
@@ -154,6 +154,7 @@ public class TcpManager implements TcpServerListener {
 									try {
 
 										dmsServer.messageFeed.write(arg0.getBytes(CHARSET));
+										dmsServer.messageFeed.flush();
 
 									} catch (IOException e) {
 
@@ -631,6 +632,7 @@ public class TcpManager implements TcpServerListener {
 			try {
 
 				dmsServer.messageFeed.write(arg1.getBytes(CHARSET));
+				dmsServer.messageFeed.flush();
 
 			} catch (IOException e) {
 

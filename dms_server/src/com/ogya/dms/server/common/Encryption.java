@@ -15,7 +15,7 @@ import com.google.crypto.tink.config.TinkConfig;
 
 public class Encryption {
 
-	private static final Charset CHARSET = StandardCharsets.ISO_8859_1;
+	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
 	private static Aead aead;
 
