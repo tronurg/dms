@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 
+import com.github.luben.zstd.Zstd;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.CleartextKeysetHandle;
 import com.google.crypto.tink.JsonKeysetReader;
@@ -19,27 +20,42 @@ public class Encryption {
 
 	private static Aead aead;
 
-	public static String encryptToString(String dataStr) throws GeneralSecurityException, IOException {
+	public static String compressAndEncryptToString(String dataStr) throws GeneralSecurityException, IOException {
 
-		return Base64.getEncoder().encodeToString(encrypt(dataStr));
+		return Base64.getEncoder().encodeToString(encryptBytes(Zstd.compress(dataStr.getBytes(CHARSET))));
 
 	}
 
 	public static byte[] encrypt(String dataStr) throws GeneralSecurityException, IOException {
 
-		return getAead().encrypt(dataStr.getBytes(CHARSET), null);
+		return encryptBytes(dataStr.getBytes(CHARSET));
 
 	}
 
-	public static String decryptFromString(String encryptedDataStr) throws GeneralSecurityException, IOException {
+	public static String decryptAndDecompressFromString(String encryptedDataStr)
+			throws GeneralSecurityException, IOException {
 
-		return decrypt(Base64.getDecoder().decode(encryptedDataStr));
+		byte[] compressedData = decryptBytes(Base64.getDecoder().decode(encryptedDataStr));
+
+		return new String(Zstd.decompress(compressedData, (int) Zstd.decompressedSize(compressedData)), CHARSET);
 
 	}
 
 	public static String decrypt(byte[] encryptedData) throws GeneralSecurityException, IOException {
 
-		return new String(getAead().decrypt(encryptedData, null), CHARSET);
+		return new String(decryptBytes(encryptedData), CHARSET);
+
+	}
+
+	private synchronized static byte[] encryptBytes(byte[] data) throws GeneralSecurityException, IOException {
+
+		return getAead().encrypt(data, null);
+
+	}
+
+	private synchronized static byte[] decryptBytes(byte[] encryptedData) throws GeneralSecurityException, IOException {
+
+		return getAead().decrypt(encryptedData, null);
 
 	}
 

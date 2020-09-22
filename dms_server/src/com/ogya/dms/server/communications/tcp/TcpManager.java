@@ -86,6 +86,7 @@ public class TcpManager implements TcpServerListener {
 		tcpServer = new TcpServer(serverPort);
 
 		tcpServer.setBlocking(true);
+		tcpServer.setKeepAlive(false);
 
 		tcpServer.addListener(this);
 
@@ -143,6 +144,7 @@ public class TcpManager implements TcpServerListener {
 						TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
 
 						tcpClient.setBlocking(true);
+						tcpClient.setKeepAlive(false);
 
 						tcpClient.addListener(new TcpClientListener() {
 
@@ -253,7 +255,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = Encryption.encryptToString(message);
+				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
 				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod);
 
@@ -299,7 +301,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = Encryption.encryptToString(message);
+				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
 				dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, encryptedMessage, sendStatus,
 						progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
@@ -328,7 +330,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = Encryption.encryptToString(message);
+				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
 				sendMessageToServer(dmsServer, encryptedMessage, null, null);
 
@@ -351,7 +353,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = Encryption.encryptToString(message);
+				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
 				dmsServers
 						.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null));
@@ -532,7 +534,7 @@ public class TcpManager implements TcpServerListener {
 
 		try {
 
-			String decryptedMessage = Encryption.decryptFromString(message);
+			String decryptedMessage = Encryption.decryptAndDecompressFromString(message);
 
 			listeners.forEach(e -> e.messageReceived(decryptedMessage));
 
