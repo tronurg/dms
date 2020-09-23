@@ -42,6 +42,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.KeyCode;
@@ -90,7 +91,7 @@ class MessagePane extends BorderPane {
 	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
 	private final StackPane btnPane = new StackPane();
 
-	private final Effect highlight = new DropShadow(3 * GAP, Color.RED);
+	private final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
