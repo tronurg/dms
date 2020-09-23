@@ -22,8 +22,6 @@ import javax.swing.JComponent;
 
 import org.hibernate.HibernateException;
 
-import com.github.luben.zstd.Zstd;
-import com.github.luben.zstd.ZstdException;
 import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.DbManager;
@@ -612,10 +610,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				byte[] fileBytes = Files.readAllBytes(path);
 
-				message.setContent(new FilePojo(path.getFileName().toString(),
-						Base64.getEncoder().encodeToString(Zstd.compress(fileBytes)), fileBytes.length).toJson());
+				message.setContent(
+						new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
+								.toJson());
 
-			} catch (ZstdException | IOException e) {
+			} catch (IOException e) {
 
 				message.setContent("");
 
@@ -1230,8 +1229,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						Path dstFile = getDstFile(dstFolder, fileName);
 
-						Files.write(dstFile, Zstd.decompress(Base64.getDecoder().decode(filePojo.fileContent),
-								filePojo.originalLength));
+						Files.write(dstFile, Base64.getDecoder().decode(filePojo.fileContent));
 
 						incomingMessage.setContent(dstFile.toString());
 

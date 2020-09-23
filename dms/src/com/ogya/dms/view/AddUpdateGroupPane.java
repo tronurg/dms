@@ -1,10 +1,10 @@
 package com.ogya.dms.view;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -15,7 +15,9 @@ import com.ogya.dms.view.factory.ViewFactory;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
@@ -38,6 +40,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
@@ -63,7 +66,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final Button addUpdateGroupBtn = new Button();
 
-	private final List<String> uuids = Collections.synchronizedList(new ArrayList<String>());
+	private final Map<String, ObjectProperty<Color>> uuidStatus = Collections
+			.synchronizedMap(new HashMap<String, ObjectProperty<Color>>());
 	private final ObservableSet<String> selectedUuids = FXCollections.observableSet(new HashSet<String>());
 
 	private final BooleanProperty updateMode = new SimpleBooleanProperty();
@@ -77,11 +81,18 @@ public class AddUpdateGroupPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof Labeled && arg1 instanceof Labeled))
+			if (!(arg0 instanceof HBox && arg1 instanceof HBox))
 				return 0;
 
-			Labeled labeled0 = (Labeled) arg0;
-			Labeled labeled1 = (Labeled) arg1;
+			HBox hBox0 = (HBox) arg0;
+			HBox hBox1 = (HBox) arg1;
+
+			if (!(hBox0.getChildren().size() > 0 && hBox0.getChildren().get(0) instanceof Labeled
+					&& hBox1.getChildren().size() > 0 && hBox1.getChildren().get(0) instanceof Labeled))
+				return 0;
+
+			Labeled labeled0 = (Labeled) hBox0.getChildren().get(0);
+			Labeled labeled1 = (Labeled) hBox1.getChildren().get(0);
 
 			return labeled0.getText().compareTo(labeled1.getText());
 
@@ -119,18 +130,33 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		final String uuid = contact.getUuid();
 		final String name = contact.getName();
+		final Color statusColor = contact.getStatus().getStatusColor();
 
-		if (!uuids.contains(uuid)) {
+		if (!uuidStatus.containsKey(uuid)) {
 
-			uuids.add(uuid);
+			uuidStatus.put(uuid, new SimpleObjectProperty<Color>(statusColor));
 
+			final HBox addContactBox = new HBox();
+			addContactBox.setAlignment(Pos.CENTER_LEFT);
+			addContactBox.managedProperty().bind(addContactBox.visibleProperty());
 			final Button addContactBtn = ViewFactory.newAddBtn();
 			initButton(addContactBtn);
 			addContactBtn.setText(name);
+			final Circle addStatusCircle = new Circle(7.0);
+			HBox.setMargin(addStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
+			addStatusCircle.fillProperty().bind(uuidStatus.get(uuid));
+			addContactBox.getChildren().addAll(addContactBtn, addStatusCircle);
 
+			final HBox removeContactBox = new HBox();
+			removeContactBox.setAlignment(Pos.CENTER_LEFT);
+			removeContactBox.managedProperty().bind(removeContactBox.visibleProperty());
 			final Button removeContactBtn = ViewFactory.newRemoveBtn();
 			initButton(removeContactBtn);
 			removeContactBtn.setText(name);
+			final Circle removeStatusCircle = new Circle(7.0);
+			HBox.setMargin(removeStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
+			removeStatusCircle.fillProperty().bind(uuidStatus.get(uuid));
+			removeContactBox.getChildren().addAll(removeContactBtn, removeStatusCircle);
 
 			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedUuids.contains(uuid),
 					selectedUuids);
@@ -139,13 +165,13 @@ public class AddUpdateGroupPane extends BorderPane {
 				return searchContactStr.isEmpty() || name.toLowerCase().startsWith(searchContactStr);
 			}, searchContactTextField.textProperty());
 
-			addContactBtn.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
-			removeContactBtn.visibleProperty().bind(addContactBinding);
+			addContactBox.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
+			removeContactBox.visibleProperty().bind(addContactBinding);
 
 			addContactBtn.setOnAction(e -> {
 
-				addedContactsPane.getChildren().remove(removeContactBtn);
-				addedContactsPane.getChildren().add(0, removeContactBtn);
+				addedContactsPane.getChildren().remove(removeContactBox);
+				addedContactsPane.getChildren().add(0, removeContactBox);
 
 				selectedUuids.add(uuid);
 
@@ -153,11 +179,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			removeContactBtn.setOnAction(e -> selectedUuids.remove(uuid));
 
-			addedContactsPane.getChildren().add(removeContactBtn);
-			notAddedContactsPane.getChildren().add(addContactBtn);
+			addedContactsPane.getChildren().add(removeContactBox);
+			notAddedContactsPane.getChildren().add(addContactBox);
 			FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
 
 		}
+
+		uuidStatus.get(uuid).setValue(statusColor);
 
 	}
 
@@ -180,7 +208,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		selectedUuids.clear();
 		if (newSelectedUuids != null) {
 			newSelectedUuids.forEach(uuid -> {
-				if (uuids.contains(uuid))
+				if (uuidStatus.containsKey(uuid))
 					selectedUuids.add(uuid);
 			});
 		}
@@ -192,10 +220,12 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initButton(Button btn) {
 
+		HBox.setHgrow(btn, Priority.ALWAYS);
+		btn.setMaxWidth(Double.MAX_VALUE);
+		btn.setAlignment(Pos.CENTER_LEFT);
 		btn.setMnemonicParsing(false);
 		btn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 		btn.setPadding(new Insets(5.0));
-		btn.managedProperty().bind(btn.visibleProperty());
 
 	}
 

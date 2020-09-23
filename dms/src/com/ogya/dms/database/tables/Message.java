@@ -50,7 +50,7 @@ public class Message {
 	@Column(name = "message_code", updatable = false)
 	private Integer messageCode;
 
-	@Column(name = "content", nullable = false, updatable = false)
+	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
 	private String content;
 
 	@Column(name = "message_status", nullable = false)
@@ -61,7 +61,7 @@ public class Message {
 	@Enumerated(EnumType.STRING)
 	private WaitStatus waitStatus;
 
-	@Column(name = "status_report_str")
+	@Column(name = "status_report_str", length = Integer.MAX_VALUE)
 	private String statusReportStr;
 
 	@Column(name = "date", nullable = false, updatable = false)

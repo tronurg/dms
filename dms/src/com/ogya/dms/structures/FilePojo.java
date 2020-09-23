@@ -6,13 +6,11 @@ public class FilePojo {
 
 	public final String fileName;
 	public final String fileContent;
-	public final int originalLength;
 
-	public FilePojo(String fileName, String fileContent, int originalLength) {
+	public FilePojo(String fileName, String fileContent) {
 
 		this.fileName = fileName;
 		this.fileContent = fileContent;
-		this.originalLength = originalLength;
 
 	}
 
