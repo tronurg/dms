@@ -2,10 +2,13 @@ package com.ogya.dms.view;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
@@ -38,6 +41,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane();
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
+
+	private final AtomicReference<Entry<String, MessagePane>> uuidOnScreenRef = new AtomicReference<Entry<String, MessagePane>>();
 
 	public DmsPanel() {
 
@@ -121,6 +126,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		}
 
+		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
+		if (!(uuidOnScreen == null || uuid.equals(uuidOnScreen.getKey())))
+			uuidOnScreen.getValue().highlightBackButton();
+
 	}
 
 	public void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection, String uuid) {
@@ -142,6 +151,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		default:
 
 		}
+
+		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
+		if (!(uuidOnScreen == null || uuid.equals(uuidOnScreen.getKey())))
+			uuidOnScreen.getValue().highlightBackButton();
 
 	}
 
@@ -502,6 +515,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		getChildren().add(messagePane);
 
+		uuidOnScreenRef.set(new AbstractMap.SimpleEntry<String, MessagePane>(uuid, messagePane));
+
 		contactMessagePaneOpenedToListeners(uuid);
 
 	}
@@ -510,6 +525,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void hideContactMessagePane(MessagePane messagePane, String uuid) {
 
 		contactMessagePaneClosedToListeners(uuid);
+
+		uuidOnScreenRef.set(null);
 
 		getChildren().remove(messagePane);
 
@@ -573,6 +590,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		getChildren().add(messagePane);
 
+		uuidOnScreenRef.set(new AbstractMap.SimpleEntry<String, MessagePane>(groupUuid, messagePane));
+
 		groupMessagePaneOpenedToListeners(groupUuid);
 
 	}
@@ -581,6 +600,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void hideGroupMessagePane(MessagePane messagePane, String groupUuid) {
 
 		groupMessagePaneClosedToListeners(groupUuid);
+
+		uuidOnScreenRef.set(null);
 
 		getChildren().remove(messagePane);
 

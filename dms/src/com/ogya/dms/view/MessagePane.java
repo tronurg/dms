@@ -43,6 +43,7 @@ import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Effect;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
@@ -88,6 +89,8 @@ class MessagePane extends BorderPane {
 	private final Button sendBtn = ViewFactory.newSendBtn();
 	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
 	private final StackPane btnPane = new StackPane();
+
+	private final Effect highlight = new DropShadow(3 * GAP, Color.RED);
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
@@ -350,9 +353,18 @@ class MessagePane extends BorderPane {
 
 	}
 
+	void highlightBackButton() {
+
+		backBtn.setEffect(highlight);
+
+	}
+
 	private void registerListeners() {
 
-		backBtn.setOnAction(e -> listeners.forEach(listener -> listener.backClicked()));
+		backBtn.setOnAction(e -> {
+			listeners.forEach(listener -> listener.backClicked());
+			backBtn.setEffect(null);
+		});
 
 		nameLabel.setOnMouseClicked(e -> {
 			if (!e.getButton().equals(MouseButton.PRIMARY))
