@@ -20,11 +20,12 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.Labeled;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
@@ -40,6 +41,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -81,20 +83,13 @@ public class AddUpdateGroupPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof HBox && arg1 instanceof HBox))
+			if (!(arg0 instanceof AddRemoveContactBox && arg1 instanceof AddRemoveContactBox))
 				return 0;
 
-			HBox hBox0 = (HBox) arg0;
-			HBox hBox1 = (HBox) arg1;
+			AddRemoveContactBox box0 = (AddRemoveContactBox) arg0;
+			AddRemoveContactBox box1 = (AddRemoveContactBox) arg1;
 
-			if (!(hBox0.getChildren().size() > 0 && hBox0.getChildren().get(0) instanceof Labeled
-					&& hBox1.getChildren().size() > 0 && hBox1.getChildren().get(0) instanceof Labeled))
-				return 0;
-
-			Labeled labeled0 = (Labeled) hBox0.getChildren().get(0);
-			Labeled labeled1 = (Labeled) hBox1.getChildren().get(0);
-
-			return labeled0.getText().compareTo(labeled1.getText());
+			return box0.getName().toLowerCase().compareTo(box1.getName().toLowerCase());
 
 		}
 
@@ -136,27 +131,11 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			uuidStatus.put(uuid, new SimpleObjectProperty<Color>(statusColor));
 
-			final HBox addContactBox = new HBox();
-			addContactBox.setAlignment(Pos.CENTER_LEFT);
-			addContactBox.managedProperty().bind(addContactBox.visibleProperty());
-			final Button addContactBtn = ViewFactory.newAddBtn();
-			initButton(addContactBtn);
-			addContactBtn.setText(name);
-			final Circle addStatusCircle = new Circle(7.0);
-			HBox.setMargin(addStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
-			addStatusCircle.fillProperty().bind(uuidStatus.get(uuid));
-			addContactBox.getChildren().addAll(addContactBtn, addStatusCircle);
+			final AddContactBox addContactBox = new AddContactBox(name);
+			final RemoveContactBox removeContactBox = new RemoveContactBox(name);
 
-			final HBox removeContactBox = new HBox();
-			removeContactBox.setAlignment(Pos.CENTER_LEFT);
-			removeContactBox.managedProperty().bind(removeContactBox.visibleProperty());
-			final Button removeContactBtn = ViewFactory.newRemoveBtn();
-			initButton(removeContactBtn);
-			removeContactBtn.setText(name);
-			final Circle removeStatusCircle = new Circle(7.0);
-			HBox.setMargin(removeStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
-			removeStatusCircle.fillProperty().bind(uuidStatus.get(uuid));
-			removeContactBox.getChildren().addAll(removeContactBtn, removeStatusCircle);
+			addContactBox.statusColorProperty().bind(uuidStatus.get(uuid));
+			removeContactBox.statusColorProperty().bind(uuidStatus.get(uuid));
 
 			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedUuids.contains(uuid),
 					selectedUuids);
@@ -168,7 +147,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			addContactBox.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
 			removeContactBox.visibleProperty().bind(addContactBinding);
 
-			addContactBtn.setOnAction(e -> {
+			addContactBox.setOnAction(e -> {
 
 				addedContactsPane.getChildren().remove(removeContactBox);
 				addedContactsPane.getChildren().add(0, removeContactBox);
@@ -177,7 +156,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			});
 
-			removeContactBtn.setOnAction(e -> selectedUuids.remove(uuid));
+			removeContactBox.setOnAction(e -> selectedUuids.remove(uuid));
 
 			addedContactsPane.getChildren().add(removeContactBox);
 			notAddedContactsPane.getChildren().add(addContactBox);
@@ -215,17 +194,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		deleteMode.set(false);
 		updateMode.set(!isNewGroup);
-
-	}
-
-	private void initButton(Button btn) {
-
-		HBox.setHgrow(btn, Priority.ALWAYS);
-		btn.setMaxWidth(Double.MAX_VALUE);
-		btn.setAlignment(Pos.CENTER_LEFT);
-		btn.setMnemonicParsing(false);
-		btn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
-		btn.setPadding(new Insets(5.0));
 
 	}
 
@@ -380,6 +348,109 @@ public class AddUpdateGroupPane extends BorderPane {
 			}
 
 		});
+
+	}
+
+	private static abstract class AddRemoveContactBox extends HBox {
+
+		protected final String name;
+
+		protected Button addRemoveBtn;
+		private final Circle addRemoveStatusCircle = new Circle(7.0);
+
+		AddRemoveContactBox(String name) {
+
+			this.name = name;
+
+			init();
+
+		}
+
+		private void init() {
+
+			initButton();
+			initCircle();
+
+			setAlignment(Pos.CENTER_LEFT);
+			managedProperty().bind(visibleProperty());
+
+			getChildren().addAll(addRemoveBtn, addRemoveStatusCircle);
+
+		}
+
+		protected abstract void initButton();
+
+		private void initCircle() {
+
+			HBox.setMargin(addRemoveStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
+
+		}
+
+		ObjectProperty<Paint> statusColorProperty() {
+
+			return addRemoveStatusCircle.fillProperty();
+
+		}
+
+		void setOnAction(EventHandler<ActionEvent> arg0) {
+
+			addRemoveBtn.setOnAction(arg0);
+
+		}
+
+		String getName() {
+
+			return name;
+
+		}
+
+	}
+
+	private static class AddContactBox extends AddRemoveContactBox {
+
+		AddContactBox(String name) {
+
+			super(name);
+
+		}
+
+		protected final void initButton() {
+
+			addRemoveBtn = ViewFactory.newAddBtn();
+
+			addRemoveBtn.setText(name);
+			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
+			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
+			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
+			addRemoveBtn.setMnemonicParsing(false);
+			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+			addRemoveBtn.setPadding(new Insets(5.0));
+
+		}
+
+	}
+
+	private static class RemoveContactBox extends AddRemoveContactBox {
+
+		RemoveContactBox(String name) {
+
+			super(name);
+
+		}
+
+		protected final void initButton() {
+
+			addRemoveBtn = ViewFactory.newRemoveBtn();
+
+			addRemoveBtn.setText(name);
+			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
+			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
+			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
+			addRemoveBtn.setMnemonicParsing(false);
+			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+			addRemoveBtn.setPadding(new Insets(5.0));
+
+		}
 
 	}
 

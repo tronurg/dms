@@ -1,12 +1,10 @@
 package com.ogya.dms.server.communications.udp;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
-import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -92,15 +90,7 @@ public class MulticastManager {
 
 				}
 
-			} catch (UnsupportedEncodingException e) {
-
-				e.printStackTrace();
-
-			} catch (GeneralSecurityException e) {
-
-				e.printStackTrace();
-
-			} catch (IOException e) {
+			} catch (Exception e) {
 
 				closeMulticastSocket();
 
@@ -188,15 +178,7 @@ public class MulticastManager {
 
 				listener.udpMessageReceived(remoteAddress, data, isUnicast);
 
-			} catch (InterruptedException e) {
-
-				e.printStackTrace();
-
-			} catch (GeneralSecurityException e) {
-
-				e.printStackTrace();
-
-			} catch (IOException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 

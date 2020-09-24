@@ -1,10 +1,8 @@
 package com.ogya.dms.server.common;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.util.Base64;
 
 import com.github.luben.zstd.Zstd;
@@ -20,20 +18,19 @@ public class Encryption {
 
 	private static Aead aead;
 
-	public static String compressAndEncryptToString(String dataStr) throws GeneralSecurityException, IOException {
+	public static String compressAndEncryptToString(String dataStr) throws Exception {
 
 		return Base64.getEncoder().encodeToString(encryptBytes(Zstd.compress(dataStr.getBytes(CHARSET))));
 
 	}
 
-	public static byte[] encrypt(String dataStr) throws GeneralSecurityException, IOException {
+	public static byte[] encrypt(String dataStr) throws Exception {
 
 		return encryptBytes(dataStr.getBytes(CHARSET));
 
 	}
 
-	public static String decryptAndDecompressFromString(String encryptedDataStr)
-			throws GeneralSecurityException, IOException {
+	public static String decryptAndDecompressFromString(String encryptedDataStr) throws Exception {
 
 		byte[] compressedData = decryptBytes(Base64.getDecoder().decode(encryptedDataStr));
 
@@ -41,25 +38,25 @@ public class Encryption {
 
 	}
 
-	public static String decrypt(byte[] encryptedData) throws GeneralSecurityException, IOException {
+	public static String decrypt(byte[] encryptedData) throws Exception {
 
 		return new String(decryptBytes(encryptedData), CHARSET);
 
 	}
 
-	private synchronized static byte[] encryptBytes(byte[] data) throws GeneralSecurityException, IOException {
+	private synchronized static byte[] encryptBytes(byte[] data) throws Exception {
 
 		return getAead().encrypt(data, null);
 
 	}
 
-	private synchronized static byte[] decryptBytes(byte[] encryptedData) throws GeneralSecurityException, IOException {
+	private synchronized static byte[] decryptBytes(byte[] encryptedData) throws Exception {
 
 		return getAead().decrypt(encryptedData, null);
 
 	}
 
-	private static Aead getAead() throws GeneralSecurityException, IOException {
+	private static Aead getAead() throws Exception {
 
 		if (aead == null) {
 

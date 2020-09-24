@@ -614,7 +614,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
 								.toJson());
 
-			} catch (IOException e) {
+			} catch (Exception e) {
 
 				message.setContent("");
 

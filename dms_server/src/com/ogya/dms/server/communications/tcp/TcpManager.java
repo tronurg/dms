@@ -8,7 +8,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -259,7 +258,7 @@ public class TcpManager implements TcpServerListener {
 
 				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod);
 
-			} catch (GeneralSecurityException | IOException e) {
+			} catch (Exception e) {
 
 				if (progressMethod != null)
 					progressMethod.accept(-1);
@@ -306,7 +305,7 @@ public class TcpManager implements TcpServerListener {
 				dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, encryptedMessage, sendStatus,
 						progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
 
-			} catch (GeneralSecurityException | IOException e) {
+			} catch (Exception e) {
 
 				if (progressMethod != null)
 					progressMethod.accept(uuids, -1);
@@ -334,7 +333,7 @@ public class TcpManager implements TcpServerListener {
 
 				sendMessageToServer(dmsServer, encryptedMessage, null, null);
 
-			} catch (GeneralSecurityException | IOException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -358,7 +357,7 @@ public class TcpManager implements TcpServerListener {
 				dmsServers
 						.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null));
 
-			} catch (GeneralSecurityException | IOException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -538,7 +537,7 @@ public class TcpManager implements TcpServerListener {
 
 			listeners.forEach(e -> e.messageReceived(decryptedMessage));
 
-		} catch (GeneralSecurityException | IOException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 

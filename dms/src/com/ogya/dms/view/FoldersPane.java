@@ -1,9 +1,17 @@
 package com.ogya.dms.view;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +22,7 @@ import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.view.factory.ViewFactory;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -48,15 +57,28 @@ public class FoldersPane extends BorderPane {
 	private final Button backBtn = ViewFactory.newBackBtn();
 	private final Label nameLabel = new Label(CommonMethods.translate("FILE_EXPLORER"));
 
-	private final Map<Path, FolderView> subFolders = new HashMap<Path, FolderView>();
+	private final Map<Path, FolderView> folderViews = Collections.synchronizedMap(new HashMap<Path, FolderView>());
 
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
+
+	private final Map<WatchKey, Path> watchKeys = Collections.synchronizedMap(new HashMap<WatchKey, Path>());
+
+	private WatchService watchService;
 
 	FoldersPane(Path mainPath) {
 
 		super();
 
+		try {
+			watchService = FileSystems.getDefault().newWatchService();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		new Thread(this::processWatchServiceEvents).start();
+
 		FolderView mainFolderView = newFolderView(mainPath, false);
+		folderViews.put(mainPath, mainFolderView);
 		centerPane.getChildren().add(mainFolderView);
 
 		init();
@@ -104,19 +126,21 @@ public class FoldersPane extends BorderPane {
 
 	private FolderView getSubFolderView(Path subFolder) {
 
-		if (!subFolders.containsKey(subFolder)) {
+		if (!folderViews.containsKey(subFolder)) {
 
 			FolderView folderView = newFolderView(subFolder, true);
 
-			subFolders.put(subFolder, folderView);
+			folderViews.put(subFolder, folderView);
 
 		}
 
-		return subFolders.get(subFolder);
+		return folderViews.get(subFolder);
 
 	}
 
 	private FolderView newFolderView(Path folder, boolean isBackActionEnabled) {
+
+		registerFolder(folder);
 
 		FolderView folderView = new FolderView(folder, isBackActionEnabled);
 
@@ -126,6 +150,19 @@ public class FoldersPane extends BorderPane {
 			folderView.setOnBackAction(this::back);
 
 		return folderView;
+
+	}
+
+	private void removeFolderView(Path path) {
+
+		FolderView folderView = folderViews.remove(path);
+
+		if (folderView == null)
+			return;
+
+		centerPane.getChildren().remove(folderView);
+
+		centerPane.getChildren().get(centerPane.getChildren().size() - 1).setVisible(true);
 
 	}
 
@@ -155,6 +192,70 @@ public class FoldersPane extends BorderPane {
 		centerPane.getChildren().remove(size - 1);
 
 		centerPane.getChildren().get(size - 2).setVisible(true);
+
+	}
+
+	private void registerFolder(Path folder) {
+
+		if (watchService == null)
+			return;
+
+		try {
+
+			watchKeys.put(folder.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
+					StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), folder);
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	private void processWatchServiceEvents() {
+
+		if (watchService == null)
+			return;
+
+		while (true) {
+
+			try {
+
+				WatchKey watchKey = watchService.take();
+
+				Path dir = watchKeys.get(watchKey);
+
+				if (dir == null)
+					continue;
+
+				FolderView folderView = folderViews.get(dir);
+
+				for (WatchEvent<?> watchEvent : watchKey.pollEvents()) {
+
+					Kind<?> kind = watchEvent.kind();
+
+					if (kind == StandardWatchEventKinds.OVERFLOW)
+						continue;
+
+					if (kind == StandardWatchEventKinds.ENTRY_DELETE)
+						Platform.runLater(() -> removeFolderView(dir.resolve((Path) watchEvent.context())));
+
+					if (folderView != null)
+						Platform.runLater(() -> folderView.populate());
+
+				}
+
+				if (!watchKey.reset())
+					watchKeys.remove(watchKey);
+
+			} catch (InterruptedException e) {
+
+				e.printStackTrace();
+
+			}
+
+		}
 
 	}
 
@@ -196,15 +297,29 @@ public class FoldersPane extends BorderPane {
 		private static final String FOLDER_ICO_PATH = "/resources/icon/folder.png";
 		private static final String FILE_ICO_PATH = "/resources/icon/file.png";
 
+		private final Path mainFolder;
+		private final boolean isBackActionEnabled;
+
 		private final AtomicReference<Consumer<Path>> folderSelectedActionRef = new AtomicReference<Consumer<Path>>();
 		private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 		private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
-		private FolderView(Path mainFolder, boolean isBackActionEnabled) {
+		FolderView(Path mainFolder, boolean isBackActionEnabled) {
 
 			super();
 
+			this.mainFolder = mainFolder;
+			this.isBackActionEnabled = isBackActionEnabled;
+
 			managedProperty().bind(visibleProperty());
+
+			populate();
+
+		}
+
+		void populate() {
+
+			getChildren().clear();
 
 			List<Path> folders = new ArrayList<Path>();
 			List<Path> files = new ArrayList<Path>();
@@ -213,19 +328,19 @@ public class FoldersPane extends BorderPane {
 
 				Files.list(mainFolder).forEach(path -> {
 
-					if (Files.isDirectory(path))
+					if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
 						folders.add(path);
 					else
 						try {
 							if (Files.size(path) <= CommonConstants.MAX_FILE_LENGHT)
 								files.add(path);
-						} catch (IOException e) {
-							e.printStackTrace();
+						} catch (Exception e) {
+
 						}
 
 				});
 
-			} catch (IOException e) {
+			} catch (Exception e) {
 
 			}
 
@@ -285,19 +400,19 @@ public class FoldersPane extends BorderPane {
 
 		}
 
-		private void setOnFolderSelectedAction(Consumer<Path> folderSelectedAction) {
+		void setOnFolderSelectedAction(Consumer<Path> folderSelectedAction) {
 
 			folderSelectedActionRef.set(folderSelectedAction);
 
 		}
 
-		private void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
+		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
 
 			fileSelectedActionRef.set(fileSelectedAction);
 
 		}
 
-		private void setOnBackAction(Runnable backAction) {
+		void setOnBackAction(Runnable backAction) {
 
 			backActionRef.set(backAction);
 
