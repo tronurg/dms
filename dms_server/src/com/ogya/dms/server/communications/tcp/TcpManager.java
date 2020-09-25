@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
@@ -719,7 +720,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 
-			} catch (IOException e) {
+			} catch (NoSuchElementException | IOException e) {
 
 				e.printStackTrace();
 

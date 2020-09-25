@@ -59,11 +59,7 @@ public class Model {
 
 			}
 
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		} catch (ClassNotFoundException e) {
+		} catch (IOException | ClassNotFoundException e) {
 
 			e.printStackTrace();
 
@@ -357,6 +353,11 @@ public class Model {
 
 		if (!localUserBeacon.containsKey(uuid))
 			return;
+
+		synchronized (senderStatusMap) {
+			if (senderStatusMap.containsKey(uuid))
+				senderStatusMap.get(uuid).forEach((messageId, status) -> status.set(false));
+		}
 
 		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
 
