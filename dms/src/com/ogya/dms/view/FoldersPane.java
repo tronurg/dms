@@ -75,7 +75,9 @@ public class FoldersPane extends BorderPane {
 			e.printStackTrace();
 		}
 
-		new Thread(this::processWatchServiceEvents).start();
+		Thread watchThread = new Thread(this::processWatchServiceEvents);
+		watchThread.setDaemon(true);
+		watchThread.start();
 
 		FolderView mainFolderView = newFolderView(mainPath, false);
 		folderViews.put(mainPath, mainFolderView);
