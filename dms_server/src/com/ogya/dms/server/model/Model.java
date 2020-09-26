@@ -28,8 +28,11 @@ public class Model {
 
 	private final Gson gson = new Gson();
 
-	private final Map<String, String> localUserBeacon = Collections.synchronizedMap(new HashMap<String, String>());
-	private final Map<String, String> remoteUserBeacon = Collections.synchronizedMap(new HashMap<String, String>());
+	private final Map<String, User> localUsers = Collections.synchronizedMap(new HashMap<String, User>());
+	private final Map<String, User> remoteUsers = Collections.synchronizedMap(new HashMap<String, User>());
+
+	private final Map<String, Set<User>> remoteServerUsers = Collections
+			.synchronizedMap(new HashMap<String, Set<User>>());
 
 	private final Map<String, Map<Long, AtomicBoolean>> senderStatusMap = Collections
 			.synchronizedMap(new HashMap<String, Map<Long, AtomicBoolean>>());
@@ -67,6 +70,12 @@ public class Model {
 
 	}
 
+	public boolean isLive() {
+
+		return !localUsers.isEmpty();
+
+	}
+
 	public void localMessageReceived(final String messagePojoStr) {
 
 		try {
@@ -80,16 +89,18 @@ public class Model {
 
 			case BCON:
 
-				if (!messagePojoStr.equals(localUserBeacon.get(senderUuid))) {
+				localUsers.putIfAbsent(senderUuid, new User(senderUuid));
 
-					boolean isNew = !localUserBeacon.containsKey(senderUuid);
+				if (!messagePojoStr.equals(localUsers.get(senderUuid).beacon)) {
+
+					boolean isNew = localUsers.get(senderUuid).beacon == null;
 
 					// Yerel uuid yeni eklendi veya guncellendi.
 					// Beacon, yerel beacon'lara eklenecek.
 					// Yeni beacon tum yerel ve uzak kullanicilara dagitilacak.
 
-					localUserBeacon.put(senderUuid, messagePojoStr);
-					localUserBeacon.forEach((receiverUuid, message) -> {
+					localUsers.get(senderUuid).beacon = messagePojoStr;
+					localUsers.forEach((receiverUuid, user) -> {
 
 						if (receiverUuid.equals(senderUuid))
 							return;
@@ -97,7 +108,7 @@ public class Model {
 						listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
 					});
-					listener.sendToAllRemoteUsers(messagePojoStr);
+					listener.sendToAllRemoteServers(messagePojoStr);
 
 					if (isNew) {
 
@@ -108,9 +119,6 @@ public class Model {
 					}
 
 				}
-
-				// Gonderen uuid agda yayinlanacak
-				listener.publishUuid(senderUuid);
 
 				break;
 
@@ -159,18 +167,24 @@ public class Model {
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
 				List<String> localReceiverUuids = new ArrayList<String>();
-				List<String> remoteReceiverUuids = new ArrayList<String>();
+				Map<String, Set<String>> remoteServerReceiverUuids = new HashMap<String, Set<String>>();
 
 				for (String receiverUuid : receiverUuids) {
 
-					if (localUserBeacon.containsKey(receiverUuid)) {
+					if (localUsers.containsKey(receiverUuid)) {
 
 						localReceiverUuids.add(receiverUuid);
 						listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
-					} else if (remoteUserBeacon.containsKey(receiverUuid)) {
+					} else if (remoteUsers.containsKey(receiverUuid)) {
 
-						remoteReceiverUuids.add(receiverUuid);
+						User remoteUser = remoteUsers.get(receiverUuid);
+
+						if (remoteUser.dmsUuid == null)
+							continue;
+
+						remoteServerReceiverUuids.putIfAbsent(remoteUser.dmsUuid, new HashSet<String>());
+						remoteServerReceiverUuids.get(remoteUser.dmsUuid).add(receiverUuid);
 
 					}
 
@@ -182,14 +196,12 @@ public class Model {
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
 
-					if (localUserBeacon.containsKey(senderUuid))
+					if (localUsers.containsKey(senderUuid))
 						listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
 
 				}
 
-				if (remoteReceiverUuids.size() == 1) {
-
-					final String remoteReceiverUuid = remoteReceiverUuids.get(0);
+				remoteServerReceiverUuids.forEach((dmsUuid, uuidList) -> {
 
 					AtomicBoolean sendStatus = new AtomicBoolean(true);
 
@@ -199,40 +211,9 @@ public class Model {
 						senderStatusMap.get(senderUuid).put(messageId, sendStatus);
 					}
 
-					listener.sendToRemoteUser(remoteReceiverUuid, messagePojoStr, sendStatus,
+					listener.sendToRemoteServer(dmsUuid, messagePojoStr, sendStatus,
 							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
 									: progress -> {
-
-										synchronized (senderStatusMap) {
-											if ((progress < 0 || progress == 100)
-													&& senderStatusMap.containsKey(senderUuid)) {
-												senderStatusMap.get(senderUuid).remove(messageId);
-												if (senderStatusMap.get(senderUuid).isEmpty())
-													senderStatusMap.remove(senderUuid);
-											}
-										}
-
-										MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-												remoteReceiverUuid, senderUuid, ContentType.PROGRESS, messageId);
-
-										if (localUserBeacon.containsKey(senderUuid))
-											listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
-
-									});
-
-				} else if (remoteReceiverUuids.size() > 0) {
-
-					AtomicBoolean sendStatus = new AtomicBoolean(true);
-
-					synchronized (senderStatusMap) {
-						senderStatusMap.putIfAbsent(senderUuid,
-								Collections.synchronizedMap(new HashMap<Long, AtomicBoolean>()));
-						senderStatusMap.get(senderUuid).put(messageId, sendStatus);
-					}
-
-					listener.sendToRemoteUsers(remoteReceiverUuids, messagePojoStr, sendStatus,
-							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
-									: (uuidList, progress) -> {
 
 										synchronized (senderStatusMap) {
 											if ((progress < 0 || progress == 100)
@@ -247,12 +228,12 @@ public class Model {
 												String.join(";", uuidList), senderUuid, ContentType.PROGRESS,
 												messageId);
 
-										if (localUserBeacon.containsKey(senderUuid))
+										if (localUsers.containsKey(senderUuid))
 											listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
 
 									});
 
-				}
+				});
 
 				break;
 
@@ -266,7 +247,7 @@ public class Model {
 
 	}
 
-	public void remoteMessageReceived(String messagePojoStr) {
+	public void remoteMessageReceived(String messagePojoStr, String dmsUuid) {
 
 		try {
 
@@ -278,15 +259,18 @@ public class Model {
 
 			case BCON:
 
-				if (!messagePojoStr.equals(remoteUserBeacon.get(senderUuid))) {
+				remoteUsers.putIfAbsent(senderUuid, new User(senderUuid));
+
+				checkRemoteUserServer(remoteUsers.get(senderUuid), dmsUuid);
+
+				if (!messagePojoStr.equals(remoteUsers.get(senderUuid).beacon)) {
 
 					// Uzak uuid yeni eklendi veya guncellendi.
 					// Beacon, uzak beacon'larda guncellenecek.
 					// Yeni beacon tum yerel kullanicilara dagitilacak.
 
-					remoteUserBeacon.put(senderUuid, messagePojoStr);
-					localUserBeacon
-							.forEach((receiverUuid, message) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+					remoteUsers.get(senderUuid).beacon = messagePojoStr;
+					localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
 				}
 
@@ -307,7 +291,7 @@ public class Model {
 
 				for (String receiverUuid : receiverUuids) {
 
-					if (localUserBeacon.containsKey(receiverUuid))
+					if (localUsers.containsKey(receiverUuid))
 						listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
 				}
@@ -326,32 +310,36 @@ public class Model {
 
 	public void processAllLocalBeacons(Consumer<String> consumer) {
 
-		localUserBeacon.forEach((receiverUuid, message) -> consumer.accept(message));
+		localUsers.forEach((uuid, user) -> consumer.accept(user.beacon));
 
 	}
 
 	public void testAllLocalUsers() {
 
-		localUserBeacon.forEach((receiverUuid, message) -> listener.sendToLocalUser(receiverUuid, ""));
+		localUsers.forEach((uuid, user) -> listener.sendToLocalUser(uuid, ""));
 
 	}
 
-	public void remoteUserDisconnected(String uuid) {
+	public void remoteServerDisconnected(String dmsUuid) {
 
-		if (!remoteUserBeacon.containsKey(uuid))
+		if (!remoteServerUsers.containsKey(dmsUuid))
 			return;
 
-		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
+		remoteServerUsers.remove(dmsUuid).forEach(user -> {
 
-		remoteUserBeacon.remove(uuid);
+			String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
 
-		localUserBeacon.forEach((receiverUuid, message) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+			remoteUsers.remove(user.uuid);
+
+			localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+
+		});
 
 	}
 
 	public void localUserDisconnected(String uuid) {
 
-		if (!localUserBeacon.containsKey(uuid))
+		if (!localUsers.containsKey(uuid))
 			return;
 
 		synchronized (senderStatusMap) {
@@ -361,11 +349,39 @@ public class Model {
 
 		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
 
-		localUserBeacon.remove(uuid);
+		localUsers.remove(uuid);
 
-		localUserBeacon.forEach((receiverUuid, message) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+		localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
-		listener.sendToAllRemoteUsers(messagePojoStr);
+		listener.sendToAllRemoteServers(messagePojoStr);
+
+	}
+
+	private void checkRemoteUserServer(User remoteUser, String dmsUuid) {
+
+		if (dmsUuid.equals(remoteUser.dmsUuid))
+			return;
+
+		// Registered to another server before
+		if (remoteUser.dmsUuid != null && remoteServerUsers.containsKey(remoteUser.dmsUuid))
+			remoteServerUsers.get(remoteUser.dmsUuid).remove(remoteUser);
+
+		remoteUser.dmsUuid = dmsUuid;
+		remoteServerUsers.putIfAbsent(dmsUuid, new HashSet<User>());
+		remoteServerUsers.get(dmsUuid).add(remoteUser);
+
+	}
+
+	private void remoteUserDisconnected(String uuid) {
+
+		if (!remoteUsers.containsKey(uuid))
+			return;
+
+		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
+
+		remoteUsers.remove(uuid);
+
+		localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
 	}
 
@@ -377,18 +393,18 @@ public class Model {
 
 	private void sendAllBeaconsToLocalUser(String receiverUuid) {
 
-		localUserBeacon.forEach((uuid, beacon) -> {
+		localUsers.forEach((uuid, user) -> {
 
 			if (receiverUuid.equals(uuid))
 				return;
 
-			listener.sendToLocalUser(receiverUuid, beacon);
+			listener.sendToLocalUser(receiverUuid, user.beacon);
 
 		});
 
-		remoteUserBeacon.forEach((uuid, beacon) -> {
+		remoteUsers.forEach((uuid, user) -> {
 
-			listener.sendToLocalUser(receiverUuid, beacon);
+			listener.sendToLocalUser(receiverUuid, user.beacon);
 
 		});
 
@@ -448,11 +464,23 @@ public class Model {
 
 		String messagePojoStr = gson.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
 
-		localUserBeacon.forEach((receiverUuid, message) -> {
+		localUsers.forEach((receiverUuid, user) -> {
 
 			listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
 		});
+
+	}
+
+	private class User {
+
+		final String uuid;
+		String beacon;
+		String dmsUuid;
+
+		User(String uuid) {
+			this.uuid = uuid;
+		}
 
 	}
 

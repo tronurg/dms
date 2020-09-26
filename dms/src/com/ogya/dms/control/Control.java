@@ -66,8 +66,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private final DmsClient dmsClient;
 
-	private final Object beaconSyncObj = new Object();
-
 	private final List<DmsListener> dmsListeners = Collections.synchronizedList(new ArrayList<DmsListener>());
 
 	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
@@ -100,8 +98,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
 
-		init();
-
 	}
 
 	public static Control getInstance(String username, String password) throws DbException {
@@ -109,14 +105,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		INSTANCES.putIfAbsent(username, new Control(username, password));
 
 		return INSTANCES.get(username);
-
-	}
-
-	private void init() {
-
-		Thread publishBeaconThread = new Thread(this::publishBeacon);
-		publishBeaconThread.setDaemon(true);
-		publishBeaconThread.start();
 
 	}
 
@@ -276,26 +264,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	}
 
-	private void publishBeacon() {
+	private void sendBeacon() {
 
-		while (true) {
-
-			synchronized (beaconSyncObj) {
-
-				if (model.isServerConnected())
-					dmsClient.sendBeacon(model.getIdentity().toJson());
-
-				try {
-
-					beaconSyncObj.wait(CommonConstants.BEACON_INTERVAL_MS);
-
-				} catch (InterruptedException e) {
-
-				}
-
-			}
-
-		}
+		if (model.isServerConnected())
+			dmsClient.sendBeacon(model.getIdentity().toJson());
 
 	}
 
@@ -1329,11 +1301,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		if (connStatus) {
 
-			synchronized (beaconSyncObj) {
-
-				beaconSyncObj.notify();
-
-			}
+			sendBeacon();
 
 			dmsClient.claimAllBeacons();
 			dmsClient.claimRemoteIps();
@@ -1513,11 +1481,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				synchronized (beaconSyncObj) {
-
-					beaconSyncObj.notify();
-
-				}
+				sendBeacon();
 
 			} catch (HibernateException e) {
 
@@ -1554,11 +1518,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				synchronized (beaconSyncObj) {
-
-					beaconSyncObj.notify();
-
-				}
+				sendBeacon();
 
 			} catch (HibernateException e) {
 

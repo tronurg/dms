@@ -4,8 +4,8 @@ public interface TcpManagerListener {
 
 	void connectedToRemoteServer(String dmsUuid);
 
-	void remoteUserDisconnected(String uuid);
+	void remoteServerDisconnected(String dmsUuid);
 
-	void messageReceived(String message);
+	void messageReceivedFromRemoteServer(String message, String dmsUuid);
 
 }

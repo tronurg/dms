@@ -77,6 +77,28 @@ public class CommonMethods {
 
 	}
 
+	static int getBeaconIntervalMs() {
+
+		int beaconIntervalMs = 2000;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/BEACON_INTERVAL_MS")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			beaconIntervalMs = Integer.parseInt(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
+				| NumberFormatException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return beaconIntervalMs;
+
+	}
+
 	static int getServerPort() {
 
 		int serverPort = -1;

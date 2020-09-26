@@ -3,14 +3,12 @@ package com.ogya.dms.server.control;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.zeromq.SocketType;
@@ -37,6 +35,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final int routerPort = CommonConstants.INTERCOM_PORT;
 	private final String multicastGroup = CommonConstants.MULTICAST_IP;
 	private final int multicastPort = CommonConstants.MULTICAST_PORT;
+	private final int beaconIntervalMs = CommonConstants.BEACON_INTERVAL_MS;
 	private final int serverPort = CommonConstants.SERVER_PORT;
 	private final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
 	private final int clientPortTo = CommonConstants.CLIENT_PORT_TO;
@@ -84,9 +83,29 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	public void start() {
 
+		new Thread(this::publishDmsUuid).start();
 		new Thread(this::router).start();
 		new Thread(this::inproc).start();
 		new Thread(this::monitor).start();
+
+	}
+
+	public void publishDmsUuid() {
+
+		while (!Thread.currentThread().isInterrupted()) {
+
+			if (model.isLive())
+				multicastManager.send(DMS_UUID, model.getRemoteIps());
+
+			try {
+
+				Thread.sleep(beaconIntervalMs);
+
+			} catch (InterruptedException e) {
+
+			}
+
+		}
 
 	}
 
@@ -106,14 +125,13 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private void receiveUdpMessage(InetAddress senderAddress, String message, boolean isUnicast) {
 
-		String[] uuids = message.split(" ");
-		if (uuids.length != 2 || DMS_UUID.equals(uuids[0]))
+		if (DMS_UUID.equals(message))
 			return;
 
 		try {
 
-			getTcpManager().addConnection(uuids[0], uuids[1], senderAddress,
-					uuids[0].compareTo(DMS_UUID) < 0 ? TcpConnectionType.SERVER : TcpConnectionType.CLIENT);
+			getTcpManager().addConnection(message, senderAddress,
+					message.compareTo(DMS_UUID) < 0 ? TcpConnectionType.SERVER : TcpConnectionType.CLIENT);
 
 		} catch (IOException e) {
 
@@ -243,7 +261,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			try {
 
-				getTcpManager().sendMessageToServer(dmsUuid, beacon);
+				getTcpManager().sendMessageToServer(dmsUuid, beacon, null, null);
 
 			} catch (IOException e) {
 
@@ -256,16 +274,16 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void remoteUserDisconnected(String uuid) {
+	public void remoteServerDisconnected(final String dmsUuid) {
 
-		taskQueue.execute(() -> model.remoteUserDisconnected(uuid));
+		taskQueue.execute(() -> model.remoteServerDisconnected(dmsUuid));
 
 	}
 
 	@Override
-	public void messageReceived(String message) {
+	public void messageReceivedFromRemoteServer(final String message, final String dmsUuid) {
 
-		taskQueue.execute(() -> model.remoteMessageReceived(message));
+		taskQueue.execute(() -> model.remoteMessageReceived(message, dmsUuid));
 
 	}
 
@@ -277,12 +295,12 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteUser(String receiverUuid, String message, AtomicBoolean sendStatus,
+	public void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus,
 			Consumer<Integer> progressMethod) {
 
 		try {
 
-			getTcpManager().sendMessageToUser(receiverUuid, message, sendStatus, progressMethod);
+			getTcpManager().sendMessageToServer(dmsUuid, message, sendStatus, progressMethod);
 
 		} catch (IOException e) {
 
@@ -293,23 +311,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteUsers(List<String> receiverUuids, String message, AtomicBoolean sendStatus,
-			BiConsumer<List<String>, Integer> progressMethod) {
-
-		try {
-
-			getTcpManager().sendMessageToUsers(receiverUuids, message, sendStatus, progressMethod);
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
-
-	}
-
-	@Override
-	public void sendToAllRemoteUsers(String message) {
+	public void sendToAllRemoteServers(String message) {
 
 		try {
 
@@ -320,13 +322,6 @@ public class Control implements TcpManagerListener, ModelListener {
 			e.printStackTrace();
 
 		}
-
-	}
-
-	@Override
-	public void publishUuid(String uuid) {
-
-		multicastManager.send(DMS_UUID + " " + uuid, model.getRemoteIps());
 
 	}
 

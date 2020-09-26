@@ -23,7 +23,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -51,7 +50,6 @@ public class TcpManager implements TcpServerListener {
 
 	private final Map<Integer, InetAddress> serverIdAddress = Collections
 			.synchronizedMap(new HashMap<Integer, InetAddress>());
-	private final Map<String, User> users = Collections.synchronizedMap(new HashMap<String, User>());
 	private final Map<String, DmsServer> dmsServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 	private final Map<InetAddress, Connection> connections = Collections
 			.synchronizedMap(new HashMap<InetAddress, Connection>());
@@ -100,33 +98,13 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void addConnection(final String dmsUuid, final String uuid, final InetAddress address,
-			final TcpConnectionType connectionType) {
+	public void addConnection(final String dmsUuid, final InetAddress address, final TcpConnectionType connectionType) {
 
 		taskQueue.execute(() -> {
 
-			users.putIfAbsent(uuid, new User(uuid));
 			dmsServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
 
-			final User user = users.get(uuid);
 			final DmsServer dmsServer = dmsServers.get(dmsUuid);
-
-			if (user.dmsServer == null) {
-				// User yeni katildi
-				// Iliskiler guncellenecek
-
-				user.dmsServer = dmsServer;
-				dmsServer.users.add(user);
-
-			} else if (user.dmsServer != dmsServer) {
-				// Kullanicinin bagli oldugu sunucu degisti
-				// Iliskiler guncellenecek
-
-				user.dmsServer.users.remove(user);
-				user.dmsServer = dmsServer;
-				dmsServer.users.add(user);
-
-			}
 
 			if (!connections.containsKey(address)) {
 
@@ -238,17 +216,12 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToUser(final String uuid, final String message, final AtomicBoolean sendStatus,
+	public void sendMessageToServer(final String dmsUuid, final String message, final AtomicBoolean sendStatus,
 			final Consumer<Integer> progressMethod) {
 
 		taskQueue.execute(() -> {
 
-			User user = users.get(uuid);
-
-			if (user == null)
-				return;
-
-			DmsServer dmsServer = user.dmsServer;
+			DmsServer dmsServer = dmsServers.get(dmsUuid);
 
 			if (dmsServer == null)
 				return;
@@ -263,78 +236,6 @@ public class TcpManager implements TcpServerListener {
 
 				if (progressMethod != null)
 					progressMethod.accept(-1);
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	public void sendMessageToUsers(final List<String> uuids, final String message, final AtomicBoolean sendStatus,
-			final BiConsumer<List<String>, Integer> progressMethod) {
-
-		taskQueue.execute(() -> {
-
-			final Map<DmsServer, List<String>> dmsServers = new HashMap<DmsServer, List<String>>();
-
-			uuids.forEach(uuid -> {
-
-				User user = users.get(uuid);
-
-				if (user == null)
-					return;
-
-				DmsServer dmsServer = user.dmsServer;
-
-				if (dmsServer == null)
-					return;
-
-				dmsServers.putIfAbsent(dmsServer, new ArrayList<String>());
-				dmsServers.get(dmsServer).add(uuid);
-
-			});
-
-			if (dmsServers.isEmpty())
-				return;
-
-			try {
-
-				String encryptedMessage = Encryption.compressAndEncryptToString(message);
-
-				dmsServers.forEach((dmsServer, uuidList) -> sendMessageToServer(dmsServer, encryptedMessage, sendStatus,
-						progressMethod == null ? null : (progress -> progressMethod.accept(uuidList, progress))));
-
-			} catch (Exception e) {
-
-				if (progressMethod != null)
-					progressMethod.accept(uuids, -1);
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	public void sendMessageToServer(final String dmsUuid, final String message) {
-
-		taskQueue.execute(() -> {
-
-			DmsServer dmsServer = dmsServers.get(dmsUuid);
-
-			if (dmsServer == null)
-				return;
-
-			try {
-
-				String encryptedMessage = Encryption.compressAndEncryptToString(message);
-
-				sendMessageToServer(dmsServer, encryptedMessage, null, null);
-
-			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -486,11 +387,6 @@ public class TcpManager implements TcpServerListener {
 
 	private void checkServer(DmsServer dmsServer) {
 
-		// sunucu bagli degilken connection eklenirse durumu bagliya cekilir
-		// ve dinleyicilere haber verilir
-		// sunucu bagliyken connectionsinin sayisi sifira duserse bagli degile cekilir
-		// ve dinleyicilere haber verilir
-
 		if (!dmsServer.isConnected.get() && dmsServer.connections.size() > 0) {
 
 			dmsServer.isConnected.set(true);
@@ -498,19 +394,11 @@ public class TcpManager implements TcpServerListener {
 			connectedToRemoteServerToListeners(dmsServer.dmsUuid);
 
 		} else if (dmsServer.isConnected.get() && dmsServer.connections.size() == 0) {
-			// sunucu koptu
-			// sunucuyu listelerden cikar
-			// tum uuid'lerin koptugunu bildir
+			// remote server disconnected
 
 			dmsServer.isConnected.set(false);
 
-			dmsServer.users.forEach(user -> {
-
-				remoteUserDisconnectedToListeners(user.uuid);
-
-				users.remove(user.uuid);
-
-			});
+			remoteServerDisconnectedToListeners(dmsServer.dmsUuid);
 
 			dmsServers.remove(dmsServer.dmsUuid).close();
 
@@ -518,9 +406,9 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void remoteUserDisconnectedToListeners(final String uuid) {
+	private void remoteServerDisconnectedToListeners(final String dmsUuid) {
 
-		listeners.forEach(e -> e.remoteUserDisconnected(uuid));
+		listeners.forEach(e -> e.remoteServerDisconnected(dmsUuid));
 
 	}
 
@@ -530,13 +418,13 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void messageReceivedToListeners(String message) {
+	private void messageReceivedToListeners(String message, String dmsUuid) {
 
 		try {
 
 			String decryptedMessage = Encryption.decryptAndDecompressFromString(message);
 
-			listeners.forEach(e -> e.messageReceived(decryptedMessage));
+			listeners.forEach(e -> e.messageReceivedFromRemoteServer(decryptedMessage, dmsUuid));
 
 		} catch (Exception e) {
 
@@ -677,7 +565,6 @@ public class TcpManager implements TcpServerListener {
 
 		final String dmsUuid;
 
-		final List<User> users = Collections.synchronizedList(new ArrayList<User>());
 		final Set<Connection> connections = Collections
 				.synchronizedSet(new TreeSet<Connection>(new Comparator<Connection>() {
 
@@ -707,30 +594,35 @@ public class TcpManager implements TcpServerListener {
 
 		final PipedOutputStream messageFeed = new PipedOutputStream();
 
-		private final Thread messageFeedThread = new Thread(() -> {
+		private final Thread messageFeedThread;
 
-			try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
-					Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
+		DmsServer(String dmsUuid) {
 
-				scanner.useDelimiter(END_OF_TRANSMISSION);
+			this.dmsUuid = dmsUuid;
 
-				while (true) {
+			messageFeedThread = new Thread(() -> {
 
-					messageReceivedToListeners(scanner.next());
+				try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
+						Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
+
+					scanner.useDelimiter(END_OF_TRANSMISSION);
+
+					while (true) {
+
+						messageReceivedToListeners(scanner.next(), this.dmsUuid);
+
+					}
+
+				} catch (NoSuchElementException | IOException e) {
+
+					e.printStackTrace();
 
 				}
 
-			} catch (NoSuchElementException | IOException e) {
+			});
 
-				e.printStackTrace();
-
-			}
-
-		});
-
-		DmsServer(String dmsUuid) {
-			this.dmsUuid = dmsUuid;
 			messageFeedThread.start();
+
 		}
 
 		void close() {
@@ -747,18 +639,6 @@ public class TcpManager implements TcpServerListener {
 
 			}
 
-		}
-
-	}
-
-	private class User {
-
-		final String uuid;
-
-		DmsServer dmsServer;
-
-		User(String uuid) {
-			this.uuid = uuid;
 		}
 
 	}
