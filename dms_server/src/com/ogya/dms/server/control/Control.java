@@ -182,7 +182,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					} catch (ZMQException e) {
 
-						taskQueue.execute(() -> model.localUserDisconnected(uuid));
+						taskQueue.execute(() -> model.localUuidDisconnected(uuid));
 
 					}
 

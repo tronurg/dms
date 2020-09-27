@@ -335,20 +335,24 @@ public class Model {
 
 	}
 
-	public void localUserDisconnected(String uuid) {
+	public void localUuidDisconnected(String uuid) {
 
-		LocalUser disconnectedUser = localUsers.get(uuid);
+		localUserDisconnected(localUsers.get(uuid));
 
-		if (disconnectedUser == null)
+	}
+
+	private void localUserDisconnected(LocalUser user) {
+
+		if (user == null)
 			return;
 
-		disconnectedUser.sendStatusMap.forEach((messageId, status) -> status.set(false));
+		user.sendStatusMap.forEach((messageId, status) -> status.set(false));
 
-		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
+		String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
 
-		localUsers.remove(uuid);
+		localUsers.remove(user.uuid);
 
-		localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
 		listener.sendToAllRemoteServers(messagePojoStr);
 
