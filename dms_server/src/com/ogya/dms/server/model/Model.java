@@ -28,14 +28,14 @@ public class Model {
 
 	private final Gson gson = new Gson();
 
-	private final Map<String, User> localUsers = Collections.synchronizedMap(new HashMap<String, User>());
+	private final Map<String, LocalUser> localUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, User> remoteUsers = Collections.synchronizedMap(new HashMap<String, User>());
 
 	private final Map<String, Set<User>> remoteServerUsers = Collections
 			.synchronizedMap(new HashMap<String, Set<User>>());
 
-	private final Map<String, Map<Long, AtomicBoolean>> senderStatusMap = Collections
-			.synchronizedMap(new HashMap<String, Map<Long, AtomicBoolean>>());
+	private final Map<AtomicBoolean, Set<String>> statusReceiverMap = Collections
+			.synchronizedMap(new HashMap<AtomicBoolean, Set<String>>());
 
 	private final Set<String> remoteIps = Collections.synchronizedSet(new HashSet<String>());
 
@@ -89,7 +89,7 @@ public class Model {
 
 			case BCON:
 
-				localUsers.putIfAbsent(senderUuid, new User(senderUuid));
+				localUsers.putIfAbsent(senderUuid, new LocalUser(senderUuid));
 
 				if (!messagePojoStr.equals(localUsers.get(senderUuid).beacon)) {
 
@@ -146,22 +146,31 @@ public class Model {
 
 				break;
 
-			case CANCEL:
+			case CANCEL: {
 
 				if (messageId == null)
 					break;
 
-				synchronized (senderStatusMap) {
-					if (senderStatusMap.containsKey(senderUuid)
-							&& senderStatusMap.get(senderUuid).containsKey(messageId))
-						senderStatusMap.get(senderUuid).get(messageId).set(false);
-				}
+				LocalUser sender = localUsers.get(senderUuid);
+
+				if (sender == null)
+					break;
+
+				if (sender.sendStatusMap.containsKey(messageId))
+					sender.sendStatusMap.get(messageId).set(false);
 
 				break;
 
-			default:
+			}
+
+			default: {
 
 				if (messagePojo.receiverUuid == null)
+					break;
+
+				final LocalUser sender = localUsers.get(senderUuid);
+
+				if (sender == null)
 					break;
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
@@ -205,23 +214,18 @@ public class Model {
 
 					AtomicBoolean sendStatus = new AtomicBoolean(true);
 
-					synchronized (senderStatusMap) {
-						senderStatusMap.putIfAbsent(senderUuid,
-								Collections.synchronizedMap(new HashMap<Long, AtomicBoolean>()));
-						senderStatusMap.get(senderUuid).put(messageId, sendStatus);
-					}
+					sender.sendStatusMap.put(messageId, sendStatus);
+					statusReceiverMap.put(sendStatus, uuidList);
 
 					listener.sendToRemoteServer(dmsUuid, messagePojoStr, sendStatus,
 							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
 									: progress -> {
 
-										synchronized (senderStatusMap) {
-											if ((progress < 0 || progress == 100)
-													&& senderStatusMap.containsKey(senderUuid)) {
-												senderStatusMap.get(senderUuid).remove(messageId);
-												if (senderStatusMap.get(senderUuid).isEmpty())
-													senderStatusMap.remove(senderUuid);
-											}
+										if ((progress < 0 || progress == 100)) {
+
+											sender.sendStatusMap.remove(messageId);
+											statusReceiverMap.remove(sendStatus);
+
 										}
 
 										MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
@@ -236,6 +240,8 @@ public class Model {
 				});
 
 				break;
+
+			}
 
 			}
 
@@ -278,7 +284,7 @@ public class Model {
 
 			case UUID_DISCONNECTED:
 
-				remoteUserDisconnected(messagePojo.message);
+				remoteUserDisconnected(remoteUsers.get(messagePojo.message));
 
 				break;
 
@@ -325,27 +331,18 @@ public class Model {
 		if (!remoteServerUsers.containsKey(dmsUuid))
 			return;
 
-		remoteServerUsers.remove(dmsUuid).forEach(user -> {
-
-			String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
-
-			remoteUsers.remove(user.uuid);
-
-			localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
-
-		});
+		remoteServerUsers.remove(dmsUuid).forEach(user -> remoteUserDisconnected(user));
 
 	}
 
 	public void localUserDisconnected(String uuid) {
 
-		if (!localUsers.containsKey(uuid))
+		LocalUser disconnectedUser = localUsers.get(uuid);
+
+		if (disconnectedUser == null)
 			return;
 
-		synchronized (senderStatusMap) {
-			if (senderStatusMap.containsKey(uuid))
-				senderStatusMap.get(uuid).forEach((messageId, status) -> status.set(false));
-		}
+		disconnectedUser.sendStatusMap.forEach((messageId, status) -> status.set(false));
 
 		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
 
@@ -372,16 +369,23 @@ public class Model {
 
 	}
 
-	private void remoteUserDisconnected(String uuid) {
+	private void remoteUserDisconnected(User user) {
 
-		if (!remoteUsers.containsKey(uuid))
+		if (user == null)
 			return;
 
-		String messagePojoStr = gson.toJson(new MessagePojo(uuid, "", ContentType.UUID_DISCONNECTED, null));
+		statusReceiverMap.forEach((sendStatus, receiverUuids) -> {
 
-		remoteUsers.remove(uuid);
+			if (receiverUuids.contains(user.uuid) && receiverUuids.size() == 1)
+				sendStatus.set(false);
 
-		localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+		});
+
+		String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
+
+		remoteUsers.remove(user.uuid);
+
+		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
 	}
 
@@ -480,6 +484,16 @@ public class Model {
 
 		User(String uuid) {
 			this.uuid = uuid;
+		}
+
+	}
+
+	private class LocalUser extends User {
+
+		final Map<Long, AtomicBoolean> sendStatusMap = Collections.synchronizedMap(new HashMap<Long, AtomicBoolean>());
+
+		LocalUser(String uuid) {
+			super(uuid);
 		}
 
 	}

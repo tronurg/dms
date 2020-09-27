@@ -594,20 +594,18 @@ public class TcpManager implements TcpServerListener {
 
 		final PipedOutputStream messageFeed = new PipedOutputStream();
 
-		private final Thread messageFeedThread;
-
 		DmsServer(String dmsUuid) {
 
 			this.dmsUuid = dmsUuid;
 
-			messageFeedThread = new Thread(() -> {
+			new Thread(() -> {
 
 				try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
 						Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
 
 					scanner.useDelimiter(END_OF_TRANSMISSION);
 
-					while (true) {
+					while (!Thread.currentThread().isInterrupted()) {
 
 						messageReceivedToListeners(scanner.next(), this.dmsUuid);
 
@@ -619,9 +617,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 
-			});
-
-			messageFeedThread.start();
+			}).start();
 
 		}
 
