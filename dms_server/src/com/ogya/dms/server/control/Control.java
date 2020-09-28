@@ -109,7 +109,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
-	private TcpManager getTcpManager() throws IOException {
+	private synchronized TcpManager getTcpManager() throws IOException {
 
 		if (tcpManager == null) {
 
