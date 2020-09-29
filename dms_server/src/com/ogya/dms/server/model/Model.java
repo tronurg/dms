@@ -89,10 +89,12 @@ public class Model {
 
 			case BCON:
 
-				if (localUsers.isEmpty())
-					listener.publishImmediately();
+				boolean fresh = localUsers.isEmpty();
 
 				localUsers.putIfAbsent(senderUuid, new LocalUser(senderUuid));
+
+				if (fresh)
+					listener.publishImmediately();
 
 				if (!messagePojoStr.equals(localUsers.get(senderUuid).beacon)) {
 
