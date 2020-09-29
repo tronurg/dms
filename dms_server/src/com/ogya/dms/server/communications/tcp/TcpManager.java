@@ -556,7 +556,11 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private class Connection {
+	private static class Connection {
+
+		private static final AtomicInteger ORDER = new AtomicInteger(0);
+
+		final int order;
 
 		final InetAddress remoteAddress;
 
@@ -567,6 +571,7 @@ public class TcpManager implements TcpServerListener {
 		Function<String, Boolean> sendMethod;
 
 		Connection(InetAddress remoteAddress) {
+			order = ORDER.getAndIncrement();
 			this.remoteAddress = remoteAddress;
 		}
 
@@ -603,7 +608,11 @@ public class TcpManager implements TcpServerListener {
 					public int compare(Connection arg0, Connection arg1) {
 						if (arg0.equals(arg1))
 							return 0;
-						return (int) Math.signum(arg0.getPingTime() - arg1.getPingTime());
+						int pingTime0 = arg0.getPingTime();
+						int pingTime1 = arg1.getPingTime();
+						if (pingTime0 == pingTime1)
+							return (int) Math.signum(arg0.order - arg1.order);
+						return (int) Math.signum(pingTime0 - pingTime1);
 					}
 
 				}));
