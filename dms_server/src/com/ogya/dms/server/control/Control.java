@@ -65,7 +65,16 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	});
 
+	private final Object publishSyncObj = new Object();
+
 	private Control() {
+
+		// Try to initialize TcpManager
+		try {
+			getTcpManager();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 	}
 
@@ -94,14 +103,18 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		while (!Thread.currentThread().isInterrupted()) {
 
-			if (model.isLive())
-				multicastManager.send(DMS_UUID, model.getRemoteIps());
+			synchronized (publishSyncObj) {
 
-			try {
+				if (model.isLive())
+					multicastManager.send(DMS_UUID, model.getRemoteIps());
 
-				Thread.sleep(beaconIntervalMs);
+				try {
 
-			} catch (InterruptedException e) {
+					publishSyncObj.wait(beaconIntervalMs);
+
+				} catch (InterruptedException e) {
+
+				}
 
 			}
 
@@ -320,6 +333,17 @@ public class Control implements TcpManagerListener, ModelListener {
 		} catch (IOException e) {
 
 			e.printStackTrace();
+
+		}
+
+	}
+
+	@Override
+	public void publishImmediately() {
+
+		synchronized (publishSyncObj) {
+
+			publishSyncObj.notify();
 
 		}
 

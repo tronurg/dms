@@ -11,4 +11,6 @@ public interface ModelListener {
 
 	void sendToAllRemoteServers(String message);
 
+	void publishImmediately();
+
 }

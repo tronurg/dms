@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -15,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
@@ -207,6 +209,21 @@ public class TcpManager implements TcpServerListener {
 
 				connection.dmsServer = dmsServer;
 				dmsServer.connections.add(connection);
+
+				while (!connection.waitingMessages.isEmpty()) {
+
+					try {
+
+						dmsServer.messageFeed.write(connection.waitingMessages.poll().getBytes(CHARSET));
+						dmsServer.messageFeed.flush();
+
+					} catch (IOException e) {
+
+						e.printStackTrace();
+
+					}
+
+				}
 
 				checkServer(dmsServer);
 
@@ -516,17 +533,22 @@ public class TcpManager implements TcpServerListener {
 
 			DmsServer dmsServer = connection.dmsServer;
 
-			if (dmsServer == null)
-				return;
+			if (dmsServer == null) {
 
-			try {
+				connection.waitingMessages.offer(arg1);
 
-				dmsServer.messageFeed.write(arg1.getBytes(CHARSET));
-				dmsServer.messageFeed.flush();
+			} else {
 
-			} catch (IOException e) {
+				try {
 
-				e.printStackTrace();
+					dmsServer.messageFeed.write(arg1.getBytes(CHARSET));
+					dmsServer.messageFeed.flush();
+
+				} catch (IOException e) {
+
+					e.printStackTrace();
+
+				}
 
 			}
 
@@ -537,6 +559,8 @@ public class TcpManager implements TcpServerListener {
 	private class Connection {
 
 		final InetAddress remoteAddress;
+
+		final Queue<String> waitingMessages = new ArrayDeque<String>();
 
 		DmsServer dmsServer;
 
@@ -549,14 +573,21 @@ public class TcpManager implements TcpServerListener {
 		int getPingTime() {
 			int pingTime = 1000;
 			try {
-				long startTimeMillis = System.currentTimeMillis();
+				long startTimeNanos = System.nanoTime();
 				remoteAddress.isReachable(pingTime);
-				long endTimeMillis = System.currentTimeMillis();
-				pingTime = (int) (endTimeMillis - startTimeMillis);
+				long endTimeNanos = System.nanoTime();
+				pingTime = (int) (endTimeNanos - startTimeNanos);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			return pingTime;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (obj == null || !(obj instanceof Connection))
+				return false;
+			return ((Connection) obj).remoteAddress.equals(remoteAddress);
 		}
 
 	}
@@ -570,7 +601,9 @@ public class TcpManager implements TcpServerListener {
 
 					@Override
 					public int compare(Connection arg0, Connection arg1) {
-						return arg0.getPingTime() - arg1.getPingTime();
+						if (arg0.equals(arg1))
+							return 0;
+						return (int) Math.signum(arg0.getPingTime() - arg1.getPingTime());
 					}
 
 				}));
@@ -598,26 +631,35 @@ public class TcpManager implements TcpServerListener {
 
 			this.dmsUuid = dmsUuid;
 
-			new Thread(() -> {
+			try {
 
-				try (PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
-						Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
+				final PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
 
-					scanner.useDelimiter(END_OF_TRANSMISSION);
+				new Thread(() -> {
 
-					while (!Thread.currentThread().isInterrupted()) {
+					try (Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
 
-						messageReceivedToListeners(scanner.next(), this.dmsUuid);
+						scanner.useDelimiter(END_OF_TRANSMISSION);
+
+						while (!Thread.currentThread().isInterrupted()) {
+
+							messageReceivedToListeners(scanner.next(), this.dmsUuid);
+
+						}
+
+					} catch (NoSuchElementException e) {
+
+						e.printStackTrace();
 
 					}
 
-				} catch (NoSuchElementException | IOException e) {
+				}).start();
 
-					e.printStackTrace();
+			} catch (IOException e) {
 
-				}
+				e.printStackTrace();
 
-			}).start();
+			}
 
 		}
 
