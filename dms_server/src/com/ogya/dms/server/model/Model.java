@@ -161,8 +161,9 @@ public class Model {
 				if (sender == null)
 					break;
 
-				if (sender.sendStatusMap.containsKey(messageId))
-					sender.sendStatusMap.get(messageId).set(false);
+				AtomicBoolean sendStatus = sender.sendStatusMap.get(messageId);
+				if (sendStatus != null)
+					sendStatus.set(false);
 
 				break;
 
@@ -175,8 +176,12 @@ public class Model {
 
 				final LocalUser sender = localUsers.get(senderUuid);
 
-				if (sender == null)
-					break;
+				// This piece of code is disabled and commented out on purpose to remind that
+				// in some cases, like conveying a status report, the sender is virtually set to
+				// represent some remote users, which naturally do not appear on local users
+				// list
+//				if (sender == null)
+//					break;
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
@@ -219,7 +224,8 @@ public class Model {
 
 					AtomicBoolean sendStatus = new AtomicBoolean(true);
 
-					sender.sendStatusMap.put(messageId, sendStatus);
+					if (sender != null)
+						sender.sendStatusMap.put(messageId, sendStatus);
 					statusReceiverMap.put(sendStatus, uuidList);
 
 					listener.sendToRemoteServer(dmsUuid, messagePojoStr, sendStatus,
@@ -228,7 +234,8 @@ public class Model {
 
 										if ((progress < 0 || progress == 100)) {
 
-											sender.sendStatusMap.remove(messageId);
+											if (sender != null)
+												sender.sendStatusMap.remove(messageId);
 											statusReceiverMap.remove(sendStatus);
 
 										}
@@ -351,7 +358,9 @@ public class Model {
 		if (user == null)
 			return;
 
-		user.sendStatusMap.forEach((messageId, status) -> status.set(false));
+		synchronized (user.sendStatusMap) {
+			user.sendStatusMap.forEach((messageId, status) -> status.set(false));
+		}
 
 		String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
 
@@ -383,12 +392,12 @@ public class Model {
 		if (user == null)
 			return;
 
-		statusReceiverMap.forEach((sendStatus, receiverUuids) -> {
-
-			if (receiverUuids.contains(user.uuid) && receiverUuids.size() == 1)
-				sendStatus.set(false);
-
-		});
+		synchronized (statusReceiverMap) {
+			statusReceiverMap.forEach((sendStatus, receiverUuids) -> {
+				if (receiverUuids.contains(user.uuid) && receiverUuids.size() == 1)
+					sendStatus.set(false);
+			});
+		}
 
 		String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
 
