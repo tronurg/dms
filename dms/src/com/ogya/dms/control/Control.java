@@ -434,7 +434,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		List<String> contactNames = new ArrayList<String>();
 		group.getContacts().forEach(contact -> contactNames.add(contact.getName()));
-		Collections.sort(contactNames);
+		Collections.sort(contactNames, model.getCaseInsensitiveStringSorter());
 		if (!group.getOwnerUuid().equals(model.getLocalUuid()))
 			contactNames.add(0, model.getContact(group.getOwnerUuid()).getName());
 		group.setComment(String.join(",", contactNames));
@@ -799,22 +799,21 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		{
 
-			if (remoteUuids.length != 1)
-				break;
+			for (String remoteUuid : remoteUuids) {
 
-			String remoteUuid = remoteUuids[0];
+				message.setMessageStatus(messageStatus);
 
-			message.setMessageStatus(messageStatus);
+				message.setWaitStatus(messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
-			message.setWaitStatus(messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
+				final Message newMessage = dbManager.addUpdateMessage(message);
 
-			final Message newMessage = dbManager.addUpdateMessage(message);
+				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
 
-			if (!newMessage.getMessageType().equals(MessageType.UPDATE))
-				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
+				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
+					sendPrivateMessage(newMessage);
 
-			if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
-				sendPrivateMessage(newMessage);
+			}
 
 			break;
 
@@ -1130,14 +1129,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				{
 
-					if (remoteUuids.length != 1)
-						break;
+					for (String uuid : remoteUuids) {
 
-					String uuid = remoteUuids[0];
+						model.storePrivateMessageProgress(uuid, messageId, progress);
 
-					model.storePrivateMessageProgress(uuid, messageId, progress);
+						Platform.runLater(() -> dmsPanel.updatePrivateMessageProgress(uuid, messageId, progress));
 
-					Platform.runLater(() -> dmsPanel.updatePrivateMessageProgress(uuid, messageId, progress));
+					}
 
 					break;
 

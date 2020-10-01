@@ -174,7 +174,9 @@ public class Model {
 				if (messagePojo.receiverUuid == null)
 					break;
 
-				final LocalUser sender = localUsers.get(senderUuid);
+				final LocalUser sender = messagePojo.contentType.equals(ContentType.MESSAGE)
+						? localUsers.get(senderUuid)
+						: null;
 
 				// This piece of code is disabled and commented out on purpose to remind that
 				// in some cases, like conveying a status report, the sender is virtually set to
@@ -232,7 +234,7 @@ public class Model {
 							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
 									: progress -> {
 
-										if ((progress < 0 || progress == 100)) {
+										if (progress < 0 || progress == 100) {
 
 											if (sender != null)
 												sender.sendStatusMap.remove(messageId);

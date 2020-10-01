@@ -47,7 +47,14 @@ public class Model {
 	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
 		@Override
 		public int compare(Contact arg0, Contact arg1) {
-			return arg0.getName().compareTo(arg1.getName());
+			return arg0.getName().toLowerCase().compareTo(arg1.getName().toLowerCase());
+		}
+	};
+
+	private final Comparator<String> caseInsensitiveStringSorter = new Comparator<String>() {
+		@Override
+		public int compare(String arg0, String arg1) {
+			return arg0.toLowerCase().compareTo(arg1.toLowerCase());
 		}
 	};
 
@@ -215,6 +222,12 @@ public class Model {
 	public Comparator<Contact> getContactSorter() {
 
 		return contactSorter;
+
+	}
+
+	public Comparator<String> getCaseInsensitiveStringSorter() {
+
+		return caseInsensitiveStringSorter;
 
 	}
 
