@@ -29,9 +29,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
-	private final ContactsPane contactsPane = new ContactsPane();
-	private final GroupsPane groupsPane = new GroupsPane();
-	private final VBox contactsGroupsPane = new VBox();
+	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(
 			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath());
@@ -56,13 +54,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		VBox.setMargin(identityPane, new Insets(10.0));
 
-		VBox.setVgrow(contactsPane, Priority.ALWAYS);
-		VBox.setVgrow(groupsPane, Priority.ALWAYS);
-		VBox.setVgrow(contactsGroupsPane, Priority.ALWAYS);
+		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
 
 		identityPane.addListener(this);
-		contactsPane.addListener(this);
-		groupsPane.addListener(this);
+		entitiesPane.addContactListener(this);
+		entitiesPane.addGroupListener(this);
 		foldersPane.setOnFileSelected(this::fileSelected);
 		foldersPane.setOnBackAction(this::backFromFoldersPane);
 		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
@@ -72,9 +68,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
 		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
 
-		contactsGroupsPane.getChildren().addAll(contactsPane, groupsPane);
-
-		mainPane.getChildren().addAll(identityPane, contactsGroupsPane);
+		mainPane.getChildren().addAll(identityPane, entitiesPane);
 
 		getChildren().add(mainPane);
 
@@ -94,15 +88,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	public void updateContact(Contact contact) {
 
-		contactsPane.updateContact(contact);
-		groupsPane.addUpdateGroupPaneUpdateContact(contact);
+		entitiesPane.updateContact(contact);
+		entitiesPane.addUpdateGroupPaneUpdateContact(contact);
 		statusInfoPane.updateContact(contact);
 
 	}
 
 	public void updateGroup(Dgroup group) {
 
-		groupsPane.updateGroup(group);
+		entitiesPane.updateGroup(group);
 
 	}
 
@@ -112,13 +106,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		case PRIVATE:
 
-			contactsPane.addMessageToTop(message, senderName, messageDirection, uuid);
+			entitiesPane.addPrivateMessageToTop(message, senderName, messageDirection, uuid);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.addMessageToTop(message, senderName, messageDirection, uuid);
+			entitiesPane.addGroupMessageToTop(message, senderName, messageDirection, uuid);
 
 			break;
 
@@ -138,13 +132,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		case PRIVATE:
 
-			contactsPane.addMessageToBottom(message, senderName, messageDirection, uuid);
+			entitiesPane.addPrivateMessageToBottom(message, senderName, messageDirection, uuid);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.addMessageToBottom(message, senderName, messageDirection, uuid);
+			entitiesPane.addGroupMessageToBottom(message, senderName, messageDirection, uuid);
 
 			break;
 
@@ -164,13 +158,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		case PRIVATE:
 
-			contactsPane.updateMessageStatus(message, uuid);
+			entitiesPane.updatePrivateMessageStatus(message, uuid);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.updateMessageStatus(message, uuid);
+			entitiesPane.updateGroupMessageStatus(message, uuid);
 
 			break;
 
@@ -182,7 +176,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	public void updatePrivateMessageProgress(String uuid, Long messageId, int progress) {
 
-		contactsPane.updateMessageProgress(uuid, messageId, progress);
+		entitiesPane.updatePrivateMessageProgress(uuid, messageId, progress);
 
 	}
 
@@ -204,13 +198,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		case PRIVATE:
 
-			contactsPane.scrollPaneToMessage(uuid, messageId);
+			entitiesPane.scrollPrivatePaneToMessage(uuid, messageId);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.scrollPaneToMessage(uuid, messageId);
+			entitiesPane.scrollGroupPaneToMessage(uuid, messageId);
 
 			break;
 
@@ -226,13 +220,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		case PRIVATE:
 
-			contactsPane.savePosition(uuid, messageId);
+			entitiesPane.savePrivatePosition(uuid, messageId);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.savePosition(uuid, messageId);
+			entitiesPane.saveGroupPosition(uuid, messageId);
 
 			break;
 
@@ -248,13 +242,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		case PRIVATE:
 
-			contactsPane.scrollToSavedPosition(uuid);
+			entitiesPane.scrollToSavedPrivatePosition(uuid);
 
 			break;
 
 		case GROUP:
 
-			groupsPane.scrollToSavedPosition(uuid);
+			entitiesPane.scrollToSavedGroupPosition(uuid);
 
 			break;
 
@@ -266,7 +260,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	public void showAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
 
-		getChildren().add(groupsPane.getAddUpdateGroupPane(groupName, selectedUuids, isNewGroup));
+		getChildren().add(entitiesPane.getAddUpdateGroupPane(groupName, selectedUuids, isNewGroup));
 
 	}
 
