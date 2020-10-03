@@ -27,6 +27,11 @@ class EntitiesPane extends BorderPane {
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
 
 	private final VBox entities = new VBox();
+	private final ScrollPane scrollPane = new ScrollPane(entities) {
+		@Override
+		public void requestFocus() {
+		}
+	};
 
 	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane();
 
@@ -62,7 +67,6 @@ class EntitiesPane extends BorderPane {
 
 		entities.setPadding(new Insets(10.0));
 
-		ScrollPane scrollPane = new ScrollPane(entities);
 		scrollPane.setFitToWidth(true);
 
 		setTop(createGroupBtn);
@@ -137,6 +141,8 @@ class EntitiesPane extends BorderPane {
 			entities.getChildren().remove(contactPane);
 			entities.getChildren().add(0, contactPane);
 
+			scrollPane.setVvalue(0.0);
+
 		}
 
 	}
@@ -155,6 +161,8 @@ class EntitiesPane extends BorderPane {
 
 			entities.getChildren().remove(groupPane);
 			entities.getChildren().add(0, groupPane);
+
+			scrollPane.setVvalue(0.0);
 
 		}
 
@@ -175,6 +183,8 @@ class EntitiesPane extends BorderPane {
 			entities.getChildren().remove(contactPane);
 			entities.getChildren().add(0, contactPane);
 
+			scrollPane.setVvalue(0.0);
+
 		}
 
 	}
@@ -194,6 +204,8 @@ class EntitiesPane extends BorderPane {
 
 			entities.getChildren().remove(groupPane);
 			entities.getChildren().add(0, groupPane);
+
+			scrollPane.setVvalue(0.0);
 
 		}
 
