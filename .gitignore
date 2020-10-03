@@ -2,6 +2,8 @@
 .settings
 bin
 database
+received
+sent
 
 .classpath
 .project
