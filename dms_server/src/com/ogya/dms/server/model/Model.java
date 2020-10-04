@@ -174,9 +174,10 @@ public class Model {
 				if (messagePojo.receiverUuid == null)
 					break;
 
-				final LocalUser sender = messagePojo.contentType.equals(ContentType.MESSAGE)
-						? localUsers.get(senderUuid)
-						: null;
+				final LocalUser sender = localUsers.get(senderUuid);
+
+				final boolean trackedMessage = messagePojo.contentType.equals(ContentType.MESSAGE) && sender != null
+						&& messageId != null;
 
 				// This piece of code is disabled and commented out on purpose to remind that
 				// in some cases, like conveying a status report, the sender is virtually set to
@@ -211,14 +212,12 @@ public class Model {
 
 				}
 
-				if (messagePojo.contentType.equals(ContentType.MESSAGE) && localReceiverUuids.size() > 0
-						&& messageId != null) {
+				if (trackedMessage && localReceiverUuids.size() > 0) {
 
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
 
-					if (localUsers.containsKey(senderUuid))
-						listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+					listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
 
 				}
 
@@ -226,30 +225,31 @@ public class Model {
 
 					AtomicBoolean sendStatus = new AtomicBoolean(true);
 
-					if (sender != null)
+					if (trackedMessage)
 						sender.sendStatusMap.put(messageId, sendStatus);
 					statusReceiverMap.put(sendStatus, uuidList);
 
-					listener.sendToRemoteServer(dmsUuid, messagePojoStr, sendStatus,
-							!messagePojo.contentType.equals(ContentType.MESSAGE) || messageId == null ? null
-									: progress -> {
+					listener.sendToRemoteServer(dmsUuid, messagePojoStr, sendStatus, trackedMessage ? progress -> {
 
-										if (progress < 0 || progress == 100) {
+						if (progress < 0 || progress == 100) {
 
-											if (sender != null)
-												sender.sendStatusMap.remove(messageId);
-											statusReceiverMap.remove(sendStatus);
+							sender.sendStatusMap.remove(messageId);
+							statusReceiverMap.remove(sendStatus);
 
-										}
+						}
 
-										MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-												String.join(";", uuidList), senderUuid, ContentType.PROGRESS,
-												messageId);
+						MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+								String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
 
-										if (localUsers.containsKey(senderUuid))
-											listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+						if (localUsers.containsKey(senderUuid))
+							listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
 
-									});
+					} : progress -> {
+
+						if (progress < 0 || progress == 100)
+							statusReceiverMap.remove(sendStatus);
+
+					});
 
 				});
 
