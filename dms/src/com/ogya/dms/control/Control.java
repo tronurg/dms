@@ -8,6 +8,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -138,63 +139,118 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			dmsPanel.setIdentity(model.getIdentity());
 		});
 
-		// Add contacts
-		model.getContacts().forEach((uuid, contact) -> Platform.runLater(() -> dmsPanel.updateContact(contact)));
+		List<DmsEntity> dmsEntities = new ArrayList<DmsEntity>();
 
-		// Add private messages
-		model.getContacts().forEach((uuid, contact) -> {
+		model.getContacts().forEach((uuid, contact) -> dmsEntities.add(new DmsEntity(uuid, ReceiverType.PRIVATE)));
+		model.getGroups().forEach((uuid, group) -> dmsEntities.add(new DmsEntity(uuid, ReceiverType.GROUP)));
 
-			String remoteUuid = uuid;
+		dmsEntities.forEach(dmsEntity -> {
 
-			List<Message> dbMessages = new ArrayList<Message>();
+			String uuid = dmsEntity.uuid;
 
-			dbMessages.addAll(dbManager.getAllPrivateMessagesSinceFirstUnreadMessage(model.getLocalUuid(), remoteUuid));
+			switch (dmsEntity.receiverType) {
 
-			if (dbMessages.size() == 0) {
+			case PRIVATE: {
 
-				dbManager.getLastPrivateMessages(model.getLocalUuid(), remoteUuid, MIN_MESSAGES_PER_PAGE)
-						.forEach(message -> dbMessages.add(0, message)); // inverse order
+				List<Message> dbMessages = new ArrayList<Message>();
 
-			} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+				dbMessages.addAll(dbManager.getAllPrivateMessagesSinceFirstUnreadMessage(model.getLocalUuid(), uuid));
 
-				dbManager
-						.getLastPrivateMessagesBeforeId(model.getLocalUuid(), remoteUuid, dbMessages.get(0).getId(),
-								MIN_MESSAGES_PER_PAGE - dbMessages.size())
-						.forEach(message -> dbMessages.add(0, message)); // inverse order
+				if (dbMessages.size() == 0) {
+
+					dbManager.getLastPrivateMessages(model.getLocalUuid(), uuid, MIN_MESSAGES_PER_PAGE)
+							.forEach(message -> dbMessages.add(0, message)); // inverse order
+
+				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+
+					dbManager
+							.getLastPrivateMessagesBeforeId(model.getLocalUuid(), uuid, dbMessages.get(0).getId(),
+									MIN_MESSAGES_PER_PAGE - dbMessages.size())
+							.forEach(message -> dbMessages.add(0, message)); // inverse order
+
+				}
+
+				dmsEntity.messages.addAll(dbMessages);
+
+				break;
+
+			}
+			case GROUP: {
+
+				List<Message> dbMessages = new ArrayList<Message>();
+
+				dbMessages.addAll(dbManager.getAllGroupMessagesSinceFirstUnreadMessage(model.getLocalUuid(), uuid));
+
+				if (dbMessages.size() == 0) {
+
+					dbManager.getLastGroupMessages(uuid, MIN_MESSAGES_PER_PAGE)
+							.forEach(message -> dbMessages.add(0, message)); // inverse order
+
+				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+
+					dbManager
+							.getLastGroupMessagesBeforeId(uuid, dbMessages.get(0).getId(),
+									MIN_MESSAGES_PER_PAGE - dbMessages.size())
+							.forEach(message -> dbMessages.add(0, message)); // inverse order
+
+				}
+
+				dmsEntity.messages.addAll(dbMessages);
+
+				break;
 
 			}
 
-			dbMessages.forEach(message -> addPrivateMessageToPane(message, true));
+			}
 
 		});
 
-		// Add groups
-		model.getGroups().forEach((uuid, group) -> Platform.runLater(() -> dmsPanel.updateGroup(group)));
+		Collections.sort(dmsEntities, new Comparator<DmsEntity>() {
 
-		// Add group messages
-		model.getGroups().forEach((uuid, group) -> {
+			@Override
+			public int compare(DmsEntity arg0, DmsEntity arg1) {
 
-			String groupUuid = uuid;
+				Long maxMessageId0 = arg0.messages.size() == 0 ? 0
+						: arg0.messages.get(arg0.messages.size() - 1).getId();
+				Long maxMessageId1 = arg1.messages.size() == 0 ? 0
+						: arg1.messages.get(arg1.messages.size() - 1).getId();
 
-			List<Message> dbMessages = new ArrayList<Message>();
-
-			dbMessages.addAll(dbManager.getAllGroupMessagesSinceFirstUnreadMessage(model.getLocalUuid(), groupUuid));
-
-			if (dbMessages.size() == 0) {
-
-				dbManager.getLastGroupMessages(groupUuid, MIN_MESSAGES_PER_PAGE)
-						.forEach(message -> dbMessages.add(0, message)); // inverse order
-
-			} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
-
-				dbManager
-						.getLastGroupMessagesBeforeId(groupUuid, dbMessages.get(0).getId(),
-								MIN_MESSAGES_PER_PAGE - dbMessages.size())
-						.forEach(message -> dbMessages.add(0, message)); // inverse order
+				return (int) Math.signum(maxMessageId0 - maxMessageId1);
 
 			}
 
-			dbMessages.forEach(message -> addGroupMessageToPane(message, true));
+		});
+
+		dmsEntities.forEach(dmsEntity -> {
+
+			String uuid = dmsEntity.uuid;
+
+			switch (dmsEntity.receiverType) {
+
+			case PRIVATE: {
+
+				Contact contact = model.getContact(uuid);
+
+				Platform.runLater(() -> dmsPanel.updateContact(contact));
+
+				dmsEntity.messages.forEach(message -> addPrivateMessageToPane(message, true));
+
+				break;
+
+			}
+			case GROUP: {
+
+				Dgroup group = model.getGroup(uuid);
+
+				Platform.runLater(() -> dmsPanel.updateGroup(group));
+
+				dmsEntity.messages.forEach(message -> addGroupMessageToPane(message, true));
+
+				break;
+
+			}
+
+			}
 
 		});
 
@@ -2213,6 +2269,21 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	public void removeListener(DmsListener listener) {
 
 		dmsListeners.remove(listener);
+
+	}
+
+	private class DmsEntity {
+
+		private final String uuid;
+		private final ReceiverType receiverType;
+		private final List<Message> messages = new ArrayList<Message>();
+
+		private DmsEntity(String uuid, ReceiverType receiverType) {
+
+			this.uuid = uuid;
+			this.receiverType = receiverType;
+
+		}
 
 	}
 
