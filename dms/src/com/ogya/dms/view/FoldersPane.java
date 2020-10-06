@@ -237,10 +237,10 @@ public class FoldersPane extends BorderPane {
 
 					Kind<?> kind = watchEvent.kind();
 
-					if (kind == StandardWatchEventKinds.OVERFLOW)
+					if (kind.equals(StandardWatchEventKinds.OVERFLOW))
 						continue;
 
-					if (kind == StandardWatchEventKinds.ENTRY_DELETE)
+					if (kind.equals(StandardWatchEventKinds.ENTRY_DELETE))
 						Platform.runLater(() -> removeFolderView(dir.resolve((Path) watchEvent.context())));
 
 					if (folderView != null)

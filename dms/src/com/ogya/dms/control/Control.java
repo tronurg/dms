@@ -691,7 +691,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		case UPDATE:
 
-			if (message.getMessageCode() == CommonConstants.CODE_CANCEL_MESSAGE) {
+			if (message.getMessageCode().equals(CommonConstants.CODE_CANCEL_MESSAGE)) {
 
 				Long messageId = Long.parseLong(message.getContent());
 
@@ -725,7 +725,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		case UPDATE:
 
-			if (message.getMessageCode() == CommonConstants.CODE_UPDATE_GROUP) {
+			if (message.getMessageCode().equals(CommonConstants.CODE_UPDATE_GROUP)) {
 
 				GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
 
@@ -918,7 +918,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					message.setWaitStatus(
 							messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
-				if (model.getDetailedGroupMessageId() == message.getId())
+				if (message.getId().equals(model.getDetailedGroupMessageId()))
 					Platform.runLater(() -> dmsPanel.updateDetailedMessageStatus(remoteUuid, messageStatus));
 
 			}
@@ -1223,7 +1223,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						model.storeGroupMessageProgress(messageId, uuid, progress);
 
-						if (model.getDetailedGroupMessageId() == messageId)
+						if (messageId.equals(model.getDetailedGroupMessageId()))
 							Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, progress));
 
 					}
