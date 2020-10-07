@@ -210,10 +210,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			@Override
 			public int compare(DmsEntity arg0, DmsEntity arg1) {
 
-				Long maxMessageId0 = arg0.messages.size() == 0 ? 0
-						: arg0.messages.get(arg0.messages.size() - 1).getId();
-				Long maxMessageId1 = arg1.messages.size() == 0 ? 0
-						: arg1.messages.get(arg1.messages.size() - 1).getId();
+				Long maxMessageId0 = arg0.messages.size() > 0 ? arg0.messages.get(arg0.messages.size() - 1).getId() : 0;
+				Long maxMessageId1 = arg1.messages.size() > 0 ? arg1.messages.get(arg1.messages.size() - 1).getId() : 0;
 
 				return (int) Math.signum(maxMessageId0 - maxMessageId1);
 

@@ -602,7 +602,7 @@ public class TcpManager implements TcpServerListener {
 		final String dmsUuid;
 
 		final Set<Connection> connections = Collections
-				.synchronizedSet(new TreeSet<Connection>(new Comparator<Connection>() {
+				.synchronizedSortedSet(new TreeSet<Connection>(new Comparator<Connection>() {
 
 					@Override
 					public int compare(Connection arg0, Connection arg1) {
