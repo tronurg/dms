@@ -195,6 +195,9 @@ class IdentityPane extends GridPane {
 
 		commentTextField.setOnKeyPressed(e -> {
 
+			if (!commentEditable.get())
+				return;
+
 			KeyCode code = e.getCode();
 			if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
 				return;

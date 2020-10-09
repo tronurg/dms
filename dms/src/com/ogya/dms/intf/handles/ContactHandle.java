@@ -12,4 +12,6 @@ public interface ContactHandle {
 
 	Double getLongitude();
 
+	boolean isOnline();
+
 }

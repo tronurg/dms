@@ -27,7 +27,7 @@ public interface DmsHandle {
 
 	GroupSelectionHandle getMyGroupsHandle();
 
-	ContactSelectionHandle getActiveContactsHandle();
+	ContactSelectionHandle getOnlineContactsHandle();
 
 	ContactHandle getContactHandle(String uuid);
 

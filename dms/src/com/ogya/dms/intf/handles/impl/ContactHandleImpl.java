@@ -9,14 +9,17 @@ public class ContactHandleImpl implements ContactHandle {
 	private final String comment;
 	private final Double lattitude;
 	private final Double longitude;
+	private final boolean online;
 
-	public ContactHandleImpl(String uuid, String name, String comment, Double lattitude, Double longitude) {
+	public ContactHandleImpl(String uuid, String name, String comment, Double lattitude, Double longitude,
+			boolean online) {
 
 		this.uuid = uuid;
 		this.name = name;
 		this.comment = comment;
 		this.lattitude = lattitude;
 		this.longitude = longitude;
+		this.online = online;
 
 	}
 
@@ -52,6 +55,13 @@ public class ContactHandleImpl implements ContactHandle {
 	public Double getLongitude() {
 
 		return longitude;
+
+	}
+
+	@Override
+	public boolean isOnline() {
+
+		return online;
 
 	}
 

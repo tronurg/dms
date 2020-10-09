@@ -19,6 +19,10 @@ import org.osgi.service.component.annotations.Reference;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.DmsService;
 import com.ogya.dms.intf.exceptions.DbException;
+import com.ogya.dms.intf.handles.ContactHandle;
+import com.ogya.dms.intf.handles.FileHandle;
+import com.ogya.dms.intf.handles.MessageHandle;
+import com.ogya.dms.intf.handles.ObjectHandle;
 import com.ogya.dms.intf.listeners.DmsListener;
 
 @Component(immediate = true)
@@ -43,22 +47,6 @@ public class DmsTest implements DmsListener {
 	protected void removeDmsService(DmsService dmsService) {
 
 		this.dmsService = null;
-
-	}
-
-	@Override
-	public void fileClicked(Path file) {
-
-		try {
-
-			new ProcessBuilder().directory(file.getParent().toFile())
-					.command("cmd", "/C", file.getFileName().toString()).start();
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
 
 	}
 
@@ -200,6 +188,46 @@ public class DmsTest implements DmsListener {
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		SwingUtilities.invokeLater(() -> frame.setVisible(true));
+
+	}
+
+	@Override
+	public void fileClicked(Path file) {
+
+		try {
+
+			new ProcessBuilder().directory(file.getParent().toFile())
+					.command("cmd", "/C", file.getFileName().toString()).start();
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	@Override
+	public void messageReceived(MessageHandle messageHandle) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void objectReceived(ObjectHandle objectHandle) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void fileReceived(FileHandle fileHandle) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void contactUpdated(ContactHandle contactHandle) {
+		// TODO Auto-generated method stub
 
 	}
 

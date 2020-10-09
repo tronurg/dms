@@ -26,6 +26,7 @@ import org.hibernate.HibernateException;
 
 import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.common.CommonConstants;
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.DbManager;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
@@ -350,6 +351,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				model.addContact(newContact);
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+				dmsListeners
+						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(uuid, newContact.getName(),
+								newContact.getComment(), newContact.getLattitude(), newContact.getLongitude(), false)));
 
 			} catch (HibernateException e) {
 
@@ -773,6 +778,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					Contact newContact = dbManager.addUpdateContact(contact);
 					model.addContact(newContact);
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
+					dmsListeners.forEach(listener -> listener
+							.contactUpdated(new ContactHandleImpl(uuid, newContact.getName(), newContact.getComment(),
+									newContact.getLattitude(), newContact.getLongitude(), false)));
 					contactsToBeAdded.add(newContact);
 				} else {
 					contactsToBeAdded.add(contact);
@@ -798,6 +806,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					Contact newContact = dbManager.addUpdateContact(contact);
 					model.addContact(newContact);
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
+					dmsListeners.forEach(listener -> listener
+							.contactUpdated(new ContactHandleImpl(uuid, newContact.getName(), newContact.getComment(),
+									newContact.getLattitude(), newContact.getLongitude(), false)));
 					contactsToBeRemoved.add(newContact);
 				} else {
 					contactsToBeRemoved.add(contact);
@@ -1019,6 +1030,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				model.addContact(newContact);
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+				dmsListeners
+						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(uuid, newContact.getName(),
+								newContact.getComment(), newContact.getLattitude(), newContact.getLongitude(), true)));
 
 				if (!wasOnline) {
 
@@ -1617,7 +1632,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Identity identity = model.getIdentity();
 
-				if (comment.equals(identity.getComment()))
+				if (Objects.equals(comment, identity.getComment()))
 					return;
 
 				identity.setComment(comment);
@@ -2403,7 +2418,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		Identity identity = model.getIdentity();
 
 		return new ContactHandleImpl(identity.getUuid(), identity.getName(), identity.getComment(),
-				identity.getLattitude(), identity.getLongitude());
+				identity.getLattitude(), identity.getLongitude(), true);
 
 	}
 
@@ -2414,7 +2429,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public ContactSelectionHandle getActiveContactsHandle() {
+	public ContactSelectionHandle getOnlineContactsHandle() {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -2428,7 +2443,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			return null;
 
 		return new ContactHandleImpl(contact.getUuid(), contact.getName(), contact.getComment(), contact.getLattitude(),
-				contact.getLongitude());
+				contact.getLongitude(), !contact.getStatus().equals(Availability.OFFLINE));
 
 	}
 
@@ -2449,38 +2464,173 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	@Override
 	public boolean sendMessageToContacts(String message, Integer messageCode, List<String> contactUuids) {
-		// TODO Auto-generated method stub
-		return false;
+
+		if (!model.isServerConnected())
+			return false;
+
+		Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.TEXT,
+				message);
+
+		outgoingMessage.setMessageCode(messageCode);
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		return true;
+
 	}
 
 	@Override
 	public boolean sendMessageToGroup(String message, Integer messageCode, String groupUuid) {
-		// TODO Auto-generated method stub
-		return false;
+
+		if (!model.isServerConnected())
+			return false;
+
+		Dgroup group = model.getGroup(groupUuid);
+
+		if (group == null)
+			return false;
+
+		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.TEXT,
+				message);
+
+		outgoingMessage.setMessageCode(messageCode);
+
+		List<String> contactUuids = new ArrayList<String>();
+
+		group.getContacts().forEach(contact -> contactUuids.add(contact.getUuid()));
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		return true;
+
 	}
 
 	@Override
 	public boolean sendObjectToContacts(Object object, Integer objectCode, List<String> contactUuids) {
-		// TODO Auto-generated method stub
-		return false;
+
+		if (!model.isServerConnected())
+			return false;
+
+		Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.TEXT,
+				CommonMethods.toJson(object));
+
+		outgoingMessage.setMessageCode(objectCode);
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		return true;
+
 	}
 
 	@Override
 	public boolean sendObjectToGroup(Object object, Integer objectCode, String groupUuid) {
-		// TODO Auto-generated method stub
-		return false;
+
+		if (!model.isServerConnected())
+			return false;
+
+		Dgroup group = model.getGroup(groupUuid);
+
+		if (group == null)
+			return false;
+
+		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.TEXT,
+				CommonMethods.toJson(object));
+
+		outgoingMessage.setMessageCode(objectCode);
+
+		List<String> contactUuids = new ArrayList<String>();
+
+		group.getContacts().forEach(contact -> contactUuids.add(contact.getUuid()));
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		return true;
+
 	}
 
 	@Override
 	public boolean sendFileToContacts(Path path, Integer fileCode, List<String> contactUuids) {
-		// TODO Auto-generated method stub
-		return false;
+
+		if (!model.isServerConnected())
+			return false;
+
+		try {
+
+			Path srcFile = path;
+			Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+
+			String fileName = srcFile.getFileName().toString();
+
+			Path dstFile = getDstFile(dstFolder, fileName);
+
+			Files.copy(srcFile, dstFile);
+
+			byte[] fileBytes = Files.readAllBytes(dstFile);
+
+			Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.FILE,
+					new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
+							.toJson());
+
+			outgoingMessage.setMessageCode(fileCode);
+
+			dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+		return true;
+
 	}
 
 	@Override
 	public boolean sendFileToGroup(Path path, Integer fileCode, String groupUuid) {
-		// TODO Auto-generated method stub
+
+		if (!model.isServerConnected())
+			return false;
+
+		Dgroup group = model.getGroup(groupUuid);
+
+		if (group == null)
+			return false;
+
+		try {
+
+			Path srcFile = path;
+			Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+
+			String fileName = srcFile.getFileName().toString();
+
+			Path dstFile = getDstFile(dstFolder, fileName);
+
+			Files.copy(srcFile, dstFile);
+
+			byte[] fileBytes = Files.readAllBytes(dstFile);
+
+			Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.FILE,
+					new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
+							.toJson());
+
+			outgoingMessage.setMessageCode(fileCode);
+
+			List<String> contactUuids = new ArrayList<String>();
+
+			group.getContacts().forEach(contact -> contactUuids.add(contact.getUuid()));
+
+			dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+			return true;
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
 		return false;
+
 	}
 
 	private class DmsEntity {
