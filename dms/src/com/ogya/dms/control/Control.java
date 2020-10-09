@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,6 +35,15 @@ import com.ogya.dms.dmsclient.DmsClient;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
+import com.ogya.dms.intf.handles.ContactHandle;
+import com.ogya.dms.intf.handles.ContactSelectionHandle;
+import com.ogya.dms.intf.handles.GroupHandle;
+import com.ogya.dms.intf.handles.GroupSelectionHandle;
+import com.ogya.dms.intf.handles.impl.ContactHandleImpl;
+import com.ogya.dms.intf.handles.impl.FileHandleImpl;
+import com.ogya.dms.intf.handles.impl.GroupHandleImpl;
+import com.ogya.dms.intf.handles.impl.MessageHandleImpl;
+import com.ogya.dms.intf.handles.impl.ObjectHandleImpl;
 import com.ogya.dms.intf.listeners.DmsListener;
 import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.Availability;
@@ -1520,14 +1530,81 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	@Override
 	public void transientMessageReceived(String message, String remoteUuid) {
 
-		// TODO Auto-generated method stub
+		taskQueue.execute(() -> {
 
-	}
+			try {
 
-	@Override
-	public JComponent getDmsPanel() {
+				Message incomingMessage = Message.fromJson(message);
 
-		return dmsPanelSwing;
+				switch (incomingMessage.getMessageType()) {
+
+				case TEXT:
+
+					final MessageHandleImpl messageHandle = new MessageHandleImpl(incomingMessage.getMessageCode(),
+							incomingMessage.getContent(), incomingMessage.getOwnerUuid(),
+							incomingMessage.getReceiverType().equals(ReceiverType.GROUP)
+									? incomingMessage.getReceiverUuid()
+									: null);
+
+					dmsListeners.forEach(listener -> listener.messageReceived(messageHandle));
+
+					break;
+
+				case FILE:
+
+					try {
+
+						FilePojo filePojo = FilePojo.fromJson(incomingMessage.getContent());
+
+						Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
+
+						String fileName = filePojo.fileName;
+
+						Path dstFile = getDstFile(dstFolder, fileName);
+
+						Files.write(dstFile, Base64.getDecoder().decode(filePojo.fileContent));
+
+						final FileHandleImpl fileHandle = new FileHandleImpl(incomingMessage.getMessageCode(), dstFile,
+								incomingMessage.getOwnerUuid(),
+								incomingMessage.getReceiverType().equals(ReceiverType.GROUP)
+										? incomingMessage.getReceiverUuid()
+										: null);
+
+						dmsListeners.forEach(listener -> listener.fileReceived(fileHandle));
+
+					} catch (Exception e) {
+
+						e.printStackTrace();
+
+					}
+
+					break;
+
+				case OBJECT:
+
+					final ObjectHandleImpl objectHandle = new ObjectHandleImpl(incomingMessage.getMessageCode(),
+							incomingMessage.getContent(), incomingMessage.getOwnerUuid(),
+							incomingMessage.getReceiverType().equals(ReceiverType.GROUP)
+									? incomingMessage.getReceiverUuid()
+									: null);
+
+					dmsListeners.forEach(listener -> listener.objectReceived(objectHandle));
+
+					break;
+
+				default:
+
+					break;
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 
@@ -2257,6 +2334,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
+	public JComponent getDmsPanel() {
+
+		return dmsPanelSwing;
+
+	}
+
+	@Override
 	public void addListener(DmsListener listener) {
 
 		dmsListeners.add(listener);
@@ -2268,6 +2352,135 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		dmsListeners.remove(listener);
 
+	}
+
+	@Override
+	public void setCoordinates(Double lattitude, Double longitude) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Identity identity = model.getIdentity();
+
+				if (Objects.equals(lattitude, identity.getLattitude())
+						&& Objects.equals(longitude, identity.getLongitude()))
+					return;
+
+				identity.setLattitude(lattitude);
+				identity.setLongitude(longitude);
+
+				Identity newIdentity = dbManager.updateIdentity(identity);
+
+				model.updateCoordinates(lattitude, longitude);
+
+				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
+
+				sendBeacon();
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void setComment(String comment) {
+
+		Platform.runLater(() -> dmsPanel.setCommentEditable(false));
+
+		commentUpdated(comment);
+
+	}
+
+	@Override
+	public ContactHandle getMyContactHandle() {
+
+		Identity identity = model.getIdentity();
+
+		return new ContactHandleImpl(identity.getUuid(), identity.getName(), identity.getComment(),
+				identity.getLattitude(), identity.getLongitude());
+
+	}
+
+	@Override
+	public GroupSelectionHandle getMyGroupsHandle() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ContactSelectionHandle getActiveContactsHandle() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ContactHandle getContactHandle(String uuid) {
+
+		Contact contact = model.getContact(uuid);
+
+		if (contact == null)
+			return null;
+
+		return new ContactHandleImpl(contact.getUuid(), contact.getName(), contact.getComment(), contact.getLattitude(),
+				contact.getLongitude());
+
+	}
+
+	@Override
+	public GroupHandle getGroupHandle(String groupUuid) {
+
+		Dgroup group = model.getGroup(groupUuid);
+
+		if (group == null)
+			return null;
+
+		List<String> contactUuids = new ArrayList<String>();
+		group.getContacts().forEach(contact -> contactUuids.add(contact.getUuid()));
+
+		return new GroupHandleImpl(group.getUuid(), group.getName(), group.getComment(), contactUuids);
+
+	}
+
+	@Override
+	public boolean sendMessageToContacts(String message, Integer messageCode, List<String> contactUuids) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean sendMessageToGroup(String message, Integer messageCode, String groupUuid) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean sendObjectToContacts(Object object, Integer objectCode, List<String> contactUuids) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean sendObjectToGroup(Object object, Integer objectCode, String groupUuid) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean sendFileToContacts(Path path, Integer fileCode, List<String> contactUuids) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean sendFileToGroup(Path path, Integer fileCode, String groupUuid) {
+		// TODO Auto-generated method stub
+		return false;
 	}
 
 	private class DmsEntity {

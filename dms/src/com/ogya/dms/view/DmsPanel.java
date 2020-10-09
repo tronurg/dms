@@ -86,6 +86,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void setCommentEditable(boolean editable) {
+
+		identityPane.setCommentEditable(editable);
+
+	}
+
 	public void updateContact(Contact contact) {
 
 		entitiesPane.updateContact(contact);

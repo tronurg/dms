@@ -90,6 +90,13 @@ public class Model {
 
 	}
 
+	public void updateCoordinates(Double lattitude, Double longitude) {
+
+		identity.setLattitude(lattitude);
+		identity.setLongitude(longitude);
+
+	}
+
 	public boolean isServerConnected() {
 
 		return isServerConnected.get();

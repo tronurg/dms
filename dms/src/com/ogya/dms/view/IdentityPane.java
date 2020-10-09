@@ -3,6 +3,7 @@ package com.ogya.dms.view;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.common.CommonMethods;
@@ -49,6 +50,8 @@ class IdentityPane extends GridPane {
 	private final Label coordinatesLabel = new Label();
 
 	private final List<IIdentityPane> listeners = Collections.synchronizedList(new ArrayList<IIdentityPane>());
+
+	private final AtomicBoolean commentEditable = new AtomicBoolean(true);
 
 	IdentityPane() {
 
@@ -99,6 +102,15 @@ class IdentityPane extends GridPane {
 		coordinatesLabel.setText(identity.getLattitude() == null || identity.getLongitude() == null ? ""
 				: "(" + String.format("%.2f", identity.getLattitude()) + String.format("%.2f", identity.getLongitude())
 						+ ")");
+
+	}
+
+	void setCommentEditable(boolean editable) {
+
+		commentEditable.set(editable);
+
+		if (!editable)
+			commentTextField.setEditable(false);
 
 	}
 
@@ -170,7 +182,7 @@ class IdentityPane extends GridPane {
 
 		commentTextField.setOnMouseClicked(e -> {
 
-			if (commentTextField.isEditable())
+			if (!commentEditable.get() || commentTextField.isEditable())
 				return;
 
 			if (!e.getButton().equals(MouseButton.PRIMARY))

@@ -159,16 +159,10 @@ public class DmsClient {
 
 	}
 
-	public void sendTransientMessage(String message, String receiverUuid, Long messageId) {
+	public void sendTransientMessage(String message, Iterable<String> receiverUuids) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.TRANSIENT, messageId)));
-
-	}
-
-	public void sendTransientMessage(String message, Iterable<String> receiverUuids, Long messageId) {
-
-		dealerQueue.offer(gson.toJson(
-				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, messageId)));
+		dealerQueue.offer(gson
+				.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null)));
 
 	}
 
