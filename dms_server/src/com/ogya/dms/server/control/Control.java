@@ -3,6 +3,7 @@ package com.ogya.dms.server.control;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -138,7 +139,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private void receiveUdpMessage(InetAddress senderAddress, String message, boolean isUnicast) {
 
-		if (DMS_UUID.equals(message))
+		if (Objects.equals(message, DMS_UUID))
 			return;
 
 		try {

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -96,7 +97,7 @@ public class Model {
 				if (fresh)
 					listener.publishImmediately();
 
-				if (!messagePojoStr.equals(localUsers.get(senderUuid).beacon)) {
+				if (!Objects.equals(messagePojoStr, localUsers.get(senderUuid).beacon)) {
 
 					boolean isNew = localUsers.get(senderUuid).beacon == null;
 
@@ -107,7 +108,7 @@ public class Model {
 					localUsers.get(senderUuid).beacon = messagePojoStr;
 					localUsers.forEach((receiverUuid, user) -> {
 
-						if (receiverUuid.equals(senderUuid))
+						if (Objects.equals(receiverUuid, senderUuid))
 							return;
 
 						listener.sendToLocalUser(receiverUuid, messagePojoStr);
@@ -176,8 +177,8 @@ public class Model {
 
 				final LocalUser sender = localUsers.get(senderUuid);
 
-				final boolean trackedMessage = messagePojo.contentType.equals(ContentType.MESSAGE) && sender != null
-						&& messageId != null;
+				final boolean trackedMessage = Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
+						&& sender != null && messageId != null;
 
 				// This piece of code is disabled and commented out on purpose to remind that
 				// in some cases, like conveying a status report, the sender is virtually set to
@@ -283,7 +284,7 @@ public class Model {
 
 				checkRemoteUserServer(remoteUsers.get(senderUuid), dmsUuid);
 
-				if (!messagePojoStr.equals(remoteUsers.get(senderUuid).beacon)) {
+				if (!Objects.equals(messagePojoStr, remoteUsers.get(senderUuid).beacon)) {
 
 					// Uzak uuid yeni eklendi veya guncellendi.
 					// Beacon, uzak beacon'larda guncellenecek.
@@ -376,7 +377,7 @@ public class Model {
 
 	private void checkRemoteUserServer(User remoteUser, String dmsUuid) {
 
-		if (dmsUuid.equals(remoteUser.dmsUuid))
+		if (Objects.equals(dmsUuid, remoteUser.dmsUuid))
 			return;
 
 		// Registered to another server before
@@ -419,7 +420,7 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			if (receiverUuid.equals(uuid))
+			if (Objects.equals(receiverUuid, uuid))
 				return;
 
 			listener.sendToLocalUser(receiverUuid, user.beacon);

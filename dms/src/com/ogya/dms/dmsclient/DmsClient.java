@@ -1,5 +1,6 @@
 package com.ogya.dms.dmsclient;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -267,7 +268,7 @@ public class DmsClient {
 
 			MessagePojo messagePojo = gson.fromJson(message, MessagePojo.class);
 
-			if (uuid.equals(messagePojo.senderUuid))
+			if (Objects.equals(uuid, messagePojo.senderUuid))
 				return;
 
 			switch (messagePojo.contentType) {

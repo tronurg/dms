@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
@@ -115,7 +116,7 @@ public class TcpManager implements TcpServerListener {
 
 				connections.put(address, connection);
 
-				if (connectionType.equals(TcpConnectionType.CLIENT)) {
+				if (Objects.equals(connectionType, TcpConnectionType.CLIENT)) {
 
 					try {
 
@@ -592,7 +593,7 @@ public class TcpManager implements TcpServerListener {
 		public boolean equals(Object obj) {
 			if (obj == null || !(obj instanceof Connection))
 				return false;
-			return ((Connection) obj).remoteAddress.equals(remoteAddress);
+			return Objects.equals(((Connection) obj).remoteAddress, remoteAddress);
 		}
 
 	}
@@ -606,7 +607,7 @@ public class TcpManager implements TcpServerListener {
 
 					@Override
 					public int compare(Connection arg0, Connection arg1) {
-						if (arg0.equals(arg1))
+						if (Objects.equals(arg0, arg1))
 							return 0;
 						int pingTime0 = arg0.getPingTime();
 						int pingTime1 = arg1.getPingTime();

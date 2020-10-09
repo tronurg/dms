@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -123,7 +124,7 @@ public class Model {
 
 	public boolean isContactOnline(String uuid) {
 
-		return contacts.containsKey(uuid) && !getContact(uuid).getStatus().equals(Availability.OFFLINE);
+		return contacts.containsKey(uuid) && !Objects.equals(getContact(uuid).getStatus(), Availability.OFFLINE);
 
 	}
 

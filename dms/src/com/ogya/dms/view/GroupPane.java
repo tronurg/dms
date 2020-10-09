@@ -1,6 +1,7 @@
 package com.ogya.dms.view;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import com.ogya.dms.database.tables.Dgroup;
@@ -104,8 +105,8 @@ class GroupPane extends GridPane {
 
 		messagePane.setStatusColor(group.getStatus().getStatusColor());
 		messagePane.setName(group.getName());
-		messagePane.setActive(!group.getStatus().equals(Availability.OFFLINE));
-		messagePane.setEditable(group.getStatus().equals(Availability.AVAILABLE));
+		messagePane.setActive(!Objects.equals(group.getStatus(), Availability.OFFLINE));
+		messagePane.setEditable(Objects.equals(group.getStatus(), Availability.AVAILABLE));
 
 	}
 
@@ -113,7 +114,8 @@ class GroupPane extends GridPane {
 
 		setOnMouseClicked(e -> {
 
-			if (!(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2 && e.isStillSincePress()))
+			if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.getClickCount() == 2
+					&& e.isStillSincePress()))
 				return;
 
 			consumer.accept(messagePane);
@@ -136,8 +138,8 @@ class GroupPane extends GridPane {
 
 	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection) {
 
-		if (messageDirection.equals(MessageDirection.INCOMING)
-				&& !message.getMessageStatus().equals(MessageStatus.READ))
+		if (Objects.equals(messageDirection, MessageDirection.INCOMING)
+				&& !Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.add(message.getId());
 
 		messagePane.addMessageToTop(message, senderName, messageDirection);
@@ -146,8 +148,8 @@ class GroupPane extends GridPane {
 
 	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection) {
 
-		if (messageDirection.equals(MessageDirection.INCOMING)
-				&& !message.getMessageStatus().equals(MessageStatus.READ))
+		if (Objects.equals(messageDirection, MessageDirection.INCOMING)
+				&& !Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.add(message.getId());
 
 		messagePane.addMessageToBottom(message, senderName, messageDirection);
@@ -156,7 +158,7 @@ class GroupPane extends GridPane {
 
 	void updateMessageStatus(Message message) {
 
-		if (message.getMessageStatus().equals(MessageStatus.READ))
+		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.remove(message.getId());
 
 		messagePane.updateMessageStatus(message);

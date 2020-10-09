@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -127,7 +128,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		}
 
 		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
-		if (!(uuidOnScreen == null || uuid.equals(uuidOnScreen.getKey())))
+		if (!(uuidOnScreen == null || Objects.equals(uuid, uuidOnScreen.getKey())))
 			uuidOnScreen.getValue().highlightBackButton();
 
 	}
@@ -153,7 +154,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		}
 
 		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
-		if (!(uuidOnScreen == null || uuid.equals(uuidOnScreen.getKey())))
+		if (!(uuidOnScreen == null || Objects.equals(uuid, uuidOnScreen.getKey())))
 			uuidOnScreen.getValue().highlightBackButton();
 
 	}

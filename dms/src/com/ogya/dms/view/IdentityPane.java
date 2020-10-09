@@ -3,6 +3,7 @@ package com.ogya.dms.view;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -120,7 +121,7 @@ class IdentityPane extends GridPane {
 
 		profilePicture.setOnMouseClicked(e -> {
 
-			if (!e.getButton().equals(MouseButton.PRIMARY))
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
 			listeners.forEach(listener -> listener.updateStatusClicked());
@@ -185,7 +186,7 @@ class IdentityPane extends GridPane {
 			if (!commentEditable.get() || commentTextField.isEditable())
 				return;
 
-			if (!e.getButton().equals(MouseButton.PRIMARY))
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
 			lastComment.set(commentTextField.getText());
@@ -199,10 +200,10 @@ class IdentityPane extends GridPane {
 				return;
 
 			KeyCode code = e.getCode();
-			if (!(code.equals(KeyCode.ENTER) || code.equals(KeyCode.ESCAPE)))
+			if (!(Objects.equals(code, KeyCode.ENTER) || Objects.equals(code, KeyCode.ESCAPE)))
 				return;
 
-			if (e.getCode().equals(KeyCode.ESCAPE))
+			if (Objects.equals(code, KeyCode.ESCAPE))
 				commentTextField.setText(lastComment.get());
 
 			e.consume();

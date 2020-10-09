@@ -128,7 +128,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		});
 
 		dbManager.fetchAllGroups().forEach(group -> {
-			if (!model.getLocalUuid().equals(group.getOwnerUuid())) {
+			if (!Objects.equals(model.getLocalUuid(), group.getOwnerUuid())) {
 				group.setStatus(Availability.OFFLINE);
 				dbManager.addUpdateGroup(group);
 			}
@@ -267,7 +267,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private void addPrivateMessageToPane(final Message message, final boolean newMessageToBottom) {
 
-		if (model.getLocalUuid().equals(message.getOwnerUuid())) {
+		if (Objects.equals(model.getLocalUuid(), message.getOwnerUuid())) {
 
 			final String remoteUuid = message.getReceiverUuid();
 
@@ -280,7 +280,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 					dmsPanel.addMessageToTop(message, "", MessageDirection.OUTGOING, remoteUuid);
 			});
 
-		} else if (model.getLocalUuid().equals(message.getReceiverUuid())) {
+		} else if (Objects.equals(model.getLocalUuid(), message.getReceiverUuid())) {
 
 			final String remoteUuid = message.getOwnerUuid();
 
@@ -303,7 +303,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		model.addMessageId(groupUuid, message.getId());
 
-		if (model.getLocalUuid().equals(message.getOwnerUuid())) {
+		if (Objects.equals(model.getLocalUuid(), message.getOwnerUuid())) {
 
 			Platform.runLater(() -> {
 				if (newMessageToBottom)
@@ -446,12 +446,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		StatusReport statusReport = new StatusReport();
 
-		if (!group.getOwnerUuid().equals(model.getLocalUuid()))
+		if (!Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			statusReport.uuidStatus.put(group.getOwnerUuid(), MessageStatus.FRESH);
 
 		group.getContacts().forEach(contact -> {
 
-			if (contact.getUuid().equals(model.getLocalUuid()))
+			if (Objects.equals(contact.getUuid(), model.getLocalUuid()))
 				return;
 
 			statusReport.uuidStatus.put(contact.getUuid(), MessageStatus.FRESH);
@@ -509,18 +509,18 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		if (!isActive)
 			group.setStatus(Availability.OFFLINE);
-		else if (group.getOwnerUuid().equals(model.getLocalUuid()))
+		else if (Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			group.setStatus(Availability.AVAILABLE);
 		else
-			group.setStatus(
-					!group.isActive() || model.getContact(group.getOwnerUuid()).getStatus().equals(Availability.OFFLINE)
+			group.setStatus(!group.isActive()
+					|| Objects.equals(model.getContact(group.getOwnerUuid()).getStatus(), Availability.OFFLINE)
 							? Availability.OFFLINE
 							: Availability.LIMITED);
 
 		List<String> contactNames = new ArrayList<String>();
 		group.getContacts().forEach(contact -> contactNames.add(contact.getName()));
 		Collections.sort(contactNames, model.getCaseInsensitiveStringSorter());
-		if (!group.getOwnerUuid().equals(model.getLocalUuid()))
+		if (!Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			contactNames.add(0, model.getContact(group.getOwnerUuid()).getName());
 		group.setComment(String.join(",", contactNames));
 
@@ -572,7 +572,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		final List<String> onlineUuids = new ArrayList<String>();
 
-		if (group.getOwnerUuid().equals(model.getLocalUuid())) {
+		if (Objects.equals(group.getOwnerUuid(), model.getLocalUuid())) {
 			// It's my group, so I have to send this message to all the members except the
 			// original sender.
 
@@ -581,7 +581,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				String receiverUuid = contact.getUuid();
 
 				// Skip the original sender
-				if (message.getOwnerUuid().equals(receiverUuid))
+				if (Objects.equals(message.getOwnerUuid(), receiverUuid))
 					continue;
 
 				if (model.isContactOnline(receiverUuid))
@@ -659,7 +659,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		String messageContent = message.getContent();
 
-		if (message.getMessageType().equals(MessageType.FILE)) {
+		if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
 
 			Path path = Paths.get(messageContent);
 
@@ -683,7 +683,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		runnable.run();
 
-		if (message.getMessageType().equals(MessageType.FILE)) {
+		if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
 
 			message.setContent(messageContent);
 
@@ -704,7 +704,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		case UPDATE:
 
-			if (message.getMessageCode().equals(CommonConstants.CODE_CANCEL_MESSAGE)) {
+			if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_CANCEL_MESSAGE)) {
 
 				Long messageId = Long.parseLong(message.getContent());
 
@@ -738,7 +738,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		case UPDATE:
 
-			if (message.getMessageCode().equals(CommonConstants.CODE_UPDATE_GROUP)) {
+			if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_UPDATE_GROUP)) {
 
 				GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
 
@@ -766,7 +766,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			groupUpdate.add.forEach((uuid, name) -> {
 
-				if (model.getLocalUuid().equals(uuid))
+				if (Objects.equals(model.getLocalUuid(), uuid))
 					return;
 
 				Contact contact = model.getContact(uuid);
@@ -794,7 +794,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			groupUpdate.remove.forEach((uuid, name) -> {
 
-				if (model.getLocalUuid().equals(uuid))
+				if (Objects.equals(model.getLocalUuid(), uuid))
 					return;
 
 				Contact contact = model.getContact(uuid);
@@ -832,7 +832,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private MessageStatus computeMessageStatus(Message message) {
 
-		if (message.getMessageType().equals(MessageType.UPDATE))
+		if (Objects.equals(message.getMessageType(), MessageType.UPDATE))
 			return MessageStatus.READ;
 
 		switch (message.getReceiverType()) {
@@ -877,13 +877,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void updateMessageStatus(Message message, String[] remoteUuids, MessageStatus messageStatus,
 			boolean resendIfNecessary) throws Exception {
 
-		if (message.getWaitStatus().equals(WaitStatus.CANCELED))
+		if (Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
 			return;
 
 		String ownerUuid = message.getOwnerUuid();
 
 		// Send this status to the original sender too.
-		if (!model.getLocalUuid().equals(ownerUuid) && model.isContactOnline(ownerUuid))
+		if (!Objects.equals(model.getLocalUuid(), ownerUuid) && model.isContactOnline(ownerUuid))
 			dmsClient.feedMessageStatus(remoteUuids, ownerUuid, message.getMessageId(), messageStatus);
 
 		switch (message.getReceiverType()) {
@@ -896,14 +896,15 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				message.setMessageStatus(messageStatus);
 
-				message.setWaitStatus(messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
+				message.setWaitStatus(
+						Objects.equals(messageStatus, MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
 				final Message newMessage = dbManager.addUpdateMessage(message);
 
-				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+				if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, remoteUuid));
 
-				if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH))
+				if (resendIfNecessary && Objects.equals(messageStatus, MessageStatus.FRESH))
 					sendPrivateMessage(newMessage);
 
 			}
@@ -933,11 +934,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				statusReport.uuidStatus.put(remoteUuid, messageStatus);
 
-				if (remoteUuid.equals(group.getOwnerUuid()) && ownerUuid.equals(model.getLocalUuid()))
+				if (Objects.equals(remoteUuid, group.getOwnerUuid()) && Objects.equals(ownerUuid, model.getLocalUuid()))
 					message.setWaitStatus(
-							messageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
+							Objects.equals(messageStatus, MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
 
-				if (message.getId().equals(model.getDetailedGroupMessageId()))
+				if (Objects.equals(message.getId(), model.getDetailedGroupMessageId()))
 					Platform.runLater(() -> dmsPanel.updateDetailedMessageStatus(remoteUuid, messageStatus));
 
 			}
@@ -946,20 +947,20 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			MessageStatus overallMessageStatus = statusReport.getOverallStatus();
 
-			if (group.getOwnerUuid().equals(model.getLocalUuid()))
-				message.setWaitStatus(
-						overallMessageStatus.equals(MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
+			if (Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
+				message.setWaitStatus(Objects.equals(overallMessageStatus, MessageStatus.READ) ? WaitStatus.DONE
+						: WaitStatus.WAITING);
 
 			// If I am the owner, update the message status too
-			if (ownerUuid.equals(model.getLocalUuid()))
+			if (Objects.equals(ownerUuid, model.getLocalUuid()))
 				message.setMessageStatus(overallMessageStatus);
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
-			if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+			if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
 				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
 
-			if (resendIfNecessary && messageStatus.equals(MessageStatus.FRESH)) {
+			if (resendIfNecessary && Objects.equals(messageStatus, MessageStatus.FRESH)) {
 				// If the message is not received remotely and;
 				// I am the group owner
 				// or
@@ -968,8 +969,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				for (String remoteUuid : remoteUuids) {
 
-					if (group.getOwnerUuid().equals(model.getLocalUuid())
-							|| (ownerUuid.equals(model.getLocalUuid()) && remoteUuid.equals(group.getOwnerUuid())))
+					if (Objects.equals(group.getOwnerUuid(), model.getLocalUuid())
+							|| (Objects.equals(ownerUuid, model.getLocalUuid())
+									&& Objects.equals(remoteUuid, group.getOwnerUuid())))
 						sendGroupMessage(newMessage, remoteUuid);
 
 				}
@@ -986,7 +988,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private Message cancelMessage(Message message) throws Exception {
 
-		if (message.getWaitStatus().equals(WaitStatus.CANCELED))
+		if (Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
 			return message;
 
 		message.setWaitStatus(WaitStatus.CANCELED);
@@ -996,14 +998,14 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		if (model.isServerConnected())
 			dmsClient.cancelMessage(message.getId());
 
-		if (!message.getReceiverType().equals(ReceiverType.GROUP))
+		if (!Objects.equals(message.getReceiverType(), ReceiverType.GROUP))
 			return newMessage;
 
 		Dgroup group = model.getGroup(message.getReceiverUuid());
 
 		String ownerUuid = group.getOwnerUuid();
 
-		if (group == null || ownerUuid.equals(model.getLocalUuid()))
+		if (group == null || Objects.equals(ownerUuid, model.getLocalUuid()))
 			return newMessage;
 
 		sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), ownerUuid, null, ReceiverType.PRIVATE,
@@ -1216,8 +1218,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				// Update view only
 
-				if (message.getMessageType().equals(MessageType.UPDATE)
-						|| !message.getOwnerUuid().equals(model.getLocalUuid()))
+				if (Objects.equals(message.getMessageType(), MessageType.UPDATE)
+						|| !Objects.equals(message.getOwnerUuid(), model.getLocalUuid()))
 					return;
 
 				switch (message.getReceiverType()) {
@@ -1246,7 +1248,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						model.storeGroupMessageProgress(messageId, uuid, progress);
 
-						if (messageId.equals(model.getDetailedGroupMessageId()))
+						if (Objects.equals(messageId, model.getDetailedGroupMessageId()))
 							Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, progress));
 
 					}
@@ -1284,7 +1286,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (dbMessage != null)
 					return;
 
-				if (incomingMessage.getMessageType().equals(MessageType.FILE)) {
+				if (Objects.equals(incomingMessage.getMessageType(), MessageType.FILE)) {
 
 					try {
 
@@ -1314,17 +1316,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				boolean messageToBeRedirected = false;
 
-				if (incomingMessage.getReceiverType().equals(ReceiverType.GROUP)) {
+				if (Objects.equals(incomingMessage.getReceiverType(), ReceiverType.GROUP)) {
 
 					Dgroup group = model.getGroup(incomingMessage.getReceiverUuid());
 
-					if (group != null && group.getOwnerUuid().equals(model.getLocalUuid())) {
+					if (group != null && Objects.equals(group.getOwnerUuid(), model.getLocalUuid())) {
 
 						StatusReport statusReport = new StatusReport();
 
 						group.getContacts().forEach(contact -> {
 
-							if (contact.getUuid().equals(incomingMessage.getOwnerUuid()))
+							if (Objects.equals(contact.getUuid(), incomingMessage.getOwnerUuid()))
 								return;
 
 							statusReport.uuidStatus.put(contact.getUuid(), MessageStatus.FRESH);
@@ -1512,7 +1514,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Message dbMessage = dbManager.getMessage(messageId);
 
-				if (dbMessage == null || dbMessage.getWaitStatus().equals(WaitStatus.CANCELED))
+				if (dbMessage == null || Objects.equals(dbMessage.getWaitStatus(), WaitStatus.CANCELED))
 					return;
 
 				String groupUuid = dbMessage.getReceiverUuid();
@@ -1529,7 +1531,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
 
-				if (!newMessage.getMessageType().equals(MessageType.UPDATE))
+				if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
 
 			} catch (Exception e) {
@@ -1557,7 +1559,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					final MessageHandleImpl messageHandle = new MessageHandleImpl(incomingMessage.getMessageCode(),
 							incomingMessage.getContent(), incomingMessage.getOwnerUuid(),
-							incomingMessage.getReceiverType().equals(ReceiverType.GROUP)
+							Objects.equals(incomingMessage.getReceiverType(), ReceiverType.GROUP)
 									? incomingMessage.getReceiverUuid()
 									: null);
 
@@ -1581,7 +1583,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 						final FileHandleImpl fileHandle = new FileHandleImpl(incomingMessage.getMessageCode(), dstFile,
 								incomingMessage.getOwnerUuid(),
-								incomingMessage.getReceiverType().equals(ReceiverType.GROUP)
+								Objects.equals(incomingMessage.getReceiverType(), ReceiverType.GROUP)
 										? incomingMessage.getReceiverUuid()
 										: null);
 
@@ -1599,7 +1601,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 					final ObjectHandleImpl objectHandle = new ObjectHandleImpl(incomingMessage.getMessageCode(),
 							incomingMessage.getContent(), incomingMessage.getOwnerUuid(),
-							incomingMessage.getReceiverType().equals(ReceiverType.GROUP)
+							Objects.equals(incomingMessage.getReceiverType(), ReceiverType.GROUP)
 									? incomingMessage.getReceiverUuid()
 									: null);
 
@@ -1664,11 +1666,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Identity identity = model.getIdentity();
 
-				if (identity.getStatus().equals(Availability.AVAILABLE)) {
+				if (Objects.equals(identity.getStatus(), Availability.AVAILABLE)) {
 
 					identity.setStatus(Availability.BUSY);
 
-				} else if (identity.getStatus().equals(Availability.BUSY)) {
+				} else if (Objects.equals(identity.getStatus(), Availability.BUSY)) {
 
 					identity.setStatus(Availability.AVAILABLE);
 
@@ -1890,10 +1892,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				residentContacts.removeAll(contactsToBeRemoved);
 
 				// The group hasn't changed, nothing to do:
-				if (group.getName().equals(groupName) && contactsToBeAdded.isEmpty() && contactsToBeRemoved.isEmpty())
+				if (Objects.equals(group.getName(), groupName) && contactsToBeAdded.isEmpty()
+						&& contactsToBeRemoved.isEmpty())
 					return;
 
-				String newGroupName = group.getName().equals(groupName) ? null : groupName;
+				String newGroupName = Objects.equals(group.getName(), groupName) ? null : groupName;
 
 				try {
 
@@ -2211,7 +2214,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Message message = dbManager.getMessage(messageId);
 
-				if (message.getMessageType().equals(MessageType.FILE)) {
+				if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
 
 					Path file = Paths.get(message.getContent());
 
@@ -2241,8 +2244,8 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				Message message = dbManager.getMessage(messageId);
 
-				if (message == null || !message.getReceiverType().equals(ReceiverType.GROUP)
-						|| !message.getOwnerUuid().equals(model.getLocalUuid()))
+				if (message == null || !Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
+						|| !Objects.equals(message.getOwnerUuid(), model.getLocalUuid()))
 					return;
 
 				Dgroup group = model.getGroup(message.getReceiverUuid());
@@ -2258,7 +2261,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 				statusReport.uuidStatus.forEach((uuid, messageStatus) -> {
 
-					if (uuid.equals(group.getOwnerUuid()))
+					if (Objects.equals(uuid, group.getOwnerUuid()))
 						return;
 
 					Contact contact = model.getContact(uuid);
@@ -2443,7 +2446,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 			return null;
 
 		return new ContactHandleImpl(contact.getUuid(), contact.getName(), contact.getComment(), contact.getLattitude(),
-				contact.getLongitude(), !contact.getStatus().equals(Availability.OFFLINE));
+				contact.getLongitude(), !Objects.equals(contact.getStatus(), Availability.OFFLINE));
 
 	}
 

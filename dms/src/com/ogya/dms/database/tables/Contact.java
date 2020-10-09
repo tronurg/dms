@@ -1,6 +1,7 @@
 package com.ogya.dms.database.tables;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -127,7 +128,7 @@ public class Contact {
 		if (!(obj instanceof Contact))
 			return false;
 		Contact contact = (Contact) obj;
-		return this.uuid.equals(contact.uuid);
+		return Objects.equals(this.uuid, contact.uuid);
 	}
 
 	@Override

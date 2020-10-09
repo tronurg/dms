@@ -1,6 +1,7 @@
 package com.ogya.dms.view;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import com.ogya.dms.database.tables.Contact;
@@ -116,7 +117,8 @@ class ContactPane extends GridPane {
 
 		setOnMouseClicked(e -> {
 
-			if (!(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2 && e.isStillSincePress()))
+			if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.getClickCount() == 2
+					&& e.isStillSincePress()))
 				return;
 
 			consumer.accept(messagePane);
@@ -139,8 +141,8 @@ class ContactPane extends GridPane {
 
 	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection) {
 
-		if (messageDirection.equals(MessageDirection.INCOMING)
-				&& !message.getMessageStatus().equals(MessageStatus.READ))
+		if (Objects.equals(messageDirection, MessageDirection.INCOMING)
+				&& !Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.add(message.getId());
 
 		messagePane.addMessageToTop(message, senderName, messageDirection);
@@ -149,8 +151,8 @@ class ContactPane extends GridPane {
 
 	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection) {
 
-		if (messageDirection.equals(MessageDirection.INCOMING)
-				&& !message.getMessageStatus().equals(MessageStatus.READ))
+		if (Objects.equals(messageDirection, MessageDirection.INCOMING)
+				&& !Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.add(message.getId());
 
 		messagePane.addMessageToBottom(message, senderName, messageDirection);
@@ -159,7 +161,7 @@ class ContactPane extends GridPane {
 
 	void updateMessageStatus(Message message) {
 
-		if (message.getMessageStatus().equals(MessageStatus.READ))
+		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.remove(message.getId());
 
 		messagePane.updateMessageStatus(message);

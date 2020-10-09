@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -144,7 +145,7 @@ class MessagePane extends BorderPane {
 
 		messageArea.setOnKeyPressed(e -> {
 
-			if (e.getCode().equals(KeyCode.ENTER)) {
+			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
 
 				sendBtn.fire();
 
@@ -222,9 +223,9 @@ class MessagePane extends BorderPane {
 
 		Date messageDate = message.getDate();
 
-		boolean clickable = message.getMessageType().equals(MessageType.FILE);
-		boolean infoAvailable = message.getReceiverType().equals(ReceiverType.GROUP)
-				&& messageDirection.equals(MessageDirection.OUTGOING);
+		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
+		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
+				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
 				clickable, infoAvailable);
@@ -235,7 +236,7 @@ class MessagePane extends BorderPane {
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-		if (dayBoxes.isEmpty() || !dayBoxes.get(0).getDay().equals(messageDay)) {
+		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).getDay(), messageDay)) {
 
 			DayBox dayBox = new DayBox(messageDay);
 			dayBox.addMessageBalloonToTop(messageBalloon);
@@ -248,7 +249,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		if (messageDirection.equals(MessageDirection.OUTGOING))
+		if (Objects.equals(messageDirection, MessageDirection.OUTGOING))
 			scrollPaneToBottom();
 
 	}
@@ -260,9 +261,9 @@ class MessagePane extends BorderPane {
 
 		Date messageDate = message.getDate();
 
-		boolean clickable = message.getMessageType().equals(MessageType.FILE);
-		boolean infoAvailable = message.getReceiverType().equals(ReceiverType.GROUP)
-				&& messageDirection.equals(MessageDirection.OUTGOING);
+		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
+		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
+				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
 				clickable, infoAvailable);
@@ -273,7 +274,7 @@ class MessagePane extends BorderPane {
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-		if (dayBoxes.isEmpty() || !dayBoxes.get(dayBoxes.size() - 1).getDay().equals(messageDay)) {
+		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).getDay(), messageDay)) {
 
 			DayBox dayBox = new DayBox(messageDay);
 			dayBox.addMessageBalloonToBottom(messageBalloon);
@@ -286,7 +287,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		if (messageDirection.equals(MessageDirection.OUTGOING))
+		if (Objects.equals(messageDirection, MessageDirection.OUTGOING))
 			scrollPaneToBottom();
 
 	}
@@ -299,7 +300,7 @@ class MessagePane extends BorderPane {
 			return;
 
 		messageBalloon.updateMessageStatus(message.getMessageStatus(),
-				message.getWaitStatus().equals(WaitStatus.CANCELED));
+				Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED));
 
 	}
 
@@ -368,7 +369,7 @@ class MessagePane extends BorderPane {
 		});
 
 		nameLabel.setOnMouseClicked(e -> {
-			if (!e.getButton().equals(MouseButton.PRIMARY))
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 			if (editableProperty.get())
 				listeners.forEach(listener -> listener.editClicked());
@@ -459,12 +460,12 @@ class MessagePane extends BorderPane {
 		};
 
 		sendBtn.setOnMouseClicked(e -> {
-			if (e.getButton().equals(MouseButton.SECONDARY))
+			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
 				transition.play();
 		});
 
 		showFoldersBtn.setOnMouseClicked(e -> {
-			if (e.getButton().equals(MouseButton.PRIMARY))
+			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				transition.play();
 		});
 
@@ -473,12 +474,12 @@ class MessagePane extends BorderPane {
 	private MessageBalloon newMessageBalloon(Message message, MessageInfo messageInfo) {
 
 		String content = message.getContent();
-		if (message.getMessageType().equals(MessageType.FILE))
+		if (Objects.equals(message.getMessageType(), MessageType.FILE))
 			content = Paths.get(content).getFileName().toString();
 
 		MessageBalloon messageBalloon = new MessageBalloon(content, messageInfo);
 		messageBalloon.updateMessageStatus(message.getMessageStatus(),
-				message.getWaitStatus().equals(WaitStatus.CANCELED));
+				Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED));
 
 		if (messageInfo.clickable) {
 
@@ -492,7 +493,7 @@ class MessagePane extends BorderPane {
 							messageBalloon.getMessagePane().hoverProperty()));
 
 			messageBalloon.getMessagePane().setOnMouseClicked(e -> {
-				if (!e.getButton().equals(MouseButton.PRIMARY))
+				if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 					return;
 				listeners.forEach(listener -> listener.messageClicked(message.getId()));
 			});
@@ -506,7 +507,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		if (messageInfo.messageDirection.equals(MessageDirection.OUTGOING)) {
+		if (Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING)) {
 
 			messageBalloon.getCancelBtn()
 					.setOnAction(e -> listeners.forEach(listener -> listener.cancelClicked(message.getId())));
@@ -627,14 +628,14 @@ class MessagePane extends BorderPane {
 
 		void updateMessageStatus(MessageStatus messageStatus, boolean cancelled) {
 
-			cancellableProperty.set(messageStatus.equals(MessageStatus.FRESH) && !cancelled);
+			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !cancelled);
 
-			if (messageStatus.equals(MessageStatus.FRESH))
+			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				setProgress(-1);
 
-			infoGrp.setVisible(!messageStatus.equals(MessageStatus.FRESH));
+			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
 
-			if (cancelled && messageInfo.messageDirection.equals(MessageDirection.OUTGOING))
+			if (cancelled && Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING))
 				messageLbl.setTextFill(Color.DARKGRAY);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
@@ -755,7 +756,7 @@ class MessagePane extends BorderPane {
 				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
 				nameLabel.setTextFill(Color.GRAY);
 				BorderPane.setAlignment(nameLabel,
-						messageInfo.messageDirection.equals(MessageDirection.INCOMING) ? Pos.CENTER_LEFT
+						Objects.equals(messageInfo.messageDirection, MessageDirection.INCOMING) ? Pos.CENTER_LEFT
 								: Pos.CENTER_RIGHT);
 				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, GAP, 0.0));
 
@@ -829,8 +830,8 @@ class MessagePane extends BorderPane {
 
 		void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
-			if (messageGroups.isEmpty()
-					|| !messageGroups.get(0).getMessageInfo().uuid.equals(messageBalloon.getMessageInfo().uuid)) {
+			if (messageGroups.isEmpty() || !Objects.equals(messageGroups.get(0).getMessageInfo().uuid,
+					messageBalloon.getMessageInfo().uuid)) {
 				MessageGroup messageGroup = new MessageGroup(messageBalloon.getMessageInfo());
 				messageGroup.addMessageBalloonToTop(messageBalloon);
 				messageGroups.add(0, messageGroup);
@@ -843,8 +844,9 @@ class MessagePane extends BorderPane {
 
 		void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
-			if (messageGroups.isEmpty() || !messageGroups.get(messageGroups.size() - 1).getMessageInfo().uuid
-					.equals(messageBalloon.getMessageInfo().uuid)) {
+			if (messageGroups.isEmpty()
+					|| !Objects.equals(messageGroups.get(messageGroups.size() - 1).getMessageInfo().uuid,
+							messageBalloon.getMessageInfo().uuid)) {
 				MessageGroup messageGroup = new MessageGroup(messageBalloon.getMessageInfo());
 				messageGroup.addMessageBalloonToBottom(messageBalloon);
 				messageGroups.add(messageGroup);
