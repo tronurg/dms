@@ -209,7 +209,6 @@ public class AddUpdateGroupPane extends BorderPane {
 		StackPane bottomPane = new StackPane();
 		Pane emptyPane = new Pane();
 		emptyPane.setOpacity(1.0);
-		emptyPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 		bottomPane.getChildren().addAll(emptyPane, addUpdateGroupBtn);
 
 		setTop(topPane);

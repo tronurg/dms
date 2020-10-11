@@ -1,6 +1,7 @@
 package com.ogya.dms.test;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
@@ -11,6 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -51,6 +53,8 @@ public class DmsTest implements DmsListener {
 	}
 
 	private void testOne() {
+
+		UIManager.put("Panel.background", Color.DARK_GRAY);
 
 		try {
 

@@ -122,7 +122,6 @@ class MessagePane extends BorderPane {
 		registerListeners();
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		bottomPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
 
 		topPane.setPadding(new Insets(GAP));
 		centerPane.setPadding(new Insets(GAP));

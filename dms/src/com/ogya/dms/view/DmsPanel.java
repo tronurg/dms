@@ -21,7 +21,10 @@ import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.intf.AppListener;
 
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -52,6 +55,24 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	private void init() {
+
+		getChildren().addListener(new ListChangeListener<Node>() {
+
+			@Override
+			public void onChanged(Change<? extends Node> arg0) {
+
+				ObservableList<? extends Node> nodeList = arg0.getList();
+
+				for (int i = 0; i < nodeList.size() - 1; ++i) {
+					nodeList.get(i).setVisible(false);
+				}
+
+				if (nodeList.size() > 0)
+					nodeList.get(nodeList.size() - 1).setVisible(true);
+
+			}
+
+		});
 
 		VBox.setMargin(identityPane, new Insets(10.0));
 

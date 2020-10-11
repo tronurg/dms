@@ -151,8 +151,6 @@ public class RemoteIpSettingsPane extends BorderPane {
 		initAddIpPane();
 		initScrollableContent();
 
-		centerPane.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY)));
-
 		centerPane.getChildren().addAll(addIpPane, new Separator(), scrollPane);
 
 	}
