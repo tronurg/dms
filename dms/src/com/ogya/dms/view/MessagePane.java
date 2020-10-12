@@ -226,10 +226,9 @@ class MessagePane extends BorderPane {
 		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
 		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
 				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
-		boolean canceled = Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				clickable, infoAvailable, canceled);
+				clickable, infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -265,10 +264,9 @@ class MessagePane extends BorderPane {
 		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
 		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
 				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
-		boolean canceled = Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				clickable, infoAvailable, canceled);
+				clickable, infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -876,10 +874,9 @@ class MessagePane extends BorderPane {
 		final MessageDirection messageDirection;
 		final boolean clickable;
 		final boolean infoAvailable;
-		final boolean canceled;
 
 		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, boolean clickable,
-				boolean infoAvailable, boolean canceled) {
+				boolean infoAvailable) {
 
 			this.uuid = uuid;
 			this.name = name;
@@ -887,7 +884,6 @@ class MessagePane extends BorderPane {
 			this.messageDirection = messageDirection;
 			this.clickable = clickable;
 			this.infoAvailable = infoAvailable;
-			this.canceled = canceled;
 
 		}
 
