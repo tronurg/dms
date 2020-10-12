@@ -1,11 +1,13 @@
 package com.ogya.dms.intf.handles;
 
-import javax.swing.JPanel;
+import javax.swing.JComponent;
 
 public interface GroupSelectionHandle {
 
-	JPanel getGroupSelectionPane();
+	JComponent getGroupSelectionPanel();
 
 	String getSelectedGroupUuid();
+
+	void resetSelection();
 
 }

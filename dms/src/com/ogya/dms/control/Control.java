@@ -44,7 +44,9 @@ import com.ogya.dms.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.intf.handles.impl.FileHandleImpl;
 import com.ogya.dms.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.intf.handles.impl.MessageHandleImpl;
+import com.ogya.dms.intf.handles.impl.MyActiveGroupsHandleImpl;
 import com.ogya.dms.intf.handles.impl.ObjectHandleImpl;
+import com.ogya.dms.intf.handles.impl.OnlineContactsHandleImpl;
 import com.ogya.dms.intf.listeners.DmsListener;
 import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.Availability;
@@ -75,6 +77,9 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private final DmsPanel dmsPanel;
 	private final JFXPanel dmsPanelSwing;
+
+	private final GroupSelectionHandle myActiveGroupsHandle;
+	private final ContactSelectionHandle onlineContactsHandle;
 
 	private final DmsClient dmsClient;
 
@@ -116,6 +121,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 		dmsPanel = new DmsPanel();
 
 		dmsPanel.addListener(this);
+
+		//
+
+		myActiveGroupsHandle = new MyActiveGroupsHandleImpl(dmsPanel.getMyActiveGroupsPanel());
+		onlineContactsHandle = new OnlineContactsHandleImpl(dmsPanel.getOnlineContactsPanel());
+
+		//
 
 		initDatabase();
 		initModel();
@@ -159,11 +171,13 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void initGUI() {
 
 		Platform.runLater(() -> {
-			Scene scene = new Scene(dmsPanel);
-			scene.getStylesheets().add("/resources/css/style.css");
+
+			Scene dmsScene = new Scene(dmsPanel);
+			dmsScene.getStylesheets().add("/resources/css/style.css");
 			dmsPanel.updateUI();
-			dmsPanelSwing.setScene(scene);
+			dmsPanelSwing.setScene(dmsScene);
 			dmsPanel.setIdentity(model.getIdentity());
+
 		});
 
 		List<DmsEntity> dmsEntities = new ArrayList<DmsEntity>();
@@ -2442,15 +2456,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	}
 
 	@Override
-	public GroupSelectionHandle getMyGroupsHandle() {
-		// TODO Auto-generated method stub
-		return null;
+	public GroupSelectionHandle getMyActiveGroupsHandle() {
+
+		return myActiveGroupsHandle;
+
 	}
 
 	@Override
 	public ContactSelectionHandle getOnlineContactsHandle() {
-		// TODO Auto-generated method stub
-		return null;
+
+		return onlineContactsHandle;
+
 	}
 
 	@Override

@@ -100,8 +100,7 @@ class IdentityPane extends GridPane {
 		if (!commentTextField.isEditable())
 			commentTextField.setText(identity.getComment());
 		coordinatesLabel.setText(identity.getLattitude() == null || identity.getLongitude() == null ? ""
-				: "(" + String.format("%.2f", identity.getLattitude()) + String.format("%.2f", identity.getLongitude())
-						+ ")");
+				: String.format("(%.2f : %.2f)", identity.getLattitude(), identity.getLongitude()));
 
 	}
 

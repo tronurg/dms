@@ -25,7 +25,7 @@ public interface DmsHandle {
 
 	ContactHandle getMyContactHandle();
 
-	GroupSelectionHandle getMyGroupsHandle();
+	GroupSelectionHandle getMyActiveGroupsHandle();
 
 	ContactSelectionHandle getOnlineContactsHandle();
 

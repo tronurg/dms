@@ -87,7 +87,8 @@ class GroupPane extends GridPane {
 		add(profilePicture, 0, 0, 1, 3);
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
 		add(nameLabel, 2, 0, 1, 1);
-		add(commentLabel, 2, 1, 1, 2);
+		add(commentLabel, 2, 1, 1, 1);
+		add(new Label(), 2, 2, 1, 1);
 		add(unreadMessagesLabel, 3, 0, 1, 2);
 
 	}
@@ -180,6 +181,12 @@ class GroupPane extends GridPane {
 	void scrollToSavedPosition() {
 
 		messagePane.scrollToSavedPosition();
+
+	}
+
+	String getName() {
+
+		return nameLabel.getText();
 
 	}
 

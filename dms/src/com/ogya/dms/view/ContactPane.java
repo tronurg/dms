@@ -105,8 +105,7 @@ class ContactPane extends GridPane {
 		nameLabel.setText(contact.getName());
 		commentLabel.setText(contact.getComment());
 		coordinatesLabel.setText(contact.getLattitude() == null || contact.getLongitude() == null ? ""
-				: "(" + String.format("%.2f", contact.getLattitude()) + String.format("%.2f", contact.getLongitude())
-						+ ")");
+				: String.format("(%.2f : %.2f)", contact.getLattitude(), contact.getLongitude()));
 
 		messagePane.setStatusColor(contact.getStatus().getStatusColor());
 		messagePane.setName(contact.getName());
@@ -189,6 +188,12 @@ class ContactPane extends GridPane {
 	void scrollToSavedPosition() {
 
 		messagePane.scrollToSavedPosition();
+
+	}
+
+	String getName() {
+
+		return nameLabel.getText();
 
 	}
 

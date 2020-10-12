@@ -37,6 +37,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	private final IdentityPane identityPane = new IdentityPane();
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
+	private final MyActiveGroupsPanel myActiveGroupsPanel = new MyActiveGroupsPanel();
+	private final OnlineContactsPanel onlineContactsPanel = new OnlineContactsPanel();
+
 	private final FoldersPane foldersPane = new FoldersPane(
 			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath());
 
@@ -118,6 +121,18 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public MyActiveGroupsPanel getMyActiveGroupsPanel() {
+
+		return myActiveGroupsPanel;
+
+	}
+
+	public OnlineContactsPanel getOnlineContactsPanel() {
+
+		return onlineContactsPanel;
+
+	}
+
 	public void setIdentity(Identity identity) {
 
 		identityPane.setIdentity(identity);
@@ -135,12 +150,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		entitiesPane.updateContact(contact);
 		entitiesPane.addUpdateGroupPaneUpdateContact(contact);
 		statusInfoPane.updateContact(contact);
+		onlineContactsPanel.updateContact(contact);
 
 	}
 
 	public void updateGroup(Dgroup group) {
 
 		entitiesPane.updateGroup(group);
+		myActiveGroupsPanel.updateGroup(group);
 
 	}
 

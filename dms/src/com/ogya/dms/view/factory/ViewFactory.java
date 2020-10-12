@@ -7,6 +7,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.paint.Color;
@@ -234,6 +235,30 @@ public class ViewFactory {
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? dropShadow : null, btn.hoverProperty()));
 
 		return btn;
+
+	}
+
+	public static Label newSelectionLbl() {
+
+		Label lbl = new Label();
+
+		Circle circle = new Circle(12.0);
+		circle.setStrokeWidth(3.0);
+		circle.setFill(Color.GREEN);
+		Line line1 = new Line(-6.0, 0.0, -2.0, 6.0);
+		line1.setStrokeLineCap(StrokeLineCap.ROUND);
+		line1.setStrokeWidth(3.0);
+		line1.setStroke(Color.WHITE);
+		Line line2 = new Line(-2.0, 6.0, 6.0, -6.0);
+		line2.setStrokeLineCap(StrokeLineCap.ROUND);
+		line2.setStrokeWidth(3.0);
+		line2.setStroke(Color.WHITE);
+		Group group = new Group(circle, line1, line2);
+		lbl.setGraphic(group);
+		lbl.setPadding(Insets.EMPTY);
+		lbl.setPickOnBounds(false);
+
+		return lbl;
 
 	}
 
