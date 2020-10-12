@@ -231,6 +231,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initGroupNameTextField() {
 
+		groupNameTextField.getStyleClass().add("blackTextField");
+
 		HBox.setHgrow(groupNameTextField, Priority.ALWAYS);
 
 		groupNameTextField.setTextFormatter(
@@ -238,7 +240,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
-		groupNameTextField.setBackground(Background.EMPTY);
 		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 
 	}

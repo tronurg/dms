@@ -11,6 +11,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import javax.swing.UIManager;
+
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
@@ -93,6 +95,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		mainPane.getChildren().addAll(identityPane, entitiesPane);
 
 		getChildren().add(mainPane);
+
+	}
+
+	public void updateUI() {
+
+		setStyle("-panel-background: #"
+				+ String.format("%6s", Integer.toHexString(
+						((java.awt.Color) UIManager.get("Panel.background")).getRGB() & 0xffffff)).replace(' ', '0')
+				+ ";" + "-text-fill: #" + String
+						.format("%6s",
+								Integer.toHexString(
+										((java.awt.Color) UIManager.get("Panel.foreground")).getRGB() & 0xffffff))
+						.replace(' ', '0')
+				+ ";");
 
 	}
 

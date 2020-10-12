@@ -24,7 +24,6 @@ import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -99,6 +98,7 @@ public class FoldersPane extends BorderPane {
 
 		scrollPane.setFitToWidth(true);
 
+		nameLabel.getStyleClass().add("blackLabel");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 		topPane.getChildren().addAll(backBtn, nameLabel);
@@ -264,11 +264,6 @@ public class FoldersPane extends BorderPane {
 
 	private static class CustomButton extends Button {
 
-		private static Background whiteBackground = new Background(
-				new BackgroundFill(Color.WHITE, CornerRadii.EMPTY, Insets.EMPTY));
-		private static Background greyBackground = new Background(
-				new BackgroundFill(Color.LIGHTGREY, CornerRadii.EMPTY, Insets.EMPTY));
-
 		private CustomButton(String arg0, ImageView arg1) {
 
 			super(arg0, arg1);
@@ -278,18 +273,7 @@ public class FoldersPane extends BorderPane {
 			setAlignment(Pos.CENTER_LEFT);
 			setPadding(new Insets(5));
 			setGraphicTextGap(5.0);
-
-			backgroundProperty().bind(Bindings.createObjectBinding(() -> {
-
-				if (parentProperty().get() == null)
-					return whiteBackground;
-
-				if (parentProperty().get().getChildrenUnmodifiable().indexOf(this) % 2 == 0)
-					return whiteBackground;
-
-				return greyBackground;
-
-			}, parentProperty()));
+			setFocusTraversable(false);
 
 		}
 

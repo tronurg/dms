@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.view.factory.ViewFactory;
 
-import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -86,6 +85,7 @@ public class SettingsPane extends BorderPane {
 
 	private void initHeadingLabel() {
 
+		headingLabel.getStyleClass().add("blackLabel");
 		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 	}
@@ -93,10 +93,8 @@ public class SettingsPane extends BorderPane {
 	private void initScrollableContent() {
 
 		Label editRemoteIpsLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
+		editRemoteIpsLabel.getStyleClass().add("linkLabel");
 		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * GAP));
-		editRemoteIpsLabel.textFillProperty()
-				.bind(Bindings.createObjectBinding(() -> editRemoteIpsLabel.isHover() ? Color.DODGERBLUE : Color.BLACK,
-						editRemoteIpsLabel.hoverProperty()));
 		editRemoteIpsLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0));
 		editRemoteIpsLabel.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();

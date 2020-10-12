@@ -20,7 +20,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 
 class EntitiesPane extends BorderPane {
 
@@ -104,9 +103,9 @@ class EntitiesPane extends BorderPane {
 
 	private void initCreateGroupBtn() {
 
+		createGroupBtn.getStyleClass().add("dimButton");
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
-		createGroupBtn.setTextFill(Color.GRAY);
 		createGroupBtn.setPadding(new Insets(10.0));
 
 		createGroupBtn

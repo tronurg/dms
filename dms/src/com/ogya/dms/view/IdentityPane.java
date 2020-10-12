@@ -23,7 +23,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -218,7 +217,6 @@ class IdentityPane extends GridPane {
 
 		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
 				BorderStrokeStyle.SOLID, new CornerRadii(15.0), BorderWidths.DEFAULT) }));
-		commentTextField.setBackground(Background.EMPTY);
 
 	}
 

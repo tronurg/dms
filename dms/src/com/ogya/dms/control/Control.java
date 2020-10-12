@@ -99,7 +99,20 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		model = new Model(identity);
 
-		dmsPanelSwing = new JFXPanel();
+		dmsPanelSwing = new JFXPanel() {
+
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void updateUI() {
+				dmsPanel.updateUI();
+				super.updateUI();
+			}
+
+		};
 		dmsPanel = new DmsPanel();
 
 		dmsPanel.addListener(this);
@@ -146,7 +159,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	private void initGUI() {
 
 		Platform.runLater(() -> {
-			dmsPanelSwing.setScene(new Scene(dmsPanel));
+			Scene scene = new Scene(dmsPanel);
+			scene.getStylesheets().add("/resources/css/style.css");
+			dmsPanel.updateUI();
+			dmsPanelSwing.setScene(scene);
 			dmsPanel.setIdentity(model.getIdentity());
 		});
 

@@ -155,6 +155,7 @@ class MessagePane extends BorderPane {
 		});
 
 		HBox.setMargin(statusCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
+		nameLabel.getStyleClass().add("blackLabel");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
@@ -561,6 +562,7 @@ class MessagePane extends BorderPane {
 			colNarrow.setHgrow(Priority.ALWAYS);
 			colWide.setPercentWidth(80.0);
 
+			messageLbl.getStyleClass().add("blackLabel");
 			messageLbl.setWrapText(true);
 
 			switch (messageInfo.messageDirection) {

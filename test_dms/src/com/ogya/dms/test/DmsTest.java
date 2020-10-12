@@ -54,7 +54,7 @@ public class DmsTest implements DmsListener {
 
 	private void testOne() {
 
-		UIManager.put("Panel.background", Color.DARK_GRAY);
+		UIManager.put("Panel.background", Color.BLUE);
 
 		try {
 

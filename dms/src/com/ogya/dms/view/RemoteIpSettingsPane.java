@@ -157,6 +157,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initHeadingLabel() {
 
+		headingLabel.getStyleClass().add("blackLabel");
 		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
 
 	}
