@@ -21,6 +21,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
 import javax.swing.JComponent;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 import org.hibernate.HibernateException;
 
@@ -113,11 +115,33 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			@Override
 			public void updateUI() {
-				Platform.runLater(() -> dmsPanel.updateUI());
 				super.updateUI();
+				Platform.runLater(() -> dmsPanel.updateUI());
 			}
 
 		};
+
+		dmsPanelSwing.addAncestorListener(new AncestorListener() {
+
+			@Override
+			public void ancestorRemoved(AncestorEvent arg0) {
+
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent arg0) {
+
+			}
+
+			@Override
+			public void ancestorAdded(AncestorEvent arg0) {
+
+				dmsPanelSwing.updateUI();
+
+			}
+
+		});
+
 		dmsPanel = new DmsPanel();
 
 		dmsPanel.addListener(this);
@@ -174,7 +198,6 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			Scene dmsScene = new Scene(dmsPanel);
 			dmsScene.getStylesheets().add("/resources/css/style.css");
-			dmsPanel.updateUI();
 			dmsPanelSwing.setScene(dmsScene);
 			dmsPanel.setIdentity(model.getIdentity());
 

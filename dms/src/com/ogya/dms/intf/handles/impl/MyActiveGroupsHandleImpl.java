@@ -1,6 +1,8 @@
 package com.ogya.dms.intf.handles.impl;
 
 import javax.swing.JComponent;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.view.MyActiveGroupsPanel;
@@ -27,17 +29,37 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 
 			@Override
 			public void updateUI() {
-				Platform.runLater(() -> myActiveGroupsPanel.updateUI());
 				super.updateUI();
+				Platform.runLater(() -> myActiveGroupsPanel.updateUI());
 			}
 
 		};
+
+		myActiveGroupsPanelSwing.addAncestorListener(new AncestorListener() {
+
+			@Override
+			public void ancestorRemoved(AncestorEvent arg0) {
+
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent arg0) {
+
+			}
+
+			@Override
+			public void ancestorAdded(AncestorEvent arg0) {
+
+				myActiveGroupsPanelSwing.updateUI();
+
+			}
+
+		});
 
 		Platform.runLater(() -> {
 
 			Scene myActiveGroupsScene = new Scene(myActiveGroupsPanel);
 			myActiveGroupsScene.getStylesheets().add("/resources/css/style.css");
-			myActiveGroupsPanel.updateUI();
 			myActiveGroupsPanelSwing.setScene(myActiveGroupsScene);
 
 		});
@@ -46,8 +68,6 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 
 	@Override
 	public JComponent getGroupSelectionPanel() {
-
-		Platform.runLater(() -> myActiveGroupsPanel.updateUI());
 
 		return myActiveGroupsPanelSwing;
 

@@ -3,6 +3,8 @@ package com.ogya.dms.intf.handles.impl;
 import java.util.List;
 
 import javax.swing.JComponent;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.view.OnlineContactsPanel;
@@ -29,17 +31,37 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
 			@Override
 			public void updateUI() {
-				Platform.runLater(() -> onlineContactsPanel.updateUI());
 				super.updateUI();
+				Platform.runLater(() -> onlineContactsPanel.updateUI());
 			}
 
 		};
+
+		onlineContactsPanelSwing.addAncestorListener(new AncestorListener() {
+
+			@Override
+			public void ancestorRemoved(AncestorEvent arg0) {
+
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent arg0) {
+
+			}
+
+			@Override
+			public void ancestorAdded(AncestorEvent arg0) {
+
+				onlineContactsPanelSwing.updateUI();
+
+			}
+
+		});
 
 		Platform.runLater(() -> {
 
 			Scene onlineContactsScene = new Scene(onlineContactsPanel);
 			onlineContactsScene.getStylesheets().add("/resources/css/style.css");
-			onlineContactsPanel.updateUI();
 			onlineContactsPanelSwing.setScene(onlineContactsScene);
 
 		});
@@ -48,8 +70,6 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
 	@Override
 	public JComponent getContactSelectionPanel() {
-
-		Platform.runLater(() -> onlineContactsPanel.updateUI());
 
 		return onlineContactsPanelSwing;
 
