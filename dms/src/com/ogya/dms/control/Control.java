@@ -108,7 +108,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			@Override
 			public void updateUI() {
-				dmsPanel.updateUI();
+				Platform.runLater(() -> dmsPanel.updateUI());
 				super.updateUI();
 			}
 

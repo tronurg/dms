@@ -226,9 +226,10 @@ class MessagePane extends BorderPane {
 		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
 		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
 				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
+		boolean canceled = Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				clickable, infoAvailable);
+				clickable, infoAvailable, canceled);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -264,9 +265,10 @@ class MessagePane extends BorderPane {
 		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
 		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
 				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
+		boolean canceled = Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				clickable, infoAvailable);
+				clickable, infoAvailable, canceled);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -627,17 +629,17 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void updateMessageStatus(MessageStatus messageStatus, boolean cancelled) {
+		void updateMessageStatus(MessageStatus messageStatus, boolean canceled) {
 
-			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !cancelled);
+			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !canceled);
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				setProgress(-1);
 
 			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
 
-			if (cancelled && Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING))
-				messageLbl.setTextFill(Color.DARKGRAY);
+			if (canceled && Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING))
+				messageLbl.setDisable(true);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());
@@ -874,9 +876,10 @@ class MessagePane extends BorderPane {
 		final MessageDirection messageDirection;
 		final boolean clickable;
 		final boolean infoAvailable;
+		final boolean canceled;
 
 		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, boolean clickable,
-				boolean infoAvailable) {
+				boolean infoAvailable, boolean canceled) {
 
 			this.uuid = uuid;
 			this.name = name;
@@ -884,6 +887,7 @@ class MessagePane extends BorderPane {
 			this.messageDirection = messageDirection;
 			this.clickable = clickable;
 			this.infoAvailable = infoAvailable;
+			this.canceled = canceled;
 
 		}
 
