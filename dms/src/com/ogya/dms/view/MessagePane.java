@@ -129,6 +129,7 @@ class MessagePane extends BorderPane {
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
+		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);

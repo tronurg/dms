@@ -10,10 +10,12 @@ import java.util.Objects;
 
 import javax.swing.UIManager;
 
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.view.factory.ViewFactory;
 
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
@@ -21,12 +23,16 @@ import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
 
 public class OnlineContactsPanel extends BorderPane {
+
+	private final TextField searchTextField = new TextField();
 
 	private final VBox contacts = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(contacts) {
@@ -67,27 +73,39 @@ public class OnlineContactsPanel extends BorderPane {
 
 	private void init() {
 
+		initSearchTextField();
+
 		contacts.setPadding(new Insets(10.0));
 
+		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
+		setTop(searchTextField);
 		setCenter(scrollPane);
 
 		setPadding(Insets.EMPTY);
 
 	}
 
-	public void updateContact(Contact contact) {
+	private void initSearchTextField() {
+
+		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
+		searchTextField.setPromptText(CommonMethods.translate("FIND"));
+		searchTextField.setFocusTraversable(false);
+
+	}
+
+	void updateContact(Contact contact) {
 
 		ContactBundle contactBundle = getContactBundle(contact.getUuid());
 
 		contactBundle.contactPane.updateContact(contact);
 
-		boolean visible = !Objects.equals(contact.getStatus(), Availability.OFFLINE);
+		boolean active = !Objects.equals(contact.getStatus(), Availability.OFFLINE);
 
-		contactBundle.setVisible(visible);
+		contactBundle.activeProperty.set(active);
 
-		if (!visible)
+		if (!active)
 			contactBundle.selectedProperty.set(false);
 
 	}
@@ -128,6 +146,12 @@ public class OnlineContactsPanel extends BorderPane {
 
 			contactBundle.managedProperty().bind(contactBundle.visibleProperty());
 
+			contactBundle.visibleProperty().bind(contactBundle.activeProperty.and(Bindings.createBooleanBinding(() -> {
+				String searchContactStr = searchTextField.getText().toLowerCase();
+				return searchContactStr.isEmpty()
+						|| contactBundle.contactPane.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchTextField.textProperty())));
+
 			contactBundle.setOnMouseClicked(e -> {
 
 				contactBundle.selectedProperty.set(!contactBundle.selectedProperty.get());
@@ -151,19 +175,27 @@ public class OnlineContactsPanel extends BorderPane {
 
 	}
 
-	private final class ContactBundle extends HBox {
+	private final class ContactBundle extends GridPane {
 
 		private final ContactPane contactPane = new ContactPane();
 		private final Label selectionLbl = ViewFactory.newSelectionLbl();
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
+		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 
 		private ContactBundle() {
 
-			HBox.setHgrow(contactPane, Priority.ALWAYS);
+			RowConstraints row1 = new RowConstraints();
+			row1.setPercentHeight(70.0);
+			RowConstraints row2 = new RowConstraints();
+			row2.setPercentHeight(30.0);
+			getRowConstraints().addAll(row1, row2);
+
+			setHgrow(contactPane, Priority.ALWAYS);
 
 			selectionLbl.visibleProperty().bind(selectedProperty);
 
-			getChildren().addAll(contactPane, selectionLbl);
+			add(contactPane, 0, 0, 1, 2);
+			add(selectionLbl, 1, 0, 1, 1);
 
 		}
 

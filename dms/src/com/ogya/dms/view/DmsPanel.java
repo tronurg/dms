@@ -151,6 +151,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		entitiesPane.addUpdateGroupPaneUpdateContact(contact);
 		statusInfoPane.updateContact(contact);
 		onlineContactsPanel.updateContact(contact);
+		myActiveGroupsPanel.updateContact(contact);
 
 	}
 

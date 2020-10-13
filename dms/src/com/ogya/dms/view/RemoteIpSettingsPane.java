@@ -17,6 +17,7 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -149,7 +150,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private void initCenterPane() {
 
 		initAddIpPane();
-		initScrollableContent();
+		initScrollPane();
 
 		centerPane.getChildren().addAll(addIpPane, new Separator(), scrollPane);
 
@@ -170,6 +171,15 @@ public class RemoteIpSettingsPane extends BorderPane {
 		addIpPane.setPadding(new Insets(GAP));
 
 		addIpPane.getChildren().addAll(ipField, addIpButton);
+
+	}
+
+	private void initScrollPane() {
+
+		initScrollableContent();
+
+		scrollPane.getStyleClass().add("edge-to-edge");
+		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
 	}
 

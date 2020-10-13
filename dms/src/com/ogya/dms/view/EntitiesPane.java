@@ -15,15 +15,20 @@ import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.view.factory.ViewFactory;
 
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 class EntitiesPane extends BorderPane {
 
+	private final VBox topArea = new VBox();
+
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
+	private final TextField searchTextField = new TextField();
 
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(entities) {
@@ -62,13 +67,14 @@ class EntitiesPane extends BorderPane {
 		addUpdateGroupPane.setOnDeleteGroupAction(
 				() -> groupListeners.forEach(listener -> listener.deleteGroupClicked(addUpdateGroupPane)));
 
-		initCreateGroupBtn();
+		initTopArea();
 
 		entities.setPadding(new Insets(10.0));
 
+		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
-		setTop(createGroupBtn);
+		setTop(topArea);
 		setCenter(scrollPane);
 
 		setPadding(Insets.EMPTY);
@@ -101,6 +107,15 @@ class EntitiesPane extends BorderPane {
 
 	}
 
+	private void initTopArea() {
+
+		initCreateGroupBtn();
+		initSearchTextField();
+
+		topArea.getChildren().addAll(createGroupBtn, searchTextField);
+
+	}
+
 	private void initCreateGroupBtn() {
 
 		createGroupBtn.getStyleClass().add("dimButton");
@@ -110,6 +125,14 @@ class EntitiesPane extends BorderPane {
 
 		createGroupBtn
 				.setOnAction(e -> groupListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(null)));
+
+	}
+
+	private void initSearchTextField() {
+
+		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
+		searchTextField.setPromptText(CommonMethods.translate("FIND"));
+		searchTextField.setFocusTraversable(false);
 
 	}
 
@@ -288,6 +311,13 @@ class EntitiesPane extends BorderPane {
 
 			final ContactPane contactPane = new ContactPane();
 
+			contactPane.managedProperty().bind(contactPane.visibleProperty());
+
+			contactPane.visibleProperty().bind(Bindings.createBooleanBinding(() -> {
+				String searchContactStr = searchTextField.getText().toLowerCase();
+				return searchContactStr.isEmpty() || contactPane.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchTextField.textProperty()));
+
 			contactPane.setOnShowMessagePane(messagePane -> {
 
 				contactListeners.forEach(listener -> listener.showContactMessagePane(messagePane, uuid));
@@ -370,6 +400,13 @@ class EntitiesPane extends BorderPane {
 		if (!uuidGroupPane.containsKey(groupUuid)) {
 
 			final GroupPane groupPane = new GroupPane();
+
+			groupPane.managedProperty().bind(groupPane.visibleProperty());
+
+			groupPane.visibleProperty().bind(Bindings.createBooleanBinding(() -> {
+				String searchContactStr = searchTextField.getText().toLowerCase();
+				return searchContactStr.isEmpty() || groupPane.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchTextField.textProperty()));
 
 			groupPane.setOnShowMessagePane(messagePane -> {
 

@@ -59,9 +59,10 @@ public class StatusInfoPane extends BorderPane {
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
+		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
-		topPane.getChildren().addAll(backBtn);
+		topPane.getChildren().add(backBtn);
 
 		setTop(topPane);
 		setCenter(scrollPane);
@@ -132,7 +133,7 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	private static class Card extends GridPane {
+	private static final class Card extends GridPane {
 
 		private static final double RADIUS = 3.0;
 
@@ -143,7 +144,7 @@ public class StatusInfoPane extends BorderPane {
 		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
 		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
 
-		Card() {
+		private Card() {
 
 			super();
 

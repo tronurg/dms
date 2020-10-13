@@ -21,6 +21,7 @@ import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -233,6 +234,12 @@ class GroupPane extends GridPane {
 	private void initCommentLabel() {
 
 		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		commentLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
+			String comment = commentLabel.getText();
+			if (comment == null || comment.isEmpty())
+				return null;
+			return new Tooltip(comment);
+		}, commentLabel.textProperty()));
 
 	}
 

@@ -277,6 +277,9 @@ public class AddUpdateGroupPane extends BorderPane {
 		addedContactsTitledPane.setCollapsible(false);
 		notAddedContactsTitledPane.setCollapsible(false);
 
+		addedContactsTitledPane.setStyle("-fx-box-border: transparent;");
+		notAddedContactsTitledPane.setStyle("-fx-box-border: transparent;");
+
 		scrollableContent.getChildren().addAll(addedContactsTitledPane, notAddedContactsTitledPane);
 
 	}
@@ -295,6 +298,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initSearchContactTextField() {
 
+		searchContactTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 		searchContactTextField.setPromptText(CommonMethods.translate("FIND"));
 		searchContactTextField.setFocusTraversable(false);
 

@@ -2,7 +2,7 @@
 	-panel-background: white;
 	-text-fill: black;
 	-fx-base: -panel-background;
-    -fx-background: -panel-background;
+	-fx-background: -panel-background;
 }
 Button {
 	-fx-background-color: transparent;
