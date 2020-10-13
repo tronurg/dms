@@ -22,6 +22,7 @@ import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.structures.WaitStatus;
+import com.ogya.dms.view.RecordButton.RecordListener;
 import com.ogya.dms.view.factory.ViewFactory;
 import com.sun.javafx.tk.Toolkit;
 
@@ -89,6 +90,7 @@ class MessagePane extends BorderPane {
 	private final Label nameLabel = new Label();
 	private final TextArea messageArea = new TextArea();
 	private final Button sendBtn = ViewFactory.newSendBtn();
+	private final RecordButton recordBtn = new RecordButton();
 	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
 	private final StackPane btnPane = new StackPane();
 
@@ -140,6 +142,7 @@ class MessagePane extends BorderPane {
 		messageArea.setWrapText(true);
 		messageArea.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
+		messageArea.disableProperty().bind(recordBtn.pressedProperty());
 
 		HBox.setHgrow(messageArea, Priority.ALWAYS);
 
@@ -147,9 +150,17 @@ class MessagePane extends BorderPane {
 
 			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
 
-				sendBtn.fire();
+				if (e.isShiftDown()) {
 
-				e.consume();
+					messageArea.appendText(System.lineSeparator());
+
+				} else {
+
+					sendBtn.fire();
+
+					e.consume();
+
+				}
 
 			}
 
@@ -398,6 +409,31 @@ class MessagePane extends BorderPane {
 
 		});
 
+		recordBtn.addRecordListener(new RecordListener() {
+
+			@Override
+			public void recordStopped() {
+
+				System.out.println("recordStopped()");
+
+			}
+
+			@Override
+			public void recordStarted() {
+
+				System.out.println("recordStarted()");
+
+			}
+
+			@Override
+			public void recordReady() {
+
+				System.out.println("recordReady()");
+
+			}
+
+		});
+
 		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
 
 	}
@@ -429,7 +465,9 @@ class MessagePane extends BorderPane {
 
 	private void initBtnPane() {
 
-		btnPane.getChildren().addAll(showFoldersBtn, sendBtn);
+		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty());
+
+		btnPane.getChildren().addAll(showFoldersBtn, sendBtn, recordBtn);
 
 		Interpolator interpolator = Interpolator.EASE_BOTH;
 
@@ -461,6 +499,11 @@ class MessagePane extends BorderPane {
 		};
 
 		sendBtn.setOnMouseClicked(e -> {
+			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
+				transition.play();
+		});
+
+		recordBtn.setOnMouseClicked(e -> {
 			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
 				transition.play();
 		});
