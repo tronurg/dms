@@ -39,6 +39,8 @@ public class Model {
 
 	private final AtomicReference<Entry<ReceiverType, String>> fileSelectionUuid = new AtomicReference<Entry<ReceiverType, String>>();
 
+	private final AtomicReference<Entry<ReceiverType, String>> recordUuid = new AtomicReference<Entry<ReceiverType, String>>();
+
 	private final Map<Long, Map<String, Integer>> groupMessageProgresses = Collections
 			.synchronizedMap(new HashMap<Long, Map<String, Integer>>());
 
@@ -224,6 +226,18 @@ public class Model {
 	public Entry<ReceiverType, String> getFileSelectionUuid() {
 
 		return fileSelectionUuid.get();
+
+	}
+
+	public void setRecordUuid(Entry<ReceiverType, String> entry) {
+
+		recordUuid.set(entry);
+
+	}
+
+	public Entry<ReceiverType, String> getRecordUuid() {
+
+		return recordUuid.get();
 
 	}
 

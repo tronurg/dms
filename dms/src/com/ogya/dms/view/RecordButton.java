@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
+import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -23,7 +23,7 @@ import javafx.util.Duration;
 
 public class RecordButton extends Button {
 
-	private final AtomicBoolean recording = new AtomicBoolean(false);
+	private final Timeline timeline = new Timeline();
 
 	private final List<RecordListener> listeners = Collections.synchronizedList(new ArrayList<RecordListener>());
 
@@ -48,10 +48,13 @@ public class RecordButton extends Button {
 
 		Circle circle = new Circle(16.0);
 		circle.setFill(Color.GREEN);
-		final Arc recordArc = new Arc(0.0, 0.0, 0.0, 0.0, 90.0, 360.0);
+		final Arc recordArc = new Arc();
+		recordArc.setCenterX(0.0);
+		recordArc.setCenterY(0.0);
+		recordArc.setStartAngle(90.0);
 		recordArc.setType(ArcType.ROUND);
 		recordArc.setFill(Color.RED);
-		recordArc.setVisible(false);
+		recordArc.visibleProperty().bind(timeline.statusProperty().isNotEqualTo(Animation.Status.STOPPED));
 		Rectangle rectangle = new Rectangle(-3.0, -10.0, 6.0, 16.0);
 		rectangle.setArcWidth(6.0);
 		rectangle.setArcHeight(6.0);
@@ -67,36 +70,30 @@ public class RecordButton extends Button {
 
 		setGraphic(group);
 
-		KeyFrame key0 = new KeyFrame(Duration.millis(0.0), e -> {
-			recordReady();
-		}, new KeyValue(recordArc.radiusXProperty(), 0.0), new KeyValue(recordArc.radiusYProperty(), 0.0),
-				new KeyValue(recordArc.lengthProperty(), 360.0));
+		KeyFrame key0 = new KeyFrame(Duration.millis(0.0), new KeyValue(recordArc.radiusXProperty(), 0.0),
+				new KeyValue(recordArc.radiusYProperty(), 0.0), new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key1 = new KeyFrame(Duration.millis(1000.0), e -> {
-			recordStarted();
+			if (isPressed())
+				listeners.forEach(listener -> listener.recordEventTriggered());
 		}, new KeyValue(recordArc.radiusXProperty(), 15.9), new KeyValue(recordArc.radiusYProperty(), 15.9),
 				new KeyValue(recordArc.lengthProperty(), 360.0));
 
-		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), e -> {
-			recordStopped();
-		}, new KeyValue(recordArc.lengthProperty(), 0.0));
-
-		Timeline timeline = new Timeline(key0, key1, key2);
+		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), new KeyValue(recordArc.lengthProperty(), 0.0));
 
 		timeline.setOnFinished(e -> {
-
-			recordArc.setVisible(false);
-
+			if (isPressed())
+				listeners.forEach(listener -> listener.recordButtonReleased());
 		});
+
+		timeline.getKeyFrames().addAll(key0, key1, key2);
 
 		setOnMousePressed(e -> {
 
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
-			recordArc.setVisible(true);
-
-			timeline.play();
+			listeners.forEach(listener -> listener.recordButtonPressed());
 
 		});
 
@@ -105,46 +102,34 @@ public class RecordButton extends Button {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
-			timeline.stop();
+			if (Objects.equals(timeline.getStatus(), Animation.Status.STOPPED))
+				return;
 
-			recordArc.setVisible(false);
-
-			recordStopped();
+			listeners.forEach(listener -> listener.recordButtonReleased());
 
 		});
 
 	}
 
-	private void recordReady() {
+	public void startAnimation() {
 
-		recording.set(true);
-
-		listeners.forEach(listener -> listener.recordReady());
+		timeline.play();
 
 	}
 
-	private void recordStarted() {
+	public void stopAnimation() {
 
-		listeners.forEach(listener -> listener.recordStarted());
-
-	}
-
-	private void recordStopped() {
-
-		if (!recording.getAndSet(false))
-			return;
-
-		listeners.forEach(listener -> listener.recordStopped());
+		timeline.stop();
 
 	}
 
 	public static interface RecordListener {
 
-		void recordReady();
+		void recordButtonPressed();
 
-		void recordStarted();
+		void recordEventTriggered();
 
-		void recordStopped();
+		void recordButtonReleased();
 
 	}
 

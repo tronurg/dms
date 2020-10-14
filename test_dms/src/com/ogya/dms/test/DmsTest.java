@@ -7,7 +7,6 @@ import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -25,7 +24,6 @@ import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.intf.handles.ContactHandle;
 import com.ogya.dms.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.intf.handles.FileHandle;
-import com.ogya.dms.intf.handles.GroupHandle;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.intf.handles.MessageHandle;
 import com.ogya.dms.intf.handles.ObjectHandle;
@@ -111,19 +109,19 @@ public class DmsTest implements DmsListener {
 
 			GroupSelectionHandle gsh = handle.getMyActiveGroupsHandle();
 
-			JComponent mcPanel = gsh.getGroupSelectionPanel();
-
-			JButton btn = new JButton("test");
-			btn.addActionListener(e -> {
-
-				GroupHandle gh = handle.getGroupHandle(gsh.getSelectedGroupUuid());
-
-				if (gh != null)
-					System.out.println(handle.getGroupHandle(gsh.getSelectedGroupUuid()).getName());
-
-				gsh.resetSelection();
-
-			});
+			JComponent mcPanel = handle.getDmsPanel();
+//			JComponent mcPanel = gsh.getGroupSelectionPanel();
+//			JButton btn = new JButton("test");
+//			btn.addActionListener(e -> {
+//
+//				GroupHandle gh = handle.getGroupHandle(gsh.getSelectedGroupUuid());
+//
+//				if (gh != null)
+//					System.out.println(handle.getGroupHandle(gsh.getSelectedGroupUuid()).getName());
+//
+//				gsh.resetSelection();
+//
+//			});
 
 			new Thread(() -> {
 
@@ -145,7 +143,7 @@ public class DmsTest implements DmsListener {
 
 			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(mcPanel, BorderLayout.CENTER);
-			panel.add(btn, BorderLayout.SOUTH);
+//			panel.add(btn, BorderLayout.SOUTH);
 
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);
@@ -167,24 +165,24 @@ public class DmsTest implements DmsListener {
 
 			ContactSelectionHandle csh = handle.getOnlineContactsHandle();
 
-			JComponent mcPanel = csh.getContactSelectionPanel();
-
-			JButton btn = new JButton("test");
-			btn.addActionListener(e -> {
-
-				csh.getSelectedContactUuids()
-						.forEach(uuid -> System.out.println(handle.getContactHandle(uuid).getName()));
-
-				csh.resetSelection();
-
-			});
+			JComponent mcPanel = handle.getDmsPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JButton btn = new JButton("test");
+//			btn.addActionListener(e -> {
+//
+//				csh.getSelectedContactUuids()
+//						.forEach(uuid -> System.out.println(handle.getContactHandle(uuid).getName()));
+//
+//				csh.resetSelection();
+//
+//			});
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(mcPanel, BorderLayout.CENTER);
-			panel.add(btn, BorderLayout.SOUTH);
+//			panel.add(btn, BorderLayout.SOUTH);
 
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);

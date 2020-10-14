@@ -320,6 +320,50 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	public void recordingStarted(String uuid, ReceiverType receiverType) {
+
+		switch (receiverType) {
+
+		case PRIVATE:
+
+			entitiesPane.privateRecordingStarted(uuid);
+
+			break;
+
+		case GROUP:
+
+			entitiesPane.groupRecordingStarted(uuid);
+
+			break;
+
+		default:
+
+		}
+
+	}
+
+	public void recordingStopped(String uuid, ReceiverType receiverType) {
+
+		switch (receiverType) {
+
+		case PRIVATE:
+
+			entitiesPane.privateRecordingStopped(uuid);
+
+			break;
+
+		case GROUP:
+
+			entitiesPane.groupRecordingStopped(uuid);
+
+			break;
+
+		default:
+
+		}
+
+	}
+
 	public void showAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
 
 		getChildren().add(entitiesPane.getAddUpdateGroupPane(groupName, selectedUuids, isNewGroup));
@@ -514,6 +558,30 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
+	private void privateRecordButtonPressedToListeners(final String uuid) {
+
+		listeners.forEach(listener -> listener.privateRecordButtonPressed(uuid));
+
+	}
+
+	private void groupRecordButtonPressedToListeners(final String groupUuid) {
+
+		listeners.forEach(listener -> listener.groupRecordButtonPressed(groupUuid));
+
+	}
+
+	private void recordEventTriggeredToListeners() {
+
+		listeners.forEach(listener -> listener.recordEventTriggered());
+
+	}
+
+	private void recordButtonReleasedToListeners() {
+
+		listeners.forEach(listener -> listener.recordButtonReleased());
+
+	}
+
 	private void settingClicked(Settings setting) {
 
 		switch (setting) {
@@ -704,6 +772,34 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void cancelClicked(Long messageId) {
 
 		cancelClickedToListeners(messageId);
+
+	}
+
+	@Override
+	public void privateRecordButtonPressed(String uuid) {
+
+		privateRecordButtonPressedToListeners(uuid);
+
+	}
+
+	@Override
+	public void groupRecordButtonPressed(String groupUuid) {
+
+		groupRecordButtonPressedToListeners(groupUuid);
+
+	}
+
+	@Override
+	public void recordEventTriggered() {
+
+		recordEventTriggeredToListeners();
+
+	}
+
+	@Override
+	public void recordButtonReleased() {
+
+		recordButtonReleasedToListeners();
 
 	}
 

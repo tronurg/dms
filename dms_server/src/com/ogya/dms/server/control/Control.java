@@ -6,9 +6,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -18,6 +16,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
 import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
@@ -51,20 +50,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final LinkedBlockingQueue<SimpleEntry<String, String>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, String>>();
 
-	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-		@Override
-		public Thread newThread(Runnable arg0) {
-
-			Thread thread = new Thread(arg0);
-
-			thread.setDaemon(true);
-
-			return thread;
-
-		}
-
-	});
+	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
 
 	private final Object publishSyncObj = new Object();
 

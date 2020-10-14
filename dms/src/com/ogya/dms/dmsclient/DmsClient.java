@@ -2,15 +2,14 @@ package com.ogya.dms.dmsclient;
 
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.google.gson.Gson;
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
@@ -31,20 +30,7 @@ public class DmsClient {
 
 	private final Gson gson = new Gson();
 
-	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-		@Override
-		public Thread newThread(Runnable arg0) {
-
-			Thread thread = new Thread(arg0);
-
-			thread.setDaemon(true);
-
-			return thread;
-
-		}
-
-	});
+	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 

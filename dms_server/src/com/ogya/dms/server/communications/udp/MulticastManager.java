@@ -9,11 +9,10 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 
 import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.MulticastManagerListener;
 
@@ -33,20 +32,7 @@ public class MulticastManager {
 
 	private final BlockingQueue<DatagramPacket> receiveQueue = new LinkedBlockingQueue<DatagramPacket>();
 
-	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-		@Override
-		public Thread newThread(Runnable arg0) {
-
-			Thread thread = new Thread(arg0);
-
-			thread.setDaemon(true);
-
-			return thread;
-
-		}
-
-	});
+	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
 
 	public MulticastManager(String multicastGroup, int multicastPort, MulticastManagerListener listener) {
 

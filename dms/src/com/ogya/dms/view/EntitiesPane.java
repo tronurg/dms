@@ -305,6 +305,38 @@ class EntitiesPane extends BorderPane {
 
 	}
 
+	void privateRecordingStarted(String uuid) {
+
+		ContactPane contactPane = getContactPane(uuid);
+
+		contactPane.recordingStarted();
+
+	}
+
+	void privateRecordingStopped(String uuid) {
+
+		ContactPane contactPane = getContactPane(uuid);
+
+		contactPane.recordingStopped();
+
+	}
+
+	void groupRecordingStarted(String groupUuid) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.recordingStarted();
+
+	}
+
+	void groupRecordingStopped(String groupUuid) {
+
+		GroupPane groupPane = getGroupPane(groupUuid);
+
+		groupPane.recordingStopped();
+
+	}
+
 	private ContactPane getContactPane(final String uuid) {
 
 		if (!uuidContactPane.containsKey(uuid)) {
@@ -382,6 +414,24 @@ class EntitiesPane extends BorderPane {
 					contactListeners.forEach(listener -> listener.cancelClicked(messageId));
 
 				}
+
+				public void recordButtonPressed() {
+
+					contactListeners.forEach(listener -> listener.privateRecordButtonPressed(uuid));
+
+				};
+
+				public void recordEventTriggered() {
+
+					contactListeners.forEach(listener -> listener.recordEventTriggered());
+
+				};
+
+				public void recordButtonReleased() {
+
+					contactListeners.forEach(listener -> listener.recordButtonReleased());
+
+				};
 
 			});
 
@@ -473,6 +523,24 @@ class EntitiesPane extends BorderPane {
 
 				}
 
+				public void recordButtonPressed() {
+
+					groupListeners.forEach(listener -> listener.groupRecordButtonPressed(groupUuid));
+
+				};
+
+				public void recordEventTriggered() {
+
+					groupListeners.forEach(listener -> listener.recordEventTriggered());
+
+				};
+
+				public void recordButtonReleased() {
+
+					groupListeners.forEach(listener -> listener.recordButtonReleased());
+
+				};
+
 			});
 
 			uuidGroupPane.put(groupUuid, groupPane);
@@ -503,6 +571,12 @@ interface IContactsPane {
 
 	void cancelClicked(Long messageId);
 
+	void privateRecordButtonPressed(String uuid);
+
+	void recordEventTriggered();
+
+	void recordButtonReleased();
+
 }
 
 interface IGroupsPane {
@@ -530,5 +604,11 @@ interface IGroupsPane {
 	void infoClicked(Long messageId);
 
 	void cancelClicked(Long messageId);
+
+	void groupRecordButtonPressed(String groupUuid);
+
+	void recordEventTriggered();
+
+	void recordButtonReleased();
 
 }

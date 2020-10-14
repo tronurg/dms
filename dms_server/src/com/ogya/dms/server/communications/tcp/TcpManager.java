@@ -22,8 +22,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -33,6 +31,7 @@ import com.ogya.communications.tcp.TcpClient;
 import com.ogya.communications.tcp.TcpClientListener;
 import com.ogya.communications.tcp.TcpServer;
 import com.ogya.communications.tcp.TcpServerListener;
+import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 
@@ -60,20 +59,7 @@ public class TcpManager implements TcpServerListener {
 	private final List<TcpManagerListener> listeners = Collections
 			.synchronizedList(new ArrayList<TcpManagerListener>());
 
-	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-		@Override
-		public Thread newThread(Runnable arg0) {
-
-			Thread thread = new Thread(arg0);
-
-			thread.setDaemon(true);
-
-			return thread;
-
-		}
-
-	});
+	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
 
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, int packetSize) throws IOException {
 
@@ -620,20 +606,7 @@ public class TcpManager implements TcpServerListener {
 
 		final AtomicBoolean isConnected = new AtomicBoolean(false);
 
-		protected final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-			@Override
-			public Thread newThread(Runnable arg0) {
-
-				Thread thread = new Thread(arg0);
-
-				thread.setDaemon(true);
-
-				return thread;
-
-			}
-
-		});
+		protected final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
 
 		final PipedOutputStream messageFeed = new PipedOutputStream();
 

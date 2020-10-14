@@ -191,6 +191,18 @@ class ContactPane extends GridPane {
 
 	}
 
+	void recordingStarted() {
+
+		messagePane.recordingStarted();
+
+	}
+
+	void recordingStopped() {
+
+		messagePane.recordingStopped();
+
+	}
+
 	String getName() {
 
 		return nameLabel.getText();

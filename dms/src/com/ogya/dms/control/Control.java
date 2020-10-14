@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -17,8 +19,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -27,6 +27,9 @@ import javax.swing.event.AncestorListener;
 import org.hibernate.HibernateException;
 
 import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.AudioCenter;
+import com.ogya.dms.common.AudioCenter.AudioCenterListener;
+import com.ogya.dms.common.AudioCenter.RecordObject;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.DbManager;
@@ -67,7 +70,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
-public class Control implements AppListener, DmsClientListener, DmsHandle {
+public class Control implements DmsClientListener, AppListener, AudioCenterListener, DmsHandle {
 
 	private static final Map<String, Control> INSTANCES = Collections.synchronizedMap(new HashMap<String, Control>());
 
@@ -85,18 +88,11 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 	private final DmsClient dmsClient;
 
+	private final AudioCenter audioCenter = new AudioCenter();
+
 	private final List<DmsListener> dmsListeners = Collections.synchronizedList(new ArrayList<DmsListener>());
 
-	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-		@Override
-		public Thread newThread(Runnable arg0) {
-			Thread thread = new Thread(arg0);
-			thread.setDaemon(true);
-			return thread;
-		}
-
-	});
+	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
 
 	private Control(String username, String password) throws DbException {
 
@@ -150,6 +146,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		myActiveGroupsHandle = new MyActiveGroupsHandleImpl(dmsPanel.getMyActiveGroupsPanel());
 		onlineContactsHandle = new OnlineContactsHandleImpl(dmsPanel.getOnlineContactsPanel());
+
+		//
+
+		audioCenter.addAudioCenterListener(this);
 
 		//
 
@@ -710,9 +710,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		message.setMessageId(message.getId());
 
-		String messageContent = message.getContent();
+		switch (message.getMessageType()) {
 
-		if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
+		case FILE:
+		case AUDIO:
+
+			String messageContent = message.getContent();
 
 			Path path = Paths.get(messageContent);
 
@@ -732,13 +735,17 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 			}
 
-		}
-
-		runnable.run();
-
-		if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
+			runnable.run();
 
 			message.setContent(messageContent);
+
+			break;
+
+		default:
+
+			runnable.run();
+
+			break;
 
 		}
 
@@ -750,6 +757,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		case TEXT:
 		case FILE:
+		case AUDIO:
 
 			addPrivateMessageToPane(message, true);
 
@@ -784,6 +792,7 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 
 		case TEXT:
 		case FILE:
+		case AUDIO:
 
 			addGroupMessageToPane(message, true);
 
@@ -1339,7 +1348,10 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 				if (dbMessage != null)
 					return;
 
-				if (Objects.equals(incomingMessage.getMessageType(), MessageType.FILE)) {
+				switch (incomingMessage.getMessageType()) {
+
+				case FILE:
+				case AUDIO:
 
 					try {
 
@@ -1362,6 +1374,12 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 						e.printStackTrace();
 
 					}
+
+					break;
+
+				default:
+
+					break;
 
 				}
 
@@ -2401,6 +2419,199 @@ public class Control implements AppListener, DmsClientListener, DmsHandle {
 	public void removeIpClicked(String ip) {
 
 		dmsClient.removeRemoteIp(ip);
+
+	}
+
+	@Override
+	public void privateRecordButtonPressed(final String uuid) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				audioCenter.prepareRecording();
+
+				model.setRecordUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.PRIVATE, uuid));
+
+				Platform.runLater(() -> dmsPanel.recordingStarted(uuid, ReceiverType.PRIVATE));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void groupRecordButtonPressed(final String groupUuid) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				audioCenter.prepareRecording();
+
+				model.setRecordUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.GROUP, groupUuid));
+
+				Platform.runLater(() -> dmsPanel.recordingStarted(groupUuid, ReceiverType.GROUP));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void recordEventTriggered() {
+
+		taskQueue.execute(() -> {
+
+			Entry<ReceiverType, String> recordUuid = model.getRecordUuid();
+
+			if (recordUuid == null)
+				return;
+
+			try {
+
+				String fileName = String.format("audio_%s.wav",
+						DateTimeFormatter.ofPattern("uuuuMMddHHmmss").format(LocalDateTime.now()));
+				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+
+				Path dstFile = getDstFile(dstFolder, fileName);
+
+				audioCenter.startRecording(new RecordObject(dstFile, recordUuid.getValue(), recordUuid.getKey()));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void recordButtonReleased() {
+
+		taskQueue.execute(() -> {
+
+			audioCenter.stopRecording();
+
+			Entry<ReceiverType, String> recordUuid = model.getRecordUuid();
+			model.setRecordUuid(null);
+
+			if (recordUuid == null)
+				return;
+
+			switch (recordUuid.getKey()) {
+
+			case PRIVATE:
+
+			{
+
+				String uuid = recordUuid.getValue();
+
+				Platform.runLater(() -> dmsPanel.recordingStopped(uuid, ReceiverType.PRIVATE));
+
+				break;
+
+			}
+
+			case GROUP:
+
+			{
+
+				String groupUuid = recordUuid.getValue();
+
+				Platform.runLater(() -> dmsPanel.recordingStopped(groupUuid, ReceiverType.GROUP));
+
+				break;
+
+			}
+
+			default:
+
+				break;
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void recordingStopped(RecordObject recordObject) {
+
+		taskQueue.execute(() -> {
+
+			boolean recordSuccessful = recordObject.path != null && Files.exists(recordObject.path);
+
+			try {
+
+				switch (recordObject.receiverType) {
+
+				case PRIVATE:
+
+				{
+
+					if (!recordSuccessful)
+						break;
+
+					String uuid = recordObject.uuid;
+
+					Message newMessage = createOutgoingMessage(recordObject.path.toString(), uuid, null,
+							ReceiverType.PRIVATE, MessageType.AUDIO, null);
+
+					addPrivateMessageToPane(newMessage, true);
+
+					sendPrivateMessage(newMessage);
+
+					break;
+
+				}
+
+				case GROUP:
+
+				{
+
+					if (!recordSuccessful)
+						break;
+
+					String groupUuid = recordObject.uuid;
+
+					Message newMessage = createOutgoingMessage(recordObject.path.toString(), groupUuid,
+							createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.AUDIO,
+							null);
+
+					addGroupMessageToPane(newMessage, true);
+
+					sendGroupMessage(newMessage);
+
+					break;
+
+				}
+
+				default:
+
+					break;
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 

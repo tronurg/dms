@@ -51,4 +51,12 @@ public interface AppListener {
 
 	void removeIpClicked(String ip);
 
+	void privateRecordButtonPressed(String uuid);
+
+	void groupRecordButtonPressed(String groudUuid);
+
+	void recordEventTriggered();
+
+	void recordButtonReleased();
+
 }

@@ -373,6 +373,18 @@ class MessagePane extends BorderPane {
 
 	}
 
+	void recordingStarted() {
+
+		recordBtn.startAnimation();
+
+	}
+
+	void recordingStopped() {
+
+		recordBtn.stopAnimation();
+
+	}
+
 	private void registerListeners() {
 
 		backBtn.setOnAction(e -> {
@@ -412,23 +424,23 @@ class MessagePane extends BorderPane {
 		recordBtn.addRecordListener(new RecordListener() {
 
 			@Override
-			public void recordStopped() {
+			public void recordButtonPressed() {
 
-				System.out.println("recordStopped()");
-
-			}
-
-			@Override
-			public void recordStarted() {
-
-				System.out.println("recordStarted()");
+				listeners.forEach(listener -> listener.recordButtonPressed());
 
 			}
 
 			@Override
-			public void recordReady() {
+			public void recordEventTriggered() {
 
-				System.out.println("recordReady()");
+				listeners.forEach(listener -> listener.recordEventTriggered());
+
+			}
+
+			@Override
+			public void recordButtonReleased() {
+
+				listeners.forEach(listener -> listener.recordButtonReleased());
 
 			}
 
@@ -952,5 +964,11 @@ interface IMessagePane {
 	void infoClicked(Long messageId);
 
 	void cancelClicked(Long messageId);
+
+	void recordButtonPressed();
+
+	void recordEventTriggered();
+
+	void recordButtonReleased();
 
 }
