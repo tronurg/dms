@@ -1,6 +1,5 @@
 package com.ogya.dms.common;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +57,7 @@ public class AudioCenter {
 
 	public void startRecording(final RecordObject recordObject) {
 
-		TargetDataLine line = targetLineRef.get();
+		final TargetDataLine line = targetLineRef.get();
 
 		if (line == null)
 			return;
@@ -67,17 +66,15 @@ public class AudioCenter {
 
 			line.start();
 
-			AudioInputStream ais = new AudioInputStream(line);
+			try (AudioInputStream audioInputStream = new AudioInputStream(line)) {
 
-			try {
+				AudioSystem.write(audioInputStream, Type.WAVE, recordObject.path.toFile());
 
-				AudioSystem.write(ais, Type.WAVE, recordObject.path.toFile());
-
-			} catch (IOException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
-				targetLineRef.set(null);
+				stopRecording();
 
 			}
 

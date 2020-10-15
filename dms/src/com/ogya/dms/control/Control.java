@@ -2562,10 +2562,12 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 				{
 
+					String uuid = recordObject.uuid;
+
+					Platform.runLater(() -> dmsPanel.recordingStopped(uuid, ReceiverType.PRIVATE));
+
 					if (!recordSuccessful)
 						break;
-
-					String uuid = recordObject.uuid;
 
 					Message newMessage = createOutgoingMessage(recordObject.path.toString(), uuid, null,
 							ReceiverType.PRIVATE, MessageType.AUDIO, null);
@@ -2582,10 +2584,12 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 				{
 
+					String groupUuid = recordObject.uuid;
+
+					Platform.runLater(() -> dmsPanel.recordingStopped(groupUuid, ReceiverType.GROUP));
+
 					if (!recordSuccessful)
 						break;
-
-					String groupUuid = recordObject.uuid;
 
 					Message newMessage = createOutgoingMessage(recordObject.path.toString(), groupUuid,
 							createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.AUDIO,
