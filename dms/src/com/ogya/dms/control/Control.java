@@ -5,7 +5,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -2481,7 +2480,7 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 			try {
 
 				String fileName = String.format("audio_%s.wav",
-						DateTimeFormatter.ofPattern("uuuuMMddHHmmss").format(LocalDateTime.now()));
+						CommonConstants.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
 				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
 
 				Path dstFile = getDstFile(dstFolder, fileName);

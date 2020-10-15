@@ -1,5 +1,7 @@
 package com.ogya.dms.common;
 
+import java.time.format.DateTimeFormatter;
+
 public class CommonConstants {
 
 	public static final String SERVER_IP = CommonMethods.getServerIp();
@@ -9,6 +11,8 @@ public class CommonConstants {
 	public static final long MAX_FILE_LENGHT = CommonMethods.getMaxFileLenght();
 	public static final String SEND_FOLDER = CommonMethods.getSendFolder();
 	public static final String RECEIVE_FOLDER = CommonMethods.getReceiveFolder();
+
+	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
 
 	public static final Integer CODE_UPDATE_GROUP = 0;
 	public static final Integer CODE_CANCEL_MESSAGE = 1;
