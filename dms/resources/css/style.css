@@ -24,3 +24,11 @@ TextField {
 .linkLabel:hover {
 	-fx-text-fill: dodgerblue
 }
+ProgressBar .bar {
+	-fx-background-insets: 1 1 2 1;
+	-fx-padding: 0.30em;
+}
+ProgressBar .track {
+	-fx-text-box-border: gray;
+	-fx-control-inner-background: white;
+}

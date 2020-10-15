@@ -102,9 +102,6 @@ public class RecordButton extends Button {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
-			if (Objects.equals(timeline.getStatus(), Animation.Status.STOPPED))
-				return;
-
 			listeners.forEach(listener -> listener.recordButtonReleased());
 
 		});

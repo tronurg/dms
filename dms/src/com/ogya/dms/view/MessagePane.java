@@ -235,12 +235,11 @@ class MessagePane extends BorderPane {
 
 		Date messageDate = message.getDate();
 
-		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
 		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
 				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				clickable, infoAvailable);
+				message.getMessageType(), infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -273,12 +272,11 @@ class MessagePane extends BorderPane {
 
 		Date messageDate = message.getDate();
 
-		boolean clickable = Objects.equals(message.getMessageType(), MessageType.FILE);
 		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
 				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
 
 		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				clickable, infoAvailable);
+				message.getMessageType(), infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -537,7 +535,7 @@ class MessagePane extends BorderPane {
 		messageBalloon.updateMessageStatus(message.getMessageStatus(),
 				Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED));
 
-		if (messageInfo.clickable) {
+		if (Objects.equals(messageInfo.messageType, MessageType.FILE)) {
 
 			messageBalloon.getMessagePane().setCursor(Cursor.HAND);
 
@@ -582,7 +580,7 @@ class MessagePane extends BorderPane {
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final Label messageLbl;
+		private final Label messageLbl = new Label();
 		private final Label progressLbl = new Label();
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
@@ -601,7 +599,11 @@ class MessagePane extends BorderPane {
 
 			this.messageInfo = messageInfo;
 
-			messageLbl = new Label(message);
+			if (Objects.equals(messageInfo.messageType, MessageType.AUDIO))
+				messageLbl.setGraphic(new DmsMediaPlayer(Paths.get(message)));
+			else
+				messageLbl.setText(message);
+
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
 
 			init();
@@ -738,7 +740,8 @@ class MessagePane extends BorderPane {
 
 			GridPane.setFillWidth(messagePane, false);
 
-			messagePane.setBorder(new Border(new BorderStroke(messageInfo.clickable ? Color.BLUE : Color.DARKGRAY,
+			messagePane.setBorder(new Border(new BorderStroke(
+					Objects.equals(messageInfo.messageType, MessageType.FILE) ? Color.BLUE : Color.DARKGRAY,
 					BorderStrokeStyle.SOLID, new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
 
 			messagePane.setPadding(new Insets(GAP));
@@ -928,17 +931,17 @@ class MessagePane extends BorderPane {
 		final String name;
 		final Date date;
 		final MessageDirection messageDirection;
-		final boolean clickable;
+		final MessageType messageType;
 		final boolean infoAvailable;
 
-		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, boolean clickable,
+		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, MessageType messageType,
 				boolean infoAvailable) {
 
 			this.uuid = uuid;
 			this.name = name;
 			this.date = date;
 			this.messageDirection = messageDirection;
-			this.clickable = clickable;
+			this.messageType = messageType;
 			this.infoAvailable = infoAvailable;
 
 		}
