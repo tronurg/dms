@@ -28,6 +28,7 @@ import javafx.scene.text.TextFlow;
 public class ReportsPane extends GridPane {
 
 	private final ComboBox<String> reportsComboBox = new ComboBox<String>();
+	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
 	private final Button sendBtn = ViewFactory.newSendBtn();
 
@@ -63,22 +64,39 @@ public class ReportsPane extends GridPane {
 		});
 
 		initReportsComboBox();
+		initCancelBtn();
 		initReportPaneHolder();
 		initSendBtn();
 
 		add(reportsComboBox, 0, 0);
+		add(cancelBtn, 0, 0);
 		add(reportPaneHolder, 0, 1);
 		add(sendBtn, 0, 1);
 
 	}
 
+	public void reset() {
+
+		reportPanes.forEach(reportPane -> reportPane.reset());
+
+		reportsComboBox.getSelectionModel().selectFirst();
+
+	}
+
 	private void initReportsComboBox() {
 
-		reportsComboBox.setOnAction(e -> updateReportPane());
+		reportsComboBox.getSelectionModel().selectedIndexProperty().addListener((e0, e1, e2) -> updateReportPane());
 
 		reportsComboBox.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
 		reportsComboBox.getSelectionModel().selectFirst();
+
+	}
+
+	private void initCancelBtn() {
+
+		GridPane.setHalignment(cancelBtn, HPos.RIGHT);
+		GridPane.setValignment(cancelBtn, VPos.TOP);
 
 	}
 
@@ -87,8 +105,6 @@ public class ReportsPane extends GridPane {
 		GridPane.setHgrow(reportPaneHolder, Priority.ALWAYS);
 		GridPane.setVgrow(reportPaneHolder, Priority.ALWAYS);
 
-		updateReportPane();
-
 	}
 
 	private void initSendBtn() {
@@ -96,8 +112,6 @@ public class ReportsPane extends GridPane {
 		GridPane.setMargin(sendBtn, new Insets(10.0));
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
-
-		sendBtn.setOnAction(e -> System.out.println("ok"));
 
 	}
 
@@ -144,9 +158,12 @@ public class ReportsPane extends GridPane {
 			}
 		};
 
+		private final List<TextField> textFields = Collections.synchronizedList(new ArrayList<TextField>());
+		private final List<Text> texts = Collections.synchronizedList(new ArrayList<Text>());
+
 		private ReportPane(String templateBody) {
 
-			super();
+			super(10.0);
 
 			init();
 
@@ -177,10 +194,14 @@ public class ReportsPane extends GridPane {
 
 			while (matcher.find()) {
 
-				if (regionStart < matcher.start())
-					preview.getChildren().add(new Text(templateBody.substring(regionStart, matcher.start())));
+				if (regionStart < matcher.start()) {
+					Text text = new Text(templateBody.substring(regionStart, matcher.start()));
+					texts.add(text);
+					preview.getChildren().add(text);
+				}
 
 				Text text = new Text();
+				texts.add(text);
 				preview.getChildren().add(text);
 
 				String tag = matcher.group();
@@ -188,6 +209,8 @@ public class ReportsPane extends GridPane {
 				Label label = new Label(tag.substring(1, tag.length() - 1));
 				TextField textField = new TextField();
 				text.textProperty().bind(textField.textProperty());
+
+				textFields.add(textField);
 
 				valuesPane.add(label, 0, line, 1, 1);
 				valuesPane.add(new Label(":"), 1, line, 1, 1);
@@ -198,8 +221,11 @@ public class ReportsPane extends GridPane {
 
 			}
 
-			if (regionStart < templateBody.length())
-				preview.getChildren().add(new Text(templateBody.substring(regionStart)));
+			if (regionStart < templateBody.length()) {
+				Text text = new Text(templateBody.substring(regionStart));
+				texts.add(text);
+				preview.getChildren().add(text);
+			}
 
 		}
 
@@ -207,13 +233,15 @@ public class ReportsPane extends GridPane {
 
 			final StringBuilder stringBuilder = new StringBuilder();
 
-			preview.getChildren().forEach(node -> {
-				if (!(node instanceof Text))
-					return;
-				stringBuilder.append(((Text) node).getText());
-			});
+			texts.forEach(text -> stringBuilder.append(text.getText()));
 
 			return stringBuilder.toString();
+
+		}
+
+		private void reset() {
+
+			textFields.forEach(textField -> textField.setText(""));
 
 		}
 
