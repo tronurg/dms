@@ -165,9 +165,9 @@ public class ReportsPane extends GridPane {
 
 			super(10.0);
 
-			init();
-
 			fillTemplate(templateBody);
+
+			init();
 
 		}
 
@@ -181,7 +181,10 @@ public class ReportsPane extends GridPane {
 
 			HBox.setHgrow(previewScrollPane, Priority.ALWAYS);
 
-			getChildren().addAll(valuesScrollPane, new Separator(Orientation.VERTICAL), previewScrollPane);
+			if (textFields.size() > 0)
+				getChildren().addAll(valuesScrollPane, new Separator(Orientation.VERTICAL));
+
+			getChildren().add(previewScrollPane);
 
 		}
 
@@ -208,9 +211,9 @@ public class ReportsPane extends GridPane {
 
 				Label label = new Label(tag.substring(1, tag.length() - 1));
 				TextField textField = new TextField();
-				text.textProperty().bind(textField.textProperty());
-
 				textFields.add(textField);
+
+				text.textProperty().bind(textField.textProperty());
 
 				valuesPane.add(label, 0, line, 1, 1);
 				valuesPane.add(new Label(":"), 1, line, 1, 1);
