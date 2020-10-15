@@ -712,11 +712,21 @@ class MessagePane extends BorderPane {
 
 		private void initMessageArea() {
 
-			if (Objects.equals(messageInfo.messageType, MessageType.AUDIO)) {
+			switch (messageInfo.messageType) {
 
-				messageArea.add(new DmsMediaPlayer(Paths.get(message)), 0, 0, 1, 1);
+			case AUDIO:
 
-			} else {
+				try {
+
+					messageArea.add(new DmsMediaPlayer(Paths.get(message)), 0, 0, 1, 1);
+
+					break;
+
+				} catch (Exception e) {
+
+				}
+
+			default:
 
 				Label messageLbl = new Label(message);
 
@@ -724,6 +734,8 @@ class MessagePane extends BorderPane {
 				messageLbl.setWrapText(true);
 
 				messageArea.add(messageLbl, 0, 0, 1, 1);
+
+				break;
 
 			}
 

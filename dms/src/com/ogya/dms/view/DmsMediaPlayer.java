@@ -1,5 +1,7 @@
 package com.ogya.dms.view;
 
+import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -27,9 +29,12 @@ public class DmsMediaPlayer extends GridPane {
 	private final ProgressBar progressBar = new ProgressBar(0.0);
 	private final Label durationLbl = new Label();
 
-	public DmsMediaPlayer(Path path) {
+	public DmsMediaPlayer(Path path) throws Exception {
 
 		super();
+
+		if (Files.notExists(path))
+			throw new FileNotFoundException(path.toString());
 
 		mediaPlayer = new MediaPlayer(new Media(path.toUri().toString()));
 
