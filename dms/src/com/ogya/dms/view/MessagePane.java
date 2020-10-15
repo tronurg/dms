@@ -575,12 +575,14 @@ class MessagePane extends BorderPane {
 	private static class MessageBalloon extends GridPane {
 
 		private static final double RADIUS = 3.0;
+		private static final double FONT_SIZE = new Label().getFont().getSize();
 		private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
 
+		private final String message;
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final Label messageLbl = new Label();
+		private final GridPane messageArea = new GridPane();
 		private final Label progressLbl = new Label();
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
@@ -597,12 +599,8 @@ class MessagePane extends BorderPane {
 
 			super();
 
+			this.message = message;
 			this.messageInfo = messageInfo;
-
-			if (Objects.equals(messageInfo.messageType, MessageType.AUDIO))
-				messageLbl.setGraphic(new DmsMediaPlayer(Paths.get(message)));
-			else
-				messageLbl.setText(message);
 
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
 
@@ -612,6 +610,7 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
+			initMessageArea();
 			initMessagePane();
 			initTimeLbl();
 
@@ -619,9 +618,6 @@ class MessagePane extends BorderPane {
 			ColumnConstraints colWide = new ColumnConstraints();
 			colNarrow.setHgrow(Priority.ALWAYS);
 			colWide.setPercentWidth(80.0);
-
-			messageLbl.getStyleClass().add("blackLabel");
-			messageLbl.setWrapText(true);
 
 			switch (messageInfo.messageDirection) {
 
@@ -635,7 +631,7 @@ class MessagePane extends BorderPane {
 						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
 
 				GridPane.setHalignment(messagePane, HPos.LEFT);
-				GridPane.setHalignment(messageLbl, HPos.LEFT);
+				GridPane.setHalignment(messageArea, HPos.LEFT);
 
 				add(messagePane, 0, 0, 1, 1);
 				add(gap, 1, 0, 1, 1);
@@ -652,7 +648,7 @@ class MessagePane extends BorderPane {
 						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
 
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
-				GridPane.setHalignment(messageLbl, HPos.RIGHT);
+				GridPane.setHalignment(messageArea, HPos.RIGHT);
 
 				add(gap, 0, 0, 1, 1);
 				add(messagePane, 1, 0, 1, 1);
@@ -695,7 +691,7 @@ class MessagePane extends BorderPane {
 			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
 
 			if (canceled && Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING))
-				messageLbl.setDisable(true);
+				messageArea.setDisable(true);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());
@@ -714,9 +710,28 @@ class MessagePane extends BorderPane {
 
 		}
 
+		private void initMessageArea() {
+
+			if (Objects.equals(messageInfo.messageType, MessageType.AUDIO)) {
+
+				messageArea.add(new DmsMediaPlayer(Paths.get(message)), 0, 0, 1, 1);
+
+			} else {
+
+				Label messageLbl = new Label(message);
+
+				messageLbl.getStyleClass().add("blackLabel");
+				messageLbl.setWrapText(true);
+
+				messageArea.add(messageLbl, 0, 0, 1, 1);
+
+			}
+
+		}
+
 		private void initIncomingMessagePane() {
 
-			messagePane.add(messageLbl, 0, 0, 1, 1);
+			messagePane.add(messageArea, 0, 0, 1, 1);
 			messagePane.add(timeLbl, 0, 1, 1, 1);
 
 		}
@@ -728,7 +743,7 @@ class MessagePane extends BorderPane {
 			initInfoGrp();
 			initCancelBtn();
 
-			messagePane.add(messageLbl, 0, 0, 2, 1);
+			messagePane.add(messageArea, 0, 0, 2, 1);
 			messagePane.add(infoGrp, 0, 1, 1, 1);
 			messagePane.add(progressLbl, 0, 1, 1, 1);
 			messagePane.add(timeLbl, 1, 1, 1, 1);
@@ -753,7 +768,7 @@ class MessagePane extends BorderPane {
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
 
-			progressLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
+			progressLbl.setFont(Font.font(FONT_SIZE * 0.75));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.setMinWidth(
@@ -773,7 +788,7 @@ class MessagePane extends BorderPane {
 
 		private void initTimeLbl() {
 
-			timeLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.75));
+			timeLbl.setFont(Font.font(FONT_SIZE * 0.75));
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
