@@ -34,6 +34,9 @@ public class ReportsPane extends GridPane {
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 
+	private final List<ReportsListener> reportListeners = Collections
+			.synchronizedList(new ArrayList<ReportsListener>());
+
 	public ReportsPane(List<ReportTemplate> templates) {
 
 		super();
@@ -75,6 +78,12 @@ public class ReportsPane extends GridPane {
 
 	}
 
+	public void addReportsListener(ReportsListener listener) {
+
+		reportListeners.add(listener);
+
+	}
+
 	public void reset() {
 
 		reportPanes.forEach(reportPane -> reportPane.reset());
@@ -98,6 +107,8 @@ public class ReportsPane extends GridPane {
 		GridPane.setHalignment(cancelBtn, HPos.RIGHT);
 		GridPane.setValignment(cancelBtn, VPos.TOP);
 
+		cancelBtn.setOnAction(e -> reportListeners.forEach(listener -> listener.cancelClicked()));
+
 	}
 
 	private void initReportPaneHolder() {
@@ -112,6 +123,11 @@ public class ReportsPane extends GridPane {
 		GridPane.setMargin(sendBtn, new Insets(10.0));
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
+
+		sendBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
+
+		sendBtn.setOnAction(e -> reportListeners.forEach(listener -> listener.sendClicked(reportsComboBox.getValue(),
+				reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getText())));
 
 	}
 
@@ -140,6 +156,14 @@ public class ReportsPane extends GridPane {
 			this.body = body;
 
 		}
+
+	}
+
+	public static interface ReportsListener {
+
+		void sendClicked(String reportHeading, String reportBody);
+
+		void cancelClicked();
 
 	}
 
@@ -211,6 +235,7 @@ public class ReportsPane extends GridPane {
 
 				Label label = new Label(tag.substring(1, tag.length() - 1));
 				TextField textField = new TextField();
+				textField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 				textFields.add(textField);
 
 				text.textProperty().bind(textField.textProperty());

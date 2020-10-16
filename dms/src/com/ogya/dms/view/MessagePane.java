@@ -92,6 +92,7 @@ class MessagePane extends BorderPane {
 	private final Button sendBtn = ViewFactory.newSendBtn();
 	private final RecordButton recordBtn = new RecordButton();
 	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
+	private final Button reportBtn = ViewFactory.newReportBtn();
 	private final StackPane btnPane = new StackPane();
 
 	private final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
@@ -201,6 +202,15 @@ class MessagePane extends BorderPane {
 	void addListener(IMessagePane listener) {
 
 		listeners.add(listener);
+
+	}
+
+	void setOnBackAction(final Runnable runnable) {
+
+		backBtn.setOnAction(e -> {
+			runnable.run();
+			backBtn.setEffect(null);
+		});
 
 	}
 
@@ -385,11 +395,6 @@ class MessagePane extends BorderPane {
 
 	private void registerListeners() {
 
-		backBtn.setOnAction(e -> {
-			listeners.forEach(listener -> listener.backClicked());
-			backBtn.setEffect(null);
-		});
-
 		nameLabel.setOnMouseClicked(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
@@ -446,6 +451,8 @@ class MessagePane extends BorderPane {
 
 		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
 
+		reportBtn.setOnAction(e -> listeners.forEach(listener -> listener.reportClicked()));
+
 	}
 
 	private void scrollPane(Node kaydirilacakNode, double bias) {
@@ -477,7 +484,7 @@ class MessagePane extends BorderPane {
 
 		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty());
 
-		btnPane.getChildren().addAll(showFoldersBtn, sendBtn, recordBtn);
+		btnPane.getChildren().addAll(reportBtn, showFoldersBtn, sendBtn, recordBtn);
 
 		Interpolator interpolator = Interpolator.EASE_BOTH;
 
@@ -487,21 +494,27 @@ class MessagePane extends BorderPane {
 				setCycleDuration(Duration.millis(100.0));
 			}
 
-			private double start;
-			private double end;
+			private double showFoldersBtnStart;
+			private double showFoldersBtnEnd;
+			private double reportBtnStart;
+			private double reportBtnEnd;
 			private int direction = -1;
 
 			@Override
 			protected void interpolate(double arg0) {
 
-				showFoldersBtn.setTranslateY(interpolator.interpolate(start, end, arg0));
+				showFoldersBtn.setTranslateY(interpolator.interpolate(showFoldersBtnStart, showFoldersBtnEnd, arg0));
+				reportBtn.setTranslateY(interpolator.interpolate(reportBtnStart, reportBtnEnd, arg0));
 
 			}
 
 			@Override
 			public void play() {
-				start = showFoldersBtn.getTranslateY();
-				end = start + (GAP + showFoldersBtn.getHeight()) * direction;
+				showFoldersBtnStart = showFoldersBtn.getTranslateY();
+				showFoldersBtnEnd = showFoldersBtnStart + (GAP + showFoldersBtn.getHeight()) * direction;
+				reportBtnStart = reportBtn.getTranslateY();
+				reportBtnEnd = reportBtnStart
+						+ (2 * GAP + reportBtn.getHeight() + showFoldersBtn.getHeight()) * direction;
 				direction = -direction;
 				super.play();
 			}
@@ -519,6 +532,11 @@ class MessagePane extends BorderPane {
 		});
 
 		showFoldersBtn.setOnMouseClicked(e -> {
+			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				transition.play();
+		});
+
+		reportBtn.setOnMouseClicked(e -> {
 			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				transition.play();
 		});
@@ -979,8 +997,6 @@ class MessagePane extends BorderPane {
 
 interface IMessagePane {
 
-	void backClicked();
-
 	void editClicked();
 
 	void paneScrolledToTop();
@@ -988,6 +1004,8 @@ interface IMessagePane {
 	void sendMessageClicked(String message);
 
 	void showFoldersClicked();
+
+	void reportClicked();
 
 	void messageClicked(Long messageId);
 

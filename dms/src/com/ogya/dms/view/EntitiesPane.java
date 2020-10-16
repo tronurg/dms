@@ -13,6 +13,7 @@ import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
+import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -44,9 +45,7 @@ class EntitiesPane extends BorderPane {
 
 	private final Map<String, GroupPane> uuidGroupPane = Collections.synchronizedMap(new HashMap<String, GroupPane>());
 
-	private final List<IContactsPane> contactListeners = Collections.synchronizedList(new ArrayList<IContactsPane>());
-
-	private final List<IGroupsPane> groupListeners = Collections.synchronizedList(new ArrayList<IGroupsPane>());
+	private final List<IEntitiesPane> entityListeners = Collections.synchronizedList(new ArrayList<IEntitiesPane>());
 
 	private final AtomicLong currentId = new AtomicLong(0);
 
@@ -61,11 +60,11 @@ class EntitiesPane extends BorderPane {
 	private void init() {
 
 		addUpdateGroupPane.setOnBackAction(
-				() -> groupListeners.forEach(listener -> listener.hideAddUpdateGroupPane(addUpdateGroupPane)));
+				() -> entityListeners.forEach(listener -> listener.hideAddUpdateGroupPane(addUpdateGroupPane)));
 		addUpdateGroupPane.setOnAddUpdateGroupAction(
-				() -> groupListeners.forEach(listener -> listener.addUpdateGroupClicked(addUpdateGroupPane)));
+				() -> entityListeners.forEach(listener -> listener.addUpdateGroupClicked(addUpdateGroupPane)));
 		addUpdateGroupPane.setOnDeleteGroupAction(
-				() -> groupListeners.forEach(listener -> listener.deleteGroupClicked(addUpdateGroupPane)));
+				() -> entityListeners.forEach(listener -> listener.deleteGroupClicked(addUpdateGroupPane)));
 
 		initTopArea();
 
@@ -81,15 +80,9 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void addContactListener(IContactsPane listener) {
+	void addEntityListener(IEntitiesPane listener) {
 
-		contactListeners.add(listener);
-
-	}
-
-	void addGroupListener(IGroupsPane listener) {
-
-		groupListeners.add(listener);
+		entityListeners.add(listener);
 
 	}
 
@@ -124,7 +117,7 @@ class EntitiesPane extends BorderPane {
 		createGroupBtn.setPadding(new Insets(10.0));
 
 		createGroupBtn
-				.setOnAction(e -> groupListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(null)));
+				.setOnAction(e -> entityListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(null)));
 
 	}
 
@@ -352,88 +345,17 @@ class EntitiesPane extends BorderPane {
 
 			contactPane.setOnShowMessagePane(messagePane -> {
 
-				contactListeners.forEach(listener -> listener.showContactMessagePane(messagePane, uuid));
+				entityListeners.forEach(listener -> listener.showMessagePane(messagePane, uuid, ReceiverType.PRIVATE));
 
 			});
 
-			contactPane.addMessagePaneListener(new IMessagePane() {
+			contactPane.setOnHideMessagePane(messagePane -> {
 
-				@Override
-				public void showFoldersClicked() {
-
-					contactListeners.forEach(listener -> listener.privateShowFoldersClicked(uuid));
-
-				}
-
-				@Override
-				public void sendMessageClicked(final String message) {
-
-					contactListeners.forEach(listener -> listener.sendPrivateMessageClicked(message, uuid));
-
-				}
-
-				@Override
-				public void paneScrolledToTop() {
-
-					contactListeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
-
-				}
-
-				@Override
-				public void messageClicked(Long messageId) {
-
-					contactListeners.forEach(listener -> listener.messageClicked(messageId));
-
-				}
-
-				@Override
-				public void infoClicked(Long messageId) {
-
-					// NO ACTION HERE
-
-				}
-
-				@Override
-				public void editClicked() {
-
-					// NO ACTION HERE
-
-				}
-
-				@Override
-				public void backClicked() {
-
-					contactListeners
-							.forEach(listener -> listener.hideContactMessagePane(contactPane.getMessagePane(), uuid));
-
-				}
-
-				@Override
-				public void cancelClicked(Long messageId) {
-
-					contactListeners.forEach(listener -> listener.cancelClicked(messageId));
-
-				}
-
-				public void recordButtonPressed() {
-
-					contactListeners.forEach(listener -> listener.privateRecordButtonPressed(uuid));
-
-				};
-
-				public void recordEventTriggered() {
-
-					contactListeners.forEach(listener -> listener.recordEventTriggered());
-
-				};
-
-				public void recordButtonReleased() {
-
-					contactListeners.forEach(listener -> listener.recordButtonReleased());
-
-				};
+				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, uuid));
 
 			});
+
+			contactPane.addMessagePaneListener(newMessagePaneListener(uuid, ReceiverType.PRIVATE));
 
 			uuidContactPane.put(uuid, contactPane);
 
@@ -460,88 +382,18 @@ class EntitiesPane extends BorderPane {
 
 			groupPane.setOnShowMessagePane(messagePane -> {
 
-				groupListeners.forEach(listener -> listener.showGroupMessagePane(messagePane, groupUuid));
+				entityListeners
+						.forEach(listener -> listener.showMessagePane(messagePane, groupUuid, ReceiverType.GROUP));
 
 			});
 
-			groupPane.addMessagePaneListener(new IMessagePane() {
+			groupPane.setOnHideMessagePane(messagePane -> {
 
-				@Override
-				public void showFoldersClicked() {
-
-					groupListeners.forEach(listener -> listener.groupShowFoldersClicked(groupUuid));
-
-				}
-
-				@Override
-				public void sendMessageClicked(final String message) {
-
-					groupListeners.forEach(listener -> listener.sendGroupMessageClicked(message, groupUuid));
-
-				}
-
-				@Override
-				public void paneScrolledToTop() {
-
-					groupListeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
-
-				}
-
-				@Override
-				public void messageClicked(Long messageId) {
-
-					groupListeners.forEach(listener -> listener.messageClicked(messageId));
-
-				}
-
-				@Override
-				public void infoClicked(Long messageId) {
-
-					groupListeners.forEach(listener -> listener.infoClicked(messageId));
-
-				}
-
-				@Override
-				public void editClicked() {
-
-					groupListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(groupUuid));
-
-				}
-
-				@Override
-				public void backClicked() {
-
-					groupListeners
-							.forEach(listener -> listener.hideGroupMessagePane(groupPane.getMessagePane(), groupUuid));
-
-				}
-
-				@Override
-				public void cancelClicked(Long messageId) {
-
-					groupListeners.forEach(listener -> listener.cancelClicked(messageId));
-
-				}
-
-				public void recordButtonPressed() {
-
-					groupListeners.forEach(listener -> listener.groupRecordButtonPressed(groupUuid));
-
-				};
-
-				public void recordEventTriggered() {
-
-					groupListeners.forEach(listener -> listener.recordEventTriggered());
-
-				};
-
-				public void recordButtonReleased() {
-
-					groupListeners.forEach(listener -> listener.recordButtonReleased());
-
-				};
+				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, groupUuid));
 
 			});
+
+			groupPane.addMessagePaneListener(newMessagePaneListener(groupUuid, ReceiverType.GROUP));
 
 			uuidGroupPane.put(groupUuid, groupPane);
 
@@ -553,33 +405,90 @@ class EntitiesPane extends BorderPane {
 
 	}
 
+	private IMessagePane newMessagePaneListener(final String uuid, final ReceiverType receiverType) {
+
+		return new IMessagePane() {
+
+			@Override
+			public void showFoldersClicked() {
+
+				entityListeners.forEach(listener -> listener.showFoldersClicked(uuid, receiverType));
+
+			}
+
+			public void reportClicked() {
+
+				entityListeners.forEach(listener -> listener.reportClicked(uuid, receiverType));
+
+			};
+
+			@Override
+			public void sendMessageClicked(final String message) {
+
+				entityListeners.forEach(listener -> listener.sendMessageClicked(message, uuid, receiverType));
+
+			}
+
+			@Override
+			public void paneScrolledToTop() {
+
+				entityListeners.forEach(listener -> listener.paneScrolledToTop(uuid, receiverType));
+
+			}
+
+			@Override
+			public void messageClicked(Long messageId) {
+
+				entityListeners.forEach(listener -> listener.messageClicked(messageId));
+
+			}
+
+			@Override
+			public void infoClicked(Long messageId) {
+
+				entityListeners.forEach(listener -> listener.infoClicked(messageId));
+
+			}
+
+			@Override
+			public void editClicked() {
+
+				entityListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(uuid));
+
+			}
+
+			@Override
+			public void cancelClicked(Long messageId) {
+
+				entityListeners.forEach(listener -> listener.cancelClicked(messageId));
+
+			}
+
+			public void recordButtonPressed() {
+
+				entityListeners.forEach(listener -> listener.recordButtonPressed(uuid, receiverType));
+
+			};
+
+			public void recordEventTriggered() {
+
+				entityListeners.forEach(listener -> listener.recordEventTriggered());
+
+			};
+
+			public void recordButtonReleased() {
+
+				entityListeners.forEach(listener -> listener.recordButtonReleased());
+
+			};
+
+		};
+
+	}
+
 }
 
-interface IContactsPane {
-
-	void showContactMessagePane(MessagePane messagePane, String uuid);
-
-	void hideContactMessagePane(MessagePane messagePane, String uuid);
-
-	void contactPaneScrolledToTop(String uuid);
-
-	void sendPrivateMessageClicked(String messageTxt, String uuid);
-
-	void privateShowFoldersClicked(String uuid);
-
-	void messageClicked(Long messageId);
-
-	void cancelClicked(Long messageId);
-
-	void privateRecordButtonPressed(String uuid);
-
-	void recordEventTriggered();
-
-	void recordButtonReleased();
-
-}
-
-interface IGroupsPane {
+interface IEntitiesPane {
 
 	void showAddUpdateGroupPaneClicked(String groupUuid);
 
@@ -589,15 +498,17 @@ interface IGroupsPane {
 
 	void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
-	void showGroupMessagePane(MessagePane messagePane, String groupUuid);
+	void showMessagePane(MessagePane messagePane, String uuid, ReceiverType receiverType);
 
-	void hideGroupMessagePane(MessagePane messagePane, String groupUuid);
+	void hideMessagePane(MessagePane messagePane, String uuid);
 
-	void groupPaneScrolledToTop(String groupUuid);
+	void paneScrolledToTop(String uuid, ReceiverType receiverType);
 
-	void sendGroupMessageClicked(String messageTxt, String groupUuid);
+	void sendMessageClicked(String messageTxt, String uuid, ReceiverType receiverType);
 
-	void groupShowFoldersClicked(String groupUuid);
+	void showFoldersClicked(String uuid, ReceiverType receiverType);
+
+	void reportClicked(String uuid, ReceiverType receiverType);
 
 	void messageClicked(Long messageId);
 
@@ -605,7 +516,7 @@ interface IGroupsPane {
 
 	void cancelClicked(Long messageId);
 
-	void groupRecordButtonPressed(String groupUuid);
+	void recordButtonPressed(String uuid, ReceiverType receiverType);
 
 	void recordEventTriggered();
 

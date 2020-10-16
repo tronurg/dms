@@ -91,7 +91,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 	private final Map<String, ObjectProperty<Color>> contactUuidStatus = Collections
 			.synchronizedMap(new HashMap<String, ObjectProperty<Color>>());
 
-	public MyActiveGroupsPanel() {
+	MyActiveGroupsPanel() {
 
 		super();
 

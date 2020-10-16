@@ -63,7 +63,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 	private final List<String> selectedUuids = Collections.synchronizedList(new ArrayList<String>());
 
-	public OnlineContactsPanel() {
+	OnlineContactsPanel() {
 
 		super();
 

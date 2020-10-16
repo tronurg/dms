@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -29,6 +30,7 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.ogya.dms.view.ReportsPane.ReportTemplate;
 
 public class CommonMethods {
 
@@ -71,6 +73,51 @@ public class CommonMethods {
 			}
 
 		});
+
+	}
+
+	public static List<ReportTemplate> getReportTemplates() {
+
+		final List<ReportTemplate> templates = new ArrayList<ReportTemplate>();
+
+		try {
+
+			Files.list(Paths.get("./plugins/dms/templates")).forEach(path -> {
+
+				if (Files.isDirectory(path) || !path.toString().toLowerCase().endsWith(".txt"))
+					return;
+
+				System.out.println(path);
+
+				try (Reader reader = Files.newBufferedReader(path)) {
+
+					StringBuilder stringBuilder = new StringBuilder();
+
+					int c;
+
+					while ((c = reader.read()) != -1)
+						stringBuilder.append((char) c);
+
+					String fileName = path.getFileName().toString();
+
+					templates.add(
+							new ReportTemplate(fileName.substring(0, fileName.length() - 4), stringBuilder.toString()));
+
+				} catch (IOException e) {
+
+					e.printStackTrace();
+
+				}
+
+			});
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return templates;
 
 	}
 

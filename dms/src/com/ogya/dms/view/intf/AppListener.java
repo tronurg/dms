@@ -3,37 +3,31 @@ package com.ogya.dms.view.intf;
 import java.nio.file.Path;
 import java.util.Set;
 
+import com.ogya.dms.structures.ReceiverType;
+
 public interface AppListener {
 
 	void commentUpdated(String comment);
 
 	void updateStatusClicked();
 
-	void contactMessagePaneOpened(String uuid);
+	void messagePaneOpened(String uuid, ReceiverType receiverType);
 
-	void contactMessagePaneClosed(String uuid);
+	void messagePaneClosed(String uuid);
 
-	void sendPrivateMessageClicked(String messageTxt, String receiverUuid);
+	void sendMessageClicked(String messageTxt, String receiverUuid, ReceiverType receiverType);
 
-	void privateShowFoldersClicked(String uuid);
+	void showFoldersClicked(String uuid, ReceiverType receiverType);
 
-	void contactPaneScrolledToTop(String uuid);
+	void reportClicked(String uuid, ReceiverType receiverType);
+
+	void paneScrolledToTop(String uuid, ReceiverType receiverType);
 
 	void showAddUpdateGroupClicked(String groupUuid);
 
 	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);
 
 	void deleteGroupRequested();
-
-	void groupMessagePaneOpened(String groupUuid);
-
-	void groupMessagePaneClosed(String groupUuid);
-
-	void sendGroupMessageClicked(String messageTxt, String groupUuid);
-
-	void groupShowFoldersClicked(String groupUuid);
-
-	void groupPaneScrolledToTop(String groupUuid);
 
 	void showFoldersCanceled();
 
@@ -51,9 +45,7 @@ public interface AppListener {
 
 	void removeIpClicked(String ip);
 
-	void privateRecordButtonPressed(String uuid);
-
-	void groupRecordButtonPressed(String groudUuid);
+	void recordButtonPressed(String uuid, ReceiverType receiverType);
 
 	void recordEventTriggered();
 

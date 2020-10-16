@@ -173,6 +173,35 @@ public class ViewFactory {
 
 	}
 
+	public static Button newReportBtn() {
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(16.0);
+		circle.setFill(Color.GREEN);
+		Rectangle rectangle = new Rectangle(-6.0, -8.0, 12.0, 16.0);
+		rectangle.setStrokeWidth(2.0);
+		rectangle.setStroke(Color.ANTIQUEWHITE);
+		rectangle.setFill(Color.TRANSPARENT);
+		Line line1 = new Line(-2.0, -4.0, 2.0, -4.0);
+		line1.setStroke(Color.ANTIQUEWHITE);
+		line1.setStrokeWidth(2.0);
+		Line line2 = new Line(-2.0, 0.0, 2.0, 0.0);
+		line2.setStroke(Color.ANTIQUEWHITE);
+		line2.setStrokeWidth(2.0);
+		Line line3 = new Line(-2.0, 4.0, 2.0, 4.0);
+		line3.setStroke(Color.ANTIQUEWHITE);
+		line3.setStrokeWidth(2.0);
+		Group group = new Group(circle, rectangle, line1, line2, line3);
+		btn.setGraphic(group);
+		btn.setBackground(Background.EMPTY);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
 	public static Button newInfoBtn() {
 
 		Button btn = new Button("i");

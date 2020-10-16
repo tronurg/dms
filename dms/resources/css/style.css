@@ -32,3 +32,6 @@ ProgressBar .track {
 	-fx-text-box-border: gray;
 	-fx-control-inner-background: white;
 }
+Text {
+	-fx-fill: -text-fill;
+}

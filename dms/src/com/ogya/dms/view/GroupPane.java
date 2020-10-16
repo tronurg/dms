@@ -126,6 +126,12 @@ class GroupPane extends GridPane {
 
 	}
 
+	void setOnHideMessagePane(Consumer<MessagePane> consumer) {
+
+		messagePane.setOnBackAction(() -> consumer.accept(messagePane));
+
+	}
+
 	void addMessagePaneListener(IMessagePane listener) {
 
 		messagePane.addListener(listener);

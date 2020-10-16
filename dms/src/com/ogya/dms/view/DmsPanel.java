@@ -31,7 +31,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane, IGroupsPane {
+public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane {
 
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
@@ -84,8 +84,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
 
 		identityPane.addListener(this);
-		entitiesPane.addContactListener(this);
-		entitiesPane.addGroupListener(this);
+		entitiesPane.addEntityListener(this);
 		foldersPane.setOnFileSelected(this::fileSelected);
 		foldersPane.setOnBackAction(this::backFromFoldersPane);
 		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
@@ -392,11 +391,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	private void fileSelected(Path file) {
+	private void fileSelected(final Path path) {
 
 		getChildren().remove(foldersPane);
 
-		fileSelectedToListeners(file);
+		listeners.forEach(listener -> listener.fileSelected(path));
 
 	}
 
@@ -406,7 +405,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		foldersPane.reset();
 
-		showFoldersCanceledToListeners();
+		listeners.forEach(listener -> listener.showFoldersCanceled());
 
 	}
 
@@ -416,169 +415,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 		statusInfoPane.reset();
 
-		statusInfoClosedToListeners();
-
-	}
-
-	private void commentUpdatedToListeners(final String comment) {
-
-		listeners.forEach(listener -> listener.commentUpdated(comment));
-
-	}
-
-	private void updateStatusClickedToListeners() {
-
-		listeners.forEach(listener -> listener.updateStatusClicked());
-
-	}
-
-	private void contactMessagePaneOpenedToListeners(final String uuid) {
-
-		listeners.forEach(listener -> listener.contactMessagePaneOpened(uuid));
-
-	}
-
-	private void contactMessagePaneClosedToListeners(final String uuid) {
-
-		listeners.forEach(listener -> listener.contactMessagePaneClosed(uuid));
-
-	}
-
-	private void sendPrivateMessageClickedToListeners(final String message, final String uuid) {
-
-		listeners.forEach(listener -> listener.sendPrivateMessageClicked(message, uuid));
-
-	}
-
-	private void privateShowFoldersClickedToListeners(final String uuid) {
-
-		listeners.forEach(listener -> listener.privateShowFoldersClicked(uuid));
-
-	}
-
-	private void contactPaneScrolledToTopToListeners(final String uuid) {
-
-		listeners.forEach(listener -> listener.contactPaneScrolledToTop(uuid));
-
-	}
-
-	private void showAddUpdateGroupClickedToListeners(final String groupUuid) {
-
-		listeners.forEach(listener -> listener.showAddUpdateGroupClicked(groupUuid));
-
-	}
-
-	private void addUpdateGroupRequestedToListeners(final String groupName, final Set<String> selectedUuids) {
-
-		listeners.forEach(listener -> listener.addUpdateGroupRequested(groupName, selectedUuids));
-
-	}
-
-	private void deleteGroupRequestedToListeners() {
-
-		listeners.forEach(listener -> listener.deleteGroupRequested());
-
-	}
-
-	private void groupMessagePaneOpenedToListeners(final String groupUuid) {
-
-		listeners.forEach(listener -> listener.groupMessagePaneOpened(groupUuid));
-
-	}
-
-	private void groupMessagePaneClosedToListeners(final String groupUuid) {
-
-		listeners.forEach(listener -> listener.groupMessagePaneClosed(groupUuid));
-
-	}
-
-	private void sendGroupMessageClickedToListeners(final String message, final String groupUuid) {
-
-		listeners.forEach(listener -> listener.sendGroupMessageClicked(message, groupUuid));
-
-	}
-
-	private void groupShowFoldersClickedToListeners(final String groupUuid) {
-
-		listeners.forEach(listener -> listener.groupShowFoldersClicked(groupUuid));
-
-	}
-
-	private void groupPaneScrolledToTopToListeners(final String groupUuid) {
-
-		listeners.forEach(listener -> listener.groupPaneScrolledToTop(groupUuid));
-
-	}
-
-	private void showFoldersCanceledToListeners() {
-
-		listeners.forEach(listener -> listener.showFoldersCanceled());
-
-	}
-
-	private void statusInfoClosedToListeners() {
-
 		listeners.forEach(listener -> listener.statusInfoClosed());
-
-	}
-
-	private void fileSelectedToListeners(final Path file) {
-
-		listeners.forEach(listener -> listener.fileSelected(file));
-
-	}
-
-	private void messageClickedToListeners(final Long messageId) {
-
-		listeners.forEach(listener -> listener.messageClicked(messageId));
-
-	}
-
-	private void infoClickedToListeners(final Long messageId) {
-
-		listeners.forEach(listener -> listener.infoClicked(messageId));
-
-	}
-
-	private void cancelClickedToListeners(final Long messageId) {
-
-		listeners.forEach(listener -> listener.cancelClicked(messageId));
-
-	}
-
-	private void addIpClickedToListeners(final String ip) {
-
-		listeners.forEach(listener -> listener.addIpClicked(ip));
-
-	}
-
-	private void removeIpClickedToListeners(final String ip) {
-
-		listeners.forEach(listener -> listener.removeIpClicked(ip));
-
-	}
-
-	private void privateRecordButtonPressedToListeners(final String uuid) {
-
-		listeners.forEach(listener -> listener.privateRecordButtonPressed(uuid));
-
-	}
-
-	private void groupRecordButtonPressedToListeners(final String groupUuid) {
-
-		listeners.forEach(listener -> listener.groupRecordButtonPressed(groupUuid));
-
-	}
-
-	private void recordEventTriggeredToListeners() {
-
-		listeners.forEach(listener -> listener.recordEventTriggered());
-
-	}
-
-	private void recordButtonReleasedToListeners() {
-
-		listeners.forEach(listener -> listener.recordButtonReleased());
 
 	}
 
@@ -599,31 +436,31 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 
 	}
 
-	private void addIpClicked(String ip) {
+	private void addIpClicked(final String ip) {
 
-		addIpClickedToListeners(ip);
+		listeners.forEach(listener -> listener.addIpClicked(ip));
 
 		remoteIpSettingsPane.clearIpField();
 
 	}
 
-	private void removeIpClicked(String ip) {
+	private void removeIpClicked(final String ip) {
 
-		removeIpClickedToListeners(ip);
+		listeners.forEach(listener -> listener.removeIpClicked(ip));
 
 	}
 
 	@Override
-	public void commentUpdated(String comment) {
+	public void commentUpdated(final String comment) {
 
-		commentUpdatedToListeners(comment);
+		listeners.forEach(listener -> listener.commentUpdated(comment));
 
 	}
 
 	@Override
 	public void updateStatusClicked() {
 
-		updateStatusClickedToListeners();
+		listeners.forEach(listener -> listener.updateStatusClicked());
 
 	}
 
@@ -635,20 +472,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void showContactMessagePane(final MessagePane messagePane, final String uuid) {
+	public void showMessagePane(MessagePane messagePane, final String uuid, final ReceiverType receiverType) {
 
 		getChildren().add(messagePane);
 
 		uuidOnScreenRef.set(new AbstractMap.SimpleEntry<String, MessagePane>(uuid, messagePane));
 
-		contactMessagePaneOpenedToListeners(uuid);
+		listeners.forEach(listener -> listener.messagePaneOpened(uuid, receiverType));
 
 	}
 
 	@Override
-	public void hideContactMessagePane(MessagePane messagePane, String uuid) {
+	public void hideMessagePane(MessagePane messagePane, final String uuid) {
 
-		contactMessagePaneClosedToListeners(uuid);
+		listeners.forEach(listener -> listener.messagePaneClosed(uuid));
 
 		uuidOnScreenRef.set(null);
 
@@ -657,32 +494,32 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void contactPaneScrolledToTop(String uuid) {
+	public void paneScrolledToTop(final String uuid, final ReceiverType receiverType) {
 
-		contactPaneScrolledToTopToListeners(uuid);
-
-	}
-
-	@Override
-	public void sendPrivateMessageClicked(String messageTxt, String uuid) {
-
-		sendPrivateMessageClickedToListeners(messageTxt, uuid);
+		listeners.forEach(listener -> listener.paneScrolledToTop(uuid, receiverType));
 
 	}
 
 	@Override
-	public void privateShowFoldersClicked(String uuid) {
+	public void sendMessageClicked(final String messageTxt, final String uuid, final ReceiverType receiverType) {
+
+		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, uuid, receiverType));
+
+	}
+
+	@Override
+	public void showFoldersClicked(final String uuid, final ReceiverType receiverType) {
 
 		getChildren().add(foldersPane);
 
-		privateShowFoldersClickedToListeners(uuid);
+		listeners.forEach(listener -> listener.showFoldersClicked(uuid, receiverType));
 
 	}
 
 	@Override
-	public void showAddUpdateGroupPaneClicked(String groupUuid) {
+	public void showAddUpdateGroupPaneClicked(final String groupUuid) {
 
-		showAddUpdateGroupClickedToListeners(groupUuid);
+		listeners.forEach(listener -> listener.showAddUpdateGroupClicked(groupUuid));
 
 	}
 
@@ -694,10 +531,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	}
 
 	@Override
-	public void addUpdateGroupClicked(AddUpdateGroupPane addUpdateGroupPane) {
+	public void addUpdateGroupClicked(final AddUpdateGroupPane addUpdateGroupPane) {
 
 		getChildren().remove(addUpdateGroupPane);
-		addUpdateGroupRequestedToListeners(addUpdateGroupPane.getGroupName(), addUpdateGroupPane.getSelectedUuids());
+
+		listeners.forEach(listener -> listener.addUpdateGroupRequested(addUpdateGroupPane.getGroupName(),
+				addUpdateGroupPane.getSelectedUuids()));
 
 	}
 
@@ -705,101 +544,57 @@ public class DmsPanel extends StackPane implements IIdentityPane, IContactsPane,
 	public void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane) {
 
 		getChildren().remove(addUpdateGroupPane);
-		deleteGroupRequestedToListeners();
+
+		listeners.forEach(listener -> listener.deleteGroupRequested());
 
 	}
 
 	@Override
-	public void showGroupMessagePane(MessagePane messagePane, String groupUuid) {
+	public void messageClicked(final Long messageId) {
 
-		getChildren().add(messagePane);
-
-		uuidOnScreenRef.set(new AbstractMap.SimpleEntry<String, MessagePane>(groupUuid, messagePane));
-
-		groupMessagePaneOpenedToListeners(groupUuid);
+		listeners.forEach(listener -> listener.messageClicked(messageId));
 
 	}
 
 	@Override
-	public void hideGroupMessagePane(MessagePane messagePane, String groupUuid) {
+	public void infoClicked(final Long messageId) {
 
-		groupMessagePaneClosedToListeners(groupUuid);
-
-		uuidOnScreenRef.set(null);
-
-		getChildren().remove(messagePane);
+		listeners.forEach(listener -> listener.infoClicked(messageId));
 
 	}
 
 	@Override
-	public void groupPaneScrolledToTop(String groupUuid) {
+	public void cancelClicked(final Long messageId) {
 
-		groupPaneScrolledToTopToListeners(groupUuid);
-
-	}
-
-	@Override
-	public void sendGroupMessageClicked(String messageTxt, String groupUuid) {
-
-		sendGroupMessageClickedToListeners(messageTxt, groupUuid);
+		listeners.forEach(listener -> listener.cancelClicked(messageId));
 
 	}
 
 	@Override
-	public void groupShowFoldersClicked(String groupUuid) {
+	public void recordButtonPressed(final String uuid, final ReceiverType receiverType) {
 
-		getChildren().add(foldersPane);
-
-		groupShowFoldersClickedToListeners(groupUuid);
-
-	}
-
-	@Override
-	public void messageClicked(Long messageId) {
-
-		messageClickedToListeners(messageId);
-
-	}
-
-	@Override
-	public void infoClicked(Long messageId) {
-
-		infoClickedToListeners(messageId);
-
-	}
-
-	@Override
-	public void cancelClicked(Long messageId) {
-
-		cancelClickedToListeners(messageId);
-
-	}
-
-	@Override
-	public void privateRecordButtonPressed(String uuid) {
-
-		privateRecordButtonPressedToListeners(uuid);
-
-	}
-
-	@Override
-	public void groupRecordButtonPressed(String groupUuid) {
-
-		groupRecordButtonPressedToListeners(groupUuid);
+		listeners.forEach(listener -> listener.recordButtonPressed(uuid, receiverType));
 
 	}
 
 	@Override
 	public void recordEventTriggered() {
 
-		recordEventTriggeredToListeners();
+		listeners.forEach(listener -> listener.recordEventTriggered());
 
 	}
 
 	@Override
 	public void recordButtonReleased() {
 
-		recordButtonReleasedToListeners();
+		listeners.forEach(listener -> listener.recordButtonReleased());
+
+	}
+
+	@Override
+	public void reportClicked(final String uuid, final ReceiverType receiverType) {
+
+		listeners.forEach(listener -> listener.reportClicked(uuid, receiverType));
 
 	}
 

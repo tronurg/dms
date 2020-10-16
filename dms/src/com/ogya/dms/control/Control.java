@@ -63,13 +63,15 @@ import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.structures.StatusReport;
 import com.ogya.dms.structures.WaitStatus;
 import com.ogya.dms.view.DmsPanel;
+import com.ogya.dms.view.ReportsDialog;
+import com.ogya.dms.view.ReportsPane.ReportsListener;
 import com.ogya.dms.view.intf.AppListener;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
-public class Control implements DmsClientListener, AppListener, AudioCenterListener, DmsHandle {
+public class Control implements DmsClientListener, AppListener, ReportsListener, AudioCenterListener, DmsHandle {
 
 	private static final Map<String, Control> INSTANCES = Collections.synchronizedMap(new HashMap<String, Control>());
 
@@ -81,6 +83,8 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 	private final DmsPanel dmsPanel;
 	private final JFXPanel dmsPanelSwing;
+
+	private final ReportsDialog reportsDialog;
 
 	private final GroupSelectionHandle myActiveGroupsHandle;
 	private final ContactSelectionHandle onlineContactsHandle;
@@ -111,7 +115,10 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 			@Override
 			public void updateUI() {
 				super.updateUI();
-				Platform.runLater(() -> dmsPanel.updateUI());
+				Platform.runLater(() -> {
+					dmsPanel.updateUI();
+					reportsDialog.updateUI();
+				});
 			}
 
 		};
@@ -145,6 +152,12 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 		myActiveGroupsHandle = new MyActiveGroupsHandleImpl(dmsPanel.getMyActiveGroupsPanel());
 		onlineContactsHandle = new OnlineContactsHandleImpl(dmsPanel.getOnlineContactsPanel());
+
+		//
+
+		reportsDialog = new ReportsDialog(CommonMethods.getReportTemplates());
+
+		reportsDialog.addReportsListener(this);
 
 		//
 
@@ -1765,44 +1778,25 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 	}
 
 	@Override
-	public void contactMessagePaneOpened(final String uuid) {
+	public void messagePaneOpened(final String uuid, final ReceiverType receiverType) {
 
 		taskQueue.execute(() -> {
 
 			model.messagePaneOpened(uuid);
 
-			try {
+			switch (receiverType) {
 
-				List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(uuid);
+			case PRIVATE:
 
-				for (Message incomingMessage : messagesWaitingFromContact) {
+				contactMessagePaneOpened(uuid);
 
-					try {
+				break;
 
-						incomingMessage.setMessageStatus(MessageStatus.READ);
+			case GROUP:
 
-						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
+				groupMessagePaneOpened(uuid);
 
-						Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, uuid));
-
-						dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
-								newMessage.getMessageId(), MessageStatus.READ);
-
-					} catch (JsonSyntaxException | HibernateException e) {
-
-						e.printStackTrace();
-
-					}
-
-				}
-
-				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(uuid,
-						messagesWaitingFromContact.size() > 0 ? messagesWaitingFromContact.get(0).getId() : -1L,
-						ReceiverType.PRIVATE));
-
-			} catch (HibernateException e) {
-
-				e.printStackTrace();
+				break;
 
 			}
 
@@ -1810,8 +1804,92 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 	}
 
+	private void contactMessagePaneOpened(final String uuid) {
+
+		try {
+
+			List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(uuid);
+
+			for (Message incomingMessage : messagesWaitingFromContact) {
+
+				try {
+
+					incomingMessage.setMessageStatus(MessageStatus.READ);
+
+					final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
+
+					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, uuid));
+
+					dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
+							newMessage.getMessageId(), MessageStatus.READ);
+
+				} catch (JsonSyntaxException | HibernateException e) {
+
+					e.printStackTrace();
+
+				}
+
+			}
+
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(uuid,
+					messagesWaitingFromContact.size() > 0 ? messagesWaitingFromContact.get(0).getId() : -1L,
+					ReceiverType.PRIVATE));
+
+		} catch (HibernateException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	private void groupMessagePaneOpened(String groupUuid) {
+
+		try {
+
+			List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(model.getLocalUuid(),
+					groupUuid);
+
+			for (Message incomingMessage : messagesWaitingFromGroup) {
+
+				try {
+
+					incomingMessage.setMessageStatus(MessageStatus.READ);
+
+					final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
+
+					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
+
+					Dgroup group = model.getGroup(groupUuid);
+
+					if (group == null)
+						return;
+
+					dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
+							newMessage.getMessageId(), newMessage.getMessageStatus());
+
+				} catch (JsonSyntaxException | HibernateException e) {
+
+					e.printStackTrace();
+
+				}
+
+			}
+
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(groupUuid,
+					messagesWaitingFromGroup.size() > 0 ? messagesWaitingFromGroup.get(0).getId() : -1L,
+					ReceiverType.GROUP));
+
+		} catch (HibernateException e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
 	@Override
-	public void contactMessagePaneClosed(final String uuid) {
+	public void messagePaneClosed(final String uuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1822,22 +1900,24 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 	}
 
 	@Override
-	public void sendPrivateMessageClicked(final String messageTxt, final String receiverUuid) {
+	public void sendMessageClicked(final String messageTxt, final String receiverUuid,
+			final ReceiverType receiverType) {
 
 		taskQueue.execute(() -> {
 
-			try {
+			switch (receiverType) {
 
-				Message newMessage = createOutgoingMessage(messageTxt, receiverUuid, null, ReceiverType.PRIVATE,
-						MessageType.TEXT, null);
+			case PRIVATE:
 
-				addPrivateMessageToPane(newMessage, true);
+				sendPrivateMessageClicked(messageTxt, receiverUuid);
 
-				sendPrivateMessage(newMessage);
+				break;
 
-			} catch (Exception e) {
+			case GROUP:
 
-				e.printStackTrace();
+				sendGroupMessageClicked(messageTxt, receiverUuid);
+
+				break;
 
 			}
 
@@ -1845,40 +1925,119 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 	}
 
+	private void sendPrivateMessageClicked(final String messageTxt, final String receiverUuid) {
+
+		try {
+
+			Message newMessage = createOutgoingMessage(messageTxt, receiverUuid, null, ReceiverType.PRIVATE,
+					MessageType.TEXT, null);
+
+			addPrivateMessageToPane(newMessage, true);
+
+			sendPrivateMessage(newMessage);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
+	private void sendGroupMessageClicked(String messageTxt, String groupUuid) {
+
+		try {
+
+			Message newMessage = createOutgoingMessage(messageTxt, groupUuid,
+					createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.TEXT, null);
+
+			addGroupMessageToPane(newMessage, true);
+
+			sendGroupMessage(newMessage);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
+
 	@Override
-	public void privateShowFoldersClicked(String uuid) {
+	public void showFoldersClicked(final String uuid, final ReceiverType receiverType) {
 
 		taskQueue.execute(() -> {
 
-			model.setFileSelectionUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.PRIVATE, uuid));
+			model.setReferenceUuid(new SimpleEntry<ReceiverType, String>(receiverType, uuid));
 
 		});
 
 	}
 
 	@Override
-	public void contactPaneScrolledToTop(final String uuid) {
+	public void paneScrolledToTop(final String uuid, final ReceiverType receiverType) {
 
 		taskQueue.execute(() -> {
 
-			Long previousMinMessageId = model.getMinMessageId(uuid);
+			switch (receiverType) {
 
-			if (previousMinMessageId < 0)
-				return;
+			case PRIVATE:
 
-			List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(model.getLocalUuid(), uuid,
-					previousMinMessageId, MIN_MESSAGES_PER_PAGE);
+				contactPaneScrolledToTop(uuid);
 
-			if (lastMessagesBeforeId.size() == 0)
-				return;
+				break;
 
-			Platform.runLater(() -> dmsPanel.savePosition(uuid, previousMinMessageId, ReceiverType.PRIVATE));
+			case GROUP:
 
-			lastMessagesBeforeId.forEach(message -> addPrivateMessageToPane(message, false));
+				groupPaneScrolledToTop(uuid);
 
-			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(uuid, ReceiverType.PRIVATE));
+				break;
+
+			}
 
 		});
+
+	}
+
+	private void contactPaneScrolledToTop(final String uuid) {
+
+		Long previousMinMessageId = model.getMinMessageId(uuid);
+
+		if (previousMinMessageId < 0)
+			return;
+
+		List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(model.getLocalUuid(), uuid,
+				previousMinMessageId, MIN_MESSAGES_PER_PAGE);
+
+		if (lastMessagesBeforeId.size() == 0)
+			return;
+
+		Platform.runLater(() -> dmsPanel.savePosition(uuid, previousMinMessageId, ReceiverType.PRIVATE));
+
+		lastMessagesBeforeId.forEach(message -> addPrivateMessageToPane(message, false));
+
+		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(uuid, ReceiverType.PRIVATE));
+
+	}
+
+	private void groupPaneScrolledToTop(String groupUuid) {
+
+		Long previousMinMessageId = model.getMinMessageId(groupUuid);
+
+		if (previousMinMessageId < 0)
+			return;
+
+		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(groupUuid, previousMinMessageId,
+				MIN_MESSAGES_PER_PAGE);
+
+		if (lastMessagesBeforeId.size() == 0)
+			return;
+
+		Platform.runLater(() -> dmsPanel.savePosition(groupUuid, previousMinMessageId, ReceiverType.GROUP));
+
+		lastMessagesBeforeId.forEach(message -> addGroupMessageToPane(message, false));
+
+		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(groupUuid, ReceiverType.GROUP));
 
 	}
 
@@ -2066,135 +2225,11 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 	}
 
 	@Override
-	public void groupMessagePaneOpened(String groupUuid) {
-
-		taskQueue.execute(() -> {
-
-			model.messagePaneOpened(groupUuid);
-
-			try {
-
-				List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(model.getLocalUuid(),
-						groupUuid);
-
-				for (Message incomingMessage : messagesWaitingFromGroup) {
-
-					try {
-
-						incomingMessage.setMessageStatus(MessageStatus.READ);
-
-						final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
-
-						Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, groupUuid));
-
-						Dgroup group = model.getGroup(groupUuid);
-
-						if (group == null)
-							return;
-
-						dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
-								newMessage.getMessageId(), newMessage.getMessageStatus());
-
-					} catch (JsonSyntaxException | HibernateException e) {
-
-						e.printStackTrace();
-
-					}
-
-				}
-
-				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(groupUuid,
-						messagesWaitingFromGroup.size() > 0 ? messagesWaitingFromGroup.get(0).getId() : -1L,
-						ReceiverType.GROUP));
-
-			} catch (HibernateException e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void groupMessagePaneClosed(String groupUuid) {
-
-		taskQueue.execute(() -> {
-
-			model.messagePaneClosed(groupUuid);
-
-		});
-
-	}
-
-	@Override
-	public void sendGroupMessageClicked(String messageTxt, String groupUuid) {
-
-		taskQueue.execute(() -> {
-
-			try {
-
-				Message newMessage = createOutgoingMessage(messageTxt, groupUuid,
-						createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.TEXT, null);
-
-				addGroupMessageToPane(newMessage, true);
-
-				sendGroupMessage(newMessage);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void groupShowFoldersClicked(String groupUuid) {
-
-		taskQueue.execute(() -> {
-
-			model.setFileSelectionUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.GROUP, groupUuid));
-
-		});
-
-	}
-
-	@Override
-	public void groupPaneScrolledToTop(String groupUuid) {
-
-		taskQueue.execute(() -> {
-
-			Long previousMinMessageId = model.getMinMessageId(groupUuid);
-
-			if (previousMinMessageId < 0)
-				return;
-
-			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(groupUuid, previousMinMessageId,
-					MIN_MESSAGES_PER_PAGE);
-
-			if (lastMessagesBeforeId.size() == 0)
-				return;
-
-			Platform.runLater(() -> dmsPanel.savePosition(groupUuid, previousMinMessageId, ReceiverType.GROUP));
-
-			lastMessagesBeforeId.forEach(message -> addGroupMessageToPane(message, false));
-
-			Platform.runLater(() -> dmsPanel.scrollToSavedPosition(groupUuid, ReceiverType.GROUP));
-
-		});
-
-	}
-
-	@Override
 	public void showFoldersCanceled() {
 
 		taskQueue.execute(() -> {
 
-			model.setFileSelectionUuid(null);
+			model.setReferenceUuid(null);
 
 		});
 
@@ -2205,10 +2240,10 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 		taskQueue.execute(() -> {
 
-			Entry<ReceiverType, String> fileSelectionUuid = model.getFileSelectionUuid();
-			model.setFileSelectionUuid(null);
+			Entry<ReceiverType, String> referenceUuid = model.getReferenceUuid();
+			model.setReferenceUuid(null);
 
-			if (fileSelectionUuid == null)
+			if (referenceUuid == null)
 				return;
 
 			try {
@@ -2224,13 +2259,13 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 				// Now to the send operations
 
-				switch (fileSelectionUuid.getKey()) {
+				switch (referenceUuid.getKey()) {
 
 				case PRIVATE:
 
 				{
 
-					Message newMessage = createOutgoingMessage(dstFile.toString(), fileSelectionUuid.getValue(), null,
+					Message newMessage = createOutgoingMessage(dstFile.toString(), referenceUuid.getValue(), null,
 							ReceiverType.PRIVATE, MessageType.FILE, null);
 
 					addPrivateMessageToPane(newMessage, true);
@@ -2245,7 +2280,7 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 				{
 
-					String groupUuid = fileSelectionUuid.getValue();
+					String groupUuid = referenceUuid.getValue();
 
 					Message newMessage = createOutgoingMessage(dstFile.toString(), groupUuid,
 							createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.FILE,
@@ -2422,7 +2457,7 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 	}
 
 	@Override
-	public void privateRecordButtonPressed(final String uuid) {
+	public void recordButtonPressed(final String uuid, final ReceiverType receiverType) {
 
 		taskQueue.execute(() -> {
 
@@ -2430,32 +2465,9 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 				audioCenter.prepareRecording();
 
-				model.setRecordUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.PRIVATE, uuid));
+				model.setReferenceUuid(new SimpleEntry<ReceiverType, String>(receiverType, uuid));
 
-				Platform.runLater(() -> dmsPanel.recordingStarted(uuid, ReceiverType.PRIVATE));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void groupRecordButtonPressed(final String groupUuid) {
-
-		taskQueue.execute(() -> {
-
-			try {
-
-				audioCenter.prepareRecording();
-
-				model.setRecordUuid(new SimpleEntry<ReceiverType, String>(ReceiverType.GROUP, groupUuid));
-
-				Platform.runLater(() -> dmsPanel.recordingStarted(groupUuid, ReceiverType.GROUP));
+				Platform.runLater(() -> dmsPanel.recordingStarted(uuid, receiverType));
 
 			} catch (Exception e) {
 
@@ -2472,9 +2484,9 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 		taskQueue.execute(() -> {
 
-			Entry<ReceiverType, String> recordUuid = model.getRecordUuid();
+			Entry<ReceiverType, String> referenceUuid = model.getReferenceUuid();
 
-			if (recordUuid == null)
+			if (referenceUuid == null)
 				return;
 
 			try {
@@ -2485,7 +2497,7 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 				Path dstFile = getDstFile(dstFolder, fileName);
 
-				audioCenter.startRecording(new RecordObject(dstFile, recordUuid.getValue(), recordUuid.getKey()));
+				audioCenter.startRecording(new RecordObject(dstFile, referenceUuid.getValue(), referenceUuid.getKey()));
 
 			} catch (Exception e) {
 
@@ -2504,19 +2516,19 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 			audioCenter.stopRecording();
 
-			Entry<ReceiverType, String> recordUuid = model.getRecordUuid();
-			model.setRecordUuid(null);
+			Entry<ReceiverType, String> referenceUuid = model.getReferenceUuid();
+			model.setReferenceUuid(null);
 
-			if (recordUuid == null)
+			if (referenceUuid == null)
 				return;
 
-			switch (recordUuid.getKey()) {
+			switch (referenceUuid.getKey()) {
 
 			case PRIVATE:
 
 			{
 
-				String uuid = recordUuid.getValue();
+				String uuid = referenceUuid.getValue();
 
 				Platform.runLater(() -> dmsPanel.recordingStopped(uuid, ReceiverType.PRIVATE));
 
@@ -2528,7 +2540,7 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 
 			{
 
-				String groupUuid = recordUuid.getValue();
+				String groupUuid = referenceUuid.getValue();
 
 				Platform.runLater(() -> dmsPanel.recordingStopped(groupUuid, ReceiverType.GROUP));
 
@@ -2613,6 +2625,52 @@ public class Control implements DmsClientListener, AppListener, AudioCenterListe
 				e.printStackTrace();
 
 			}
+
+		});
+
+	}
+
+	@Override
+	public void reportClicked(final String uuid, final ReceiverType receiverType) {
+
+		taskQueue.execute(() -> {
+
+			model.setReferenceUuid(new SimpleEntry<ReceiverType, String>(receiverType, uuid));
+
+			Platform.runLater(() -> reportsDialog.display());
+
+		});
+
+	}
+
+	@Override
+	public void sendClicked(String reportHeading, String reportBody) {
+
+		taskQueue.execute(() -> {
+
+			Platform.runLater(() -> reportsDialog.hideAndReset());
+
+			Entry<ReceiverType, String> referenceUuid = model.getReferenceUuid();
+			model.setReferenceUuid(null);
+
+			if (referenceUuid == null)
+				return;
+
+			System.out.println(reportHeading);
+			System.out.println(reportBody);
+
+		});
+
+	}
+
+	@Override
+	public void cancelClicked() {
+
+		taskQueue.execute(() -> {
+
+			Platform.runLater(() -> reportsDialog.hideAndReset());
+
+			model.setReferenceUuid(null);
 
 		});
 

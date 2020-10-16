@@ -37,9 +37,7 @@ public class Model {
 
 	private final AtomicLong detailedGroupMessageId = new AtomicLong();
 
-	private final AtomicReference<Entry<ReceiverType, String>> fileSelectionUuid = new AtomicReference<Entry<ReceiverType, String>>();
-
-	private final AtomicReference<Entry<ReceiverType, String>> recordUuid = new AtomicReference<Entry<ReceiverType, String>>();
+	private final AtomicReference<Entry<ReceiverType, String>> referenceUuid = new AtomicReference<Entry<ReceiverType, String>>();
 
 	private final Map<Long, Map<String, Integer>> groupMessageProgresses = Collections
 			.synchronizedMap(new HashMap<Long, Map<String, Integer>>());
@@ -217,27 +215,15 @@ public class Model {
 
 	}
 
-	public void setFileSelectionUuid(Entry<ReceiverType, String> entry) {
+	public void setReferenceUuid(Entry<ReceiverType, String> entry) {
 
-		fileSelectionUuid.set(entry);
-
-	}
-
-	public Entry<ReceiverType, String> getFileSelectionUuid() {
-
-		return fileSelectionUuid.get();
+		referenceUuid.set(entry);
 
 	}
 
-	public void setRecordUuid(Entry<ReceiverType, String> entry) {
+	public Entry<ReceiverType, String> getReferenceUuid() {
 
-		recordUuid.set(entry);
-
-	}
-
-	public Entry<ReceiverType, String> getRecordUuid() {
-
-		return recordUuid.get();
+		return referenceUuid.get();
 
 	}
 
