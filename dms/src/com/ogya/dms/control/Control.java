@@ -2644,7 +2644,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	}
 
 	@Override
-	public void sendClicked(String reportHeading, String reportBody) {
+	public void sendReportClicked(String reportHeading, String reportBody) {
 
 		taskQueue.execute(() -> {
 
@@ -2656,15 +2656,84 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 			if (referenceUuid == null)
 				return;
 
-			System.out.println(reportHeading);
-			System.out.println(reportBody);
+			try {
+
+				String fileName = String.format("%s_%s.pdf", reportHeading,
+						CommonConstants.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
+				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+
+				Path dstFile = getDstFile(dstFolder, fileName);
+
+				CommonMethods.writeReport(dstFile, reportHeading, reportBody);
+
+				boolean writeSuccessful = dstFile != null && Files.exists(dstFile);
+
+				if (!writeSuccessful)
+					return;
+
+				try {
+
+					switch (referenceUuid.getKey()) {
+
+					case PRIVATE:
+
+					{
+
+						String uuid = referenceUuid.getValue();
+
+						Message newMessage = createOutgoingMessage(dstFile.toString(), uuid, null, ReceiverType.PRIVATE,
+								MessageType.FILE, null);
+
+						addPrivateMessageToPane(newMessage, true);
+
+						sendPrivateMessage(newMessage);
+
+						break;
+
+					}
+
+					case GROUP:
+
+					{
+
+						String groupUuid = referenceUuid.getValue();
+
+						Message newMessage = createOutgoingMessage(dstFile.toString(), groupUuid,
+								createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.FILE,
+								null);
+
+						addGroupMessageToPane(newMessage, true);
+
+						sendGroupMessage(newMessage);
+
+						break;
+
+					}
+
+					default:
+
+						break;
+
+					}
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
 	}
 
 	@Override
-	public void cancelClicked() {
+	public void cancelReportClicked() {
 
 		taskQueue.execute(() -> {
 

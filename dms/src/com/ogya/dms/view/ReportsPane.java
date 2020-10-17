@@ -107,7 +107,7 @@ public class ReportsPane extends GridPane {
 		GridPane.setHalignment(cancelBtn, HPos.RIGHT);
 		GridPane.setValignment(cancelBtn, VPos.TOP);
 
-		cancelBtn.setOnAction(e -> reportListeners.forEach(listener -> listener.cancelClicked()));
+		cancelBtn.setOnAction(e -> reportListeners.forEach(listener -> listener.cancelReportClicked()));
 
 	}
 
@@ -126,8 +126,9 @@ public class ReportsPane extends GridPane {
 
 		sendBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
-		sendBtn.setOnAction(e -> reportListeners.forEach(listener -> listener.sendClicked(reportsComboBox.getValue(),
-				reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getText())));
+		sendBtn.setOnAction(
+				e -> reportListeners.forEach(listener -> listener.sendReportClicked(reportsComboBox.getValue(),
+						reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getText())));
 
 	}
 
@@ -161,9 +162,9 @@ public class ReportsPane extends GridPane {
 
 	public static interface ReportsListener {
 
-		void sendClicked(String reportHeading, String reportBody);
+		void sendReportClicked(String reportHeading, String reportBody);
 
-		void cancelClicked();
+		void cancelReportClicked();
 
 	}
 

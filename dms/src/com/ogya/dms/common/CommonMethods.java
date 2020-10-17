@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,6 +12,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -21,6 +23,11 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
@@ -87,8 +94,6 @@ public class CommonMethods {
 				if (Files.isDirectory(path) || !path.toString().toLowerCase().endsWith(".txt"))
 					return;
 
-				System.out.println(path);
-
 				try (Reader reader = Files.newBufferedReader(path)) {
 
 					StringBuilder stringBuilder = new StringBuilder();
@@ -118,6 +123,72 @@ public class CommonMethods {
 		}
 
 		return templates;
+
+	}
+
+	public static void writeReport(Path path, String header, String body) {
+
+		try (Scanner scanner = new Scanner(body); PDDocument document = new PDDocument()) {
+
+			PDFont font = PDType0Font.load(document,
+					CommonMethods.class.getResourceAsStream("/resources/font/arial.ttf"));
+
+			final float fontSize = 12f;
+
+			final float lineWidth = 500f;
+
+			List<String> lines = new ArrayList<String>();
+
+			lines.addAll(splitParagraph(header, lineWidth, font, fontSize));
+
+			lines.add("");
+
+			while (scanner.hasNextLine()) {
+
+				lines.addAll(splitParagraph(scanner.nextLine().replaceAll("\t", "    "), lineWidth, font, fontSize));
+
+			}
+
+			for (int j = 0; j < lines.size(); j += 30) {
+
+				PDPage page = new PDPage();
+
+				document.addPage(page);
+
+				try (PDPageContentStream pageContentStream = new PDPageContentStream(document, page)) {
+
+					pageContentStream.setFont(font, fontSize);
+
+					pageContentStream.setLeading(21f);
+
+					pageContentStream.beginText();
+
+					pageContentStream.newLineAtOffset(50, 700);
+
+					for (int i = j; i < j + 30 && i < lines.size(); ++i) {
+
+						pageContentStream.showText(lines.get(i));
+						pageContentStream.newLine();
+
+					}
+
+					pageContentStream.endText();
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			}
+
+			document.save(path.toFile());
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -327,6 +398,77 @@ public class CommonMethods {
 		}
 
 		return confDoc;
+
+	}
+
+	private static List<String> splitParagraph(String paragraph, float lineWidth, PDFont font, float fontSize) {
+
+		final String space = " ";
+
+		String[] words = paragraph.split(space);
+
+		List<String> lines = new ArrayList<String>();
+
+		StringBuffer lineBuffer = new StringBuffer();
+
+		for (String word : words) {
+
+			try {
+
+				if (getStringWidth(word, font, fontSize) > lineWidth) {
+
+					for (int index = 0; index < word.length(); ++index) {
+
+						char chr = word.charAt(index);
+
+						if (getStringWidth(lineBuffer.toString() + chr, font, fontSize) > lineWidth) {
+
+							lines.add(lineBuffer.toString());
+
+							lineBuffer.delete(0, lineBuffer.length());
+
+						}
+
+						lineBuffer.append(chr);
+
+					}
+
+					lineBuffer.append(space);
+
+					continue;
+
+				}
+
+				if (getStringWidth(lineBuffer.toString() + word, font, fontSize) > lineWidth) {
+
+					lines.add(lineBuffer.toString());
+
+					lineBuffer.delete(0, lineBuffer.length());
+
+				}
+
+				if (lineBuffer.length() == 0 && word.isEmpty())
+					continue;
+
+				lineBuffer.append(word);
+				lineBuffer.append(space);
+
+			} catch (IOException e) {
+
+			}
+
+		}
+
+		if (lineBuffer.length() > 0)
+			lines.add(lineBuffer.toString());
+
+		return lines;
+
+	}
+
+	private static float getStringWidth(String str, PDFont font, float fontSize) throws IOException {
+
+		return font.getStringWidth(str) * fontSize / 1000;
 
 	}
 
