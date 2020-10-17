@@ -447,7 +447,7 @@ public class CommonMethods {
 
 				}
 
-				if (lineBuffer.length() == 0 && word.isEmpty())
+				if (word.isEmpty() && lineBuffer.length() == 0 && lines.size() > 0)
 					continue;
 
 				lineBuffer.append(word);
