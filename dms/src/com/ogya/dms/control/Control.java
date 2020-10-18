@@ -834,10 +834,6 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			break;
 
-		default:
-
-			break;
-
 		}
 
 	}
@@ -1444,6 +1440,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
 				switch (newMessage.getReceiverType()) {
+
 				case PRIVATE:
 
 					privateMessageReceived(newMessage);
