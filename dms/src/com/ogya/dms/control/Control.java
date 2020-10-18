@@ -775,21 +775,6 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			break;
 
-		case UPDATE:
-
-			if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_CANCEL_MESSAGE)) {
-
-				Long messageId = Long.parseLong(message.getContent());
-
-				Message dbMessage = dbManager.getMessage(message.getSenderUuid(), messageId);
-
-				if (dbMessage != null)
-					cancelMessage(dbMessage);
-
-			}
-
-			break;
-
 		default:
 
 			break;
@@ -810,7 +795,34 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			break;
 
-		case UPDATE:
+		default:
+
+			break;
+
+		}
+
+	}
+
+	private void updateMessageReceived(Message message) throws Exception {
+
+		switch (message.getReceiverType()) {
+
+		case PRIVATE:
+
+			if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_CANCEL_MESSAGE)) {
+
+				Long messageId = Long.parseLong(message.getContent());
+
+				Message dbMessage = dbManager.getMessage(message.getSenderUuid(), messageId);
+
+				if (dbMessage != null)
+					cancelMessage(dbMessage);
+
+			}
+
+			break;
+
+		case GROUP:
 
 			if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_UPDATE_GROUP)) {
 
@@ -1425,6 +1437,9 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				}
 
 				incomingMessage.setWaitStatus(messageToBeRedirected ? WaitStatus.WAITING : WaitStatus.DONE);
+
+				if (Objects.equals(incomingMessage.getMessageType(), MessageType.UPDATE))
+					updateMessageReceived(incomingMessage);
 
 				Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
