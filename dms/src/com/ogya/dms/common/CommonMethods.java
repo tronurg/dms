@@ -8,8 +8,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Scanner;
@@ -63,6 +66,49 @@ public class CommonMethods {
 		}
 
 	}).create();
+
+	private static final Map<String, String> genericConversionMap = new HashMap<String, String>();
+	private static final Map<String, Map<String, String>> customConversionMap = new HashMap<String, Map<String, String>>();
+
+	static {
+
+		try (Reader reader = Files.newBufferedReader(Paths.get("./plugins/dms/dictionary/dictionary.properties"))) {
+
+			Properties dictionary = new Properties();
+
+			dictionary.load(reader);
+
+			dictionary.stringPropertyNames().forEach(key -> {
+
+				int indexOfDot = key.indexOf('.');
+
+				String convertedName = dictionary.getProperty(key);
+
+				if (indexOfDot < 0) {
+
+					genericConversionMap.put(key, convertedName);
+
+				} else {
+
+					String className = key.substring(0, indexOfDot);
+
+					String fieldName = key.substring(indexOfDot);
+
+					customConversionMap.putIfAbsent(className, new HashMap<String, String>());
+
+					customConversionMap.get(className).put(fieldName, convertedName);
+
+				}
+
+			});
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+	}
 
 	public static ExecutorService newSingleThreadExecutorService() {
 
@@ -203,6 +249,44 @@ public class CommonMethods {
 		}
 
 		return arg0;
+
+	}
+
+	public static String convertListJsonToCommon(String listJson, String className) {
+
+		Map<String, String> dictionary = new HashMap<String, String>(genericConversionMap);
+
+		if (customConversionMap.containsKey(className))
+			dictionary.putAll(customConversionMap.get(className));
+
+		for (String key : dictionary.keySet()) {
+
+			String value = dictionary.get(key);
+
+			listJson = listJson.replaceAll(String.format("\"%s\":", key), String.format("\"%s\":", value));
+
+		}
+
+		return listJson;
+
+	}
+
+	public static String convertListJsonFromCommon(String commonJson, String className) {
+
+		Map<String, String> dictionary = new HashMap<String, String>(genericConversionMap);
+
+		if (customConversionMap.containsKey(className))
+			dictionary.putAll(customConversionMap.get(className));
+
+		for (String key : dictionary.keySet()) {
+
+			String value = dictionary.get(key);
+
+			commonJson = commonJson.replaceAll(String.format("\"%s\":", value), String.format("\"%s\":", key));
+
+		}
+
+		return commonJson;
 
 	}
 

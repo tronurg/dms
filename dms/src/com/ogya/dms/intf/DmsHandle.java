@@ -41,6 +41,10 @@ public interface DmsHandle {
 
 	boolean sendObjectToGroup(Object object, Integer objectCode, String groupUuid);
 
+	<T> boolean sendListToContacts(List<T> list, Class<T> elementType, Integer listCode, List<String> contactUuids);
+
+	<T> boolean sendListToGroup(List<T> list, Class<T> elementType, Integer listCode, String groupUuid);
+
 	boolean sendFileToContacts(Path path, Integer fileCode, List<String> contactUuids);
 
 	boolean sendFileToGroup(Path path, Integer fileCode, String groupUuid);

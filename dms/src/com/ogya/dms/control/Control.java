@@ -47,6 +47,7 @@ import com.ogya.dms.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.intf.handles.impl.FileHandleImpl;
 import com.ogya.dms.intf.handles.impl.GroupHandleImpl;
+import com.ogya.dms.intf.handles.impl.ListHandleImpl;
 import com.ogya.dms.intf.handles.impl.MessageHandleImpl;
 import com.ogya.dms.intf.handles.impl.MyActiveGroupsHandleImpl;
 import com.ogya.dms.intf.handles.impl.ObjectHandleImpl;
@@ -1704,6 +1705,18 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 					break;
 
+				case LIST:
+
+					final ListHandleImpl listHandle = new ListHandleImpl(incomingMessage.getMessageCode(),
+							incomingMessage.getContent(), incomingMessage.getOwnerUuid(),
+							Objects.equals(incomingMessage.getReceiverType(), ReceiverType.GROUP)
+									? incomingMessage.getReceiverUuid()
+									: null);
+
+					dmsListeners.forEach(listener -> listener.listReceived(listHandle));
+
+					break;
+
 				default:
 
 					break;
@@ -2767,7 +2780,19 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	@Override
 	public void addListener(DmsListener listener) {
 
-		dmsListeners.add(listener);
+		taskQueue.execute(() -> {
+
+			dmsListeners.add(listener);
+
+			model.getContacts().forEach((uuid, contact) -> {
+
+				listener.contactUpdated(
+						new ContactHandleImpl(uuid, contact.getName(), contact.getComment(), contact.getLattitude(),
+								contact.getLongitude(), !Objects.equals(contact.getStatus(), Availability.OFFLINE)));
+
+			});
+
+		});
 
 	}
 
@@ -2922,7 +2947,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		if (!model.isServerConnected())
 			return false;
 
-		Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.TEXT,
+		Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.OBJECT,
 				CommonMethods.toJson(object));
 
 		outgoingMessage.setMessageCode(objectCode);
@@ -2944,10 +2969,54 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		if (group == null)
 			return false;
 
-		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.TEXT,
+		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.OBJECT,
 				CommonMethods.toJson(object));
 
 		outgoingMessage.setMessageCode(objectCode);
+
+		List<String> contactUuids = new ArrayList<String>();
+
+		group.getContacts().forEach(contact -> contactUuids.add(contact.getUuid()));
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		return true;
+
+	}
+
+	@Override
+	public <T> boolean sendListToContacts(List<T> list, Class<T> elementType, Integer listCode,
+			List<String> contactUuids) {
+
+		if (!model.isServerConnected())
+			return false;
+
+		Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.LIST,
+				CommonMethods.convertListJsonToCommon(CommonMethods.toJson(list), elementType.getSimpleName()));
+
+		outgoingMessage.setMessageCode(listCode);
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
+
+		return true;
+
+	}
+
+	@Override
+	public <T> boolean sendListToGroup(List<T> list, Class<T> elementType, Integer listCode, String groupUuid) {
+
+		if (!model.isServerConnected())
+			return false;
+
+		Dgroup group = model.getGroup(groupUuid);
+
+		if (group == null)
+			return false;
+
+		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.LIST,
+				CommonMethods.convertListJsonToCommon(CommonMethods.toJson(list), elementType.getSimpleName()));
+
+		outgoingMessage.setMessageCode(listCode);
 
 		List<String> contactUuids = new ArrayList<String>();
 
