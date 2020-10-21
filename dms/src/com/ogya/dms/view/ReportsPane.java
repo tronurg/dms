@@ -3,6 +3,7 @@ package com.ogya.dms.view;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,8 +23,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
+import javafx.scene.layout.VBox;
 
 public class ReportsPane extends GridPane {
 
@@ -128,7 +128,7 @@ public class ReportsPane extends GridPane {
 
 		sendBtn.setOnAction(
 				e -> reportListeners.forEach(listener -> listener.sendReportClicked(reportsComboBox.getValue(),
-						reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getText())));
+						reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getParagraphs())));
 
 	}
 
@@ -162,7 +162,7 @@ public class ReportsPane extends GridPane {
 
 	public static interface ReportsListener {
 
-		void sendReportClicked(String reportHeading, String reportBody);
+		void sendReportClicked(String reportHeading, List<String> reportParagraphs);
 
 		void cancelReportClicked();
 
@@ -176,7 +176,7 @@ public class ReportsPane extends GridPane {
 			public void requestFocus() {
 			}
 		};
-		private final TextFlow preview = new TextFlow();
+		private final VBox preview = new VBox();
 		private final ScrollPane previewScrollPane = new ScrollPane(preview) {
 			@Override
 			public void requestFocus() {
@@ -184,7 +184,7 @@ public class ReportsPane extends GridPane {
 		};
 
 		private final List<TextField> textFields = Collections.synchronizedList(new ArrayList<TextField>());
-		private final List<Text> texts = Collections.synchronizedList(new ArrayList<Text>());
+		private final List<List<Label>> lines = Collections.synchronizedList(new ArrayList<List<Label>>());
 
 		private ReportPane(String templateBody) {
 
@@ -215,56 +215,84 @@ public class ReportsPane extends GridPane {
 
 		private void fillTemplate(String templateBody) {
 
-			Matcher matcher = Pattern.compile("<.*?>").matcher(templateBody);
+			int valuesLine = 0;
 
-			int regionStart = 0;
-			int line = 0;
+			try (Scanner scanner = new Scanner(templateBody)) {
 
-			while (matcher.find()) {
+				while (scanner.hasNextLine()) {
 
-				if (regionStart < matcher.start()) {
-					Text text = new Text(templateBody.substring(regionStart, matcher.start()));
-					texts.add(text);
-					preview.getChildren().add(text);
+					String lineStr = scanner.nextLine().replaceAll("\t", "    ");
+					List<Label> words = new ArrayList<Label>();
+					lines.add(words);
+
+					HBox lineBox = new HBox();
+					preview.getChildren().add(lineBox);
+
+					Matcher matcher = Pattern.compile("<.*?>").matcher(lineStr);
+
+					int regionStart = 0;
+
+					while (matcher.find()) {
+
+						if (regionStart < matcher.start()) {
+							Label word = new Label(lineStr.substring(regionStart, matcher.start()));
+							words.add(word);
+							lineBox.getChildren().add(word);
+						}
+
+						Label word = new Label();
+						words.add(word);
+						lineBox.getChildren().add(word);
+
+						String tag = matcher.group();
+
+						Label label = new Label(tag.substring(1, tag.length() - 1));
+						TextField textField = new TextField();
+						textField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
+						textFields.add(textField);
+
+						word.textProperty().bind(textField.textProperty());
+
+						valuesPane.add(label, 0, valuesLine, 1, 1);
+						valuesPane.add(new Label(":"), 1, valuesLine, 1, 1);
+						valuesPane.add(textField, 2, valuesLine, 1, 1);
+						++valuesLine;
+
+						regionStart = matcher.end();
+
+					}
+
+					if (regionStart < templateBody.length()) {
+						Label word = new Label(lineStr.substring(regionStart));
+						words.add(word);
+						lineBox.getChildren().add(word);
+					}
+
 				}
 
-				Text text = new Text();
-				texts.add(text);
-				preview.getChildren().add(text);
-
-				String tag = matcher.group();
-
-				Label label = new Label(tag.substring(1, tag.length() - 1));
-				TextField textField = new TextField();
-				textField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
-				textFields.add(textField);
-
-				text.textProperty().bind(textField.textProperty());
-
-				valuesPane.add(label, 0, line, 1, 1);
-				valuesPane.add(new Label(":"), 1, line, 1, 1);
-				valuesPane.add(textField, 2, line, 1, 1);
-				++line;
-
-				regionStart = matcher.end();
-
-			}
-
-			if (regionStart < templateBody.length()) {
-				Text text = new Text(templateBody.substring(regionStart));
-				texts.add(text);
-				preview.getChildren().add(text);
 			}
 
 		}
 
-		private String getText() {
+		private List<String> getParagraphs() {
 
-			final StringBuilder stringBuilder = new StringBuilder();
+			List<String> paragraphs = new ArrayList<String>();
 
-			texts.forEach(text -> stringBuilder.append(text.getText()));
+			lines.forEach(line -> {
 
-			return stringBuilder.toString();
+				StringBuilder stringBuilder = new StringBuilder();
+
+				line.forEach(word -> {
+
+					stringBuilder.append(word.getText());
+
+				});
+
+				paragraphs.add(stringBuilder.toString());
+
+			});
+
+			return paragraphs;
 
 		}
 

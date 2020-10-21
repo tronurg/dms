@@ -2676,7 +2676,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	}
 
 	@Override
-	public void sendReportClicked(String reportHeading, String reportBody) {
+	public void sendReportClicked(String reportHeading, List<String> reportParagraphs) {
 
 		taskQueue.execute(() -> {
 
@@ -2696,7 +2696,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Path dstFile = getDstFile(dstFolder, fileName);
 
-				CommonMethods.writeReport(dstFile, reportHeading, reportBody);
+				CommonMethods.writeReport(dstFile, reportHeading, reportParagraphs);
 
 				boolean writeSuccessful = dstFile != null && Files.exists(dstFile);
 

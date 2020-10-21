@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
-import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -150,9 +149,9 @@ public class CommonMethods {
 
 	}
 
-	public static void writeReport(Path path, String header, String body) {
+	public static void writeReport(Path path, String header, List<String> paragraphs) {
 
-		try (Scanner scanner = new Scanner(body); PDDocument document = new PDDocument()) {
+		try (PDDocument document = new PDDocument()) {
 
 			PDFont font = PDType0Font.load(document,
 					CommonMethods.class.getResourceAsStream("/resources/font/arial.ttf"));
@@ -167,11 +166,7 @@ public class CommonMethods {
 
 			lines.add("");
 
-			while (scanner.hasNextLine()) {
-
-				lines.addAll(splitParagraph(scanner.nextLine().replaceAll("\t", "    "), lineWidth, font, fontSize));
-
-			}
+			paragraphs.forEach(paragraph -> lines.addAll(splitParagraph(paragraph, lineWidth, font, fontSize)));
 
 			for (int j = 0; j < lines.size(); j += 30) {
 
