@@ -4,9 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
-import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -21,16 +22,11 @@ import org.osgi.service.component.annotations.Reference;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.DmsService;
 import com.ogya.dms.intf.exceptions.DbException;
-import com.ogya.dms.intf.handles.ContactHandle;
 import com.ogya.dms.intf.handles.ContactSelectionHandle;
-import com.ogya.dms.intf.handles.FileHandle;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
-import com.ogya.dms.intf.handles.MessageHandle;
-import com.ogya.dms.intf.handles.ObjectHandle;
-import com.ogya.dms.intf.listeners.DmsListener;
 
 @Component(immediate = true)
-public class DmsTest implements DmsListener {
+public class DmsTest {
 
 	private DmsService dmsService;
 
@@ -60,7 +56,7 @@ public class DmsTest implements DmsListener {
 
 			DmsHandle handle = dmsService.login("elma", "elma");
 
-			handle.addListener(this);
+			handle.addListener(new DmsListenerImpl(handle));
 
 			JComponent mcPanel = handle.getDmsPanel();
 
@@ -105,23 +101,27 @@ public class DmsTest implements DmsListener {
 
 			DmsHandle handle = dmsService.login("armut", "armut");
 
-			handle.addListener(this);
+			handle.addListener(new DmsListenerImpl(handle));
 
 			GroupSelectionHandle gsh = handle.getMyActiveGroupsHandle();
 
-			JComponent mcPanel = handle.getDmsPanel();
-//			JComponent mcPanel = gsh.getGroupSelectionPanel();
-//			JButton btn = new JButton("test");
-//			btn.addActionListener(e -> {
-//
-//				GroupHandle gh = handle.getGroupHandle(gsh.getSelectedGroupUuid());
-//
-//				if (gh != null)
-//					System.out.println(handle.getGroupHandle(gsh.getSelectedGroupUuid()).getName());
-//
-//				gsh.resetSelection();
-//
-//			});
+//			JComponent mcPanel = handle.getDmsPanel();
+			JComponent mcPanel = gsh.getGroupSelectionPanel();
+			JButton btn = new JButton("test");
+			btn.addActionListener(e -> {
+
+				TestPojo testPojo = new TestPojo();
+				List<TestPojo> testList = new ArrayList<TestPojo>();
+				testList.add(testPojo);
+
+//				handle.sendMessageToGroup("hello group!", 1, gsh.getSelectedGroupUuid());
+//				handle.sendObjectToGroup(testPojo, 1, gsh.getSelectedGroupUuid());
+				handle.sendListToGroup(testList, TestPojo.class, 1, gsh.getSelectedGroupUuid());
+//				handle.sendFileToGroup(Paths.get("D:/test.txt"), 1, gsh.getSelectedGroupUuid());
+
+				gsh.resetSelection();
+
+			});
 
 			new Thread(() -> {
 
@@ -143,7 +143,7 @@ public class DmsTest implements DmsListener {
 
 			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(mcPanel, BorderLayout.CENTER);
-//			panel.add(btn, BorderLayout.SOUTH);
+			panel.add(btn, BorderLayout.SOUTH);
 
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);
@@ -161,28 +161,34 @@ public class DmsTest implements DmsListener {
 
 			DmsHandle handle = dmsService.login("kiraz", "kiraz");
 
-			handle.addListener(this);
+			handle.addListener(new DmsListenerImpl(handle));
 
 			ContactSelectionHandle csh = handle.getOnlineContactsHandle();
 
-			JComponent mcPanel = handle.getDmsPanel();
-//			JComponent mcPanel = csh.getContactSelectionPanel();
-//			JButton btn = new JButton("test");
-//			btn.addActionListener(e -> {
-//
-//				csh.getSelectedContactUuids()
-//						.forEach(uuid -> System.out.println(handle.getContactHandle(uuid).getName()));
-//
-//				csh.resetSelection();
-//
-//			});
+//			JComponent mcPanel = handle.getDmsPanel();
+			JComponent mcPanel = csh.getContactSelectionPanel();
+			JButton btn = new JButton("test");
+			btn.addActionListener(e -> {
+
+				TestPojo testPojo = new TestPojo();
+				List<TestPojo> testList = new ArrayList<TestPojo>();
+				testList.add(testPojo);
+
+//				handle.sendMessageToContacts("hello contact!", 1, csh.getSelectedContactUuids());
+//				handle.sendObjectToContacts(testPojo, 1, csh.getSelectedContactUuids());
+				handle.sendListToContacts(testList, TestPojo.class, 1, csh.getSelectedContactUuids());
+//				handle.sendFileToContacts(Paths.get("D:/test.txt"), 1, csh.getSelectedContactUuids());
+
+				csh.resetSelection();
+
+			});
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(mcPanel, BorderLayout.CENTER);
-//			panel.add(btn, BorderLayout.SOUTH);
+			panel.add(btn, BorderLayout.SOUTH);
 
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);
@@ -222,7 +228,7 @@ public class DmsTest implements DmsListener {
 
 						DmsHandle handle = dmsService.login(textField.getText(), textField.getText());
 
-						handle.addListener(DmsTest.this);
+						handle.addListener(new DmsListenerImpl(handle));
 
 						JComponent mcPanel = handle.getDmsPanel();
 
@@ -253,46 +259,6 @@ public class DmsTest implements DmsListener {
 		frame.pack();
 		frame.setLocationRelativeTo(null);
 		SwingUtilities.invokeLater(() -> frame.setVisible(true));
-
-	}
-
-	@Override
-	public void fileClicked(Path file) {
-
-		try {
-
-			new ProcessBuilder().directory(file.getParent().toFile())
-					.command("cmd", "/C", file.getFileName().toString()).start();
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
-
-	}
-
-	@Override
-	public void messageReceived(MessageHandle messageHandle) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void objectReceived(ObjectHandle objectHandle) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void fileReceived(FileHandle fileHandle) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void contactUpdated(ContactHandle contactHandle) {
-		// TODO Auto-generated method stub
 
 	}
 

@@ -92,7 +92,7 @@ public class CommonMethods {
 
 					String className = key.substring(0, indexOfDot);
 
-					String fieldName = key.substring(indexOfDot);
+					String fieldName = key.substring(indexOfDot + 1);
 
 					customConversionMap.putIfAbsent(className, new HashMap<String, String>());
 
