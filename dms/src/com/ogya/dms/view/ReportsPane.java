@@ -278,11 +278,11 @@ public class ReportsPane extends GridPane {
 
 			List<String> paragraphs = new ArrayList<String>();
 
-			lines.forEach(line -> {
+			lines.forEach(words -> {
 
 				StringBuilder stringBuilder = new StringBuilder();
 
-				line.forEach(word -> {
+				words.forEach(word -> {
 
 					stringBuilder.append(word.getText());
 
