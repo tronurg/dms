@@ -12,9 +12,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.MulticastManagerListener;
+import com.ogya.dms.server.factory.DmsFactory;
 
 public class MulticastManager {
 
@@ -32,7 +32,7 @@ public class MulticastManager {
 
 	private final BlockingQueue<DatagramPacket> receiveQueue = new LinkedBlockingQueue<DatagramPacket>();
 
-	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	public MulticastManager(String multicastGroup, int multicastPort, MulticastManagerListener listener) {
 

@@ -14,6 +14,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.TargetDataLine;
 
+import com.ogya.dms.factory.DmsFactory;
 import com.ogya.dms.structures.ReceiverType;
 
 public class AudioCenter {
@@ -26,7 +27,7 @@ public class AudioCenter {
 	private final List<AudioCenterListener> listeners = Collections
 			.synchronizedList(new ArrayList<AudioCenterListener>());
 
-	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	public AudioCenter() {
 

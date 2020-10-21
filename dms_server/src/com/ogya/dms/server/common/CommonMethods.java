@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -22,25 +19,6 @@ import org.xml.sax.SAXException;
 public class CommonMethods {
 
 	private static Document confDoc;
-
-	public static ExecutorService newSingleThreadExecutorService() {
-
-		return Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-			@Override
-			public Thread newThread(Runnable arg0) {
-
-				Thread thread = new Thread(arg0);
-
-				thread.setDaemon(true);
-
-				return thread;
-
-			}
-
-		});
-
-	}
 
 	static int getIntercomPort() {
 

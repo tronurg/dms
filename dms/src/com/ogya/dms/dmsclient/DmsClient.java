@@ -9,10 +9,10 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.google.gson.Gson;
-import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
+import com.ogya.dms.factory.DmsFactory;
 import com.ogya.dms.structures.MessageStatus;
 
 public class DmsClient {
@@ -30,7 +30,7 @@ public class DmsClient {
 
 	private final Gson gson = new Gson();
 
-	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 

@@ -16,9 +16,6 @@ import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -107,25 +104,6 @@ public class CommonMethods {
 			e.printStackTrace();
 
 		}
-
-	}
-
-	public static ExecutorService newSingleThreadExecutorService() {
-
-		return Executors.newSingleThreadExecutor(new ThreadFactory() {
-
-			@Override
-			public Thread newThread(Runnable arg0) {
-
-				Thread thread = new Thread(arg0);
-
-				thread.setDaemon(true);
-
-				return thread;
-
-			}
-
-		});
 
 	}
 

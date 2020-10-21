@@ -31,6 +31,7 @@ import com.ogya.dms.common.AudioCenter.AudioCenterListener;
 import com.ogya.dms.common.AudioCenter.RecordObject;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.common.CommonMethods;
+import com.ogya.dms.common.SoundPlayer;
 import com.ogya.dms.database.DbManager;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
@@ -38,6 +39,7 @@ import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.dmsclient.DmsClient;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
+import com.ogya.dms.factory.DmsFactory;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.intf.handles.ContactHandle;
@@ -93,10 +95,11 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	private final DmsClient dmsClient;
 
 	private final AudioCenter audioCenter = new AudioCenter();
+	private final SoundPlayer soundPlayer = new SoundPlayer();
 
 	private final List<DmsListener> dmsListeners = Collections.synchronizedList(new ArrayList<DmsListener>());
 
-	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	private Control(String username, String password) throws DbException {
 
@@ -774,6 +777,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			addPrivateMessageToPane(message, true);
 
+			soundPlayer.playDuoTone();
+
 			break;
 
 		default:
@@ -793,6 +798,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		case AUDIO:
 
 			addGroupMessageToPane(message, true);
+
+			soundPlayer.playTriTone();
 
 			break;
 

@@ -16,11 +16,11 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
 import com.ogya.dms.server.communications.udp.MulticastManager;
+import com.ogya.dms.server.factory.DmsFactory;
 import com.ogya.dms.server.model.Model;
 import com.ogya.dms.server.model.intf.ModelListener;
 
@@ -50,7 +50,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final LinkedBlockingQueue<SimpleEntry<String, String>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, String>>();
 
-	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	private final Object publishSyncObj = new Object();
 

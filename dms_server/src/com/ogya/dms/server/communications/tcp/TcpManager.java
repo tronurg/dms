@@ -31,9 +31,9 @@ import com.ogya.communications.tcp.TcpClient;
 import com.ogya.communications.tcp.TcpClientListener;
 import com.ogya.communications.tcp.TcpServer;
 import com.ogya.communications.tcp.TcpServerListener;
-import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
+import com.ogya.dms.server.factory.DmsFactory;
 
 public class TcpManager implements TcpServerListener {
 
@@ -59,7 +59,7 @@ public class TcpManager implements TcpServerListener {
 	private final List<TcpManagerListener> listeners = Collections
 			.synchronizedList(new ArrayList<TcpManagerListener>());
 
-	private final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, int packetSize) throws IOException {
 
@@ -606,7 +606,7 @@ public class TcpManager implements TcpServerListener {
 
 		final AtomicBoolean isConnected = new AtomicBoolean(false);
 
-		protected final ExecutorService taskQueue = CommonMethods.newSingleThreadExecutorService();
+		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 		final PipedOutputStream messageFeed = new PipedOutputStream();
 
