@@ -3036,16 +3036,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		try {
 
-			Path srcFile = path;
-			Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
-
-			String fileName = srcFile.getFileName().toString();
-
-			Path dstFile = getDstFile(dstFolder, fileName);
-
-			Files.copy(srcFile, dstFile);
-
-			byte[] fileBytes = Files.readAllBytes(dstFile);
+			byte[] fileBytes = Files.readAllBytes(path);
 
 			Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.FILE,
 					new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
@@ -3078,16 +3069,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		try {
 
-			Path srcFile = path;
-			Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
-
-			String fileName = srcFile.getFileName().toString();
-
-			Path dstFile = getDstFile(dstFolder, fileName);
-
-			Files.copy(srcFile, dstFile);
-
-			byte[] fileBytes = Files.readAllBytes(dstFile);
+			byte[] fileBytes = Files.readAllBytes(path);
 
 			Message outgoingMessage = new Message(model.getLocalUuid(), null, ReceiverType.PRIVATE, MessageType.FILE,
 					new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))

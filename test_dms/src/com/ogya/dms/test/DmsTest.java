@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -116,8 +117,8 @@ public class DmsTest {
 
 //				handle.sendMessageToGroup("hello group!", 1, gsh.getSelectedGroupUuid());
 //				handle.sendObjectToGroup(testPojo, 1, gsh.getSelectedGroupUuid());
-				handle.sendListToGroup(testList, TestPojo.class, 1, gsh.getSelectedGroupUuid());
-//				handle.sendFileToGroup(Paths.get("D:/test.txt"), 1, gsh.getSelectedGroupUuid());
+//				handle.sendListToGroup(testList, TestPojo.class, 1, gsh.getSelectedGroupUuid());
+				handle.sendFileToGroup(Paths.get("D:/test.txt"), 1, gsh.getSelectedGroupUuid());
 
 				gsh.resetSelection();
 
@@ -176,8 +177,8 @@ public class DmsTest {
 
 //				handle.sendMessageToContacts("hello contact!", 1, csh.getSelectedContactUuids());
 //				handle.sendObjectToContacts(testPojo, 1, csh.getSelectedContactUuids());
-				handle.sendListToContacts(testList, TestPojo.class, 1, csh.getSelectedContactUuids());
-//				handle.sendFileToContacts(Paths.get("D:/test.txt"), 1, csh.getSelectedContactUuids());
+//				handle.sendListToContacts(testList, TestPojo.class, 1, csh.getSelectedContactUuids());
+				handle.sendFileToContacts(Paths.get("D:/test.txt"), 1, csh.getSelectedContactUuids());
 
 				csh.resetSelection();
 
