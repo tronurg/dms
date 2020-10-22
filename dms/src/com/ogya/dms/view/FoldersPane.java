@@ -319,7 +319,7 @@ public class FoldersPane extends BorderPane {
 						folders.add(path);
 					else
 						try {
-							if (Files.size(path) <= CommonConstants.MAX_FILE_LENGHT)
+							if (Files.size(path) <= CommonConstants.MAX_FILE_LENGTH)
 								files.add(path);
 						} catch (Exception e) {
 

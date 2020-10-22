@@ -33,7 +33,7 @@ public class DbManager {
 
 		try {
 
-			factory = new Configuration().configure(new File("./plugins/hibernate.cfg/dms.cfg.xml"))
+			factory = new Configuration().configure(new File("./plugins/dms/hibernate.cfg/dms.cfg.xml"))
 					.setProperty("hibernate.connection.url",
 							"jdbc:h2:" + CommonConstants.DB_PATH + File.separator + dbName)
 					.setProperty("hibernate.connection.username", dbName)

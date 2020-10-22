@@ -12,6 +12,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.media.Media;
@@ -108,6 +109,17 @@ public class DmsMediaPlayer extends GridPane {
 	private void initProgressBar() {
 
 		GridPane.setHgrow(progressBar, Priority.ALWAYS);
+
+		progressBar.setOnMouseClicked(e -> {
+
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
+
+			if (Objects.equals(mediaPlayer.getStatus(), MediaPlayer.Status.PLAYING))
+				mediaPlayer.seek(
+						Duration.millis(mediaPlayer.getTotalDuration().toMillis() * e.getX() / progressBar.getWidth()));
+
+		});
 
 	}
 

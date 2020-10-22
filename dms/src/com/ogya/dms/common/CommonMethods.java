@@ -378,16 +378,16 @@ public class CommonMethods {
 
 	}
 
-	static long getMaxFileLenght() {
+	static long getMaxFileLength() {
 
-		long maxFileLenght = 1000000;
+		long maxFileLength = 1000000;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/MAX_FILE_LENGHT")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/MAX_FILE_LENGTH")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			maxFileLenght = Long.parseLong(node.getTextContent());
+			maxFileLength = Long.parseLong(node.getTextContent());
 
 		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
 				| NumberFormatException e) {
@@ -396,7 +396,7 @@ public class CommonMethods {
 
 		}
 
-		return maxFileLenght;
+		return maxFileLength;
 
 	}
 
