@@ -241,7 +241,6 @@ public class ViewFactory {
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
-		btn.opacityProperty().bind(Bindings.createDoubleBinding(() -> btn.isHover() ? 1.0 : 0.5, btn.hoverProperty()));
 
 		return btn;
 

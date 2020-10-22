@@ -124,6 +124,8 @@ public class ReportsPane extends GridPane {
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
 
+		sendBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> sendBtn.isHover() ? 1.0 : 0.5, sendBtn.hoverProperty()));
 		sendBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
 		sendBtn.setOnAction(

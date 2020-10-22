@@ -828,6 +828,8 @@ class MessagePane extends BorderPane {
 			GridPane.setHalignment(cancelBtn, HPos.RIGHT);
 			GridPane.setValignment(cancelBtn, VPos.TOP);
 
+			cancelBtn.opacityProperty().bind(
+					Bindings.createDoubleBinding(() -> cancelBtn.isHover() ? 1.0 : 0.5, cancelBtn.hoverProperty()));
 			cancelBtn.visibleProperty().bind(messagePane.hoverProperty().and(cancellableProperty));
 
 		}
