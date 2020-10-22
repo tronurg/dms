@@ -257,7 +257,7 @@ class MessagePane extends BorderPane {
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).getDay(), messageDay)) {
+		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).day, messageDay)) {
 
 			DayBox dayBox = new DayBox(messageDay);
 			dayBox.addMessageBalloonToTop(messageBalloon);
@@ -294,7 +294,7 @@ class MessagePane extends BorderPane {
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).getDay(), messageDay)) {
+		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
 
 			DayBox dayBox = new DayBox(messageDay);
 			dayBox.addMessageBalloonToBottom(messageBalloon);
@@ -555,33 +555,40 @@ class MessagePane extends BorderPane {
 
 		if (Objects.equals(messageInfo.messageType, MessageType.FILE)) {
 
-			messageBalloon.getMessagePane().setCursor(Cursor.HAND);
+			messageBalloon.messagePane.cursorProperty()
+					.bind(Bindings.createObjectBinding(
+							() -> messageBalloon.activeProperty.get() ? Cursor.HAND : Cursor.DEFAULT,
+							messageBalloon.activeProperty));
 
 			final DropShadow dropShadow = new DropShadow();
 
-			messageBalloon.getMessagePane().effectProperty()
-					.bind(Bindings.createObjectBinding(
-							() -> messageBalloon.getMessagePane().isHover() ? dropShadow : null,
-							messageBalloon.getMessagePane().hoverProperty()));
+			messageBalloon.messagePane.effectProperty().bind(Bindings.createObjectBinding(
+					() -> messageBalloon.activeProperty.get() && messageBalloon.messagePane.isHover() ? dropShadow
+							: null,
+					messageBalloon.activeProperty, messageBalloon.messagePane.hoverProperty()));
 
-			messageBalloon.getMessagePane().setOnMouseClicked(e -> {
-				if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-					return;
-				listeners.forEach(listener -> listener.messageClicked(message.getId()));
-			});
+			messageBalloon.messagePane.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
+				if (messageBalloon.activeProperty.get())
+					return e -> {
+						if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+							return;
+						listeners.forEach(listener -> listener.messageClicked(message.getId()));
+					};
+				return null;
+			}, messageBalloon.activeProperty));
 
 		}
 
 		if (messageInfo.infoAvailable) {
 
-			messageBalloon.getInfoBtn()
+			messageBalloon.infoBtn
 					.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(message.getId())));
 
 		}
 
 		if (Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING)) {
 
-			messageBalloon.getCancelBtn()
+			messageBalloon.cancelBtn
 					.setOnAction(e -> listeners.forEach(listener -> listener.cancelClicked(message.getId())));
 
 		}
@@ -611,9 +618,10 @@ class MessagePane extends BorderPane {
 
 		private final Region gap = new Region();
 
-		final BooleanProperty cancellableProperty = new SimpleBooleanProperty(false);
+		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
+		private final BooleanProperty cancellableProperty = new SimpleBooleanProperty(false);
 
-		MessageBalloon(String message, MessageInfo messageInfo) {
+		private MessageBalloon(String message, MessageInfo messageInfo) {
 
 			super();
 
@@ -681,26 +689,9 @@ class MessagePane extends BorderPane {
 
 		}
 
-		Region getMessagePane() {
-
-			return messagePane;
-
-		}
-
-		Button getInfoBtn() {
-
-			return infoBtn;
-
-		}
-
-		Button getCancelBtn() {
-
-			return cancelBtn;
-
-		}
-
 		void updateMessageStatus(MessageStatus messageStatus, boolean canceled) {
 
+			activeProperty.set(!canceled);
 			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !canceled);
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH))
@@ -719,12 +710,6 @@ class MessagePane extends BorderPane {
 		void setProgress(int progress) {
 
 			progressLbl.setText(progress < 0 ? "" : String.format("%d%%", progress));
-
-		}
-
-		MessageInfo getMessageInfo() {
-
-			return messageInfo;
 
 		}
 
@@ -843,7 +828,7 @@ class MessagePane extends BorderPane {
 		private final Label nameLabel;
 		private final VBox messageBox = new VBox(SMALL_GAP);
 
-		MessageGroup(MessageInfo messageInfo) {
+		private MessageGroup(MessageInfo messageInfo) {
 
 			super();
 
@@ -874,21 +859,15 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void addMessageBalloonToTop(MessageBalloon messageBalloon) {
+		private void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
 			messageBox.getChildren().add(0, messageBalloon);
 
 		}
 
-		void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
+		private void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
 			messageBox.getChildren().add(messageBalloon);
-
-		}
-
-		MessageInfo getMessageInfo() {
-
-			return messageInfo;
 
 		}
 
@@ -905,7 +884,7 @@ class MessagePane extends BorderPane {
 
 		private final List<MessageGroup> messageGroups = Collections.synchronizedList(new ArrayList<MessageGroup>());
 
-		DayBox(LocalDate day) {
+		private DayBox(LocalDate day) {
 
 			super();
 
@@ -935,11 +914,11 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void addMessageBalloonToTop(MessageBalloon messageBalloon) {
+		private void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
-			if (messageGroups.isEmpty() || !Objects.equals(messageGroups.get(0).getMessageInfo().uuid,
-					messageBalloon.getMessageInfo().uuid)) {
-				MessageGroup messageGroup = new MessageGroup(messageBalloon.getMessageInfo());
+			if (messageGroups.isEmpty()
+					|| !Objects.equals(messageGroups.get(0).messageInfo.uuid, messageBalloon.messageInfo.uuid)) {
+				MessageGroup messageGroup = new MessageGroup(messageBalloon.messageInfo);
 				messageGroup.addMessageBalloonToTop(messageBalloon);
 				messageGroups.add(0, messageGroup);
 				messageGroupBox.getChildren().add(0, messageGroup);
@@ -949,24 +928,17 @@ class MessagePane extends BorderPane {
 
 		}
 
-		void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
+		private void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
-			if (messageGroups.isEmpty()
-					|| !Objects.equals(messageGroups.get(messageGroups.size() - 1).getMessageInfo().uuid,
-							messageBalloon.getMessageInfo().uuid)) {
-				MessageGroup messageGroup = new MessageGroup(messageBalloon.getMessageInfo());
+			if (messageGroups.isEmpty() || !Objects.equals(messageGroups.get(messageGroups.size() - 1).messageInfo.uuid,
+					messageBalloon.messageInfo.uuid)) {
+				MessageGroup messageGroup = new MessageGroup(messageBalloon.messageInfo);
 				messageGroup.addMessageBalloonToBottom(messageBalloon);
 				messageGroups.add(messageGroup);
 				messageGroupBox.getChildren().add(messageGroup);
 			} else {
 				messageGroups.get(messageGroups.size() - 1).addMessageBalloonToBottom(messageBalloon);
 			}
-
-		}
-
-		LocalDate getDay() {
-
-			return day;
 
 		}
 
