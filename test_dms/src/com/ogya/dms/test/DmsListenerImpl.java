@@ -40,7 +40,7 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void messageReceived(MessageHandle messageHandle) {
 
-		String senderUuid = messageHandle.getSenderUuid();
+		String senderUuid = messageHandle.getContactUuid();
 		String groupUuid = messageHandle.getGroupUuid();
 
 		System.out.println(String.format("Message received from: %s (group: %s)\nContent: %s\n",
@@ -52,7 +52,7 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void objectReceived(ObjectHandle objectHandle) {
 
-		String senderUuid = objectHandle.getSenderUuid();
+		String senderUuid = objectHandle.getContactUuid();
 		String groupUuid = objectHandle.getGroupUuid();
 
 		System.out.println(String.format("Object received from: %s (group: %s)\nContent: %s\n",
@@ -65,7 +65,7 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void listReceived(ListHandle listHandle) {
 
-		String senderUuid = listHandle.getSenderUuid();
+		String senderUuid = listHandle.getContactUuid();
 		String groupUuid = listHandle.getGroupUuid();
 
 		System.out.println(String.format("List received from: %s (group: %s)\nContent: %s\n",
@@ -78,7 +78,7 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void fileReceived(FileHandle fileHandle) {
 
-		String senderUuid = fileHandle.getSenderUuid();
+		String senderUuid = fileHandle.getContactUuid();
 		String groupUuid = fileHandle.getGroupUuid();
 
 		System.out.println(String.format("File received from: %s (group: %s)\nContent: %s\n",

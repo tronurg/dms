@@ -6,14 +6,14 @@ public class MessageHandleImpl implements MessageHandle {
 
 	private final Integer messageCode;
 	private final String message;
-	private final String senderUuid;
+	private final String contactUuid;
 	private final String groupUuid;
 
-	public MessageHandleImpl(Integer messageCode, String message, String senderUuid, String groupUuid) {
+	public MessageHandleImpl(Integer messageCode, String message, String contactUuid, String groupUuid) {
 
 		this.messageCode = messageCode;
 		this.message = message;
-		this.senderUuid = senderUuid;
+		this.contactUuid = contactUuid;
 		this.groupUuid = groupUuid;
 
 	}
@@ -33,9 +33,9 @@ public class MessageHandleImpl implements MessageHandle {
 	}
 
 	@Override
-	public String getSenderUuid() {
+	public String getContactUuid() {
 
-		return senderUuid;
+		return contactUuid;
 
 	}
 

@@ -8,7 +8,7 @@ public interface FileHandle {
 
 	Path getPath();
 
-	String getSenderUuid();
+	String getContactUuid();
 
 	String getGroupUuid();
 

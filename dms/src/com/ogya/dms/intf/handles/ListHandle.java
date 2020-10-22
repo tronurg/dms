@@ -8,7 +8,7 @@ public interface ListHandle {
 
 	<T> List<T> getList(Class<T> elementType);
 
-	String getSenderUuid();
+	String getContactUuid();
 
 	String getGroupUuid();
 

@@ -7,14 +7,14 @@ public class ObjectHandleImpl implements ObjectHandle {
 
 	private final Integer objectCode;
 	private final String objectStr;
-	private final String senderUuid;
+	private final String contactUuid;
 	private final String groupUuid;
 
-	public ObjectHandleImpl(Integer objectCode, String objectStr, String senderUuid, String groupUuid) {
+	public ObjectHandleImpl(Integer objectCode, String objectStr, String contactUuid, String groupUuid) {
 
 		this.objectCode = objectCode;
 		this.objectStr = objectStr;
-		this.senderUuid = senderUuid;
+		this.contactUuid = contactUuid;
 		this.groupUuid = groupUuid;
 
 	}
@@ -44,9 +44,9 @@ public class ObjectHandleImpl implements ObjectHandle {
 	}
 
 	@Override
-	public String getSenderUuid() {
+	public String getContactUuid() {
 
-		return senderUuid;
+		return contactUuid;
 
 	}
 

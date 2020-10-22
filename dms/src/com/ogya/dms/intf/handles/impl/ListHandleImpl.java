@@ -11,14 +11,14 @@ public class ListHandleImpl implements ListHandle {
 
 	private final Integer listCode;
 	private final String listStr;
-	private final String senderUuid;
+	private final String contactUuid;
 	private final String groupUuid;
 
-	public ListHandleImpl(Integer listCode, String listStr, String senderUuid, String groupUuid) {
+	public ListHandleImpl(Integer listCode, String listStr, String contactUuid, String groupUuid) {
 
 		this.listCode = listCode;
 		this.listStr = listStr;
-		this.senderUuid = senderUuid;
+		this.contactUuid = contactUuid;
 		this.groupUuid = groupUuid;
 
 	}
@@ -51,9 +51,9 @@ public class ListHandleImpl implements ListHandle {
 	}
 
 	@Override
-	public String getSenderUuid() {
+	public String getContactUuid() {
 
-		return senderUuid;
+		return contactUuid;
 
 	}
 

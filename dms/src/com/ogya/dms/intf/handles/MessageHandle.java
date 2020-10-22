@@ -6,7 +6,7 @@ public interface MessageHandle {
 
 	String getMessage();
 
-	String getSenderUuid();
+	String getContactUuid();
 
 	String getGroupUuid();
 

@@ -6,7 +6,7 @@ public interface ObjectHandle {
 
 	<T> T getObject(Class<T> objectClass);
 
-	String getSenderUuid();
+	String getContactUuid();
 
 	String getGroupUuid();
 
