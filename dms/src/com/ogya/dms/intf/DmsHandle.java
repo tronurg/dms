@@ -9,6 +9,7 @@ import com.ogya.dms.intf.handles.ContactHandle;
 import com.ogya.dms.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.intf.handles.GroupHandle;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
+import com.ogya.dms.intf.listeners.DmsGuiListener;
 import com.ogya.dms.intf.listeners.DmsListener;
 
 public interface DmsHandle {
@@ -18,6 +19,10 @@ public interface DmsHandle {
 	void addListener(DmsListener listener);
 
 	void removeListener(DmsListener listener);
+
+	void addGuiListener(DmsGuiListener guiListener);
+
+	void removeGuiListener(DmsGuiListener guiListener);
 
 	void setCoordinates(Double lattitude, Double longitude);
 
