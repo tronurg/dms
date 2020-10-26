@@ -800,25 +800,25 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			case TEXT:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(
+				dmsGuiListeners.forEach(
 						guiListener -> guiListener.messageReceived(new MessageHandleImpl(message.getMessageCode(),
-								message.getContent(), message.getOwnerUuid(), null))));
+								message.getContent(), message.getOwnerUuid(), null)));
 
 				break;
 
 			case FILE:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners
+				dmsGuiListeners
 						.forEach(guiListener -> guiListener.fileReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), null))));
+								Paths.get(message.getContent()), message.getOwnerUuid(), null)));
 
 				break;
 
 			case AUDIO:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners
+				dmsGuiListeners
 						.forEach(guiListener -> guiListener.audioReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), null))));
+								Paths.get(message.getContent()), message.getOwnerUuid(), null)));
 
 				break;
 
@@ -858,25 +858,25 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			case TEXT:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(
+				dmsGuiListeners.forEach(
 						guiListener -> guiListener.messageReceived(new MessageHandleImpl(message.getMessageCode(),
-								message.getContent(), message.getOwnerUuid(), message.getReceiverUuid()))));
+								message.getContent(), message.getOwnerUuid(), message.getReceiverUuid())));
 
 				break;
 
 			case FILE:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners
+				dmsGuiListeners
 						.forEach(guiListener -> guiListener.fileReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid()))));
+								Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
 
 				break;
 
 			case AUDIO:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners
+				dmsGuiListeners
 						.forEach(guiListener -> guiListener.audioReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid()))));
+								Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
 
 				break;
 
