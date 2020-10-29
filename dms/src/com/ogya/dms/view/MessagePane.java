@@ -14,10 +14,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.database.tables.Message;
-import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
@@ -111,6 +111,8 @@ class MessagePane extends BorderPane {
 			null);
 
 	private final List<IMessagePane> listeners = Collections.synchronizedList(new ArrayList<IMessagePane>());
+
+	private final AtomicLong maxMessageId = new AtomicLong(0);
 
 	MessagePane() {
 
@@ -238,76 +240,60 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void addMessageToTop(Message message, String senderName, MessageDirection messageDirection) {
+	void addMessage(Message message, String senderName, boolean isOutgoing) {
 
 		if (messageBalloons.containsKey(message.getId()))
 			return;
 
+		long messageId = message.getId();
 		Date messageDate = message.getDate();
 
-		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
-				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
+		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP) && isOutgoing;
 
-		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
+		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, isOutgoing,
 				message.getMessageType(), infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
-		messageBalloons.put(message.getId(), messageBalloon);
+		messageBalloons.put(messageId, messageBalloon);
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).day, messageDay)) {
+		if (maxMessageId.get() < messageId) {
 
-			DayBox dayBox = new DayBox(messageDay);
-			dayBox.addMessageBalloonToTop(messageBalloon);
-			dayBoxes.add(0, dayBox);
-			centerPane.getChildren().add(0, dayBox);
+			maxMessageId.set(messageId);
 
-		} else {
+			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
 
-			dayBoxes.get(0).addMessageBalloonToTop(messageBalloon);
+				DayBox dayBox = new DayBox(messageDay);
+				dayBox.addMessageBalloonToBottom(messageBalloon);
+				dayBoxes.add(dayBox);
+				centerPane.getChildren().add(dayBox);
 
-		}
+			} else {
 
-		if (Objects.equals(messageDirection, MessageDirection.OUTGOING))
-			scrollPaneToBottom();
+				dayBoxes.get(dayBoxes.size() - 1).addMessageBalloonToBottom(messageBalloon);
 
-	}
-
-	void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection) {
-
-		if (messageBalloons.containsKey(message.getId()))
-			return;
-
-		Date messageDate = message.getDate();
-
-		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP)
-				&& Objects.equals(messageDirection, MessageDirection.OUTGOING);
-
-		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, messageDirection,
-				message.getMessageType(), infoAvailable);
-
-		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
-
-		messageBalloons.put(message.getId(), messageBalloon);
-
-		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-
-		if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
-
-			DayBox dayBox = new DayBox(messageDay);
-			dayBox.addMessageBalloonToBottom(messageBalloon);
-			dayBoxes.add(dayBox);
-			centerPane.getChildren().add(dayBox);
+			}
 
 		} else {
 
-			dayBoxes.get(dayBoxes.size() - 1).addMessageBalloonToBottom(messageBalloon);
+			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).day, messageDay)) {
+
+				DayBox dayBox = new DayBox(messageDay);
+				dayBox.addMessageBalloonToTop(messageBalloon);
+				dayBoxes.add(0, dayBox);
+				centerPane.getChildren().add(0, dayBox);
+
+			} else {
+
+				dayBoxes.get(0).addMessageBalloonToTop(messageBalloon);
+
+			}
 
 		}
 
-		if (Objects.equals(messageDirection, MessageDirection.OUTGOING))
+		if (isOutgoing)
 			scrollPaneToBottom();
 
 	}
@@ -586,7 +572,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		if (Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING)) {
+		if (messageInfo.isOutgoing) {
 
 			messageBalloon.cancelBtn
 					.setOnAction(e -> listeners.forEach(listener -> listener.cancelClicked(message.getId())));
@@ -645,26 +631,7 @@ class MessagePane extends BorderPane {
 			colNarrow.setHgrow(Priority.ALWAYS);
 			colWide.setPercentWidth(80.0);
 
-			switch (messageInfo.messageDirection) {
-
-			case INCOMING:
-
-				initIncomingMessagePane();
-
-				getColumnConstraints().addAll(colWide, colNarrow);
-
-				messagePane.setBackground(
-						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
-
-				GridPane.setHalignment(messagePane, HPos.LEFT);
-				GridPane.setHalignment(messageArea, HPos.LEFT);
-
-				add(messagePane, 0, 0, 1, 1);
-				add(gap, 1, 0, 1, 1);
-
-				break;
-
-			case OUTGOING:
+			if (messageInfo.isOutgoing) {
 
 				initOutgoingMessagePane();
 
@@ -683,7 +650,20 @@ class MessagePane extends BorderPane {
 					add(infoBtn, 2, 0, 1, 1);
 				}
 
-				break;
+			} else {
+
+				initIncomingMessagePane();
+
+				getColumnConstraints().addAll(colWide, colNarrow);
+
+				messagePane.setBackground(
+						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
+
+				GridPane.setHalignment(messagePane, HPos.LEFT);
+				GridPane.setHalignment(messageArea, HPos.LEFT);
+
+				add(messagePane, 0, 0, 1, 1);
+				add(gap, 1, 0, 1, 1);
 
 			}
 
@@ -699,7 +679,7 @@ class MessagePane extends BorderPane {
 
 			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
 
-			if (canceled && Objects.equals(messageInfo.messageDirection, MessageDirection.OUTGOING))
+			if (canceled && messageInfo.isOutgoing)
 				messageArea.setDisable(true);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
@@ -847,14 +827,13 @@ class MessagePane extends BorderPane {
 				nameLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
 				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
 				nameLabel.setTextFill(Color.GRAY);
-				BorderPane.setAlignment(nameLabel,
-						Objects.equals(messageInfo.messageDirection, MessageDirection.INCOMING) ? Pos.CENTER_LEFT
-								: Pos.CENTER_RIGHT);
+				BorderPane.setAlignment(nameLabel, messageInfo.isOutgoing ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
 				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, GAP, 0.0));
 
 				setTop(nameLabel);
 
 			}
+
 			setCenter(messageBox);
 
 		}
@@ -949,17 +928,17 @@ class MessagePane extends BorderPane {
 		final String uuid;
 		final String name;
 		final Date date;
-		final MessageDirection messageDirection;
+		final boolean isOutgoing;
 		final MessageType messageType;
 		final boolean infoAvailable;
 
-		MessageInfo(String uuid, String name, Date date, MessageDirection messageDirection, MessageType messageType,
+		MessageInfo(String uuid, String name, Date date, boolean isOutgoing, MessageType messageType,
 				boolean infoAvailable) {
 
 			this.uuid = uuid;
 			this.name = name;
 			this.date = date;
-			this.messageDirection = messageDirection;
+			this.isOutgoing = isOutgoing;
 			this.messageType = messageType;
 			this.infoAvailable = infoAvailable;
 

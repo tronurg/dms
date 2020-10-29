@@ -5,16 +5,20 @@ import com.ogya.dms.intf.handles.MessageHandle;
 
 public interface DmsGuiListener {
 
-	void messageSent(MessageHandle messageHandle);
+	void guiMessageSent(MessageHandle messageHandle);
 
-	void messageReceived(MessageHandle messageHandle);
+	void guiMessageReceived(MessageHandle messageHandle);
 
-	void fileSent(FileHandle fileHandle);
+	void guiFileSent(FileHandle fileHandle);
 
-	void fileReceived(FileHandle fileHandle);
+	void guiFileReceived(FileHandle fileHandle);
 
-	void audioSent(FileHandle fileHandle);
+	void guiReportSent(FileHandle fileHandle);
 
-	void audioReceived(FileHandle fileHandle);
+	void guiReportReceived(FileHandle fileHandle);
+
+	void guiAudioSent(FileHandle fileHandle);
+
+	void guiAudioReceived(FileHandle fileHandle);
 
 }

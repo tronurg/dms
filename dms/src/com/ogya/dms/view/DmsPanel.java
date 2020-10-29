@@ -18,7 +18,6 @@ import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
-import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.intf.AppListener;
@@ -161,54 +160,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public void addMessageToTop(Message message, String senderName, MessageDirection messageDirection, String uuid) {
+	public void addMessage(Message message, String senderName, boolean isOutgoing, String entityUuid) {
 
-		switch (message.getReceiverType()) {
-
-		case PRIVATE:
-
-			entitiesPane.addPrivateMessageToTop(message, senderName, messageDirection, uuid);
-
-			break;
-
-		case GROUP:
-
-			entitiesPane.addGroupMessageToTop(message, senderName, messageDirection, uuid);
-
-			break;
-
-		default:
-
-		}
+		entitiesPane.addMessage(message, senderName, isOutgoing, entityUuid);
 
 		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
-		if (!(uuidOnScreen == null || Objects.equals(uuid, uuidOnScreen.getKey())))
-			uuidOnScreen.getValue().highlightBackButton();
-
-	}
-
-	public void addMessageToBottom(Message message, String senderName, MessageDirection messageDirection, String uuid) {
-
-		switch (message.getReceiverType()) {
-
-		case PRIVATE:
-
-			entitiesPane.addPrivateMessageToBottom(message, senderName, messageDirection, uuid);
-
-			break;
-
-		case GROUP:
-
-			entitiesPane.addGroupMessageToBottom(message, senderName, messageDirection, uuid);
-
-			break;
-
-		default:
-
-		}
-
-		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
-		if (!(uuidOnScreen == null || Objects.equals(uuid, uuidOnScreen.getKey())))
+		if (!(uuidOnScreen == null || Objects.equals(entityUuid, uuidOnScreen.getKey())))
 			uuidOnScreen.getValue().highlightBackButton();
 
 	}

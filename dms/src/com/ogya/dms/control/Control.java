@@ -64,7 +64,6 @@ import com.ogya.dms.model.Model;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.FilePojo;
 import com.ogya.dms.structures.GroupUpdate;
-import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
@@ -318,7 +317,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Platform.runLater(() -> dmsPanel.updateContact(contact));
 
-				dmsEntity.messages.forEach(message -> addPrivateMessageToPane(message, true));
+				dmsEntity.messages.forEach(message -> addMessageToPane(message));
 
 				break;
 
@@ -329,7 +328,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Platform.runLater(() -> dmsPanel.updateGroup(group));
 
-				dmsEntity.messages.forEach(message -> addGroupMessageToPane(message, true));
+				dmsEntity.messages.forEach(message -> addMessageToPane(message));
 
 				break;
 
@@ -341,67 +340,24 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	}
 
-	private void addPrivateMessageToPane(final Message message, final boolean newMessageToBottom) {
+	private void addMessageToPane(final Message message) {
 
-		if (Objects.equals(model.getLocalUuid(), message.getOwnerUuid())) {
+		final boolean isOutgoing = Objects.equals(model.getLocalUuid(), message.getOwnerUuid());
 
-			final String remoteUuid = message.getReceiverUuid();
+		final String entityUuid = Objects.equals(message.getReceiverType(), ReceiverType.GROUP) || isOutgoing
+				? message.getReceiverUuid()
+				: message.getOwnerUuid();
 
-			model.addMessageId(remoteUuid, message.getId());
+		model.addMessageId(entityUuid, message.getId());
 
-			Platform.runLater(() -> {
-				if (newMessageToBottom)
-					dmsPanel.addMessageToBottom(message, "", MessageDirection.OUTGOING, remoteUuid);
-				else
-					dmsPanel.addMessageToTop(message, "", MessageDirection.OUTGOING, remoteUuid);
-			});
-
-		} else if (Objects.equals(model.getLocalUuid(), message.getReceiverUuid())) {
-
-			final String remoteUuid = message.getOwnerUuid();
-
-			model.addMessageId(remoteUuid, message.getId());
-
-			Platform.runLater(() -> {
-				if (newMessageToBottom)
-					dmsPanel.addMessageToBottom(message, "", MessageDirection.INCOMING, remoteUuid);
-				else
-					dmsPanel.addMessageToTop(message, "", MessageDirection.INCOMING, remoteUuid);
-			});
-
-		}
-
-	}
-
-	private void addGroupMessageToPane(final Message message, final boolean newMessageToBottom) {
-
-		final String groupUuid = message.getReceiverUuid();
-
-		model.addMessageId(groupUuid, message.getId());
-
-		if (Objects.equals(model.getLocalUuid(), message.getOwnerUuid())) {
-
-			Platform.runLater(() -> {
-				if (newMessageToBottom)
-					dmsPanel.addMessageToBottom(message, "", MessageDirection.OUTGOING, groupUuid);
-				else
-					dmsPanel.addMessageToTop(message, "", MessageDirection.OUTGOING, groupUuid);
-			});
-
-		} else {
-
-			Contact owner = model.getContact(message.getOwnerUuid());
-
-			Platform.runLater(() -> {
-				if (newMessageToBottom)
-					dmsPanel.addMessageToBottom(message, owner == null ? "" : owner.getName(),
-							MessageDirection.INCOMING, groupUuid);
-				else
-					dmsPanel.addMessageToTop(message, owner == null ? "" : owner.getName(), MessageDirection.INCOMING,
-							groupUuid);
-			});
-
-		}
+		Platform.runLater(() -> {
+			String senderName = null;
+			if (Objects.equals(message.getReceiverType(), ReceiverType.GROUP) && !isOutgoing) {
+				Contact owner = model.getContact(message.getOwnerUuid());
+				senderName = owner == null ? "" : owner.getName();
+			}
+			dmsPanel.addMessage(message, senderName, isOutgoing, entityUuid);
+		});
 
 	}
 
@@ -782,7 +738,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		case FILE:
 		case AUDIO:
 
-			addPrivateMessageToPane(message, true);
+			addMessageToPane(message);
 
 			soundPlayer.playDuoTone();
 
@@ -800,25 +756,27 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			case TEXT:
 
-				dmsGuiListeners.forEach(
-						guiListener -> guiListener.messageReceived(new MessageHandleImpl(message.getMessageCode(),
-								message.getContent(), message.getOwnerUuid(), null)));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(
+						new MessageHandleImpl(null, message.getContent(), message.getOwnerUuid(), null)));
 
 				break;
 
 			case FILE:
 
-				dmsGuiListeners
-						.forEach(guiListener -> guiListener.fileReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), null)));
+				if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_REPORT)) {
+					dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(
+							new FileHandleImpl(null, Paths.get(message.getContent()), message.getOwnerUuid(), null)));
+				} else {
+					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(
+							new FileHandleImpl(null, Paths.get(message.getContent()), message.getOwnerUuid(), null)));
+				}
 
 				break;
 
 			case AUDIO:
 
-				dmsGuiListeners
-						.forEach(guiListener -> guiListener.audioReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), null)));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(
+						new FileHandleImpl(null, Paths.get(message.getContent()), message.getOwnerUuid(), null)));
 
 				break;
 
@@ -840,7 +798,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		case FILE:
 		case AUDIO:
 
-			addGroupMessageToPane(message, true);
+			addMessageToPane(message);
 
 			soundPlayer.playTriTone();
 
@@ -858,25 +816,27 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			case TEXT:
 
-				dmsGuiListeners.forEach(
-						guiListener -> guiListener.messageReceived(new MessageHandleImpl(message.getMessageCode(),
-								message.getContent(), message.getOwnerUuid(), message.getReceiverUuid())));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(new MessageHandleImpl(null,
+						message.getContent(), message.getOwnerUuid(), message.getReceiverUuid())));
 
 				break;
 
 			case FILE:
 
-				dmsGuiListeners
-						.forEach(guiListener -> guiListener.fileReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
+				if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_REPORT)) {
+					dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(new FileHandleImpl(null,
+							Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
+				} else {
+					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(new FileHandleImpl(null,
+							Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
+				}
 
 				break;
 
 			case AUDIO:
 
-				dmsGuiListeners
-						.forEach(guiListener -> guiListener.audioReceived(new FileHandleImpl(message.getMessageCode(),
-								Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(new FileHandleImpl(null,
+						Paths.get(message.getContent()), message.getOwnerUuid(), message.getReceiverUuid())));
 
 				break;
 
@@ -2047,12 +2007,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 			Message newMessage = createOutgoingMessage(messageTxt, receiverUuid, null, ReceiverType.PRIVATE,
 					MessageType.TEXT, null);
 
-			addPrivateMessageToPane(newMessage, true);
+			addMessageToPane(newMessage);
 
 			sendPrivateMessage(newMessage);
 
-			listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener.messageSent(
-					new MessageHandleImpl(newMessage.getMessageCode(), newMessage.getContent(), receiverUuid, null))));
+			listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+					.guiMessageSent(new MessageHandleImpl(null, newMessage.getContent(), receiverUuid, null))));
 
 		} catch (Exception e) {
 
@@ -2069,12 +2029,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 			Message newMessage = createOutgoingMessage(messageTxt, groupUuid,
 					createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.TEXT, null);
 
-			addGroupMessageToPane(newMessage, true);
+			addMessageToPane(newMessage);
 
 			sendGroupMessage(newMessage);
 
-			listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener.messageSent(
-					new MessageHandleImpl(newMessage.getMessageCode(), newMessage.getContent(), null, groupUuid))));
+			listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+					.guiMessageSent(new MessageHandleImpl(null, newMessage.getContent(), null, groupUuid))));
 
 		} catch (Exception e) {
 
@@ -2135,7 +2095,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Platform.runLater(() -> dmsPanel.savePosition(uuid, previousMinMessageId, ReceiverType.PRIVATE));
 
-		lastMessagesBeforeId.forEach(message -> addPrivateMessageToPane(message, false));
+		lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
 		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(uuid, ReceiverType.PRIVATE));
 
@@ -2156,7 +2116,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Platform.runLater(() -> dmsPanel.savePosition(groupUuid, previousMinMessageId, ReceiverType.GROUP));
 
-		lastMessagesBeforeId.forEach(message -> addGroupMessageToPane(message, false));
+		lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
 		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(groupUuid, ReceiverType.GROUP));
 
@@ -2391,12 +2351,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					Message newMessage = createOutgoingMessage(dstFile.toString(), contactUuid, null,
 							ReceiverType.PRIVATE, MessageType.FILE, null);
 
-					addPrivateMessageToPane(newMessage, true);
+					addMessageToPane(newMessage);
 
 					sendPrivateMessage(newMessage);
 
 					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-							.fileSent(new FileHandleImpl(newMessage.getMessageCode(), dstFile, contactUuid, null))));
+							.guiFileSent(new FileHandleImpl(null, dstFile, contactUuid, null))));
 
 					break;
 
@@ -2412,12 +2372,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 							createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.FILE,
 							null);
 
-					addGroupMessageToPane(newMessage, true);
+					addMessageToPane(newMessage);
 
 					sendGroupMessage(newMessage);
 
 					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-							.fileSent(new FileHandleImpl(newMessage.getMessageCode(), dstFile, null, groupUuid))));
+							.guiFileSent(new FileHandleImpl(null, dstFile, null, groupUuid))));
 
 					break;
 
@@ -2712,12 +2672,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					Message newMessage = createOutgoingMessage(recordObject.path.toString(), uuid, null,
 							ReceiverType.PRIVATE, MessageType.AUDIO, null);
 
-					addPrivateMessageToPane(newMessage, true);
+					addMessageToPane(newMessage);
 
 					sendPrivateMessage(newMessage);
 
-					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener.audioSent(
-							new FileHandleImpl(newMessage.getMessageCode(), recordObject.path, uuid, null))));
+					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+							.guiAudioSent(new FileHandleImpl(null, recordObject.path, uuid, null))));
 
 					break;
 
@@ -2738,12 +2698,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 							createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.AUDIO,
 							null);
 
-					addGroupMessageToPane(newMessage, true);
+					addMessageToPane(newMessage);
 
 					sendGroupMessage(newMessage);
 
-					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener.audioSent(
-							new FileHandleImpl(newMessage.getMessageCode(), recordObject.path, null, groupUuid))));
+					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+							.guiAudioSent(new FileHandleImpl(null, recordObject.path, null, groupUuid))));
 
 					break;
 
@@ -2819,12 +2779,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 						Message newMessage = createOutgoingMessage(dstFile.toString(), uuid, null, ReceiverType.PRIVATE,
 								MessageType.FILE, CommonConstants.CODE_REPORT);
 
-						addPrivateMessageToPane(newMessage, true);
+						addMessageToPane(newMessage);
 
 						sendPrivateMessage(newMessage);
 
 						listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-								.fileSent(new FileHandleImpl(newMessage.getMessageCode(), dstFile, uuid, null))));
+								.guiReportSent(new FileHandleImpl(null, dstFile, uuid, null))));
 
 						break;
 
@@ -2840,12 +2800,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 								createStatusReportStr(model.getGroup(groupUuid)), ReceiverType.GROUP, MessageType.FILE,
 								CommonConstants.CODE_REPORT);
 
-						addGroupMessageToPane(newMessage, true);
+						addMessageToPane(newMessage);
 
 						sendGroupMessage(newMessage);
 
 						listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-								.fileSent(new FileHandleImpl(newMessage.getMessageCode(), dstFile, null, groupUuid))));
+								.guiReportSent(new FileHandleImpl(null, dstFile, null, groupUuid))));
 
 						break;
 

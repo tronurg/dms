@@ -106,8 +106,8 @@ public class DmsTest {
 
 			GroupSelectionHandle gsh = handle.getMyActiveGroupsHandle();
 
-//			JComponent mcPanel = handle.getDmsPanel();
-			JComponent mcPanel = gsh.getGroupSelectionPanel();
+			JComponent mcPanel = handle.getDmsPanel();
+//			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
@@ -166,8 +166,8 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = handle.getOnlineContactsHandle();
 
-//			JComponent mcPanel = handle.getDmsPanel();
-			JComponent mcPanel = csh.getContactSelectionPanel();
+			JComponent mcPanel = handle.getDmsPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 

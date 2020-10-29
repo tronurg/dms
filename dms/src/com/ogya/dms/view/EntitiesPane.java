@@ -12,7 +12,6 @@ import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
-import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.factory.ViewFactory;
 
@@ -141,86 +140,59 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void addPrivateMessageToTop(Message message, String senderName, MessageDirection messageDirection, String uuid) {
+	void addMessage(Message message, String senderName, boolean isOutgoing, String entityUuid) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		switch (message.getReceiverType()) {
 
-		contactPane.addMessageToTop(message, senderName, messageDirection);
+		case PRIVATE: {
 
-		Long messageId = message.getId();
+			ContactPane contactPane = getContactPane(entityUuid);
 
-		if (currentId.get() < messageId) {
+			contactPane.addMessage(message, senderName, isOutgoing);
 
-			currentId.set(messageId);
+			Long messageId = message.getId();
 
-			entities.getChildren().remove(contactPane);
-			entities.getChildren().add(0, contactPane);
+			if (currentId.get() < messageId) {
 
-			scrollPane.setVvalue(0.0);
+				currentId.set(messageId);
 
-		}
+				entities.getChildren().remove(contactPane);
+				entities.getChildren().add(0, contactPane);
 
-	}
+				scrollPane.setVvalue(0.0);
 
-	void addGroupMessageToTop(Message message, String senderName, MessageDirection messageDirection, String groupUuid) {
+			}
 
-		GroupPane groupPane = getGroupPane(groupUuid);
-
-		groupPane.addMessageToTop(message, senderName, messageDirection);
-
-		Long messageId = message.getId();
-
-		if (currentId.get() < messageId) {
-
-			currentId.set(messageId);
-
-			entities.getChildren().remove(groupPane);
-			entities.getChildren().add(0, groupPane);
-
-			scrollPane.setVvalue(0.0);
+			break;
 
 		}
 
-	}
+		case GROUP: {
 
-	void addPrivateMessageToBottom(Message message, String senderName, MessageDirection messageDirection, String uuid) {
+			GroupPane groupPane = getGroupPane(entityUuid);
 
-		ContactPane contactPane = getContactPane(uuid);
+			groupPane.addMessage(message, senderName, isOutgoing);
 
-		contactPane.addMessageToBottom(message, senderName, messageDirection);
+			Long messageId = message.getId();
 
-		Long messageId = message.getId();
+			if (currentId.get() < messageId) {
 
-		if (currentId.get() < messageId) {
+				currentId.set(messageId);
 
-			currentId.set(messageId);
+				entities.getChildren().remove(groupPane);
+				entities.getChildren().add(0, groupPane);
 
-			entities.getChildren().remove(contactPane);
-			entities.getChildren().add(0, contactPane);
+				scrollPane.setVvalue(0.0);
 
-			scrollPane.setVvalue(0.0);
+			}
+
+			break;
 
 		}
 
-	}
+		default:
 
-	void addGroupMessageToBottom(Message message, String senderName, MessageDirection messageDirection,
-			String groupUuid) {
-
-		GroupPane groupPane = getGroupPane(groupUuid);
-
-		groupPane.addMessageToBottom(message, senderName, messageDirection);
-
-		Long messageId = message.getId();
-
-		if (currentId.get() < messageId) {
-
-			currentId.set(messageId);
-
-			entities.getChildren().remove(groupPane);
-			entities.getChildren().add(0, groupPane);
-
-			scrollPane.setVvalue(0.0);
+			break;
 
 		}
 
