@@ -906,8 +906,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Contact contact = model.getContact(uuid);
 				if (contact == null) {
-					contact = new Contact();
-					contact.setUuid(uuid);
+					contact = new Contact(uuid);
 					contact.setName(name);
 					contact.setStatus(Availability.OFFLINE);
 					Contact newContact = dbManager.addUpdateContact(contact);
@@ -934,8 +933,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Contact contact = model.getContact(uuid);
 				if (contact == null) {
-					contact = new Contact();
-					contact.setUuid(uuid);
+					contact = new Contact(uuid);
 					contact.setName(name);
 					contact.setStatus(Availability.OFFLINE);
 					Contact newContact = dbManager.addUpdateContact(contact);
@@ -1153,10 +1151,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	private Contact copyBeaconToContact(Beacon beacon, Contact contact) {
 
 		if (contact == null)
-			contact = new Contact();
-
-		if (beacon.uuid != null)
-			contact.setUuid(beacon.uuid);
+			contact = new Contact(beacon.uuid);
 
 		if (beacon.name != null)
 			contact.setName(beacon.name);

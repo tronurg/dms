@@ -99,7 +99,7 @@ public class Model {
 
 				boolean fresh = localUsers.isEmpty();
 
-				localUsers.putIfAbsent(userUuid, new LocalUser());
+				localUsers.putIfAbsent(userUuid, new LocalUser(userUuid));
 
 				if (fresh)
 					listener.publishImmediately();
@@ -280,7 +280,7 @@ public class Model {
 				if (userUuid == null)
 					break;
 
-				remoteUsers.putIfAbsent(userUuid, new User());
+				remoteUsers.putIfAbsent(userUuid, new User(userUuid));
 
 				checkRemoteUserServer(remoteUsers.get(userUuid), dmsUuid);
 
@@ -529,8 +529,14 @@ public class Model {
 
 	private class User {
 
-		protected final Beacon beacon = new Beacon();
+		protected final Beacon beacon;
 		protected String dmsUuid;
+
+		private User(String userUuid) {
+
+			this.beacon = new Beacon(userUuid);
+
+		}
 
 	}
 
@@ -539,7 +545,9 @@ public class Model {
 		private final Map<Long, AtomicBoolean> sendStatusMap = Collections
 				.synchronizedMap(new HashMap<Long, AtomicBoolean>());
 
-		private LocalUser() {
+		private LocalUser(String userUuid) {
+
+			super(userUuid);
 
 			try {
 

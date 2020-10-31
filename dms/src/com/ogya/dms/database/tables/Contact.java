@@ -51,6 +51,11 @@ public class Contact {
 		super();
 	}
 
+	public Contact(String uuid) {
+		super();
+		this.uuid = uuid;
+	}
+
 	public Long getId() {
 		return id;
 	}

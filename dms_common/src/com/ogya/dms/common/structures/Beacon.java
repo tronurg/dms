@@ -7,7 +7,7 @@ import java.util.List;
 
 public class Beacon {
 
-	public String uuid;
+	public final String uuid;
 	public String name;
 	public String comment;
 	public Integer status;
@@ -15,13 +15,16 @@ public class Beacon {
 	public Double longitude;
 	public final List<InetAddress> addresses = Collections.synchronizedList(new ArrayList<InetAddress>());
 
-	public Beacon() {
+	public Beacon(String uuid) {
+
+		this.uuid = uuid;
 
 	}
 
 	public Beacon(String uuid, String name, String comment, Integer status, Double lattitude, Double longitude) {
 
-		this.uuid = uuid;
+		this(uuid);
+
 		this.name = name;
 		this.comment = comment;
 		this.status = status;

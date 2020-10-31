@@ -47,9 +47,8 @@ public class Identity {
 	}
 
 	public Identity(String name) {
-
+		super();
 		this.name = name;
-
 	}
 
 	public Long getId() {

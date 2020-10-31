@@ -57,6 +57,7 @@ public class Dgroup {
 	}
 
 	public Dgroup(String ownerUuid) {
+		super();
 		this.ownerUuid = ownerUuid;
 	}
 

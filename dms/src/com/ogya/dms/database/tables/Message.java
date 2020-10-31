@@ -73,6 +73,7 @@ public class Message {
 
 	public Message(String ownerUuid, String receiverUuid, ReceiverType receiverType, MessageType messageType,
 			String content) {
+		super();
 		this.ownerUuid = ownerUuid;
 		this.receiverUuid = receiverUuid;
 		this.receiverType = receiverType;
