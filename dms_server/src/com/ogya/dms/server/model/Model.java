@@ -3,6 +3,8 @@ package com.ogya.dms.server.model;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,17 +19,15 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
+import com.ogya.dms.common.structures.Beacon;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
+import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
 
 	private final ModelListener listener;
-
-	private final Gson gson = new Gson();
 
 	private final Map<String, LocalUser> localUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, User> remoteUsers = Collections.synchronizedMap(new HashMap<String, User>());
@@ -81,7 +81,7 @@ public class Model {
 
 		try {
 
-			MessagePojo messagePojo = gson.fromJson(messagePojoStr, MessagePojo.class);
+			MessagePojo messagePojo = CommonMethods.fromJson(messagePojoStr, MessagePojo.class);
 
 			String senderUuid = messagePojo.senderUuid;
 			Long messageId = messagePojo.messageId;
@@ -90,47 +90,48 @@ public class Model {
 
 			case BCON:
 
+				Beacon beacon = CommonMethods.fromJson(messagePojo.message, Beacon.class);
+
+				String userUuid = beacon.uuid;
+
+				if (userUuid == null)
+					break;
+
 				boolean fresh = localUsers.isEmpty();
 
-				localUsers.putIfAbsent(senderUuid, new LocalUser(senderUuid));
+				localUsers.putIfAbsent(userUuid, new LocalUser());
 
 				if (fresh)
 					listener.publishImmediately();
 
-				if (!Objects.equals(messagePojoStr, localUsers.get(senderUuid).beacon)) {
+				boolean isNew = localUsers.get(userUuid).beacon.uuid == null;
 
-					boolean isNew = localUsers.get(senderUuid).beacon == null;
+				copyBeacon(beacon, localUsers.get(userUuid).beacon);
+				localUsers.forEach((receiverUuid, user) -> {
 
-					// Yerel uuid yeni eklendi veya guncellendi.
-					// Beacon, yerel beacon'lara eklenecek.
-					// Yeni beacon tum yerel ve uzak kullanicilara dagitilacak.
+					if (Objects.equals(receiverUuid, userUuid))
+						return;
 
-					localUsers.get(senderUuid).beacon = messagePojoStr;
-					localUsers.forEach((receiverUuid, user) -> {
+					listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
-						if (Objects.equals(receiverUuid, senderUuid))
-							return;
+				});
+				listener.sendToAllRemoteServers(messagePojoStr);
 
-						listener.sendToLocalUser(receiverUuid, messagePojoStr);
+				if (isNew) {
 
-					});
-					listener.sendToAllRemoteServers(messagePojoStr);
+					sendAllBeaconsToLocalUser(userUuid);
 
-					if (isNew) {
-
-						sendAllBeaconsToLocalUser(senderUuid);
-
-						sendRemoteIpsToLocalUser(senderUuid);
-
-					}
+					sendRemoteIpsToLocalUser(userUuid);
 
 				}
 
 				break;
 
-			case REQ_BCON:
+			case REQ_STRT:
 
 				sendAllBeaconsToLocalUser(senderUuid);
+
+				sendRemoteIpsToLocalUser(senderUuid);
 
 				break;
 
@@ -143,12 +144,6 @@ public class Model {
 			case REMOVE_IP:
 
 				removeRemoteIp(messagePojo.message);
-
-				break;
-
-			case REQ_IP:
-
-				sendRemoteIpsToLocalUser(senderUuid);
 
 				break;
 
@@ -218,7 +213,7 @@ public class Model {
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
 
-					listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+					listener.sendToLocalUser(senderUuid, CommonMethods.toJson(progressMessagePojo));
 
 				}
 
@@ -243,7 +238,7 @@ public class Model {
 								String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
 
 						if (localUsers.containsKey(senderUuid))
-							listener.sendToLocalUser(senderUuid, gson.toJson(progressMessagePojo));
+							listener.sendToLocalUser(senderUuid, CommonMethods.toJson(progressMessagePojo));
 
 					} : progress -> {
 
@@ -260,7 +255,7 @@ public class Model {
 
 			}
 
-		} catch (JsonSyntaxException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 
@@ -272,28 +267,29 @@ public class Model {
 
 		try {
 
-			MessagePojo messagePojo = gson.fromJson(messagePojoStr, MessagePojo.class);
-
-			String senderUuid = messagePojo.senderUuid;
+			MessagePojo messagePojo = CommonMethods.fromJson(messagePojoStr, MessagePojo.class);
 
 			switch (messagePojo.contentType) {
 
 			case BCON:
 
-				remoteUsers.putIfAbsent(senderUuid, new User(senderUuid));
+				Beacon beacon = CommonMethods.fromJson(messagePojo.message, Beacon.class);
 
-				checkRemoteUserServer(remoteUsers.get(senderUuid), dmsUuid);
+				String userUuid = beacon.uuid;
 
-				if (!Objects.equals(messagePojoStr, remoteUsers.get(senderUuid).beacon)) {
+				if (userUuid == null)
+					break;
 
-					// Uzak uuid yeni eklendi veya guncellendi.
-					// Beacon, uzak beacon'larda guncellenecek.
-					// Yeni beacon tum yerel kullanicilara dagitilacak.
+				remoteUsers.putIfAbsent(userUuid, new User());
 
-					remoteUsers.get(senderUuid).beacon = messagePojoStr;
-					localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+				checkRemoteUserServer(remoteUsers.get(userUuid), dmsUuid);
 
-				}
+				// Uzak uuid yeni eklendi veya guncellendi.
+				// Beacon, uzak beacon'larda guncellenecek.
+				// Yeni beacon tum yerel kullanicilara dagitilacak.
+
+				copyBeacon(beacon, remoteUsers.get(userUuid).beacon);
+				localUsers.forEach((receiverUuid, user) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
 				break;
 
@@ -321,7 +317,7 @@ public class Model {
 
 			}
 
-		} catch (JsonSyntaxException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 
@@ -331,7 +327,12 @@ public class Model {
 
 	public void processAllLocalBeacons(Consumer<String> consumer) {
 
-		localUsers.forEach((uuid, user) -> consumer.accept(user.beacon));
+		localUsers.forEach((uuid, user) -> {
+
+			consumer.accept(CommonMethods
+					.toRemoteJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null)));
+
+		});
 
 	}
 
@@ -365,9 +366,12 @@ public class Model {
 			user.sendStatusMap.forEach((messageId, status) -> status.set(false));
 		}
 
-		String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
+		String userUuid = user.beacon.uuid;
 
-		localUsers.remove(user.uuid);
+		String messagePojoStr = CommonMethods
+				.toJson(new MessagePojo(userUuid, "", ContentType.UUID_DISCONNECTED, null));
+
+		localUsers.remove(userUuid);
 
 		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
@@ -395,16 +399,19 @@ public class Model {
 		if (user == null)
 			return;
 
+		String userUuid = user.beacon.uuid;
+
 		synchronized (statusReceiverMap) {
 			statusReceiverMap.forEach((sendStatus, receiverUuids) -> {
-				if (receiverUuids.contains(user.uuid) && receiverUuids.size() == 1)
+				if (receiverUuids.contains(userUuid) && receiverUuids.size() == 1)
 					sendStatus.set(false);
 			});
 		}
 
-		String messagePojoStr = gson.toJson(new MessagePojo(user.uuid, "", ContentType.UUID_DISCONNECTED, null));
+		String messagePojoStr = CommonMethods
+				.toJson(new MessagePojo(userUuid, "", ContentType.UUID_DISCONNECTED, null));
 
-		remoteUsers.remove(user.uuid);
+		remoteUsers.remove(userUuid);
 
 		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
@@ -423,13 +430,15 @@ public class Model {
 			if (Objects.equals(receiverUuid, uuid))
 				return;
 
-			listener.sendToLocalUser(receiverUuid, user.beacon);
+			listener.sendToLocalUser(receiverUuid, CommonMethods
+					.toJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null)));
 
 		});
 
 		remoteUsers.forEach((uuid, user) -> {
 
-			listener.sendToLocalUser(receiverUuid, user.beacon);
+			listener.sendToLocalUser(receiverUuid, CommonMethods
+					.toJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null)));
 
 		});
 
@@ -479,7 +488,8 @@ public class Model {
 
 	private void sendRemoteIpsToLocalUser(String receiverUuid) {
 
-		String messagePojoStr = gson.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
+		String messagePojoStr = CommonMethods
+				.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
 
 		listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
@@ -487,7 +497,8 @@ public class Model {
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		String messagePojoStr = gson.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
+		String messagePojoStr = CommonMethods
+				.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
 
 		localUsers.forEach((receiverUuid, user) -> {
 
@@ -497,24 +508,49 @@ public class Model {
 
 	}
 
+	private void copyBeacon(Beacon fromBeacon, Beacon toBeacon) {
+
+		if (fromBeacon.name != null)
+			toBeacon.name = fromBeacon.name;
+
+		if (fromBeacon.comment != null)
+			toBeacon.comment = fromBeacon.comment;
+
+		if (fromBeacon.status != null)
+			toBeacon.status = fromBeacon.status;
+
+		if (fromBeacon.lattitude != null)
+			toBeacon.lattitude = fromBeacon.lattitude;
+
+		if (fromBeacon.longitude != null)
+			toBeacon.longitude = fromBeacon.longitude;
+
+	}
+
 	private class User {
 
-		final String uuid;
-		String beacon;
-		String dmsUuid;
-
-		User(String uuid) {
-			this.uuid = uuid;
-		}
+		protected final Beacon beacon = new Beacon();
+		protected String dmsUuid;
 
 	}
 
 	private class LocalUser extends User {
 
-		final Map<Long, AtomicBoolean> sendStatusMap = Collections.synchronizedMap(new HashMap<Long, AtomicBoolean>());
+		private final Map<Long, AtomicBoolean> sendStatusMap = Collections
+				.synchronizedMap(new HashMap<Long, AtomicBoolean>());
 
-		LocalUser(String uuid) {
-			super(uuid);
+		private LocalUser() {
+
+			try {
+
+				beacon.addresses.add(InetAddress.getByName("localhost"));
+
+			} catch (UnknownHostException e) {
+
+				e.printStackTrace();
+
+			}
+
 		}
 
 	}

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -16,9 +18,56 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.google.gson.ExclusionStrategy;
+import com.google.gson.FieldAttributes;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 public class CommonMethods {
 
 	private static Document confDoc;
+
+	private static final List<String> gsonExcludedNames = Arrays.asList("id", "senderUuid", "messageStatus",
+			"statusReportStr", "waitStatus", "date");
+
+	private static Gson gson = new Gson();
+
+	private static Gson gsonRemote = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
+
+		@Override
+		public boolean shouldSkipField(FieldAttributes arg0) {
+			return gsonExcludedNames.contains(arg0.getName());
+		}
+
+		@Override
+		public boolean shouldSkipClass(Class<?> arg0) {
+			return false;
+		}
+
+	}).create();
+
+	public static String toJson(Object src) {
+
+		return gson.toJson(src);
+
+	}
+
+	public static <T> T fromJson(String json, Class<T> classOfT) throws Exception {
+
+		T result = gson.fromJson(json, classOfT);
+
+		if (result == null)
+			throw new Exception();
+
+		return result;
+
+	}
+
+	public static String toRemoteJson(Object src) {
+
+		return gsonRemote.toJson(src);
+
+	}
 
 	static int getIntercomPort() {
 

@@ -32,6 +32,7 @@ import com.ogya.dms.common.AudioCenter.RecordObject;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.common.SoundPlayer;
+import com.ogya.dms.common.structures.Beacon;
 import com.ogya.dms.database.DbManager;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
@@ -361,10 +362,15 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	}
 
-	private void sendBeacon() {
+	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude) {
 
-		if (model.isServerConnected())
-			dmsClient.sendBeacon(model.getIdentity().toJson());
+		if (!model.isServerConnected())
+			return;
+
+		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.ordinal(),
+				lattitude, longitude);
+
+		dmsClient.sendBeacon(CommonMethods.toJson(beacon));
 
 	}
 
@@ -1144,6 +1150,33 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	}
 
+	private Contact copyBeaconToContact(Beacon beacon, Contact contact) {
+
+		if (contact == null)
+			contact = new Contact();
+
+		if (beacon.uuid != null)
+			contact.setUuid(beacon.uuid);
+
+		if (beacon.name != null)
+			contact.setName(beacon.name);
+
+		if (beacon.comment != null)
+			contact.setComment(beacon.comment);
+
+		if (beacon.status != null)
+			contact.setStatus(Availability.values()[beacon.status]);
+
+		if (beacon.lattitude != null)
+			contact.setLattitude(beacon.lattitude);
+
+		if (beacon.longitude != null)
+			contact.setLongitude(beacon.longitude);
+
+		return contact;
+
+	}
+
 	@Override
 	public void beaconReceived(String message) {
 
@@ -1151,10 +1184,16 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Contact incomingContact = Contact.fromJson(message);
+				Beacon beacon = CommonMethods.fromJson(message, Beacon.class);
 
-				final String uuid = incomingContact.getUuid();
-				boolean wasOnline = model.isContactOnline(uuid);
+				final String userUuid = beacon.uuid;
+
+				if (userUuid == null)
+					return;
+
+				boolean wasOnline = model.isContactOnline(userUuid);
+
+				Contact incomingContact = copyBeaconToContact(beacon, model.getContact(beacon.uuid));
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
@@ -1162,8 +1201,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
-				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(uuid, newContact.getName(),
+				listenerTaskQueue.execute(() -> dmsListeners.forEach(
+						listener -> listener.contactUpdated(new ContactHandleImpl(userUuid, newContact.getName(),
 								newContact.getComment(), newContact.getLattitude(), newContact.getLongitude(), true))));
 
 				if (!wasOnline) {
@@ -1175,7 +1214,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 						// START WITH PRIVATE MESSAGES
 						try {
 
-							for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(uuid)) {
+							for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(userUuid)) {
 
 								switch (waitingMessage.getMessageStatus()) {
 
@@ -1188,7 +1227,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 								case SENT:
 								case RECEIVED:
 
-									dmsClient.claimMessageStatus(waitingMessage.getId(), uuid);
+									dmsClient.claimMessageStatus(waitingMessage.getId(), userUuid);
 
 									break;
 
@@ -1210,7 +1249,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 						try {
 
 							for (Message waitingMessage : dbManager
-									.getGroupMessagesWaitingToContact(model.getLocalUuid(), uuid)) {
+									.getGroupMessagesWaitingToContact(model.getLocalUuid(), userUuid)) {
 
 								StatusReport statusReport;
 
@@ -1220,20 +1259,20 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 									continue;
 								}
 
-								MessageStatus messageStatus = statusReport.uuidStatus.get(uuid);
+								MessageStatus messageStatus = statusReport.uuidStatus.get(userUuid);
 
 								switch (messageStatus) {
 
 								case FRESH:
 
-									sendGroupMessage(waitingMessage, uuid);
+									sendGroupMessage(waitingMessage, userUuid);
 
 									break;
 
 								case SENT:
 								case RECEIVED:
 
-									dmsClient.claimMessageStatus(waitingMessage.getId(), uuid);
+									dmsClient.claimMessageStatus(waitingMessage.getId(), userUuid);
 
 									break;
 
@@ -1255,9 +1294,9 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 						try {
 
 							for (Message waitingMessage : dbManager
-									.getGroupMessagesNotReadToItsGroup(model.getLocalUuid(), uuid)) {
+									.getGroupMessagesNotReadToItsGroup(model.getLocalUuid(), userUuid)) {
 
-								dmsClient.claimStatusReport(waitingMessage.getId(), uuid);
+								dmsClient.claimStatusReport(waitingMessage.getId(), userUuid);
 
 							}
 
@@ -1270,7 +1309,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 						// MODIFY GROUP STATUS
 						try {
 
-							for (Dgroup group : dbManager.getAllActiveGroupsOfUuid(uuid)) {
+							for (Dgroup group : dbManager.getAllActiveGroupsOfUuid(userUuid)) {
 
 								group.setStatus(Availability.LIMITED);
 
@@ -1540,10 +1579,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		if (connStatus) {
 
-			sendBeacon();
+			Identity identity = model.getIdentity();
 
-			dmsClient.claimAllBeacons();
-			dmsClient.claimRemoteIps();
+			sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
+					identity.getLongitude());
+
+			dmsClient.claimStartInfo();
 
 		} else {
 
@@ -1803,7 +1844,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon();
+				sendBeacon(null, comment, null, null, null);
 
 			} catch (HibernateException e) {
 
@@ -1840,7 +1881,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon();
+				sendBeacon(null, null, newIdentity.getStatus(), null, null);
 
 			} catch (HibernateException e) {
 
@@ -2915,7 +2956,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon();
+				sendBeacon(null, null, null, lattitude, longitude);
 
 			} catch (HibernateException e) {
 

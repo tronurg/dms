@@ -63,13 +63,13 @@ public class DmsClient {
 
 	public void sendBeacon(String message) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.BCON, null)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(message, null, ContentType.BCON, null)));
 
 	}
 
-	public void claimAllBeacons() {
+	public void claimStartInfo() {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.REQ_BCON, null)));
+		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.REQ_STRT, null)));
 
 	}
 
@@ -82,12 +82,6 @@ public class DmsClient {
 	public void removeRemoteIp(String message) {
 
 		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.REMOVE_IP, null)));
-
-	}
-
-	public void claimRemoteIps() {
-
-		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.REQ_IP, null)));
 
 	}
 
