@@ -306,17 +306,6 @@ public class Model {
 
 	}
 
-//	public void processAllLocalBeacons(Consumer<String> consumer) {
-//
-//		localUsers.forEach((uuid, user) -> {
-//
-//			consumer.accept(CommonMethods
-//					.toRemoteJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null)));
-//
-//		});
-//
-//	}
-
 	public void testAllLocalUsers() {
 
 		localUsers.forEach((uuid, user) -> listener.sendToLocalUser(uuid, ""));
