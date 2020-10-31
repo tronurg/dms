@@ -143,7 +143,7 @@ public class TcpManager implements TcpServerListener {
 									connection.sendMethod = tcpClient::sendMessage;
 									dmsServer.connections.add(connection);
 
-									checkServer(dmsServer);
+									serverConnectionsUpdated(dmsServer);
 
 								});
 
@@ -168,7 +168,7 @@ public class TcpManager implements TcpServerListener {
 									connections.remove(address);
 									dmsServer.connections.remove(connection);
 
-									checkServer(dmsServer);
+									serverConnectionsUpdated(dmsServer);
 
 								});
 
@@ -212,7 +212,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 
-				checkServer(dmsServer);
+				serverConnectionsUpdated(dmsServer);
 
 			}
 
@@ -389,7 +389,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void checkServer(DmsServer dmsServer) {
+	private void serverConnectionsUpdated(DmsServer dmsServer) {
 
 		List<InetAddress> addresses = new ArrayList<InetAddress>();
 
@@ -446,7 +446,7 @@ public class TcpManager implements TcpServerListener {
 
 				dmsServer.connections.remove(connection);
 
-				checkServer(dmsServer);
+				serverConnectionsUpdated(dmsServer);
 
 			}
 
@@ -477,7 +477,7 @@ public class TcpManager implements TcpServerListener {
 
 				dmsServer.connections.add(connection);
 
-				checkServer(dmsServer);
+				serverConnectionsUpdated(dmsServer);
 
 			}
 
