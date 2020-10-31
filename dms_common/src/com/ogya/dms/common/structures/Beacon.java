@@ -1,8 +1,6 @@
 package com.ogya.dms.common.structures;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class Beacon {
@@ -13,7 +11,7 @@ public class Beacon {
 	public Integer status;
 	public Double lattitude;
 	public Double longitude;
-	public final List<InetAddress> addresses = Collections.synchronizedList(new ArrayList<InetAddress>());
+	public List<InetAddress> addresses;
 
 	public Beacon(String uuid) {
 

@@ -56,6 +56,16 @@ public class Contact {
 		this.uuid = uuid;
 	}
 
+	public Contact(String uuid, String name, String comment, Availability status, Double lattitude, Double longitude) {
+		super();
+		this.uuid = uuid;
+		this.name = name;
+		this.comment = comment;
+		this.status = status;
+		this.lattitude = lattitude;
+		this.longitude = longitude;
+	}
+
 	public Long getId() {
 		return id;
 	}

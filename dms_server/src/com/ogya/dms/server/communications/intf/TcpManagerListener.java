@@ -1,10 +1,11 @@
 package com.ogya.dms.server.communications.intf;
 
+import java.net.InetAddress;
+import java.util.List;
+
 public interface TcpManagerListener {
 
-	void connectedToRemoteServer(String dmsUuid);
-
-	void remoteServerDisconnected(String dmsUuid);
+	void serverConnectionsUpdated(String dmsUuid, List<InetAddress> addresses);
 
 	void messageReceivedFromRemoteServer(String message, String dmsUuid);
 

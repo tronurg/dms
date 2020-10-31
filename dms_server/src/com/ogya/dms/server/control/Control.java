@@ -3,6 +3,7 @@ package com.ogya.dms.server.control;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -255,28 +256,9 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void connectedToRemoteServer(final String dmsUuid) {
+	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> addresses) {
 
-		taskQueue.execute(() -> model.processAllLocalBeacons(beacon -> {
-
-			try {
-
-				getTcpManager().sendMessageToServer(dmsUuid, beacon, null, null);
-
-			} catch (IOException e) {
-
-				e.printStackTrace();
-
-			}
-
-		}));
-
-	}
-
-	@Override
-	public void remoteServerDisconnected(final String dmsUuid) {
-
-		taskQueue.execute(() -> model.remoteServerDisconnected(dmsUuid));
+		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, addresses));
 
 	}
 

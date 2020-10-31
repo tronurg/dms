@@ -1,7 +1,9 @@
 package com.ogya.dms.intf;
 
+import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.JComponent;
 
@@ -37,6 +39,8 @@ public interface DmsHandle {
 	ContactHandle getContactHandle(String uuid);
 
 	GroupHandle getGroupHandle(String groupUuid);
+
+	Set<String> getUuidsByAddress(InetAddress address);
 
 	boolean sendMessageToContacts(String message, Integer messageCode, List<String> contactUuids);
 

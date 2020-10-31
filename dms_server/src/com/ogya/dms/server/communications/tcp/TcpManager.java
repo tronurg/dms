@@ -391,34 +391,18 @@ public class TcpManager implements TcpServerListener {
 
 	private void checkServer(DmsServer dmsServer) {
 
-		if (!dmsServer.isConnected.get() && dmsServer.connections.size() > 0) {
+		List<InetAddress> addresses = new ArrayList<InetAddress>();
 
-			dmsServer.isConnected.set(true);
+		dmsServer.connections.forEach(connection -> addresses.add(connection.remoteAddress));
 
-			connectedToRemoteServerToListeners(dmsServer.dmsUuid);
+		listeners.forEach(listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, addresses));
 
-		} else if (dmsServer.isConnected.get() && dmsServer.connections.size() == 0) {
+		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
-
-			dmsServer.isConnected.set(false);
-
-			remoteServerDisconnectedToListeners(dmsServer.dmsUuid);
 
 			dmsServers.remove(dmsServer.dmsUuid).close();
 
 		}
-
-	}
-
-	private void remoteServerDisconnectedToListeners(final String dmsUuid) {
-
-		listeners.forEach(e -> e.remoteServerDisconnected(dmsUuid));
-
-	}
-
-	private void connectedToRemoteServerToListeners(final String dmsUuid) {
-
-		listeners.forEach(e -> e.connectedToRemoteServer(dmsUuid));
 
 	}
 
@@ -603,8 +587,6 @@ public class TcpManager implements TcpServerListener {
 					}
 
 				}));
-
-		final AtomicBoolean isConnected = new AtomicBoolean(false);
 
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 

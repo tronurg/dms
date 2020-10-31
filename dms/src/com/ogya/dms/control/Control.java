@@ -1,6 +1,7 @@
 package com.ogya.dms.control;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -387,6 +388,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				final Contact newContact = dbManager.addUpdateContact(contact);
 
 				model.addContact(newContact);
+
+				model.setContactAddresses(uuid, null);
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -1148,30 +1151,6 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	}
 
-	private Contact copyBeaconToContact(Beacon beacon, Contact contact) {
-
-		if (contact == null)
-			contact = new Contact(beacon.uuid);
-
-		if (beacon.name != null)
-			contact.setName(beacon.name);
-
-		if (beacon.comment != null)
-			contact.setComment(beacon.comment);
-
-		if (beacon.status != null)
-			contact.setStatus(Availability.values()[beacon.status]);
-
-		if (beacon.lattitude != null)
-			contact.setLattitude(beacon.lattitude);
-
-		if (beacon.longitude != null)
-			contact.setLongitude(beacon.longitude);
-
-		return contact;
-
-	}
-
 	@Override
 	public void beaconReceived(String message) {
 
@@ -1188,11 +1167,14 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				boolean wasOnline = model.isContactOnline(userUuid);
 
-				Contact incomingContact = copyBeaconToContact(beacon, model.getContact(beacon.uuid));
+				Contact incomingContact = new Contact(beacon.uuid, beacon.name, beacon.comment,
+						Availability.values()[beacon.status], beacon.lattitude, beacon.longitude);
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
 				model.addContact(newContact);
+
+				model.setContactAddresses(userUuid, beacon.addresses);
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -3021,6 +3003,13 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		group.getContacts().forEach(contact -> contactUuids.add(contact.getUuid()));
 
 		return new GroupHandleImpl(group.getUuid(), group.getName(), group.getComment(), contactUuids);
+
+	}
+
+	@Override
+	public Set<String> getUuidsByAddress(InetAddress address) {
+
+		return model.getUuidsByAddress(address);
 
 	}
 
