@@ -169,7 +169,7 @@ public class Model {
 
 	}
 
-	public Set<String> getUuidsByAddress(InetAddress address) {
+	public List<String> getUuidsByAddress(InetAddress address) {
 
 		try {
 
@@ -182,7 +182,7 @@ public class Model {
 
 		}
 
-		Set<String> uuids = new HashSet<String>();
+		List<String> uuids = new ArrayList<String>();
 
 		synchronized (uuidsByAddress) {
 

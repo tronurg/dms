@@ -3007,7 +3007,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	}
 
 	@Override
-	public Set<String> getUuidsByAddress(InetAddress address) {
+	public List<String> getUuidsByAddress(InetAddress address) {
 
 		return model.getUuidsByAddress(address);
 
