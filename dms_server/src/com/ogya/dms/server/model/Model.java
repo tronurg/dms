@@ -182,9 +182,6 @@ public class Model {
 
 						RemoteUser remoteUser = remoteUsers.get(receiverUuid);
 
-						if (remoteUser.dmsServer.dmsUuid == null)
-							continue;
-
 						remoteServerReceiverUuids.putIfAbsent(remoteUser.dmsServer.dmsUuid, new HashSet<String>());
 						remoteServerReceiverUuids.get(remoteUser.dmsServer.dmsUuid).add(receiverUuid);
 
@@ -276,7 +273,14 @@ public class Model {
 
 			case UUID_DISCONNECTED:
 
-				remoteUserDisconnected(remoteUsers.get(messagePojo.message));
+				String uuid = messagePojo.message;
+
+				remoteUserDisconnected(remoteUsers.get(uuid));
+
+				DmsServer dmsServer = remoteServers.get(dmsUuid);
+
+				if (dmsServer != null)
+					dmsServer.users.remove(uuid);
 
 				break;
 
@@ -358,7 +362,7 @@ public class Model {
 		String userUuid = user.beacon.uuid;
 
 		String messagePojoStr = CommonMethods
-				.toJson(new MessagePojo(userUuid, "", ContentType.UUID_DISCONNECTED, null));
+				.toJson(new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null));
 
 		localUsers.remove(userUuid);
 
@@ -392,7 +396,7 @@ public class Model {
 		}
 
 		String messagePojoStr = CommonMethods
-				.toJson(new MessagePojo(userUuid, "", ContentType.UUID_DISCONNECTED, null));
+				.toJson(new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null));
 
 		remoteUsers.remove(userUuid);
 
