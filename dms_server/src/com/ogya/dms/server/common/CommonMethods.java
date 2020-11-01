@@ -27,8 +27,7 @@ public class CommonMethods {
 
 	private static Document confDoc;
 
-	private static final List<String> gsonExcludedNames = Arrays.asList("id", "senderUuid", "messageStatus",
-			"statusReportStr", "waitStatus", "date");
+	private static final List<String> gsonExcludedNames = Arrays.asList("addresses");
 
 	private static Gson gson = new Gson();
 
