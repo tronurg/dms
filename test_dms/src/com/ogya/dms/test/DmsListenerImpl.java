@@ -1,8 +1,6 @@
 package com.ogya.dms.test;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Path;
 
 import com.ogya.dms.intf.DmsHandle;
@@ -104,15 +102,6 @@ public class DmsListenerImpl implements DmsListener {
 	public void contactUpdated(ContactHandle contactHandle) {
 
 //		System.out.println(String.format("Contact updated: %s\n", contactHandle.getName()));
-
-		System.out.println("I'm " + dmsHandle.getMyContactHandle().getName());
-		try {
-			dmsHandle.getUuidsByAddress(InetAddress.getByName("192.168.1.87"))
-					.forEach(e -> System.out.println(dmsHandle.getContactHandle(e).getName()));
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 	}
 
