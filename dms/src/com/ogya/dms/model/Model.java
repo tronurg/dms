@@ -8,12 +8,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,8 +33,8 @@ public class Model {
 	private final Map<String, Contact> contacts = Collections.synchronizedMap(new HashMap<String, Contact>());
 	private final Map<String, Dgroup> groups = Collections.synchronizedMap(new HashMap<String, Dgroup>());
 
-	private final Map<InetAddress, Set<String>> uuidsByAddress = Collections
-			.synchronizedMap(new HashMap<InetAddress, Set<String>>());
+	private final Map<String, List<InetAddress>> uuidAddresses = Collections
+			.synchronizedMap(new HashMap<String, List<InetAddress>>());
 
 	private final List<String> openUuids = Collections.synchronizedList(new ArrayList<String>());
 
@@ -145,27 +143,10 @@ public class Model {
 
 	public void setContactAddresses(String uuid, List<InetAddress> addresses) {
 
-		synchronized (uuidsByAddress) {
-
-			uuidsByAddress.entrySet().stream()
-					.filter(addressUuids -> addressUuids.getValue().contains(uuid)
-							&& (addresses == null || !addresses.contains(addressUuids.getKey())))
-					.forEach(addressUuids -> addressUuids.getValue().remove(uuid));
-
-			uuidsByAddress.entrySet().removeIf(addressUuids -> addressUuids.getValue().isEmpty());
-
-			if (addresses == null)
-				return;
-
-			addresses.forEach(address -> {
-
-				uuidsByAddress.putIfAbsent(address, new HashSet<String>());
-
-				uuidsByAddress.get(address).add(uuid);
-
-			});
-
-		}
+		if (addresses == null)
+			uuidAddresses.remove(uuid);
+		else
+			uuidAddresses.put(uuid, addresses);
 
 	}
 
@@ -182,14 +163,12 @@ public class Model {
 
 		}
 
+		final InetAddress searchAddress = address;
+
 		List<String> uuids = new ArrayList<String>();
 
-		synchronized (uuidsByAddress) {
-
-			if (uuidsByAddress.containsKey(address))
-				uuids.addAll(uuidsByAddress.get(address));
-
-		}
+		uuidAddresses.entrySet().stream().filter(entry -> entry.getValue().contains(searchAddress))
+				.forEach(entry -> uuids.add(entry.getKey()));
 
 		return uuids;
 
