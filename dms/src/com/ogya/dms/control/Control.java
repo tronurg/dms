@@ -371,7 +371,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.ordinal(),
 				lattitude, longitude);
 
-		dmsClient.sendBeacon(CommonMethods.toJson(beacon));
+		dmsClient.sendBeacon(beacon.toJson());
 
 	}
 
@@ -1158,7 +1158,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Beacon beacon = CommonMethods.fromJson(message, Beacon.class);
+				Beacon beacon = Beacon.fromJson(message);
 
 				final String userUuid = beacon.uuid;
 

@@ -36,6 +36,14 @@ import com.google.gson.ExclusionStrategy;
 import com.google.gson.FieldAttributes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import com.ogya.dms.structures.Availability;
+import com.ogya.dms.structures.MessageStatus;
+import com.ogya.dms.structures.MessageType;
+import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.ReportsPane.ReportTemplate;
 
 public class CommonMethods {
@@ -47,7 +55,28 @@ public class CommonMethods {
 	private static final List<String> gsonExcludedNames = Arrays.asList("id", "senderUuid", "messageStatus",
 			"statusReportStr", "waitStatus", "date");
 
-	private static Gson gson = new Gson();
+	private static Gson gson = new GsonBuilder()
+			.registerTypeAdapter(MessageStatus.class, new TypeAdapter<MessageStatus>() {
+
+				@Override
+				public MessageStatus read(JsonReader reader) throws IOException {
+					if (reader.peek() == JsonToken.NULL) {
+						reader.nextNull();
+						return null;
+					}
+					return MessageStatus.values()[reader.nextInt()];
+				}
+
+				@Override
+				public void write(JsonWriter writer, MessageStatus value) throws IOException {
+					if (value == null) {
+						writer.nullValue();
+						return;
+					}
+					writer.value(value.ordinal());
+				}
+
+			}).create();
 
 	private static Gson gsonDb = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
 
@@ -59,6 +88,66 @@ public class CommonMethods {
 		@Override
 		public boolean shouldSkipClass(Class<?> arg0) {
 			return false;
+		}
+
+	}).registerTypeAdapter(Availability.class, new TypeAdapter<Availability>() {
+
+		@Override
+		public Availability read(JsonReader reader) throws IOException {
+			if (reader.peek() == JsonToken.NULL) {
+				reader.nextNull();
+				return null;
+			}
+			return Availability.values()[reader.nextInt()];
+		}
+
+		@Override
+		public void write(JsonWriter writer, Availability value) throws IOException {
+			if (value == null) {
+				writer.nullValue();
+				return;
+			}
+			writer.value(value.ordinal());
+		}
+
+	}).registerTypeAdapter(MessageType.class, new TypeAdapter<MessageType>() {
+
+		@Override
+		public MessageType read(JsonReader reader) throws IOException {
+			if (reader.peek() == JsonToken.NULL) {
+				reader.nextNull();
+				return null;
+			}
+			return MessageType.values()[reader.nextInt()];
+		}
+
+		@Override
+		public void write(JsonWriter writer, MessageType value) throws IOException {
+			if (value == null) {
+				writer.nullValue();
+				return;
+			}
+			writer.value(value.ordinal());
+		}
+
+	}).registerTypeAdapter(ReceiverType.class, new TypeAdapter<ReceiverType>() {
+
+		@Override
+		public ReceiverType read(JsonReader reader) throws IOException {
+			if (reader.peek() == JsonToken.NULL) {
+				reader.nextNull();
+				return null;
+			}
+			return ReceiverType.values()[reader.nextInt()];
+		}
+
+		@Override
+		public void write(JsonWriter writer, ReceiverType value) throws IOException {
+			if (value == null) {
+				writer.nullValue();
+				return;
+			}
+			writer.value(value.ordinal());
 		}
 
 	}).create();

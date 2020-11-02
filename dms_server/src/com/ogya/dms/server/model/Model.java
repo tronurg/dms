@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.ogya.dms.common.structures.Beacon;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
-import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
@@ -80,7 +79,7 @@ public class Model {
 
 		try {
 
-			MessagePojo messagePojo = CommonMethods.fromJson(messagePojoStr, MessagePojo.class);
+			MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
 
 			String senderUuid = messagePojo.senderUuid;
 			Long messageId = messagePojo.messageId;
@@ -89,7 +88,7 @@ public class Model {
 
 			case BCON:
 
-				Beacon beacon = CommonMethods.fromJson(messagePojo.message, Beacon.class);
+				Beacon beacon = Beacon.fromJson(messagePojo.message);
 
 				String userUuid = beacon.uuid;
 
@@ -194,7 +193,7 @@ public class Model {
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
 
-					listener.sendToLocalUser(senderUuid, CommonMethods.toJson(progressMessagePojo));
+					listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
 				}
 
@@ -219,7 +218,7 @@ public class Model {
 								String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
 
 						if (localUsers.containsKey(senderUuid))
-							listener.sendToLocalUser(senderUuid, CommonMethods.toJson(progressMessagePojo));
+							listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
 					} : progress -> {
 
@@ -248,13 +247,13 @@ public class Model {
 
 		try {
 
-			MessagePojo messagePojo = CommonMethods.fromJson(messagePojoStr, MessagePojo.class);
+			MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
 
 			switch (messagePojo.contentType) {
 
 			case BCON:
 
-				Beacon beacon = CommonMethods.fromJson(messagePojo.message, Beacon.class);
+				Beacon beacon = Beacon.fromJson(messagePojo.message);
 
 				String userUuid = beacon.uuid;
 
@@ -361,8 +360,7 @@ public class Model {
 
 		String userUuid = user.beacon.uuid;
 
-		String messagePojoStr = CommonMethods
-				.toJson(new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null));
+		String messagePojoStr = new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null).toJson();
 
 		localUsers.remove(userUuid);
 
@@ -395,8 +393,7 @@ public class Model {
 			});
 		}
 
-		String messagePojoStr = CommonMethods
-				.toJson(new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null));
+		String messagePojoStr = new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null).toJson();
 
 		remoteUsers.remove(userUuid);
 
@@ -412,8 +409,7 @@ public class Model {
 
 	private void sendBeaconToLocalUsers(Beacon beacon) {
 
-		String beaconStr = CommonMethods
-				.toJson(new MessagePojo(CommonMethods.toJson(beacon), null, ContentType.BCON, null));
+		String beaconStr = new MessagePojo(beacon.toJson(), null, ContentType.BCON, null).toJson();
 
 		localUsers.forEach((uuid, user) -> {
 
@@ -433,8 +429,7 @@ public class Model {
 			if (Objects.equals(receiverUuid, uuid))
 				return;
 
-			String beaconStr = CommonMethods
-					.toJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null));
+			String beaconStr = new MessagePojo(user.beacon.toJson(), null, ContentType.BCON, null).toJson();
 
 			listener.sendToLocalUser(receiverUuid, beaconStr);
 
@@ -442,8 +437,7 @@ public class Model {
 
 		remoteUsers.forEach((uuid, user) -> {
 
-			String beaconStr = CommonMethods
-					.toJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null));
+			String beaconStr = new MessagePojo(user.beacon.toJson(), null, ContentType.BCON, null).toJson();
 
 			listener.sendToLocalUser(receiverUuid, beaconStr);
 
@@ -466,8 +460,7 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			String beaconStr = CommonMethods
-					.toRemoteJson(new MessagePojo(CommonMethods.toJson(user.beacon), null, ContentType.BCON, null));
+			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), null, ContentType.BCON, null).toJson();
 
 			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null);
 
@@ -519,8 +512,7 @@ public class Model {
 
 	private void sendRemoteIpsToLocalUser(String receiverUuid) {
 
-		String messagePojoStr = CommonMethods
-				.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
+		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null).toJson();
 
 		listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
@@ -528,8 +520,7 @@ public class Model {
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		String messagePojoStr = CommonMethods
-				.toJson(new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null));
+		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null).toJson();
 
 		localUsers.forEach((receiverUuid, user) -> {
 

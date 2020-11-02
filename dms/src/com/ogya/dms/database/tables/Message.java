@@ -13,6 +13,7 @@ import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
+import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
@@ -28,43 +29,55 @@ public class Message {
 	private Long id;
 
 	@Column(name = "message_id")
+	@SerializedName(value = "a")
 	private Long messageId;
 
 	@Column(name = "owner_uuid", nullable = false, updatable = false)
+	@SerializedName(value = "b")
 	private String ownerUuid;
 
 	@Column(name = "sender_uuid", nullable = false, updatable = false)
+	@SerializedName(value = "c")
 	private String senderUuid;
 
 	@Column(name = "receiver_uuid", nullable = false, updatable = false)
+	@SerializedName(value = "d")
 	private String receiverUuid;
 
 	@Column(name = "receiver_type", nullable = false, updatable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
+	@SerializedName(value = "e")
 	private ReceiverType receiverType;
 
 	@Column(name = "message_type", nullable = false, updatable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
+	@SerializedName(value = "f")
 	private MessageType messageType;
 
 	@Column(name = "message_code", updatable = false)
+	@SerializedName(value = "g")
 	private Integer messageCode;
 
 	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
+	@SerializedName(value = "h")
 	private String content;
 
 	@Column(name = "message_status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
+	@SerializedName(value = "i")
 	private MessageStatus messageStatus;
 
 	@Column(name = "wait_status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
+	@SerializedName(value = "j")
 	private WaitStatus waitStatus;
 
 	@Column(name = "status_report_str", length = Integer.MAX_VALUE)
+	@SerializedName(value = "k")
 	private String statusReportStr;
 
 	@Column(name = "date", nullable = false, updatable = false)
+	@SerializedName(value = "l")
 	private Date date;
 
 	public Message() {

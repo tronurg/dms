@@ -41,7 +41,7 @@ public class Dgroup {
 	private String ownerUuid;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
 	private Availability status;
 
 	@Column(name = "active", nullable = false)

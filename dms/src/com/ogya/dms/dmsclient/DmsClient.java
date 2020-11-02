@@ -8,7 +8,6 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import com.google.gson.Gson;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
@@ -27,8 +26,6 @@ public class DmsClient {
 	private final DmsClientListener listener;
 
 	private final LinkedBlockingQueue<String> dealerQueue = new LinkedBlockingQueue<String>();
-
-	private final Gson gson = new Gson();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
@@ -63,87 +60,88 @@ public class DmsClient {
 
 	public void sendBeacon(String message) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, null, ContentType.BCON, null)));
+		dealerQueue.offer(new MessagePojo(message, null, ContentType.BCON, null).toJson());
 
 	}
 
 	public void claimStartInfo() {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.REQ_STRT, null)));
+		dealerQueue.offer(new MessagePojo(null, uuid, ContentType.REQ_STRT, null).toJson());
 
 	}
 
 	public void addRemoteIp(String message) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.ADD_IP, null)));
+		dealerQueue.offer(new MessagePojo(message, uuid, ContentType.ADD_IP, null).toJson());
 
 	}
 
 	public void removeRemoteIp(String message) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, ContentType.REMOVE_IP, null)));
+		dealerQueue.offer(new MessagePojo(message, uuid, ContentType.REMOVE_IP, null).toJson());
 
 	}
 
 	public void sendMessage(String message, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE, messageId)));
+		dealerQueue.offer(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE, messageId).toJson());
 
 	}
 
 	public void sendMessage(String message, Iterable<String> receiverUuids, Long messageId) {
 
-		dealerQueue.offer(gson.toJson(
-				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)));
+		dealerQueue
+				.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)
+						.toJson());
 
 	}
 
 	public void cancelMessage(Long messageId) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(null, uuid, ContentType.CANCEL, messageId)));
+		dealerQueue.offer(new MessagePojo(null, uuid, ContentType.CANCEL, messageId).toJson());
 
 	}
 
 	public void claimMessageStatus(Long messageId, String receiverUuid) {
 
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId)));
+		dealerQueue
+				.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId).toJson());
 
 	}
 
 	public void feedMessageStatus(String senderUuid, String receiverUuid, Long messageId, MessageStatus messageStatus) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(null, senderUuid, receiverUuid,
-				ContentType.valueOf(messageStatus.toString()), messageId)));
+		dealerQueue.offer(new MessagePojo(null, senderUuid, receiverUuid, ContentType.valueOf(messageStatus.toString()),
+				messageId).toJson());
 
 	}
 
 	public void feedMessageStatus(String[] senderUuids, String receiverUuid, Long messageId,
 			MessageStatus messageStatus) {
 
-		dealerQueue.offer(gson.toJson(new MessagePojo(null, String.join(";", senderUuids), receiverUuid,
-				ContentType.valueOf(messageStatus.toString()), messageId)));
+		dealerQueue.offer(new MessagePojo(null, String.join(";", senderUuids), receiverUuid,
+				ContentType.valueOf(messageStatus.toString()), messageId).toJson());
 
 	}
 
 	public void claimStatusReport(Long messageId, String receiverUuid) {
 
-		dealerQueue.offer(
-				gson.toJson(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId)));
+		dealerQueue
+				.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId).toJson());
 
 	}
 
 	public void feedStatusReport(Long messageId, String message, String receiverUuid) {
 
 		dealerQueue.offer(
-				gson.toJson(new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId)));
+				new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId).toJson());
 
 	}
 
 	public void sendTransientMessage(String message, Iterable<String> receiverUuids) {
 
-		dealerQueue.offer(gson
-				.toJson(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null)));
+		dealerQueue.offer(
+				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null).toJson());
 
 	}
 
@@ -246,7 +244,7 @@ public class DmsClient {
 
 		try {
 
-			MessagePojo messagePojo = gson.fromJson(message, MessagePojo.class);
+			MessagePojo messagePojo = MessagePojo.fromJson(message);
 
 			if (Objects.equals(uuid, messagePojo.senderUuid))
 				return;

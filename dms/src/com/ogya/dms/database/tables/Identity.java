@@ -12,7 +12,6 @@ import javax.persistence.Id;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 
-import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.Availability;
 
 @Entity
@@ -33,7 +32,7 @@ public class Identity {
 	private String comment;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
 	private Availability status;
 
 	@Column(name = "lattitude")
@@ -111,14 +110,6 @@ public class Identity {
 	private void onCreate() {
 		this.uuid = UUID.randomUUID().toString();
 		this.status = Availability.AVAILABLE;
-	}
-
-	public String toJson() {
-		return CommonMethods.toDbJson(this);
-	}
-
-	public static Identity fromJson(String json) throws Exception {
-		return CommonMethods.fromDbJson(json, Identity.class);
 	}
 
 }

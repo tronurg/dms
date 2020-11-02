@@ -3,10 +3,12 @@ package com.ogya.dms.structures;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.common.CommonMethods;
 
 public class StatusReport {
 
+	@SerializedName(value = "a")
 	public final Map<String, MessageStatus> uuidStatus = new HashMap<String, MessageStatus>();
 
 	public MessageStatus getOverallStatus() {
@@ -18,11 +20,11 @@ public class StatusReport {
 
 		for (MessageStatus messageStatus : uuidStatus.values()) {
 
-			minOrder = Math.min(minOrder, messageStatus.getLogicalOrder());
+			minOrder = Math.min(minOrder, messageStatus.ordinal());
 
 		}
 
-		return MessageStatus.getMessageStatusByLogicalOrder(minOrder);
+		return MessageStatus.values()[minOrder];
 
 	}
 

@@ -14,6 +14,7 @@ import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
+import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.Availability;
 
@@ -26,25 +27,32 @@ public class Contact {
 	private Long id;
 
 	@Column(name = "uuid", unique = true, nullable = false, updatable = false)
+	@SerializedName(value = "a")
 	private String uuid;
 
 	@Column(name = "name", nullable = false, updatable = false)
+	@SerializedName(value = "b")
 	private String name;
 
 	@Column(name = "comment")
+	@SerializedName(value = "c")
 	private String comment;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Enumerated(EnumType.ORDINAL)
+	@SerializedName(value = "d")
 	private Availability status;
 
 	@Column(name = "lattitude")
+	@SerializedName(value = "e")
 	private Double lattitude;
 
 	@Column(name = "longitude")
+	@SerializedName(value = "f")
 	private Double longitude;
 
 	@ManyToMany(mappedBy = "contacts")
+	@SerializedName(value = "g")
 	private Set<Dgroup> groups = new HashSet<Dgroup>();
 
 	public Contact() {
