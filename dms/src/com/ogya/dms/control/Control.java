@@ -3038,7 +3038,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Dgroup group = model.getGroup(groupUuid);
 
-		if (group == null)
+		if (group == null || !Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			return false;
 
 		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.TEXT,
@@ -3081,7 +3081,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Dgroup group = model.getGroup(groupUuid);
 
-		if (group == null)
+		if (group == null || !Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			return false;
 
 		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.OBJECT,
@@ -3125,7 +3125,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Dgroup group = model.getGroup(groupUuid);
 
-		if (group == null)
+		if (group == null || !Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			return false;
 
 		Message outgoingMessage = new Message(model.getLocalUuid(), groupUuid, ReceiverType.GROUP, MessageType.LIST,
@@ -3179,7 +3179,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Dgroup group = model.getGroup(groupUuid);
 
-		if (group == null)
+		if (group == null || !Objects.equals(group.getOwnerUuid(), model.getLocalUuid()))
 			return false;
 
 		try {

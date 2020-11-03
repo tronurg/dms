@@ -235,11 +235,19 @@ class GroupPane extends GridPane {
 
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
 
+		nameLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
+			String name = nameLabel.getText();
+			if (name == null || name.isEmpty())
+				return null;
+			return new Tooltip(name);
+		}, nameLabel.textProperty()));
+
 	}
 
 	private void initCommentLabel() {
 
 		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
 		commentLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String comment = commentLabel.getText();
 			if (comment == null || comment.isEmpty())
@@ -263,6 +271,7 @@ class GroupPane extends GridPane {
 		unreadMessagesLabel.setTextFill(Color.WHITE);
 
 		unreadMessagesLabel.visibleProperty().bind(Bindings.size(unreadMessages).greaterThan(0));
+		unreadMessagesLabel.managedProperty().bind(unreadMessagesLabel.visibleProperty());
 		unreadMessagesLabel.textProperty().bind(Bindings.size(unreadMessages).asString());
 
 	}
