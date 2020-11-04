@@ -15,7 +15,6 @@ import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
@@ -26,13 +25,15 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-class GroupPane extends GridPane {
+class GroupPane extends HBox {
 
 	private static final double SIZE = 24.0;
 
@@ -41,9 +42,11 @@ class GroupPane extends GridPane {
 	private final Circle profileRound = new Circle(SIZE * 0.8);
 	private final Label initialLabel = new Label();
 
+	private final VBox middlePane = new VBox();
 	private final Label nameLabel = new Label();
 	private final Label commentLabel = new Label();
 
+	private final GridPane rightPane = new GridPane();
 	private final Label unreadMessagesLabel = new Label() {
 
 		@Override
@@ -64,7 +67,7 @@ class GroupPane extends GridPane {
 
 	GroupPane() {
 
-		super();
+		super(5.0);
 
 		init();
 
@@ -73,23 +76,10 @@ class GroupPane extends GridPane {
 	private void init() {
 
 		initProfilePicture();
-		initStatusCircle();
-		initProfileRound();
-		initInitialLabel();
-		initNameLabel();
-		initCommentLabel();
-		initUnreadMessagesLabel();
+		initMiddlePane();
+		initRightPane();
 
-		setHgap(5.0);
-		setValignment(profilePicture, VPos.TOP);
-		setHgrow(commentLabel, Priority.ALWAYS);
-
-		add(profilePicture, 0, 0, 1, 3);
-		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
-		add(nameLabel, 2, 0, 1, 1);
-		add(commentLabel, 2, 1, 1, 1);
-		add(new Label(), 2, 2, 1, 1);
-		add(unreadMessagesLabel, 3, 0, 1, 2);
+		getChildren().addAll(profilePicture, new Separator(Orientation.VERTICAL), middlePane, rightPane);
 
 	}
 
@@ -199,6 +189,10 @@ class GroupPane extends GridPane {
 
 	private void initProfilePicture() {
 
+		initStatusCircle();
+		initProfileRound();
+		initInitialLabel();
+
 		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLabel);
 
 	}
@@ -229,6 +223,17 @@ class GroupPane extends GridPane {
 
 	}
 
+	private void initMiddlePane() {
+
+		initNameLabel();
+		initCommentLabel();
+
+		setHgrow(middlePane, Priority.ALWAYS);
+
+		middlePane.getChildren().addAll(nameLabel, commentLabel, new Label());
+
+	}
+
 	private void initNameLabel() {
 
 		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
@@ -254,6 +259,17 @@ class GroupPane extends GridPane {
 				return null;
 			return new Tooltip(comment);
 		}, commentLabel.textProperty()));
+
+	}
+
+	private void initRightPane() {
+
+		initUnreadMessagesLabel();
+
+		GridPane.setVgrow(unreadMessagesLabel, Priority.ALWAYS);
+
+		rightPane.add(unreadMessagesLabel, 0, 0);
+		rightPane.add(new Label(), 0, 1);
 
 	}
 
