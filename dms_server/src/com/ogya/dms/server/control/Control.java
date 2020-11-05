@@ -40,7 +40,6 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final int serverPort = CommonConstants.SERVER_PORT;
 	private final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
 	private final int clientPortTo = CommonConstants.CLIENT_PORT_TO;
-	private final int packetSize = CommonConstants.PACKET_SIZE;
 
 	private final MulticastManager multicastManager = new MulticastManager(multicastGroup, multicastPort,
 			this::receiveUdpMessage);
@@ -114,7 +113,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		if (tcpManager == null) {
 
-			tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, packetSize);
+			tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo);
 
 			tcpManager.addListener(this);
 

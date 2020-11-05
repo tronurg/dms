@@ -156,25 +156,6 @@ public class CommonMethods {
 
 	}
 
-	static int getPacketSize() {
-
-		int packetSize = -1;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/PACKET_SIZE")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			packetSize = Integer.parseInt(node.getTextContent());
-
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
-		}
-
-		return packetSize;
-
-	}
-
 	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
 
 		if (confDoc == null) {

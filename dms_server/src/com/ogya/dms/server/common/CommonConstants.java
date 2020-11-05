@@ -9,7 +9,6 @@ public class CommonConstants {
 	public static final int SERVER_PORT = CommonMethods.getServerPort();
 	public static final int CLIENT_PORT_FROM = CommonMethods.getClientPortFrom();
 	public static final int CLIENT_PORT_TO = CommonMethods.getClientPortTo();
-	public static final int PACKET_SIZE = CommonMethods.getPacketSize();
 
 	public static final int CONN_TIMEOUT_MS = 5000;
 

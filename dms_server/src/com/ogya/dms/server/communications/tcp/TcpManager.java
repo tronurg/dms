@@ -1,13 +1,9 @@
 package com.ogya.dms.server.communications.tcp;
 
 import java.io.IOException;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,17 +11,14 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.ogya.communications.tcp.TcpClient;
 import com.ogya.communications.tcp.TcpClientListener;
@@ -37,14 +30,9 @@ import com.ogya.dms.server.factory.DmsFactory;
 
 public class TcpManager implements TcpServerListener {
 
-	private static final Charset CHARSET = StandardCharsets.UTF_8;
-
-	private static final String END_OF_TRANSMISSION = String.valueOf((char) 4);
-
 	private final int serverPort;
 	private final int clientPortFrom;
 	private final int clientPortTo;
-	private final int packetSize;
 
 	private final AtomicInteger nextPort = new AtomicInteger(0);
 
@@ -61,12 +49,11 @@ public class TcpManager implements TcpServerListener {
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, int packetSize) throws IOException {
+	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo) throws IOException {
 
 		this.serverPort = serverPort;
 		this.clientPortFrom = clientPortFrom;
 		this.clientPortTo = clientPortTo;
-		this.packetSize = packetSize;
 
 		nextPort.set(clientPortFrom);
 
@@ -120,16 +107,7 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
-									try {
-
-										dmsServer.messageFeed.write(arg0.getBytes(CHARSET));
-										dmsServer.messageFeed.flush();
-
-									} catch (IOException e) {
-
-										e.printStackTrace();
-
-									}
+									messageReceivedToListeners(arg0, dmsUuid);
 
 								});
 
@@ -140,7 +118,7 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
-									connection.sendMethod = tcpClient::sendMessage;
+									connection.sendFunction = tcpClient::sendMessage;
 									dmsServer.connections.add(connection);
 
 									serverConnectionsUpdated(dmsServer);
@@ -197,22 +175,13 @@ public class TcpManager implements TcpServerListener {
 				connection.dmsServer = dmsServer;
 				dmsServer.connections.add(connection);
 
+				serverConnectionsUpdated(dmsServer);
+
 				while (!connection.waitingMessages.isEmpty()) {
 
-					try {
-
-						dmsServer.messageFeed.write(connection.waitingMessages.poll().getBytes(CHARSET));
-						dmsServer.messageFeed.flush();
-
-					} catch (IOException e) {
-
-						e.printStackTrace();
-
-					}
+					messageReceivedToListeners(connection.waitingMessages.poll(), dmsUuid);
 
 				}
-
-				serverConnectionsUpdated(dmsServer);
 
 			}
 
@@ -310,67 +279,33 @@ public class TcpManager implements TcpServerListener {
 
 		dmsServer.taskQueue.execute(() -> {
 
-			int totalProgress = 0;
-
 			// Send a progress of zero before starting
 			if (progressMethod != null)
-				progressMethod.accept(totalProgress);
+				progressMethod.accept(0);
 
 			int messageLength = message.length();
 
-			int packetSize = this.packetSize > 0 ? this.packetSize : messageLength;
-
-			int totalParts = (messageLength + packetSize - 1) / packetSize;
-
-			// Start sending...
-			for (int i = 0; i < totalParts && (sendStatus == null || sendStatus.get()); ++i) {
-
-				int fromIndex = i * packetSize;
-				int toIndex = Math.min((i + 1) * packetSize, messageLength);
-
-				String messagePart = message.substring(fromIndex, toIndex);
-
-				boolean sent = false;
-
-				synchronized (dmsServer.connections) {
-
-					for (Connection connection : dmsServer.connections) {
-
-						if (connection.sendMethod == null)
-							continue;
-
-						sent = connection.sendMethod.apply(messagePart);
-
-						if (sent)
-							break;
-
-					}
-
-				}
-
-				if (sent)
-					totalProgress = 100 * toIndex / messageLength;
-				else
-					break;
-
-				if (progressMethod != null && totalProgress < 100)
-					progressMethod.accept(totalProgress);
-
-			}
-
-			// Send end of transmission
-			boolean eotSent = false;
+			boolean sent = false;
 
 			synchronized (dmsServer.connections) {
 
 				for (Connection connection : dmsServer.connections) {
 
-					if (connection.sendMethod == null)
+					if (connection.sendFunction == null)
 						continue;
 
-					eotSent = connection.sendMethod.apply(END_OF_TRANSMISSION);
+					final AtomicInteger progress = new AtomicInteger(0);
 
-					if (eotSent)
+					sent = connection.sendFunction.send(message, sendStatus, progressMethod == null ? null : () -> {
+
+						int bytesSent = progress.incrementAndGet();
+
+						if (bytesSent % 1024 == 0 && bytesSent < messageLength)
+							progressMethod.accept(100 * bytesSent / messageLength);
+
+					});
+
+					if (sent)
 						break;
 
 				}
@@ -380,8 +315,8 @@ public class TcpManager implements TcpServerListener {
 			if (progressMethod == null)
 				return;
 
-			if (eotSent && totalProgress == 100)
-				progressMethod.accept(totalProgress);
+			if (sent)
+				progressMethod.accept(100);
 			else
 				progressMethod.accept(-1);
 
@@ -467,7 +402,8 @@ public class TcpManager implements TcpServerListener {
 
 			Connection connection = connections.get(address);
 
-			connection.sendMethod = message -> tcpServer.sendMessage(id, message);
+			connection.sendFunction = (message, sendCheck, success) -> tcpServer.sendMessage(id, message, sendCheck,
+					success);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -510,16 +446,7 @@ public class TcpManager implements TcpServerListener {
 
 			} else {
 
-				try {
-
-					dmsServer.messageFeed.write(arg1.getBytes(CHARSET));
-					dmsServer.messageFeed.flush();
-
-				} catch (IOException e) {
-
-					e.printStackTrace();
-
-				}
+				messageReceivedToListeners(arg1, dmsServer.dmsUuid);
 
 			}
 
@@ -539,7 +466,7 @@ public class TcpManager implements TcpServerListener {
 
 		DmsServer dmsServer;
 
-		Function<String, Boolean> sendMethod;
+		SendFunction sendFunction;
 
 		Connection(InetAddress remoteAddress) {
 			order = ORDER.getAndIncrement();
@@ -590,41 +517,9 @@ public class TcpManager implements TcpServerListener {
 
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-		final PipedOutputStream messageFeed = new PipedOutputStream();
-
 		DmsServer(String dmsUuid) {
 
 			this.dmsUuid = dmsUuid;
-
-			try {
-
-				final PipedInputStream pipedInputStream = new PipedInputStream(messageFeed);
-
-				new Thread(() -> {
-
-					try (Scanner scanner = new Scanner(pipedInputStream, CHARSET.name())) {
-
-						scanner.useDelimiter(END_OF_TRANSMISSION);
-
-						while (!Thread.currentThread().isInterrupted()) {
-
-							messageReceivedToListeners(scanner.next(), this.dmsUuid);
-
-						}
-
-					} catch (NoSuchElementException e) {
-
-						e.printStackTrace();
-
-					}
-
-				}).start();
-
-			} catch (IOException e) {
-
-				e.printStackTrace();
-
-			}
 
 		}
 
@@ -632,17 +527,13 @@ public class TcpManager implements TcpServerListener {
 
 			taskQueue.shutdown();
 
-			try {
-
-				messageFeed.close();
-
-			} catch (IOException e) {
-
-				e.printStackTrace();
-
-			}
-
 		}
+
+	}
+
+	private interface SendFunction {
+
+		boolean send(String message, AtomicBoolean sendCheck, Runnable successMethod);
 
 	}
 
