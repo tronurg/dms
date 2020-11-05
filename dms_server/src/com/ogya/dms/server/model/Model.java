@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ogya.dms.common.structures.Beacon;
 import com.ogya.dms.common.structures.ContentType;
@@ -26,11 +27,14 @@ import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
 
+	private static final AtomicInteger MAP_ID = new AtomicInteger(0);
+
 	private final ModelListener listener;
 
 	private final Map<String, LocalUser> localUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, RemoteUser> remoteUsers = Collections.synchronizedMap(new HashMap<String, RemoteUser>());
 
+	private final Map<String, User> mappedUsers = Collections.synchronizedMap(new HashMap<String, User>());
 	private final Map<String, DmsServer> remoteServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 
 	private final Map<AtomicBoolean, Set<String>> statusReceiverMap = Collections
@@ -97,16 +101,21 @@ public class Model {
 
 				boolean fresh = localUsers.isEmpty();
 
-				localUsers.putIfAbsent(userUuid, new LocalUser(userUuid));
+				localUsers.putIfAbsent(userUuid, new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement())));
 
 				if (fresh)
 					listener.publishImmediately();
 
-				copyBeacon(beacon, localUsers.get(userUuid).beacon);
+				User localUser = localUsers.get(userUuid);
 
-				sendBeaconToLocalUsers(localUsers.get(userUuid).beacon);
+				mappedUsers.putIfAbsent(localUser.mapId, localUser);
 
-				sendBeaconToRemoteServers(messagePojoStr);
+				copyBeacon(beacon, localUser.beacon);
+
+				sendBeaconToLocalUsers(localUser.beacon);
+
+				sendBeaconToRemoteServers(new MessagePojo(messagePojo.message, localUser.mapId,
+						messagePojo.receiverUuid, messagePojo.contentType, messagePojo.messageId).toJson());
 
 				break;
 
@@ -205,27 +214,35 @@ public class Model {
 						sender.sendStatusMap.put(messageId, sendStatus);
 					statusReceiverMap.put(sendStatus, uuidList);
 
-					listener.sendToRemoteServer(dmsUuid, messagePojoStr, sendStatus, trackedMessage ? progress -> {
+					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
+					List<String> receiverMapIdList = new ArrayList<String>();
+					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
+					String remoteMessagePojoStr = new MessagePojo(messagePojo.message, senderMapId,
+							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.messageId)
+									.toJson();
 
-						if (progress < 0 || progress == 100) {
+					listener.sendToRemoteServer(dmsUuid, remoteMessagePojoStr, sendStatus,
+							trackedMessage ? progress -> {
 
-							sender.sendStatusMap.remove(messageId);
-							statusReceiverMap.remove(sendStatus);
+								if (progress < 0 || progress == 100) {
 
-						}
+									sender.sendStatusMap.remove(messageId);
+									statusReceiverMap.remove(sendStatus);
 
-						MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-								String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
+								}
 
-						if (localUsers.containsKey(senderUuid))
-							listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+										String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
 
-					} : progress -> {
+								if (localUsers.containsKey(senderUuid))
+									listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
-						if (progress < 0 || progress == 100)
-							statusReceiverMap.remove(sendStatus);
+							} : progress -> {
 
-					});
+								if (progress < 0 || progress == 100)
+									statusReceiverMap.remove(sendStatus);
+
+							});
 
 				});
 
@@ -249,6 +266,26 @@ public class Model {
 
 			MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
 
+			DmsServer remoteServer = remoteServers.get(dmsUuid);
+
+			if (remoteServer != null) {
+
+				User remoteUser = remoteServer.mappedUsers.get(messagePojo.senderUuid);
+				String senderUuid = remoteUser == null ? messagePojo.senderUuid : remoteUser.beacon.uuid;
+				List<String> receiverUuids = new ArrayList<String>();
+				if (messagePojo.receiverUuid != null) {
+					for (String receiverMapId : messagePojo.receiverUuid.split(";")) {
+						User localUser = mappedUsers.get(receiverMapId);
+						receiverUuids.add(localUser == null ? receiverMapId : localUser.beacon.uuid);
+					}
+				}
+				String receiverUuid = String.join(";", receiverUuids);
+
+				messagePojo = new MessagePojo(messagePojo.message, senderUuid, receiverUuid, messagePojo.contentType,
+						messagePojo.messageId);
+
+			}
+
 			switch (messagePojo.contentType) {
 
 			case BCON:
@@ -260,9 +297,11 @@ public class Model {
 				if (userUuid == null)
 					break;
 
+				String mapId = messagePojo.senderUuid;
+
 				remoteServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
-				remoteUsers.putIfAbsent(userUuid, new RemoteUser(userUuid, remoteServers.get(dmsUuid)));
-				remoteServers.get(dmsUuid).users.putIfAbsent(userUuid, remoteUsers.get(userUuid));
+				remoteUsers.putIfAbsent(userUuid, new RemoteUser(userUuid, mapId, remoteServers.get(dmsUuid)));
+				remoteServers.get(dmsUuid).mappedUsers.putIfAbsent(mapId, remoteUsers.get(userUuid));
 
 				copyBeacon(beacon, remoteUsers.get(userUuid).beacon);
 
@@ -272,14 +311,16 @@ public class Model {
 
 			case UUID_DISCONNECTED:
 
-				String uuid = messagePojo.message;
+				String uuid = messagePojo.senderUuid;
 
-				remoteUserDisconnected(remoteUsers.get(uuid));
+				User remoteUser = remoteUsers.get(uuid);
 
 				DmsServer dmsServer = remoteServers.get(dmsUuid);
 
 				if (dmsServer != null)
-					dmsServer.users.remove(uuid);
+					dmsServer.mappedUsers.remove(remoteUser.mapId);
+
+				remoteUserDisconnected(remoteUser);
 
 				break;
 
@@ -339,17 +380,13 @@ public class Model {
 		dmsServer.addresses.clear();
 		dmsServer.addresses.addAll(addresses);
 
-		dmsServer.users.forEach((uuid, user) -> sendBeaconToLocalUsers(user.beacon));
+		dmsServer.mappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
 
 	}
 
 	public void localUuidDisconnected(String uuid) {
 
-		localUserDisconnected(localUsers.get(uuid));
-
-	}
-
-	private void localUserDisconnected(LocalUser user) {
+		LocalUser user = localUsers.get(uuid);
 
 		if (user == null)
 			return;
@@ -358,9 +395,11 @@ public class Model {
 			user.sendStatusMap.forEach((messageId, status) -> status.set(false));
 		}
 
+		mappedUsers.remove(user.mapId);
+
 		String userUuid = user.beacon.uuid;
 
-		String messagePojoStr = new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null).toJson();
+		String messagePojoStr = new MessagePojo(null, user.mapId, ContentType.UUID_DISCONNECTED, null).toJson();
 
 		localUsers.remove(userUuid);
 
@@ -375,7 +414,7 @@ public class Model {
 		if (!remoteServers.containsKey(dmsUuid))
 			return;
 
-		remoteServers.remove(dmsUuid).users.forEach((userUuid, user) -> remoteUserDisconnected(user));
+		remoteServers.remove(dmsUuid).mappedUsers.forEach((mapId, user) -> remoteUserDisconnected(user));
 
 	}
 
@@ -393,7 +432,7 @@ public class Model {
 			});
 		}
 
-		String messagePojoStr = new MessagePojo(userUuid, null, ContentType.UUID_DISCONNECTED, null).toJson();
+		String messagePojoStr = new MessagePojo(null, userUuid, ContentType.UUID_DISCONNECTED, null).toJson();
 
 		remoteUsers.remove(userUuid);
 
@@ -460,7 +499,7 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), null, ContentType.BCON, null).toJson();
+			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), user.mapId, ContentType.BCON, null).toJson();
 
 			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null);
 
@@ -552,10 +591,13 @@ public class Model {
 	private abstract class User {
 
 		protected final Beacon beacon;
+		protected final String mapId;
 
-		private User(String userUuid) {
+		private User(String userUuid, String mapId) {
 
 			this.beacon = new Beacon(userUuid);
+
+			this.mapId = mapId;
 
 		}
 
@@ -566,9 +608,9 @@ public class Model {
 		private final Map<Long, AtomicBoolean> sendStatusMap = Collections
 				.synchronizedMap(new HashMap<Long, AtomicBoolean>());
 
-		private LocalUser(String userUuid) {
+		private LocalUser(String userUuid, String mapId) {
 
-			super(userUuid);
+			super(userUuid, mapId);
 
 			try {
 
@@ -588,9 +630,9 @@ public class Model {
 
 		private final DmsServer dmsServer;
 
-		private RemoteUser(String userUuid, DmsServer dmsServer) {
+		private RemoteUser(String userUuid, String mapId, DmsServer dmsServer) {
 
-			super(userUuid);
+			super(userUuid, mapId);
 
 			this.dmsServer = dmsServer;
 
@@ -603,7 +645,7 @@ public class Model {
 	private class DmsServer {
 
 		private final String dmsUuid;
-		private final Map<String, User> users = Collections.synchronizedMap(new HashMap<String, User>());
+		private final Map<String, User> mappedUsers = Collections.synchronizedMap(new HashMap<String, User>());
 		private final List<InetAddress> addresses = Collections.synchronizedList(new ArrayList<InetAddress>());
 
 		private DmsServer(String dmsUuid) {

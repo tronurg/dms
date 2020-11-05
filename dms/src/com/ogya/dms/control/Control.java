@@ -1518,7 +1518,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				}
 
-				dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(), newMessage.getMessageId(),
+				dmsClient.feedMessageStatus(newMessage.getSenderUuid(), newMessage.getMessageId(),
 						newMessage.getMessageStatus());
 
 				if (messageToBeRedirected) {
@@ -1591,12 +1591,11 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (incomingMessage == null) {
 
 					// Not received
-					dmsClient.feedMessageStatus(model.getLocalUuid(), remoteUuid, messageId, MessageStatus.FRESH);
+					dmsClient.feedMessageStatus(remoteUuid, messageId, MessageStatus.FRESH);
 
 				} else {
 
-					dmsClient.feedMessageStatus(model.getLocalUuid(), remoteUuid, messageId,
-							incomingMessage.getMessageStatus());
+					dmsClient.feedMessageStatus(remoteUuid, messageId, incomingMessage.getMessageStatus());
 
 				}
 
@@ -1661,7 +1660,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	}
 
 	@Override
-	public void statusReportFed(final Long messageId, final String message, final String remoteUuid) {
+	public void statusReportFed(final Long messageId, final String message) {
 
 		taskQueue.execute(() -> {
 
@@ -1913,8 +1912,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage, uuid));
 
-					dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
-							newMessage.getMessageId(), MessageStatus.READ);
+					dmsClient.feedMessageStatus(newMessage.getSenderUuid(), newMessage.getMessageId(),
+							MessageStatus.READ);
 
 				} catch (JsonSyntaxException | HibernateException e) {
 
@@ -1958,8 +1957,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					if (group == null)
 						return;
 
-					dmsClient.feedMessageStatus(model.getLocalUuid(), newMessage.getSenderUuid(),
-							newMessage.getMessageId(), newMessage.getMessageStatus());
+					dmsClient.feedMessageStatus(newMessage.getSenderUuid(), newMessage.getMessageId(),
+							newMessage.getMessageStatus());
 
 				} catch (JsonSyntaxException | HibernateException e) {
 

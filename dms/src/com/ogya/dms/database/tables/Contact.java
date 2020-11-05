@@ -8,6 +8,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -51,7 +52,7 @@ public class Contact {
 	@SerializedName(value = "f")
 	private Double longitude;
 
-	@ManyToMany(mappedBy = "contacts")
+	@ManyToMany(mappedBy = "contacts", fetch = FetchType.LAZY)
 	@SerializedName(value = "g")
 	private Set<Dgroup> groups = new HashSet<Dgroup>();
 

@@ -22,7 +22,7 @@ public interface DmsClientListener {
 
 	void statusReportClaimed(Long messageId, String remoteUuid);
 
-	void statusReportFed(Long messageId, String message, String remoteUuid);
+	void statusReportFed(Long messageId, String message);
 
 	void transientMessageReceived(String message, String remoteUuid);
 

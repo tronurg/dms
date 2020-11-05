@@ -109,10 +109,11 @@ public class DmsClient {
 
 	}
 
-	public void feedMessageStatus(String senderUuid, String receiverUuid, Long messageId, MessageStatus messageStatus) {
+	public void feedMessageStatus(String receiverUuid, Long messageId, MessageStatus messageStatus) {
 
-		dealerQueue.offer(new MessagePojo(null, senderUuid, receiverUuid, ContentType.valueOf(messageStatus.toString()),
-				messageId).toJson());
+		dealerQueue.offer(
+				new MessagePojo(null, uuid, receiverUuid, ContentType.valueOf(messageStatus.toString()), messageId)
+						.toJson());
 
 	}
 
@@ -134,7 +135,7 @@ public class DmsClient {
 	public void feedStatusReport(Long messageId, String message, String receiverUuid) {
 
 		dealerQueue.offer(
-				new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId).toJson());
+				new MessagePojo(message, null, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId).toJson());
 
 	}
 
@@ -278,7 +279,7 @@ public class DmsClient {
 
 			case UUID_DISCONNECTED:
 
-				userDisconnectedToListener(messagePojo.message);
+				userDisconnectedToListener(messagePojo.senderUuid);
 
 				break;
 
@@ -305,7 +306,7 @@ public class DmsClient {
 
 			case FEED_STATUS_REPORT:
 
-				statusReportFedToListener(messagePojo.messageId, messagePojo.message, messagePojo.senderUuid);
+				statusReportFedToListener(messagePojo.messageId, messagePojo.message);
 
 				break;
 
@@ -420,11 +421,11 @@ public class DmsClient {
 
 	}
 
-	private void statusReportFedToListener(final Long messageId, final String message, final String remoteUuid) {
+	private void statusReportFedToListener(final Long messageId, final String message) {
 
 		taskQueue.execute(() -> {
 
-			listener.statusReportFed(messageId, message, remoteUuid);
+			listener.statusReportFed(messageId, message);
 
 		});
 
