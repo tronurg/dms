@@ -268,7 +268,7 @@ public class Model {
 
 			DmsServer remoteServer = remoteServers.get(dmsUuid);
 
-			if (remoteServer != null) {
+			if (!(Objects.equals(messagePojo.contentType, ContentType.BCON) || remoteServer == null)) {
 
 				User remoteUser = remoteServer.mappedUsers.get(messagePojo.senderUuid);
 				String senderUuid = remoteUser == null ? messagePojo.senderUuid : remoteUser.beacon.uuid;
@@ -283,6 +283,8 @@ public class Model {
 
 				messagePojo = new MessagePojo(messagePojo.message, senderUuid, receiverUuid, messagePojo.contentType,
 						messagePojo.messageId);
+
+				messagePojoStr = messagePojo.toJson();
 
 			}
 
