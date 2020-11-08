@@ -10,7 +10,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,39 +17,38 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
-import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.structures.Availability;
-import com.ogya.dms.structures.ReceiverType;
 
 public class Model {
 
-	private final Identity identity;
+	private final Contact identity;
 
 	private final String localUuid;
 
 	private final AtomicBoolean isServerConnected = new AtomicBoolean(false);
 
-	private final Map<String, Contact> contacts = Collections.synchronizedMap(new HashMap<String, Contact>());
-	private final Map<String, Dgroup> groups = Collections.synchronizedMap(new HashMap<String, Dgroup>());
+	private final Map<String, Contact> uuidContacts = Collections.synchronizedMap(new HashMap<String, Contact>());
+	private final Map<Long, Contact> idContacts = Collections.synchronizedMap(new HashMap<Long, Contact>());
+	private final Map<String, Map<Long, Dgroup>> uuidGroups = Collections
+			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
+	private final Map<Long, Dgroup> idGroups = Collections.synchronizedMap(new HashMap<Long, Dgroup>());
 
-	private final Map<String, List<InetAddress>> uuidAddresses = Collections
-			.synchronizedMap(new HashMap<String, List<InetAddress>>());
+	private final Map<Long, List<InetAddress>> idAddresses = Collections
+			.synchronizedMap(new HashMap<Long, List<InetAddress>>());
 
-	private final List<String> openUuids = Collections.synchronizedList(new ArrayList<String>());
-
-	private final Map<String, Long> minMessageIds = Collections.synchronizedMap(new HashMap<String, Long>());
+	private final List<Long> openUuids = Collections.synchronizedList(new ArrayList<Long>());
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
 	private final AtomicLong detailedGroupMessageId = new AtomicLong();
 
-	private final AtomicReference<Entry<ReceiverType, String>> referenceUuid = new AtomicReference<Entry<ReceiverType, String>>();
+	private final AtomicReference<Long> referenceId = new AtomicReference<Long>();
 
-	private final Map<Long, Map<String, Integer>> groupMessageProgresses = Collections
-			.synchronizedMap(new HashMap<Long, Map<String, Integer>>());
+	private final Map<Long, Map<Long, Integer>> groupMessageProgresses = Collections
+			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
 
-	private final Map<String, Map<Long, Integer>> privateMessageProgresses = Collections
-			.synchronizedMap(new HashMap<String, Map<Long, Integer>>());
+	private final Map<Long, Map<Long, Integer>> privateMessageProgresses = Collections
+			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
 
 	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
 		@Override
@@ -66,7 +64,7 @@ public class Model {
 		}
 	};
 
-	public Model(Identity identity) {
+	public Model(Contact identity) {
 
 		this.identity = identity;
 
@@ -74,7 +72,7 @@ public class Model {
 
 	}
 
-	public Identity getIdentity() {
+	public Contact getIdentity() {
 
 		return identity;
 
@@ -119,38 +117,45 @@ public class Model {
 
 	public void addContact(Contact contact) {
 
-		contacts.put(contact.getUuid(), contact);
+		uuidContacts.put(contact.getUuid(), contact);
+		idContacts.put(contact.getId(), contact);
 
 	}
 
 	public Contact getContact(String uuid) {
 
-		return contacts.get(uuid);
+		return uuidContacts.get(uuid);
+
+	}
+
+	public Contact getContact(Long id) {
+
+		return idContacts.get(id);
 
 	}
 
 	public boolean isContactOnline(String uuid) {
 
-		return contacts.containsKey(uuid) && !Objects.equals(getContact(uuid).getStatus(), Availability.OFFLINE);
+		return uuidContacts.containsKey(uuid) && !Objects.equals(getContact(uuid).getStatus(), Availability.OFFLINE);
 
 	}
 
-	public Map<String, Contact> getContacts() {
+	public Map<Long, Contact> getContacts() {
 
-		return contacts;
+		return idContacts;
 
 	}
 
-	public void setContactAddresses(String uuid, List<InetAddress> addresses) {
+	public void setContactAddresses(Long id, List<InetAddress> addresses) {
 
 		if (addresses == null)
-			uuidAddresses.remove(uuid);
+			idAddresses.remove(id);
 		else
-			uuidAddresses.put(uuid, addresses);
+			idAddresses.put(id, addresses);
 
 	}
 
-	public List<String> getUuidsByAddress(InetAddress address) {
+	public List<Long> getIdsByAddress(InetAddress address) {
 
 		try {
 
@@ -165,69 +170,68 @@ public class Model {
 
 		final InetAddress searchAddress = address;
 
-		List<String> uuids = new ArrayList<String>();
+		List<Long> ids = new ArrayList<Long>();
 
-		uuidAddresses.entrySet().stream().filter(entry -> entry.getValue().contains(searchAddress))
-				.forEach(entry -> uuids.add(entry.getKey()));
+		idAddresses.entrySet().stream().filter(entry -> entry.getValue().contains(searchAddress))
+				.forEach(entry -> ids.add(entry.getKey()));
 
-		return uuids;
+		return ids;
 
 	}
 
 	public void addGroup(Dgroup group) {
 
-		groups.put(group.getUuid(), group);
+		idGroups.put(group.getId(), group);
 
-	}
-
-	public Dgroup getGroup(String uuid) {
-
-		if (uuid == null)
-			return null;
-
-		return groups.get(uuid);
-
-	}
-
-	public Map<String, Dgroup> getGroups() {
-
-		return groups;
-
-	}
-
-	public void messagePaneOpened(String uuid) {
-
-		openUuids.add(uuid);
-
-	}
-
-	public void messagePaneClosed(String uuid) {
-
-		openUuids.remove(uuid);
-
-	}
-
-	public boolean isMessagePaneOpen(String uuid) {
-
-		return openUuids.contains(uuid);
-
-	}
-
-	public void addMessageId(String uuid, Long id) {
-
-		if (minMessageIds.containsKey(uuid) && minMessageIds.get(uuid) < id)
+		if (Objects.equals(group.getOwner().getUuid(), localUuid))
 			return;
 
-		minMessageIds.put(uuid, id);
+		String ownerUuid = group.getOwner().getUuid();
+
+		uuidGroups.putIfAbsent(ownerUuid, new HashMap<Long, Dgroup>());
+		uuidGroups.get(ownerUuid).put(group.getGroupRefId(), group);
 
 	}
 
-	public Long getMinMessageId(String uuid) {
+	public Dgroup getGroup(Long groupId) {
 
-		if (!minMessageIds.containsKey(uuid))
-			return -1L;
+		if (groupId == null)
+			return null;
 
-		return minMessageIds.get(uuid);
+		return idGroups.get(groupId);
+
+	}
+
+	public Dgroup getGroup(String ownerUuid, Long groupRefId) {
+
+		if (uuidGroups.containsKey(ownerUuid))
+			return uuidGroups.get(ownerUuid).get(groupRefId);
+
+		return null;
+
+	}
+
+	public Map<Long, Dgroup> getGroups() {
+
+		return idGroups;
+
+	}
+
+	public void messagePaneOpened(Long id) {
+
+		openUuids.add(id);
+
+	}
+
+	public void messagePaneClosed(Long id) {
+
+		openUuids.remove(id);
+
+	}
+
+	public boolean isMessagePaneOpen(Long id) {
+
+		return openUuids.contains(id);
 
 	}
 
@@ -255,15 +259,15 @@ public class Model {
 
 	}
 
-	public void setReferenceUuid(Entry<ReceiverType, String> entry) {
+	public void setReferenceId(Long id) {
 
-		referenceUuid.set(entry);
+		referenceId.set(id);
 
 	}
 
-	public Entry<ReceiverType, String> getReferenceUuid() {
+	public Long getReferenceId() {
 
-		return referenceUuid.get();
+		return referenceId.get();
 
 	}
 
@@ -279,29 +283,29 @@ public class Model {
 
 	}
 
-	public void storeGroupMessageProgress(Long messageId, String uuid, int progress) {
+	public void storeGroupMessageProgress(Long messageId, Long contactId, int progress) {
 
 		if (progress < 0 || progress == 100) {
 
 			if (!groupMessageProgresses.containsKey(messageId))
 				return;
 
-			groupMessageProgresses.get(messageId).remove(uuid);
+			groupMessageProgresses.get(messageId).remove(contactId);
 
 			if (groupMessageProgresses.get(messageId).isEmpty())
 				groupMessageProgresses.remove(messageId);
 
 		} else {
 
-			groupMessageProgresses.putIfAbsent(messageId, Collections.synchronizedMap(new HashMap<String, Integer>()));
+			groupMessageProgresses.putIfAbsent(messageId, Collections.synchronizedMap(new HashMap<Long, Integer>()));
 
-			groupMessageProgresses.get(messageId).put(uuid, progress);
+			groupMessageProgresses.get(messageId).put(contactId, progress);
 
 		}
 
 	}
 
-	public Map<String, Integer> getGroupMessageProgresses(Long messageId) {
+	public Map<Long, Integer> getGroupMessageProgresses(Long messageId) {
 
 		return groupMessageProgresses.get(messageId);
 
@@ -313,29 +317,29 @@ public class Model {
 
 	}
 
-	public void storePrivateMessageProgress(String uuid, Long messageId, int progress) {
+	public void storePrivateMessageProgress(Long contactId, Long messageId, int progress) {
 
 		if (progress < 0 || progress == 100) {
 
-			if (!privateMessageProgresses.containsKey(uuid))
+			if (!privateMessageProgresses.containsKey(contactId))
 				return;
 
-			privateMessageProgresses.get(uuid).remove(messageId);
+			privateMessageProgresses.get(contactId).remove(messageId);
 
-			if (privateMessageProgresses.get(uuid).isEmpty())
-				privateMessageProgresses.remove(uuid);
+			if (privateMessageProgresses.get(contactId).isEmpty())
+				privateMessageProgresses.remove(contactId);
 
 		} else {
 
-			privateMessageProgresses.putIfAbsent(uuid, Collections.synchronizedMap(new HashMap<Long, Integer>()));
+			privateMessageProgresses.putIfAbsent(contactId, Collections.synchronizedMap(new HashMap<Long, Integer>()));
 
-			privateMessageProgresses.get(uuid).put(messageId, progress);
+			privateMessageProgresses.get(contactId).put(messageId, progress);
 
 		}
 
 	}
 
-	public Map<String, Map<Long, Integer>> getPrivateMessageProgresses() {
+	public Map<Long, Map<Long, Integer>> getPrivateMessageProgresses() {
 
 		return privateMessageProgresses;
 

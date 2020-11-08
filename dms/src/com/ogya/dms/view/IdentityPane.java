@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.common.CommonMethods;
-import com.ogya.dms.database.tables.Identity;
+import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -91,7 +91,7 @@ class IdentityPane extends GridPane {
 
 	}
 
-	void setIdentity(Identity identity) {
+	void setIdentity(Contact identity) {
 
 		statusCircle.setStroke(identity.getStatus().getStatusColor());
 		profileLabel.setText(identity.getName().substring(0, 1).toUpperCase());

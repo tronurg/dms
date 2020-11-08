@@ -7,15 +7,15 @@ public class ObjectHandleImpl implements ObjectHandle {
 
 	private final Integer objectCode;
 	private final String objectStr;
-	private final String contactUuid;
-	private final String groupUuid;
+	private final Long contactId;
+	private final Long groupId;
 
-	public ObjectHandleImpl(Integer objectCode, String objectStr, String contactUuid, String groupUuid) {
+	public ObjectHandleImpl(Integer objectCode, String objectStr, Long contactId, Long groupId) {
 
 		this.objectCode = objectCode;
 		this.objectStr = objectStr;
-		this.contactUuid = contactUuid;
-		this.groupUuid = groupUuid;
+		this.contactId = contactId;
+		this.groupId = groupId;
 
 	}
 
@@ -44,16 +44,16 @@ public class ObjectHandleImpl implements ObjectHandle {
 	}
 
 	@Override
-	public String getContactUuid() {
+	public Long getContactId() {
 
-		return contactUuid;
+		return contactId;
 
 	}
 
 	@Override
-	public String getGroupUuid() {
+	public Long getGroupId() {
 
-		return groupUuid;
+		return groupId;
 
 	}
 

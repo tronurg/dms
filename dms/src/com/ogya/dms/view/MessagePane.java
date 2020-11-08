@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
@@ -112,6 +113,7 @@ class MessagePane extends BorderPane {
 
 	private final List<IMessagePane> listeners = Collections.synchronizedList(new ArrayList<IMessagePane>());
 
+	private final AtomicLong minMessageId = new AtomicLong(-1);
 	private final AtomicLong maxMessageId = new AtomicLong(0);
 
 	MessagePane() {
@@ -240,18 +242,22 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void addMessage(Message message, String senderName, boolean isOutgoing) {
+	void addMessage(Message message) {
 
 		if (messageBalloons.containsKey(message.getId()))
 			return;
 
+		boolean isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
+		String senderName = isOutgoing ? null : message.getContact().getName();
+		Long id = isOutgoing ? null : message.getContact().getId();
+
 		long messageId = message.getId();
 		Date messageDate = message.getDate();
 
-		boolean infoAvailable = Objects.equals(message.getReceiverType(), ReceiverType.GROUP) && isOutgoing;
+		boolean infoAvailable = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) && isOutgoing;
 
-		MessageInfo messageInfo = new MessageInfo(message.getOwnerUuid(), senderName, messageDate, isOutgoing,
-				message.getMessageType(), infoAvailable);
+		MessageInfo messageInfo = new MessageInfo(id, senderName, messageDate, isOutgoing, message.getMessageType(),
+				infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -276,7 +282,9 @@ class MessagePane extends BorderPane {
 
 			}
 
-		} else {
+		} else if (minMessageId.get() < 0 || messageId < minMessageId.get()) {
+
+			minMessageId.set(messageId);
 
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).day, messageDay)) {
 
@@ -393,7 +401,7 @@ class MessagePane extends BorderPane {
 			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
 				return;
 
-			listeners.forEach(listener -> listener.paneScrolledToTop());
+			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
 
 		});
 
@@ -896,7 +904,7 @@ class MessagePane extends BorderPane {
 		private void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
 			if (messageGroups.isEmpty()
-					|| !Objects.equals(messageGroups.get(0).messageInfo.uuid, messageBalloon.messageInfo.uuid)) {
+					|| !Objects.equals(messageGroups.get(0).messageInfo.id, messageBalloon.messageInfo.id)) {
 				MessageGroup messageGroup = new MessageGroup(messageBalloon.messageInfo);
 				messageGroup.addMessageBalloonToTop(messageBalloon);
 				messageGroups.add(0, messageGroup);
@@ -909,8 +917,8 @@ class MessagePane extends BorderPane {
 
 		private void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
-			if (messageGroups.isEmpty() || !Objects.equals(messageGroups.get(messageGroups.size() - 1).messageInfo.uuid,
-					messageBalloon.messageInfo.uuid)) {
+			if (messageGroups.isEmpty() || !Objects.equals(messageGroups.get(messageGroups.size() - 1).messageInfo.id,
+					messageBalloon.messageInfo.id)) {
 				MessageGroup messageGroup = new MessageGroup(messageBalloon.messageInfo);
 				messageGroup.addMessageBalloonToBottom(messageBalloon);
 				messageGroups.add(messageGroup);
@@ -925,17 +933,17 @@ class MessagePane extends BorderPane {
 
 	private static class MessageInfo {
 
-		final String uuid;
+		final Long id;
 		final String name;
 		final Date date;
 		final boolean isOutgoing;
 		final MessageType messageType;
 		final boolean infoAvailable;
 
-		MessageInfo(String uuid, String name, Date date, boolean isOutgoing, MessageType messageType,
+		MessageInfo(Long id, String name, Date date, boolean isOutgoing, MessageType messageType,
 				boolean infoAvailable) {
 
-			this.uuid = uuid;
+			this.id = id;
 			this.name = name;
 			this.date = date;
 			this.isOutgoing = isOutgoing;
@@ -952,7 +960,7 @@ interface IMessagePane {
 
 	void editClicked();
 
-	void paneScrolledToTop();
+	void paneScrolledToTop(Long topMessageId);
 
 	void sendMessageClicked(String message);
 

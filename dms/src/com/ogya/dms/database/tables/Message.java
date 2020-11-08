@@ -6,15 +6,20 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.common.CommonMethods;
+import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
 import com.ogya.dms.structures.ReceiverType;
@@ -28,67 +33,76 @@ public class Message {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "message_id")
+	@Column(name = "message_ref_id")
 	@SerializedName(value = "a")
-	private Long messageId;
+	private Long messageRefId;
 
-	@Column(name = "owner_uuid", nullable = false, updatable = false)
+	@Column(name = "message_direction", nullable = false, updatable = false)
+	@Enumerated(EnumType.ORDINAL)
 	@SerializedName(value = "b")
-	private String ownerUuid;
-
-	@Column(name = "sender_uuid", nullable = false, updatable = false)
-	@SerializedName(value = "c")
-	private String senderUuid;
-
-	@Column(name = "receiver_uuid", nullable = false, updatable = false)
-	@SerializedName(value = "d")
-	private String receiverUuid;
+	private MessageDirection messageDirection;
 
 	@Column(name = "receiver_type", nullable = false, updatable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "e")
+	@SerializedName(value = "c")
 	private ReceiverType receiverType;
 
 	@Column(name = "message_type", nullable = false, updatable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "f")
+	@SerializedName(value = "d")
 	private MessageType messageType;
 
 	@Column(name = "message_code", updatable = false)
-	@SerializedName(value = "g")
+	@SerializedName(value = "e")
 	private Integer messageCode;
 
 	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
-	@SerializedName(value = "h")
+	@SerializedName(value = "f")
 	private String content;
 
 	@Column(name = "message_status", nullable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "i")
+	@SerializedName(value = "g")
 	private MessageStatus messageStatus;
 
 	@Column(name = "wait_status", nullable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "j")
+	@SerializedName(value = "h")
 	private WaitStatus waitStatus;
 
 	@Column(name = "status_report_str", length = Integer.MAX_VALUE)
-	@SerializedName(value = "k")
+	@SerializedName(value = "i")
 	private String statusReportStr;
 
 	@Column(name = "date", nullable = false, updatable = false)
-	@SerializedName(value = "l")
+	@SerializedName(value = "j")
 	private Date date;
+
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
+	@SerializedName(value = "k")
+	private Contact contact;
+
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "dgroup_id", updatable = false)
+	@SerializedName(value = "l")
+	private Dgroup dgroup;
+
+	@Transient
+	@SerializedName(value = "m")
+	private Long groupRefId;
+	@Transient
+	@SerializedName(value = "n")
+	private Long contactRefId;
 
 	public Message() {
 		super();
 	}
 
-	public Message(String ownerUuid, String receiverUuid, ReceiverType receiverType, MessageType messageType,
-			String content) {
+	public Message(Contact contact, Dgroup dgroup, ReceiverType receiverType, MessageType messageType, String content) {
 		super();
-		this.ownerUuid = ownerUuid;
-		this.receiverUuid = receiverUuid;
+		this.contact = contact;
+		this.dgroup = dgroup;
 		this.receiverType = receiverType;
 		this.messageType = messageType;
 		this.content = content;
@@ -102,36 +116,20 @@ public class Message {
 		this.id = id;
 	}
 
-	public Long getMessageId() {
-		return messageId;
+	public Long getMessageRefId() {
+		return messageRefId;
 	}
 
-	public void setMessageId(Long messageId) {
-		this.messageId = messageId;
+	public void setMessageRefId(Long messageRefId) {
+		this.messageRefId = messageRefId;
 	}
 
-	public String getOwnerUuid() {
-		return ownerUuid;
+	public MessageDirection getMessageDirection() {
+		return messageDirection;
 	}
 
-	public void setOwnerUuid(String ownerUuid) {
-		this.ownerUuid = ownerUuid;
-	}
-
-	public String getSenderUuid() {
-		return senderUuid;
-	}
-
-	public void setSenderUuid(String senderUuid) {
-		this.senderUuid = senderUuid;
-	}
-
-	public String getReceiverUuid() {
-		return receiverUuid;
-	}
-
-	public void setReceiverUuid(String receiverUuid) {
-		this.receiverUuid = receiverUuid;
+	public void setMessageDirection(MessageDirection messageDirection) {
+		this.messageDirection = messageDirection;
 	}
 
 	public ReceiverType getReceiverType() {
@@ -198,6 +196,38 @@ public class Message {
 		this.date = date;
 	}
 
+	public Contact getContact() {
+		return contact;
+	}
+
+	public void setContact(Contact contact) {
+		this.contact = contact;
+	}
+
+	public Dgroup getDgroup() {
+		return dgroup;
+	}
+
+	public void setDgroup(Dgroup dgroup) {
+		this.dgroup = dgroup;
+	}
+
+	public Long getGroupRefId() {
+		return groupRefId;
+	}
+
+	public void setGroupRefId(Long groupRefId) {
+		this.groupRefId = groupRefId;
+	}
+
+	public Long getContactRefId() {
+		return contactRefId;
+	}
+
+	public void setContactRefId(Long contactRefId) {
+		this.contactRefId = contactRefId;
+	}
+
 	@PrePersist
 	protected void onCreate() {
 		this.date = new Date();
@@ -205,8 +235,8 @@ public class Message {
 
 	@PostPersist
 	protected void onPersist() {
-		if (this.messageId == null)
-			this.messageId = this.id;
+		if (this.messageRefId == null)
+			this.messageRefId = this.id;
 	}
 
 	public String toJson() {

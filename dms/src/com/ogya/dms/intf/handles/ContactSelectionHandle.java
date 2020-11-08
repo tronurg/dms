@@ -8,7 +8,7 @@ public interface ContactSelectionHandle {
 
 	JComponent getContactSelectionPanel();
 
-	List<String> getSelectedContactUuids();
+	List<Long> getSelectedContactIds();
 
 	void resetSelection();
 

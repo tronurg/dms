@@ -8,15 +8,15 @@ public class FileHandleImpl implements FileHandle {
 
 	private final Integer fileCode;
 	private final Path path;
-	private final String contactUuid;
-	private final String groupUuid;
+	private final Long contactId;
+	private final Long groupId;
 
-	public FileHandleImpl(Integer fileCode, Path path, String contactUuid, String groupUuid) {
+	public FileHandleImpl(Integer fileCode, Path path, Long contactId, Long groupId) {
 
 		this.fileCode = fileCode;
 		this.path = path;
-		this.contactUuid = contactUuid;
-		this.groupUuid = groupUuid;
+		this.contactId = contactId;
+		this.groupId = groupId;
 
 	}
 
@@ -35,16 +35,16 @@ public class FileHandleImpl implements FileHandle {
 	}
 
 	@Override
-	public String getContactUuid() {
+	public Long getContactId() {
 
-		return contactUuid;
+		return contactId;
 
 	}
 
 	@Override
-	public String getGroupUuid() {
+	public Long getGroupId() {
 
-		return groupUuid;
+		return groupId;
 
 	}
 

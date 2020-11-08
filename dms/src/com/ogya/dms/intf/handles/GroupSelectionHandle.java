@@ -6,7 +6,7 @@ public interface GroupSelectionHandle {
 
 	JComponent getGroupSelectionPanel();
 
-	String getSelectedGroupUuid();
+	Long getSelectedGroupId();
 
 	void resetSelection();
 

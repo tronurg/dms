@@ -2,6 +2,6 @@ package com.ogya.dms.structures;
 
 public enum ReceiverType {
 
-	PRIVATE, GROUP
+	CONTACT, GROUP_OWNER, GROUP_MEMBER
 
 }

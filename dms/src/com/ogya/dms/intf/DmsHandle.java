@@ -35,26 +35,26 @@ public interface DmsHandle {
 
 	ContactSelectionHandle getOnlineContactsHandle();
 
-	ContactHandle getContactHandle(String uuid);
+	ContactHandle getContactHandle(Long contactId);
 
-	GroupHandle getGroupHandle(String groupUuid);
+	GroupHandle getGroupHandle(Long groupId);
 
-	List<String> getUuidsByAddress(InetAddress address);
+	List<Long> getIdsByAddress(InetAddress address);
 
-	boolean sendMessageToContacts(String message, Integer messageCode, List<String> contactUuids);
+	boolean sendMessageToContacts(String message, Integer messageCode, List<Long> contactIds);
 
-	boolean sendMessageToGroup(String message, Integer messageCode, String groupUuid);
+	boolean sendMessageToGroup(String message, Integer messageCode, Long groupId);
 
-	boolean sendObjectToContacts(Object object, Integer objectCode, List<String> contactUuids);
+	boolean sendObjectToContacts(Object object, Integer objectCode, List<Long> contactIds);
 
-	boolean sendObjectToGroup(Object object, Integer objectCode, String groupUuid);
+	boolean sendObjectToGroup(Object object, Integer objectCode, Long groupId);
 
-	<T> boolean sendListToContacts(List<T> list, Class<T> elementType, Integer listCode, List<String> contactUuids);
+	<T> boolean sendListToContacts(List<T> list, Class<T> elementType, Integer listCode, List<Long> contactIds);
 
-	<T> boolean sendListToGroup(List<T> list, Class<T> elementType, Integer listCode, String groupUuid);
+	<T> boolean sendListToGroup(List<T> list, Class<T> elementType, Integer listCode, Long groupId);
 
-	boolean sendFileToContacts(Path path, Integer fileCode, List<String> contactUuids);
+	boolean sendFileToContacts(Path path, Integer fileCode, List<Long> contactIds);
 
-	boolean sendFileToGroup(Path path, Integer fileCode, String groupUuid);
+	boolean sendFileToGroup(Path path, Integer fileCode, Long groupId);
 
 }

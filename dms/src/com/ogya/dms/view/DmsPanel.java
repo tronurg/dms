@@ -16,7 +16,6 @@ import javax.swing.UIManager;
 import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
-import com.ogya.dms.database.tables.Identity;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
@@ -48,7 +47,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
-	private final AtomicReference<Entry<String, MessagePane>> uuidOnScreenRef = new AtomicReference<Entry<String, MessagePane>>();
+	private final AtomicReference<Entry<Long, MessagePane>> idOnScreenRef = new AtomicReference<Entry<Long, MessagePane>>();
 
 	public DmsPanel() {
 
@@ -131,7 +130,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public void setIdentity(Identity identity) {
+	public void setIdentity(Contact identity) {
 
 		identityPane.setIdentity(identity);
 
@@ -160,69 +159,33 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public void addMessage(Message message, String senderName, boolean isOutgoing, String entityUuid) {
+	public void addMessage(Message message) {
 
-		entitiesPane.addMessage(message, senderName, isOutgoing, entityUuid);
+		entitiesPane.addMessage(message);
 
-		Entry<String, MessagePane> uuidOnScreen = uuidOnScreenRef.get();
-		if (!(uuidOnScreen == null || Objects.equals(entityUuid, uuidOnScreen.getKey())))
-			uuidOnScreen.getValue().highlightBackButton();
+		Long entityId = Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) ? message.getContact().getId()
+				: -message.getDgroup().getId();
+
+		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
+		if (!(idOnScreen == null || Objects.equals(entityId, idOnScreen.getKey())))
+			idOnScreen.getValue().highlightBackButton();
 
 	}
 
-	public void updateMessageStatus(Message message, String uuid) {
+	public void updateMessageStatus(Message message) {
 
 		switch (message.getReceiverType()) {
 
-		case PRIVATE:
+		case CONTACT:
 
-			entitiesPane.updatePrivateMessageStatus(message, uuid);
-
-			break;
-
-		case GROUP:
-
-			entitiesPane.updateGroupMessageStatus(message, uuid);
+			entitiesPane.updatePrivateMessageStatus(message);
 
 			break;
 
-		default:
+		case GROUP_OWNER:
+		case GROUP_MEMBER:
 
-		}
-
-	}
-
-	public void updatePrivateMessageProgress(String uuid, Long messageId, int progress) {
-
-		entitiesPane.updatePrivateMessageProgress(uuid, messageId, progress);
-
-	}
-
-	public void updateDetailedMessageStatus(String uuid, MessageStatus messageStatus) {
-
-		statusInfoPane.updateMessageStatus(uuid, messageStatus);
-
-	}
-
-	public void updateDetailedMessageProgress(String uuid, int progress) {
-
-		statusInfoPane.updateMessageProgress(uuid, progress);
-
-	}
-
-	public void scrollPaneToMessage(String uuid, Long messageId, ReceiverType receiverType) {
-
-		switch (receiverType) {
-
-		case PRIVATE:
-
-			entitiesPane.scrollPrivatePaneToMessage(uuid, messageId);
-
-			break;
-
-		case GROUP:
-
-			entitiesPane.scrollGroupPaneToMessage(uuid, messageId);
+			entitiesPane.updateGroupMessageStatus(message);
 
 			break;
 
@@ -232,89 +195,89 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public void savePosition(String uuid, Long messageId, ReceiverType receiverType) {
+	public void updatePrivateMessageProgress(Long id, Long messageId, int progress) {
 
-		switch (receiverType) {
+		entitiesPane.updatePrivateMessageProgress(id, messageId, progress);
 
-		case PRIVATE:
+	}
 
-			entitiesPane.savePrivatePosition(uuid, messageId);
+	public void updateDetailedMessageStatus(Long id, MessageStatus messageStatus) {
 
-			break;
+		statusInfoPane.updateMessageStatus(id, messageStatus);
 
-		case GROUP:
+	}
 
-			entitiesPane.saveGroupPosition(uuid, messageId);
+	public void updateDetailedMessageProgress(Long id, int progress) {
 
-			break;
+		statusInfoPane.updateMessageProgress(id, progress);
 
-		default:
+	}
+
+	public void scrollPaneToMessage(Long id, Long messageId) {
+
+		if (id > 0) {
+
+			entitiesPane.scrollPrivatePaneToMessage(id, messageId);
+
+		} else {
+
+			entitiesPane.scrollGroupPaneToMessage(-id, messageId);
 
 		}
 
 	}
 
-	public void scrollToSavedPosition(String uuid, ReceiverType receiverType) {
+	public void savePosition(Long id, Long messageId) {
 
-		switch (receiverType) {
+		if (id > 0) {
 
-		case PRIVATE:
+			entitiesPane.savePrivatePosition(id, messageId);
 
-			entitiesPane.scrollToSavedPrivatePosition(uuid);
+		} else {
 
-			break;
-
-		case GROUP:
-
-			entitiesPane.scrollToSavedGroupPosition(uuid);
-
-			break;
-
-		default:
+			entitiesPane.saveGroupPosition(-id, messageId);
 
 		}
 
 	}
 
-	public void recordingStarted(String uuid, ReceiverType receiverType) {
+	public void scrollToSavedPosition(Long id) {
 
-		switch (receiverType) {
+		if (id > 0) {
 
-		case PRIVATE:
+			entitiesPane.scrollToSavedPrivatePosition(id);
 
-			entitiesPane.privateRecordingStarted(uuid);
+		} else {
 
-			break;
-
-		case GROUP:
-
-			entitiesPane.groupRecordingStarted(uuid);
-
-			break;
-
-		default:
+			entitiesPane.scrollToSavedGroupPosition(-id);
 
 		}
 
 	}
 
-	public void recordingStopped(String uuid, ReceiverType receiverType) {
+	public void recordingStarted(Long id) {
 
-		switch (receiverType) {
+		if (id > 0) {
 
-		case PRIVATE:
+			entitiesPane.privateRecordingStarted(id);
 
-			entitiesPane.privateRecordingStopped(uuid);
+		} else {
 
-			break;
+			entitiesPane.groupRecordingStarted(-id);
 
-		case GROUP:
+		}
 
-			entitiesPane.groupRecordingStopped(uuid);
+	}
 
-			break;
+	public void recordingStopped(Long id) {
 
-		default:
+		if (id > 0) {
+
+			entitiesPane.privateRecordingStopped(id);
+
+		} else {
+
+			entitiesPane.groupRecordingStopped(-id);
 
 		}
 
@@ -429,54 +392,54 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void showMessagePane(MessagePane messagePane, final String uuid, final ReceiverType receiverType) {
+	public void showMessagePane(MessagePane messagePane, final Long id) {
 
 		getChildren().add(messagePane);
 
-		uuidOnScreenRef.set(new AbstractMap.SimpleEntry<String, MessagePane>(uuid, messagePane));
+		idOnScreenRef.set(new AbstractMap.SimpleEntry<Long, MessagePane>(id, messagePane));
 
-		listeners.forEach(listener -> listener.messagePaneOpened(uuid, receiverType));
+		listeners.forEach(listener -> listener.messagePaneOpened(id));
 
 	}
 
 	@Override
-	public void hideMessagePane(MessagePane messagePane, final String uuid) {
+	public void hideMessagePane(MessagePane messagePane, final Long id) {
 
-		listeners.forEach(listener -> listener.messagePaneClosed(uuid));
+		listeners.forEach(listener -> listener.messagePaneClosed(id));
 
-		uuidOnScreenRef.set(null);
+		idOnScreenRef.set(null);
 
 		getChildren().remove(messagePane);
 
 	}
 
 	@Override
-	public void paneScrolledToTop(final String uuid, final ReceiverType receiverType) {
+	public void paneScrolledToTop(final Long id, Long topMessageId) {
 
-		listeners.forEach(listener -> listener.paneScrolledToTop(uuid, receiverType));
-
-	}
-
-	@Override
-	public void sendMessageClicked(final String messageTxt, final String uuid, final ReceiverType receiverType) {
-
-		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, uuid, receiverType));
+		listeners.forEach(listener -> listener.paneScrolledToTop(id, topMessageId));
 
 	}
 
 	@Override
-	public void showFoldersClicked(final String uuid, final ReceiverType receiverType) {
+	public void sendMessageClicked(final String messageTxt, final Long id) {
+
+		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, id));
+
+	}
+
+	@Override
+	public void showFoldersClicked(final Long id) {
 
 		getChildren().add(foldersPane);
 
-		listeners.forEach(listener -> listener.showFoldersClicked(uuid, receiverType));
+		listeners.forEach(listener -> listener.showFoldersClicked(id));
 
 	}
 
 	@Override
-	public void showAddUpdateGroupPaneClicked(final String groupUuid) {
+	public void showAddUpdateGroupPaneClicked(final Long id) {
 
-		listeners.forEach(listener -> listener.showAddUpdateGroupClicked(groupUuid));
+		listeners.forEach(listener -> listener.showAddUpdateGroupClicked(id));
 
 	}
 
@@ -528,9 +491,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void recordButtonPressed(final String uuid, final ReceiverType receiverType) {
+	public void recordButtonPressed(final Long id) {
 
-		listeners.forEach(listener -> listener.recordButtonPressed(uuid, receiverType));
+		listeners.forEach(listener -> listener.recordButtonPressed(id));
 
 	}
 
@@ -549,9 +512,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void reportClicked(final String uuid, final ReceiverType receiverType) {
+	public void reportClicked(final Long id) {
 
-		listeners.forEach(listener -> listener.reportClicked(uuid, receiverType));
+		listeners.forEach(listener -> listener.reportClicked(id));
 
 	}
 

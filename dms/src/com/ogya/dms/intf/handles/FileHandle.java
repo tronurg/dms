@@ -8,8 +8,8 @@ public interface FileHandle {
 
 	Path getPath();
 
-	String getContactUuid();
+	Long getContactId();
 
-	String getGroupUuid();
+	Long getGroupId();
 
 }

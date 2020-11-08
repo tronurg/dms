@@ -3,27 +3,25 @@ package com.ogya.dms.view.intf;
 import java.nio.file.Path;
 import java.util.Set;
 
-import com.ogya.dms.structures.ReceiverType;
-
 public interface AppListener {
 
 	void commentUpdated(String comment);
 
 	void updateStatusClicked();
 
-	void messagePaneOpened(String uuid, ReceiverType receiverType);
+	void messagePaneOpened(Long id);
 
-	void messagePaneClosed(String uuid);
+	void messagePaneClosed(Long id);
 
-	void sendMessageClicked(String messageTxt, String receiverUuid, ReceiverType receiverType);
+	void sendMessageClicked(String messageTxt, Long receiverId);
 
-	void showFoldersClicked(String uuid, ReceiverType receiverType);
+	void showFoldersClicked(Long id);
 
-	void reportClicked(String uuid, ReceiverType receiverType);
+	void reportClicked(Long id);
 
-	void paneScrolledToTop(String uuid, ReceiverType receiverType);
+	void paneScrolledToTop(Long id, Long topMessageId);
 
-	void showAddUpdateGroupClicked(String groupUuid);
+	void showAddUpdateGroupClicked(Long id);
 
 	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);
 
@@ -45,7 +43,7 @@ public interface AppListener {
 
 	void removeIpClicked(String ip);
 
-	void recordButtonPressed(String uuid, ReceiverType receiverType);
+	void recordButtonPressed(Long id);
 
 	void recordEventTriggered();
 

@@ -76,9 +76,9 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 	}
 
 	@Override
-	public List<String> getSelectedContactUuids() {
+	public List<Long> getSelectedContactIds() {
 
-		return onlineContactsPanel.getSelectedUuids();
+		return onlineContactsPanel.getSelectedIds();
 
 	}
 

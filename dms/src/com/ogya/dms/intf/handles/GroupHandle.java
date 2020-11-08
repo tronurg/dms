@@ -4,12 +4,12 @@ import java.util.List;
 
 public interface GroupHandle {
 
-	String getGroupUuid();
+	Long getGroupId();
 
 	String getName();
 
 	String getComment();
 
-	List<String> getContactUuids();
+	List<Long> getContactIds();
 
 }

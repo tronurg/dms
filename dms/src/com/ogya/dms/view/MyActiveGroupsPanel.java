@@ -49,8 +49,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 		}
 	};
 
-	private final Map<String, GroupBundle> uuidGroupBundle = Collections
-			.synchronizedMap(new HashMap<String, GroupBundle>());
+	private final Map<Long, GroupBundle> idGroupBundle = Collections.synchronizedMap(new HashMap<Long, GroupBundle>());
 
 	private final Comparator<Node> groupsSorter = new Comparator<Node>() {
 
@@ -86,7 +85,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	};
 
-	private final AtomicReference<String> selectedUuid = new AtomicReference<String>();
+	private final AtomicReference<Long> selectedId = new AtomicReference<Long>();
 
 	private final Map<String, ObjectProperty<Color>> contactUuidStatus = Collections
 			.synchronizedMap(new HashMap<String, ObjectProperty<Color>>());
@@ -125,7 +124,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	void updateGroup(Dgroup group) {
 
-		GroupBundle groupBundle = getGroupBundle(group.getUuid());
+		GroupBundle groupBundle = getGroupBundle(group.getId());
 
 		groupBundle.groupPane.updateGroup(group);
 
@@ -137,7 +136,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 			groupBundle.selectedProperty.set(false);
 
 		if (active)
-			groupBundle.setContacts(group.getContacts());
+			groupBundle.setContacts(group.getMembers());
 
 	}
 
@@ -148,17 +147,17 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	}
 
-	public String getSelectedUuid() {
+	public Long getSelectedId() {
 
-		return selectedUuid.get();
+		return selectedId.get();
 
 	}
 
 	public void resetSelection() {
 
-		selectedUuid.set(null);
+		selectedId.set(null);
 
-		uuidGroupBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
+		idGroupBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
 
 	}
 
@@ -176,9 +175,9 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	}
 
-	private GroupBundle getGroupBundle(final String groupUuid) {
+	private GroupBundle getGroupBundle(final Long groupId) {
 
-		if (!uuidGroupBundle.containsKey(groupUuid)) {
+		if (!idGroupBundle.containsKey(groupId)) {
 
 			final GroupBundle groupBundle = new GroupBundle();
 
@@ -194,15 +193,15 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 				boolean wasSelected = groupBundle.selectedProperty.get();
 
-				uuidGroupBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
+				idGroupBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
 
 				groupBundle.selectedProperty.set(!wasSelected);
 
-				selectedUuid.set(groupBundle.selectedProperty.get() ? groupUuid : null);
+				selectedId.set(groupBundle.selectedProperty.get() ? groupId : null);
 
 			});
 
-			uuidGroupBundle.put(groupUuid, groupBundle);
+			idGroupBundle.put(groupId, groupBundle);
 
 			groups.getChildren().add(groupBundle);
 
@@ -210,7 +209,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 		}
 
-		return uuidGroupBundle.get(groupUuid);
+		return idGroupBundle.get(groupId);
 
 	}
 

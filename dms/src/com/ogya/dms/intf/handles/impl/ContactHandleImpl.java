@@ -4,17 +4,16 @@ import com.ogya.dms.intf.handles.ContactHandle;
 
 public class ContactHandleImpl implements ContactHandle {
 
-	private final String uuid;
+	private final Long id;
 	private final String name;
 	private final String comment;
 	private final Double lattitude;
 	private final Double longitude;
 	private final boolean online;
 
-	public ContactHandleImpl(String uuid, String name, String comment, Double lattitude, Double longitude,
-			boolean online) {
+	public ContactHandleImpl(Long id, String name, String comment, Double lattitude, Double longitude, boolean online) {
 
-		this.uuid = uuid;
+		this.id = id;
 		this.name = name;
 		this.comment = comment;
 		this.lattitude = lattitude;
@@ -24,9 +23,9 @@ public class ContactHandleImpl implements ContactHandle {
 	}
 
 	@Override
-	public String getUuid() {
+	public Long getId() {
 
-		return uuid;
+		return id;
 
 	}
 

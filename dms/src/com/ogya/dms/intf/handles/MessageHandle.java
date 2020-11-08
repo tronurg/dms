@@ -6,8 +6,8 @@ public interface MessageHandle {
 
 	String getMessage();
 
-	String getContactUuid();
+	Long getContactId();
 
-	String getGroupUuid();
+	Long getGroupId();
 
 }

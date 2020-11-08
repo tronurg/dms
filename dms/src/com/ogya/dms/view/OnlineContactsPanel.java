@@ -41,8 +41,8 @@ public class OnlineContactsPanel extends BorderPane {
 		}
 	};
 
-	private final Map<String, ContactBundle> uuidContactBundle = Collections
-			.synchronizedMap(new HashMap<String, ContactBundle>());
+	private final Map<Long, ContactBundle> idContactBundle = Collections
+			.synchronizedMap(new HashMap<Long, ContactBundle>());
 
 	private final Comparator<Node> contactsSorter = new Comparator<Node>() {
 
@@ -61,7 +61,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 	};
 
-	private final List<String> selectedUuids = Collections.synchronizedList(new ArrayList<String>());
+	private final List<Long> selectedIds = Collections.synchronizedList(new ArrayList<Long>());
 
 	OnlineContactsPanel() {
 
@@ -97,7 +97,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		ContactBundle contactBundle = getContactBundle(contact.getUuid());
+		ContactBundle contactBundle = getContactBundle(contact.getId());
 
 		contactBundle.contactPane.updateContact(contact);
 
@@ -110,17 +110,17 @@ public class OnlineContactsPanel extends BorderPane {
 
 	}
 
-	public List<String> getSelectedUuids() {
+	public List<Long> getSelectedIds() {
 
-		return new ArrayList<String>(selectedUuids);
+		return new ArrayList<Long>(selectedIds);
 
 	}
 
 	public void resetSelection() {
 
-		selectedUuids.clear();
+		selectedIds.clear();
 
-		uuidContactBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
+		idContactBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
 
 	}
 
@@ -138,9 +138,9 @@ public class OnlineContactsPanel extends BorderPane {
 
 	}
 
-	private ContactBundle getContactBundle(final String uuid) {
+	private ContactBundle getContactBundle(final Long id) {
 
-		if (!uuidContactBundle.containsKey(uuid)) {
+		if (!idContactBundle.containsKey(id)) {
 
 			final ContactBundle contactBundle = new ContactBundle();
 
@@ -157,13 +157,13 @@ public class OnlineContactsPanel extends BorderPane {
 				contactBundle.selectedProperty.set(!contactBundle.selectedProperty.get());
 
 				if (contactBundle.selectedProperty.get())
-					selectedUuids.add(uuid);
+					selectedIds.add(id);
 				else
-					selectedUuids.remove(uuid);
+					selectedIds.remove(id);
 
 			});
 
-			uuidContactBundle.put(uuid, contactBundle);
+			idContactBundle.put(id, contactBundle);
 
 			contacts.getChildren().add(contactBundle);
 
@@ -171,7 +171,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 		}
 
-		return uuidContactBundle.get(uuid);
+		return idContactBundle.get(id);
 
 	}
 

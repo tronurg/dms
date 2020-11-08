@@ -42,7 +42,7 @@ public class StatusInfoPane extends BorderPane {
 	};
 	private final Button backBtn = ViewFactory.newBackBtn();
 
-	private final Map<String, Card> cards = Collections.synchronizedMap(new HashMap<String, Card>());
+	private final Map<Long, Card> cards = Collections.synchronizedMap(new HashMap<Long, Card>());
 
 	StatusInfoPane() {
 
@@ -81,7 +81,7 @@ public class StatusInfoPane extends BorderPane {
 
 			Card card = new Card();
 
-			cards.put(contact.getUuid(), card);
+			cards.put(contact.getId(), card);
 
 			updateContact(contact);
 
@@ -101,7 +101,7 @@ public class StatusInfoPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		Card card = cards.get(contact.getUuid());
+		Card card = cards.get(contact.getId());
 
 		if (card == null)
 			return;
@@ -111,9 +111,9 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	void updateMessageStatus(String uuid, MessageStatus messageStatus) {
+	void updateMessageStatus(Long id, MessageStatus messageStatus) {
 
-		Card card = cards.get(uuid);
+		Card card = cards.get(id);
 
 		if (card == null)
 			return;
@@ -122,9 +122,9 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	void updateMessageProgress(String uuid, int progress) {
+	void updateMessageProgress(Long id, int progress) {
 
-		Card card = cards.get(uuid);
+		Card card = cards.get(id);
 
 		if (card == null)
 			return;

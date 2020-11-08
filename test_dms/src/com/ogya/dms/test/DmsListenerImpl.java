@@ -40,24 +40,24 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void messageReceived(MessageHandle messageHandle) {
 
-		String senderUuid = messageHandle.getContactUuid();
-		String groupUuid = messageHandle.getGroupUuid();
+		Long contactId = messageHandle.getContactId();
+		Long groupId = messageHandle.getGroupId();
 
 		System.out.println(String.format("Message received from: %s (group: %s)\nContent: %s\n",
-				dmsHandle.getContactHandle(senderUuid).getName(),
-				groupUuid == null ? null : dmsHandle.getGroupHandle(groupUuid).getName(), messageHandle.getMessage()));
+				dmsHandle.getContactHandle(contactId).getName(),
+				groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(), messageHandle.getMessage()));
 
 	}
 
 	@Override
 	public void objectReceived(ObjectHandle objectHandle) {
 
-		String senderUuid = objectHandle.getContactUuid();
-		String groupUuid = objectHandle.getGroupUuid();
+		Long contactId = objectHandle.getContactId();
+		Long groupId = objectHandle.getGroupId();
 
 		System.out.println(String.format("Object received from: %s (group: %s)\nContent: %s\n",
-				dmsHandle.getContactHandle(senderUuid).getName(),
-				groupUuid == null ? null : dmsHandle.getGroupHandle(groupUuid).getName(),
+				dmsHandle.getContactHandle(contactId).getName(),
+				groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(),
 				objectHandle.getObject(TestPojo.class)));
 
 	}
@@ -65,12 +65,12 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void listReceived(ListHandle listHandle) {
 
-		String senderUuid = listHandle.getContactUuid();
-		String groupUuid = listHandle.getGroupUuid();
+		Long contactId = listHandle.getContactId();
+		Long groupId = listHandle.getGroupId();
 
 		System.out.println(String.format("List received from: %s (group: %s)\nContent: %s\n",
-				dmsHandle.getContactHandle(senderUuid).getName(),
-				groupUuid == null ? null : dmsHandle.getGroupHandle(groupUuid).getName(),
+				dmsHandle.getContactHandle(contactId).getName(),
+				groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(),
 				listHandle.getList(TestPojoConverted.class)));
 
 	}
@@ -78,12 +78,12 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void fileReceived(FileHandle fileHandle) {
 
-		String senderUuid = fileHandle.getContactUuid();
-		String groupUuid = fileHandle.getGroupUuid();
+		Long contactId = fileHandle.getContactId();
+		Long groupId = fileHandle.getGroupId();
 
 		System.out.println(String.format("File received from: %s (group: %s)\nContent: %s\n",
-				dmsHandle.getContactHandle(senderUuid).getName(),
-				groupUuid == null ? null : dmsHandle.getGroupHandle(groupUuid).getName(), fileHandle.getPath()));
+				dmsHandle.getContactHandle(contactId).getName(),
+				groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(), fileHandle.getPath()));
 
 		try {
 

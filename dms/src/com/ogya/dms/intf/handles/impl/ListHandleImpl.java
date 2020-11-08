@@ -11,15 +11,15 @@ public class ListHandleImpl implements ListHandle {
 
 	private final Integer listCode;
 	private final String listStr;
-	private final String contactUuid;
-	private final String groupUuid;
+	private final Long contactId;
+	private final Long groupId;
 
-	public ListHandleImpl(Integer listCode, String listStr, String contactUuid, String groupUuid) {
+	public ListHandleImpl(Integer listCode, String listStr, Long contactId, Long groupId) {
 
 		this.listCode = listCode;
 		this.listStr = listStr;
-		this.contactUuid = contactUuid;
-		this.groupUuid = groupUuid;
+		this.contactId = contactId;
+		this.groupId = groupId;
 
 	}
 
@@ -51,16 +51,16 @@ public class ListHandleImpl implements ListHandle {
 	}
 
 	@Override
-	public String getContactUuid() {
+	public Long getContactId() {
 
-		return contactUuid;
+		return contactId;
 
 	}
 
 	@Override
-	public String getGroupUuid() {
+	public Long getGroupId() {
 
-		return groupUuid;
+		return groupId;
 
 	}
 

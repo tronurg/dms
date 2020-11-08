@@ -6,8 +6,8 @@ public interface ObjectHandle {
 
 	<T> T getObject(Class<T> objectClass);
 
-	String getContactUuid();
+	Long getContactId();
 
-	String getGroupUuid();
+	Long getGroupId();
 
 }

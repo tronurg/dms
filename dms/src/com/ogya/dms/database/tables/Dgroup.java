@@ -2,7 +2,6 @@ package com.ogya.dms.database.tables;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -15,7 +14,8 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
-import javax.persistence.PrePersist;
+import javax.persistence.ManyToOne;
+import javax.persistence.PostPersist;
 import javax.persistence.Table;
 
 import com.ogya.dms.structures.Availability;
@@ -28,17 +28,14 @@ public class Dgroup {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "uuid", nullable = false, updatable = false)
-	private String uuid;
+	@Column(name = "group_ref_id")
+	private Long groupRefId;
 
 	@Column(name = "name", nullable = false)
 	private String name;
 
-	@Column(name = "comment")
+	@Column(name = "comment", length = Integer.MAX_VALUE)
 	private String comment;
-
-	@Column(name = "owner_uuid", nullable = false, updatable = false)
-	private String ownerUuid;
 
 	@Column(name = "status", nullable = false)
 	@Enumerated(EnumType.ORDINAL)
@@ -47,18 +44,26 @@ public class Dgroup {
 	@Column(name = "active", nullable = false)
 	private Boolean active;
 
+	@Column(name = "contact_map_str", length = Integer.MAX_VALUE)
+	private String contactMapStr;
+
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "dgroup_id", nullable = false, updatable = false)
+	private Contact owner;
+
 	@ManyToMany(fetch = FetchType.EAGER)
-	@JoinTable(name = "dgroup_contacts", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
-			@JoinColumn(name = "contact_id") })
-	private Set<Contact> contacts = new HashSet<Contact>();
+	@JoinTable(name = "dgroup_members", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
+			@JoinColumn(name = "member_id") })
+	private Set<Contact> members = new HashSet<Contact>();
 
 	public Dgroup() {
 		super();
 	}
 
-	public Dgroup(String ownerUuid) {
+	public Dgroup(Contact owner, Long groupRefId) {
 		super();
-		this.ownerUuid = ownerUuid;
+		this.owner = owner;
+		this.groupRefId = groupRefId;
 	}
 
 	public Long getId() {
@@ -69,12 +74,12 @@ public class Dgroup {
 		this.id = id;
 	}
 
-	public String getUuid() {
-		return uuid;
+	public Long getGroupRefId() {
+		return groupRefId;
 	}
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
+	public void setGroupRefId(Long groupRefId) {
+		this.groupRefId = groupRefId;
 	}
 
 	public String getName() {
@@ -93,14 +98,6 @@ public class Dgroup {
 		this.comment = comment;
 	}
 
-	public String getOwnerUuid() {
-		return ownerUuid;
-	}
-
-	public void setOwnerUuid(String ownerUuid) {
-		this.ownerUuid = ownerUuid;
-	}
-
 	public Availability getStatus() {
 		return status;
 	}
@@ -109,7 +106,7 @@ public class Dgroup {
 		this.status = status;
 	}
 
-	public Boolean isActive() {
+	public Boolean getActive() {
 		return active;
 	}
 
@@ -117,18 +114,34 @@ public class Dgroup {
 		this.active = active;
 	}
 
-	public Set<Contact> getContacts() {
-		return contacts;
+	public String getContactMapStr() {
+		return contactMapStr;
 	}
 
-	public void setContacts(Set<Contact> contacts) {
-		this.contacts = contacts;
+	public void setContactMapStr(String contactMapStr) {
+		this.contactMapStr = contactMapStr;
 	}
 
-	@PrePersist
-	private void onCreate() {
-		if (this.uuid == null)
-			this.uuid = UUID.randomUUID().toString();
+	public Contact getOwner() {
+		return owner;
+	}
+
+	public void setOwner(Contact owner) {
+		this.owner = owner;
+	}
+
+	public Set<Contact> getMembers() {
+		return members;
+	}
+
+	public void setMembers(Set<Contact> members) {
+		this.members = members;
+	}
+
+	@PostPersist
+	protected void onPersist() {
+		if (this.groupRefId == null)
+			this.groupRefId = this.id;
 	}
 
 }

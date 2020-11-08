@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.Availability;
+import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
 
 import javafx.beans.binding.Bindings;
@@ -133,12 +134,13 @@ class GroupPane extends HBox {
 
 	}
 
-	void addMessage(Message message, String senderName, boolean isOutgoing) {
+	void addMessage(Message message) {
 
-		if (!(isOutgoing || Objects.equals(message.getMessageStatus(), MessageStatus.READ)))
+		if (!(Objects.equals(message.getMessageDirection(), MessageDirection.OUT)
+				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ)))
 			unreadMessages.add(message.getId());
 
-		messagePane.addMessage(message, senderName, isOutgoing);
+		messagePane.addMessage(message);
 
 	}
 

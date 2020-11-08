@@ -74,9 +74,9 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 	}
 
 	@Override
-	public String getSelectedGroupUuid() {
+	public Long getSelectedGroupId() {
 
-		return myActiveGroupsPanel.getSelectedUuid();
+		return myActiveGroupsPanel.getSelectedId();
 
 	}
 

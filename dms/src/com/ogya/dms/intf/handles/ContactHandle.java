@@ -2,7 +2,7 @@ package com.ogya.dms.intf.handles;
 
 public interface ContactHandle {
 
-	String getUuid();
+	Long getId();
 
 	String getName();
 

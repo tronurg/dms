@@ -15,7 +15,6 @@ import javax.sound.sampled.DataLine;
 import javax.sound.sampled.TargetDataLine;
 
 import com.ogya.dms.factory.DmsFactory;
-import com.ogya.dms.structures.ReceiverType;
 
 public class AudioCenter {
 
@@ -107,14 +106,12 @@ public class AudioCenter {
 	public static final class RecordObject {
 
 		public final Path path;
-		public final String uuid;
-		public final ReceiverType receiverType;
+		public final Long id;
 
-		public RecordObject(Path path, String uuid, ReceiverType receiverType) {
+		public RecordObject(Path path, Long id) {
 
 			this.path = path;
-			this.uuid = uuid;
-			this.receiverType = receiverType;
+			this.id = id;
 
 		}
 

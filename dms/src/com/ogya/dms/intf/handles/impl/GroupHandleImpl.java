@@ -6,24 +6,24 @@ import com.ogya.dms.intf.handles.GroupHandle;
 
 public class GroupHandleImpl implements GroupHandle {
 
-	private final String groupUuid;
+	private final Long groupId;
 	private final String name;
 	private final String comment;
-	private final List<String> contactUuids;
+	private final List<Long> contactIds;
 
-	public GroupHandleImpl(String groupUuid, String name, String comment, List<String> contactUuids) {
+	public GroupHandleImpl(Long groupId, String name, String comment, List<Long> contactIds) {
 
-		this.groupUuid = groupUuid;
+		this.groupId = groupId;
 		this.name = name;
 		this.comment = comment;
-		this.contactUuids = contactUuids;
+		this.contactIds = contactIds;
 
 	}
 
 	@Override
-	public String getGroupUuid() {
+	public Long getGroupId() {
 
-		return groupUuid;
+		return groupId;
 
 	}
 
@@ -42,9 +42,9 @@ public class GroupHandleImpl implements GroupHandle {
 	}
 
 	@Override
-	public List<String> getContactUuids() {
+	public List<Long> getContactIds() {
 
-		return contactUuids;
+		return contactIds;
 
 	}
 

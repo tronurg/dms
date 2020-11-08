@@ -8,8 +8,8 @@ public interface ListHandle {
 
 	<T> List<T> getList(Class<T> elementType);
 
-	String getContactUuid();
+	Long getContactId();
 
-	String getGroupUuid();
+	Long getGroupId();
 
 }

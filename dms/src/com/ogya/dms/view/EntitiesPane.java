@@ -12,7 +12,6 @@ import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
-import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -39,10 +38,9 @@ class EntitiesPane extends BorderPane {
 
 	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane();
 
-	private final Map<String, ContactPane> uuidContactPane = Collections
-			.synchronizedMap(new HashMap<String, ContactPane>());
+	private final Map<Long, ContactPane> idContactPane = Collections.synchronizedMap(new HashMap<Long, ContactPane>());
 
-	private final Map<String, GroupPane> uuidGroupPane = Collections.synchronizedMap(new HashMap<String, GroupPane>());
+	private final Map<Long, GroupPane> idGroupPane = Collections.synchronizedMap(new HashMap<Long, GroupPane>());
 
 	private final List<IEntitiesPane> entityListeners = Collections.synchronizedList(new ArrayList<IEntitiesPane>());
 
@@ -130,25 +128,25 @@ class EntitiesPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		getContactPane(contact.getUuid()).updateContact(contact);
+		getContactPane(contact.getId()).updateContact(contact);
 
 	}
 
 	void updateGroup(Dgroup group) {
 
-		getGroupPane(group.getUuid()).updateGroup(group);
+		getGroupPane(group.getId()).updateGroup(group);
 
 	}
 
-	void addMessage(Message message, String senderName, boolean isOutgoing, String entityUuid) {
+	void addMessage(Message message) {
 
 		switch (message.getReceiverType()) {
 
-		case PRIVATE: {
+		case CONTACT: {
 
-			ContactPane contactPane = getContactPane(entityUuid);
+			ContactPane contactPane = getContactPane(message.getContact().getId());
 
-			contactPane.addMessage(message, senderName, isOutgoing);
+			contactPane.addMessage(message);
 
 			Long messageId = message.getId();
 
@@ -167,11 +165,12 @@ class EntitiesPane extends BorderPane {
 
 		}
 
-		case GROUP: {
+		case GROUP_OWNER:
+		case GROUP_MEMBER: {
 
-			GroupPane groupPane = getGroupPane(entityUuid);
+			GroupPane groupPane = getGroupPane(message.getDgroup().getId());
 
-			groupPane.addMessage(message, senderName, isOutgoing);
+			groupPane.addMessage(message);
 
 			Long messageId = message.getId();
 
@@ -198,113 +197,113 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void updatePrivateMessageStatus(Message message, String uuid) {
+	void updatePrivateMessageStatus(Message message) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		ContactPane contactPane = getContactPane(message.getContact().getId());
 
 		contactPane.updateMessageStatus(message);
 
 	}
 
-	void updateGroupMessageStatus(Message message, String groupUuid) {
+	void updateGroupMessageStatus(Message message) {
 
-		GroupPane groupPane = getGroupPane(groupUuid);
+		GroupPane groupPane = getGroupPane(message.getDgroup().getId());
 
 		groupPane.updateMessageStatus(message);
 
 	}
 
-	void updatePrivateMessageProgress(String uuid, Long messageId, int progress) {
+	void updatePrivateMessageProgress(Long id, Long messageId, int progress) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		ContactPane contactPane = getContactPane(id);
 
 		contactPane.updateMessageProgress(messageId, progress);
 
 	}
 
-	void scrollPrivatePaneToMessage(String uuid, Long mesajId) {
+	void scrollPrivatePaneToMessage(Long id, Long messageId) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		ContactPane contactPane = getContactPane(id);
 
-		contactPane.scrollPaneToMessage(mesajId);
-
-	}
-
-	void scrollGroupPaneToMessage(String groupUuid, Long mesajId) {
-
-		GroupPane groupPane = getGroupPane(groupUuid);
-
-		groupPane.scrollPaneToMessage(mesajId);
+		contactPane.scrollPaneToMessage(messageId);
 
 	}
 
-	void savePrivatePosition(String uuid, Long mesajId) {
+	void scrollGroupPaneToMessage(Long id, Long messageId) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		GroupPane groupPane = getGroupPane(id);
 
-		contactPane.savePosition(mesajId);
-
-	}
-
-	void saveGroupPosition(String groupUuid, Long mesajId) {
-
-		GroupPane groupPane = getGroupPane(groupUuid);
-
-		groupPane.savePosition(mesajId);
+		groupPane.scrollPaneToMessage(messageId);
 
 	}
 
-	void scrollToSavedPrivatePosition(String uuid) {
+	void savePrivatePosition(Long id, Long messageId) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		ContactPane contactPane = getContactPane(id);
+
+		contactPane.savePosition(messageId);
+
+	}
+
+	void saveGroupPosition(Long id, Long messageId) {
+
+		GroupPane groupPane = getGroupPane(id);
+
+		groupPane.savePosition(messageId);
+
+	}
+
+	void scrollToSavedPrivatePosition(Long id) {
+
+		ContactPane contactPane = getContactPane(id);
 
 		contactPane.scrollToSavedPosition();
 
 	}
 
-	void scrollToSavedGroupPosition(String groupUuid) {
+	void scrollToSavedGroupPosition(Long id) {
 
-		GroupPane groupPane = getGroupPane(groupUuid);
+		GroupPane groupPane = getGroupPane(id);
 
 		groupPane.scrollToSavedPosition();
 
 	}
 
-	void privateRecordingStarted(String uuid) {
+	void privateRecordingStarted(Long id) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		ContactPane contactPane = getContactPane(id);
 
 		contactPane.recordingStarted();
 
 	}
 
-	void privateRecordingStopped(String uuid) {
+	void privateRecordingStopped(Long id) {
 
-		ContactPane contactPane = getContactPane(uuid);
+		ContactPane contactPane = getContactPane(id);
 
 		contactPane.recordingStopped();
 
 	}
 
-	void groupRecordingStarted(String groupUuid) {
+	void groupRecordingStarted(Long id) {
 
-		GroupPane groupPane = getGroupPane(groupUuid);
+		GroupPane groupPane = getGroupPane(id);
 
 		groupPane.recordingStarted();
 
 	}
 
-	void groupRecordingStopped(String groupUuid) {
+	void groupRecordingStopped(Long id) {
 
-		GroupPane groupPane = getGroupPane(groupUuid);
+		GroupPane groupPane = getGroupPane(id);
 
 		groupPane.recordingStopped();
 
 	}
 
-	private ContactPane getContactPane(final String uuid) {
+	private ContactPane getContactPane(final Long id) {
 
-		if (!uuidContactPane.containsKey(uuid)) {
+		if (!idContactPane.containsKey(id)) {
 
 			final ContactPane contactPane = new ContactPane();
 
@@ -317,31 +316,31 @@ class EntitiesPane extends BorderPane {
 
 			contactPane.setOnShowMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.showMessagePane(messagePane, uuid, ReceiverType.PRIVATE));
+				entityListeners.forEach(listener -> listener.showMessagePane(messagePane, id));
 
 			});
 
 			contactPane.setOnHideMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, uuid));
+				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, id));
 
 			});
 
-			contactPane.addMessagePaneListener(newMessagePaneListener(uuid, ReceiverType.PRIVATE));
+			contactPane.addMessagePaneListener(newMessagePaneListener(id));
 
-			uuidContactPane.put(uuid, contactPane);
+			idContactPane.put(id, contactPane);
 
 			entities.getChildren().add(0, contactPane);
 
 		}
 
-		return uuidContactPane.get(uuid);
+		return idContactPane.get(id);
 
 	}
 
-	private GroupPane getGroupPane(final String groupUuid) {
+	private GroupPane getGroupPane(final Long id) {
 
-		if (!uuidGroupPane.containsKey(groupUuid)) {
+		if (!idGroupPane.containsKey(id)) {
 
 			final GroupPane groupPane = new GroupPane();
 
@@ -354,57 +353,56 @@ class EntitiesPane extends BorderPane {
 
 			groupPane.setOnShowMessagePane(messagePane -> {
 
-				entityListeners
-						.forEach(listener -> listener.showMessagePane(messagePane, groupUuid, ReceiverType.GROUP));
+				entityListeners.forEach(listener -> listener.showMessagePane(messagePane, -id));
 
 			});
 
 			groupPane.setOnHideMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, groupUuid));
+				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, -id));
 
 			});
 
-			groupPane.addMessagePaneListener(newMessagePaneListener(groupUuid, ReceiverType.GROUP));
+			groupPane.addMessagePaneListener(newMessagePaneListener(-id));
 
-			uuidGroupPane.put(groupUuid, groupPane);
+			idGroupPane.put(id, groupPane);
 
 			entities.getChildren().add(0, groupPane);
 
 		}
 
-		return uuidGroupPane.get(groupUuid);
+		return idGroupPane.get(id);
 
 	}
 
-	private IMessagePane newMessagePaneListener(final String uuid, final ReceiverType receiverType) {
+	private IMessagePane newMessagePaneListener(final Long id) {
 
 		return new IMessagePane() {
 
 			@Override
 			public void showFoldersClicked() {
 
-				entityListeners.forEach(listener -> listener.showFoldersClicked(uuid, receiverType));
+				entityListeners.forEach(listener -> listener.showFoldersClicked(id));
 
 			}
 
 			public void reportClicked() {
 
-				entityListeners.forEach(listener -> listener.reportClicked(uuid, receiverType));
+				entityListeners.forEach(listener -> listener.reportClicked(id));
 
 			};
 
 			@Override
 			public void sendMessageClicked(final String message) {
 
-				entityListeners.forEach(listener -> listener.sendMessageClicked(message, uuid, receiverType));
+				entityListeners.forEach(listener -> listener.sendMessageClicked(message, id));
 
 			}
 
 			@Override
-			public void paneScrolledToTop() {
+			public void paneScrolledToTop(Long topMessageId) {
 
-				entityListeners.forEach(listener -> listener.paneScrolledToTop(uuid, receiverType));
+				entityListeners.forEach(listener -> listener.paneScrolledToTop(id, topMessageId));
 
 			}
 
@@ -425,7 +423,7 @@ class EntitiesPane extends BorderPane {
 			@Override
 			public void editClicked() {
 
-				entityListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(uuid));
+				entityListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(id));
 
 			}
 
@@ -438,7 +436,7 @@ class EntitiesPane extends BorderPane {
 
 			public void recordButtonPressed() {
 
-				entityListeners.forEach(listener -> listener.recordButtonPressed(uuid, receiverType));
+				entityListeners.forEach(listener -> listener.recordButtonPressed(id));
 
 			};
 
@@ -462,7 +460,7 @@ class EntitiesPane extends BorderPane {
 
 interface IEntitiesPane {
 
-	void showAddUpdateGroupPaneClicked(String groupUuid);
+	void showAddUpdateGroupPaneClicked(Long id);
 
 	void hideAddUpdateGroupPane(AddUpdateGroupPane addUpdateGroupPane);
 
@@ -470,17 +468,17 @@ interface IEntitiesPane {
 
 	void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
-	void showMessagePane(MessagePane messagePane, String uuid, ReceiverType receiverType);
+	void showMessagePane(MessagePane messagePane, Long id);
 
-	void hideMessagePane(MessagePane messagePane, String uuid);
+	void hideMessagePane(MessagePane messagePane, Long id);
 
-	void paneScrolledToTop(String uuid, ReceiverType receiverType);
+	void paneScrolledToTop(Long id, Long topMessageId);
 
-	void sendMessageClicked(String messageTxt, String uuid, ReceiverType receiverType);
+	void sendMessageClicked(String messageTxt, Long id);
 
-	void showFoldersClicked(String uuid, ReceiverType receiverType);
+	void showFoldersClicked(Long id);
 
-	void reportClicked(String uuid, ReceiverType receiverType);
+	void reportClicked(Long id);
 
 	void messageClicked(Long messageId);
 
@@ -488,7 +486,7 @@ interface IEntitiesPane {
 
 	void cancelClicked(Long messageId);
 
-	void recordButtonPressed(String uuid, ReceiverType receiverType);
+	void recordButtonPressed(Long id);
 
 	void recordEventTriggered();
 

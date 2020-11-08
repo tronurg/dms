@@ -13,10 +13,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-import com.google.gson.annotations.SerializedName;
-import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.structures.Availability;
 
 @Entity
@@ -28,33 +27,29 @@ public class Contact {
 	private Long id;
 
 	@Column(name = "uuid", unique = true, nullable = false, updatable = false)
-	@SerializedName(value = "a")
 	private String uuid;
 
 	@Column(name = "name", nullable = false, updatable = false)
-	@SerializedName(value = "b")
 	private String name;
 
 	@Column(name = "comment")
-	@SerializedName(value = "c")
 	private String comment;
 
 	@Column(name = "status", nullable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "d")
 	private Availability status;
 
 	@Column(name = "lattitude")
-	@SerializedName(value = "e")
 	private Double lattitude;
 
 	@Column(name = "longitude")
-	@SerializedName(value = "f")
 	private Double longitude;
 
-	@ManyToMany(mappedBy = "contacts", fetch = FetchType.LAZY)
-	@SerializedName(value = "g")
-	private Set<Dgroup> groups = new HashSet<Dgroup>();
+	@OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
+	private Set<Dgroup> ownedGroups = new HashSet<Dgroup>();
+
+	@ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
+	private Set<Dgroup> joinedGroups = new HashSet<Dgroup>();
 
 	public Contact() {
 		super();
@@ -131,20 +126,20 @@ public class Contact {
 		this.longitude = longitude;
 	}
 
-	public Set<Dgroup> getGroups() {
-		return groups;
+	public Set<Dgroup> getOwnedGroups() {
+		return ownedGroups;
 	}
 
-	public void setGroups(Set<Dgroup> groups) {
-		this.groups = groups;
+	public void setOwnedGroups(Set<Dgroup> ownedGroups) {
+		this.ownedGroups = ownedGroups;
 	}
 
-	public String toJson() {
-		return CommonMethods.toDbJson(this);
+	public Set<Dgroup> getJoinedGroups() {
+		return joinedGroups;
 	}
 
-	public static Contact fromJson(String json) throws Exception {
-		return CommonMethods.fromDbJson(json, Contact.class);
+	public void setJoinedGroups(Set<Dgroup> joinedGroups) {
+		this.joinedGroups = joinedGroups;
 	}
 
 	@Override
