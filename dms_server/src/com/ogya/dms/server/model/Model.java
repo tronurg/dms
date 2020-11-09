@@ -401,13 +401,15 @@ public class Model {
 
 		String userUuid = user.beacon.uuid;
 
-		String messagePojoStr = new MessagePojo(null, user.mapId, ContentType.UUID_DISCONNECTED, null).toJson();
+		String messagePojoStr = new MessagePojo(null, userUuid, ContentType.UUID_DISCONNECTED, null).toJson();
 
 		localUsers.remove(userUuid);
 
 		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
-		listener.sendToAllRemoteServers(messagePojoStr);
+		String remoteMessagePojoStr = new MessagePojo(null, user.mapId, ContentType.UUID_DISCONNECTED, null).toJson();
+
+		listener.sendToAllRemoteServers(remoteMessagePojoStr);
 
 	}
 

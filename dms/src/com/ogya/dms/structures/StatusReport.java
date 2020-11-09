@@ -9,16 +9,16 @@ import com.ogya.dms.common.CommonMethods;
 public class StatusReport {
 
 	@SerializedName(value = "a")
-	public final Map<String, MessageStatus> uuidStatus = new HashMap<String, MessageStatus>();
+	public final Map<Long, MessageStatus> idStatus = new HashMap<Long, MessageStatus>();
 
 	public MessageStatus getOverallStatus() {
 
-		if (uuidStatus.size() == 0)
+		if (idStatus.size() == 0)
 			return MessageStatus.READ;
 
 		int minOrder = Integer.MAX_VALUE;
 
-		for (MessageStatus messageStatus : uuidStatus.values()) {
+		for (MessageStatus messageStatus : idStatus.values()) {
 
 			minOrder = Math.min(minOrder, messageStatus.ordinal());
 

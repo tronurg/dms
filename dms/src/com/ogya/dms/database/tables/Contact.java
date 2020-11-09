@@ -1,19 +1,14 @@
 package com.ogya.dms.database.tables;
 
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import com.ogya.dms.structures.Availability;
@@ -44,12 +39,6 @@ public class Contact {
 
 	@Column(name = "longitude")
 	private Double longitude;
-
-	@OneToMany(mappedBy = "owner", fetch = FetchType.LAZY)
-	private Set<Dgroup> ownedGroups = new HashSet<Dgroup>();
-
-	@ManyToMany(mappedBy = "members", fetch = FetchType.LAZY)
-	private Set<Dgroup> joinedGroups = new HashSet<Dgroup>();
 
 	public Contact() {
 		super();
@@ -124,22 +113,6 @@ public class Contact {
 
 	public void setLongitude(Double longitude) {
 		this.longitude = longitude;
-	}
-
-	public Set<Dgroup> getOwnedGroups() {
-		return ownedGroups;
-	}
-
-	public void setOwnedGroups(Set<Dgroup> ownedGroups) {
-		this.ownedGroups = ownedGroups;
-	}
-
-	public Set<Dgroup> getJoinedGroups() {
-		return joinedGroups;
-	}
-
-	public void setJoinedGroups(Set<Dgroup> joinedGroups) {
-		this.joinedGroups = joinedGroups;
 	}
 
 	@Override

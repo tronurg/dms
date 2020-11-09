@@ -12,7 +12,6 @@ import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.factory.DmsFactory;
-import com.ogya.dms.structures.MessageStatus;
 
 public class DmsClient {
 
@@ -109,19 +108,10 @@ public class DmsClient {
 
 	}
 
-	public void feedMessageStatus(String receiverUuid, Long messageId, MessageStatus messageStatus) {
+	public void feedMessageStatus(String receiverUuid, Long messageId, String message) {
 
 		dealerQueue.offer(
-				new MessagePojo(null, uuid, receiverUuid, ContentType.valueOf(messageStatus.toString()), messageId)
-						.toJson());
-
-	}
-
-	public void feedMessageStatus(String[] senderUuids, String receiverUuid, Long messageId,
-			MessageStatus messageStatus) {
-
-		dealerQueue.offer(new MessagePojo(null, String.join(";", senderUuids), receiverUuid,
-				ContentType.valueOf(messageStatus.toString()), messageId).toJson());
+				new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS, messageId).toJson());
 
 	}
 
@@ -240,6 +230,8 @@ public class DmsClient {
 
 	private void processIncomingMessage(String message) {
 
+		System.out.println(message);
+
 		if (message.isEmpty())
 			return;
 
@@ -289,12 +281,9 @@ public class DmsClient {
 
 				break;
 
-			case FRESH:
-			case RECEIVED:
-			case READ:
+			case FEED_MESSAGE_STATUS:
 
-				messageStatusFedToListener(messagePojo.messageId,
-						MessageStatus.valueOf(messagePojo.contentType.toString()), messagePojo.senderUuid.split(";"));
+				messageStatusFedToListener(messagePojo.messageId, messagePojo.message, messagePojo.senderUuid);
 
 				break;
 
@@ -400,12 +389,11 @@ public class DmsClient {
 
 	}
 
-	private void messageStatusFedToListener(final Long messageId, final MessageStatus messageStatus,
-			final String[] remoteUuids) {
+	private void messageStatusFedToListener(final Long messageId, final String message, String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusFed(messageId, messageStatus, remoteUuids);
+			listener.messageStatusFed(messageId, message, remoteUuid);
 
 		});
 

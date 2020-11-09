@@ -1,5 +1,7 @@
 package com.ogya.dms.structures;
 
+import com.ogya.dms.common.CommonMethods;
+
 import javafx.scene.paint.Color;
 
 public enum MessageStatus {
@@ -7,8 +9,8 @@ public enum MessageStatus {
 	FRESH(Color.TRANSPARENT, Color.TRANSPARENT), SENT(Color.DARKGRAY, Color.TRANSPARENT),
 	RECEIVED(Color.DARKGRAY, Color.DARKGRAY), READ(Color.DEEPSKYBLUE, Color.DEEPSKYBLUE);
 
-	private final Color waitingColor;
-	private final Color transmittedColor;
+	private transient final Color waitingColor;
+	private transient final Color transmittedColor;
 
 	private MessageStatus(Color waitingColor, Color transmittedColor) {
 
@@ -27,6 +29,14 @@ public enum MessageStatus {
 
 		return transmittedColor;
 
+	}
+
+	public String toJson() {
+		return CommonMethods.toJson(this);
+	}
+
+	public static MessageStatus fromJson(String json) throws Exception {
+		return CommonMethods.fromJson(json, MessageStatus.class);
 	}
 
 }
