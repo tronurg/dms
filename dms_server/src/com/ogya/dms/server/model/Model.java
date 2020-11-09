@@ -372,15 +372,19 @@ public class Model {
 
 		DmsServer dmsServer = remoteServers.get(dmsUuid);
 
-		if (dmsServer.addresses.size() == 0) {
-			// Connection just established with the server
-
-			sendAllBeaconsToRemoteServer(dmsUuid);
-
-		}
+		// This block is commented out upon a half-open connection error. See below.
+//		if (dmsServer.addresses.size() == 0) {
+//			// Connection just established with the server
+//
+//			sendAllBeaconsToRemoteServer(dmsUuid);
+//
+//		}
 
 		dmsServer.addresses.clear();
 		dmsServer.addresses.addAll(addresses);
+
+		// This block is added upon a half-open connection error.
+		sendAllBeaconsToRemoteServer(dmsUuid);
 
 		dmsServer.mappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
 

@@ -17,6 +17,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
@@ -42,6 +43,7 @@ class GroupPane extends HBox {
 	private final Circle statusCircle = new Circle(SIZE);
 	private final Circle profileRound = new Circle(SIZE * 0.8);
 	private final Label initialLabel = new Label();
+	private final Label groupSign = new Label("G");
 
 	private final VBox middlePane = new VBox();
 	private final Label nameLabel = new Label();
@@ -194,8 +196,9 @@ class GroupPane extends HBox {
 		initStatusCircle();
 		initProfileRound();
 		initInitialLabel();
+		initGroupSign();
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLabel);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLabel, groupSign);
 
 	}
 
@@ -222,6 +225,23 @@ class GroupPane extends HBox {
 				.createDoubleBinding(() -> -initialLabel.widthProperty().get() / 2, initialLabel.widthProperty()));
 		initialLabel.translateYProperty().bind(Bindings
 				.createDoubleBinding(() -> -initialLabel.heightProperty().get() / 2, initialLabel.heightProperty()));
+
+	}
+
+	private void initGroupSign() {
+
+		groupSign.setTextFill(Color.WHITE);
+		groupSign.setContentDisplay(ContentDisplay.CENTER);
+		Font defaultFont = groupSign.getFont();
+		groupSign.setFont(Font.font(defaultFont.getFamily(), FontWeight.EXTRA_BOLD, SIZE * 0.5));
+
+		Circle circle = new Circle(SIZE * 0.3);
+		circle.setFill(Color.TOMATO);
+
+		groupSign.setGraphic(circle);
+
+		groupSign.setTranslateX(SIZE * 0.5);
+		groupSign.setTranslateY(SIZE * 0.5);
 
 	}
 

@@ -230,8 +230,6 @@ public class DmsClient {
 
 	private void processIncomingMessage(String message) {
 
-		System.out.println(message);
-
 		if (message.isEmpty())
 			return;
 
