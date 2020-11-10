@@ -30,6 +30,8 @@ import com.ogya.dms.server.factory.DmsFactory;
 
 public class TcpManager implements TcpServerListener {
 
+	private static final int CHUNK_SIZE = 1024;
+
 	private final int serverPort;
 	private final int clientPortFrom;
 	private final int clientPortTo;
@@ -283,7 +285,7 @@ public class TcpManager implements TcpServerListener {
 			if (progressMethod != null)
 				progressMethod.accept(0);
 
-			int messageLength = message.length();
+			final int messageLength = message.length();
 
 			boolean sent = false;
 
@@ -295,15 +297,23 @@ public class TcpManager implements TcpServerListener {
 						continue;
 
 					final AtomicInteger progress = new AtomicInteger(0);
+					final AtomicInteger progressPercent = new AtomicInteger(0);
 
-					sent = connection.sendFunction.send(message, sendStatus, progressMethod == null ? null : () -> {
+					sent = connection.sendFunction.send(message, CHUNK_SIZE, sendStatus,
+							progressMethod == null ? null : () -> {
 
-						int bytesSent = progress.incrementAndGet();
+								int bytesSent = progress.addAndGet(CHUNK_SIZE);
+								int bytesSentPercent = 100 * bytesSent / messageLength;
 
-						if (bytesSent % 1024 == 0 && bytesSent < messageLength)
-							progressMethod.accept(100 * bytesSent / messageLength);
+								if (bytesSentPercent > progressPercent.get() && bytesSentPercent < 100) {
 
-					});
+									progressPercent.set(bytesSentPercent);
+
+									progressMethod.accept(bytesSentPercent);
+
+								}
+
+							});
 
 					if (sent)
 						break;
@@ -402,8 +412,8 @@ public class TcpManager implements TcpServerListener {
 
 			Connection connection = connections.get(address);
 
-			connection.sendFunction = (message, sendCheck, success) -> tcpServer.sendMessage(id, message, sendCheck,
-					success);
+			connection.sendFunction = (message, chunkSize, sendCheck, success) -> tcpServer.sendMessage(id, message,
+					chunkSize, sendCheck, success);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -533,7 +543,7 @@ public class TcpManager implements TcpServerListener {
 
 	private interface SendFunction {
 
-		boolean send(String message, AtomicBoolean sendCheck, Runnable successMethod);
+		boolean send(String message, int chunkSize, AtomicBoolean sendCheck, Runnable successMethod);
 
 	}
 

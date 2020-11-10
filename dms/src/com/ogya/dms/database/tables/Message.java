@@ -1,7 +1,10 @@
 package com.ogya.dms.database.tables;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -12,10 +15,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.common.CommonMethods;
@@ -70,28 +73,28 @@ public class Message {
 	@SerializedName(value = "h")
 	private WaitStatus waitStatus;
 
-	@Column(name = "status_report_str", length = Integer.MAX_VALUE)
-	@SerializedName(value = "i")
-	private String statusReportStr;
-
 	@Column(name = "date", nullable = false, updatable = false)
-	@SerializedName(value = "j")
+	@SerializedName(value = "i")
 	private Date date;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
-	@SerializedName(value = "k")
+	@SerializedName(value = "j")
 	private Contact contact;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", updatable = false)
-	@SerializedName(value = "l")
+	@SerializedName(value = "k")
 	private Dgroup dgroup;
 
-	@Transient
+	@OneToMany(mappedBy = "message", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@SerializedName(value = "l")
+	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
+
+	@Column(name = "group_ref_id")
 	@SerializedName(value = "m")
 	private Long groupRefId;
-	@Transient
+	@Column(name = "contact_ref_id")
 	@SerializedName(value = "n")
 	private Long contactRefId;
 
@@ -180,14 +183,6 @@ public class Message {
 		this.waitStatus = waitStatus;
 	}
 
-	public String getStatusReportStr() {
-		return statusReportStr;
-	}
-
-	public void setStatusReportStr(String statusReportStr) {
-		this.statusReportStr = statusReportStr;
-	}
-
 	public Date getDate() {
 		return date;
 	}
@@ -212,6 +207,15 @@ public class Message {
 		this.dgroup = dgroup;
 	}
 
+	public Set<StatusReport> getStatusReports() {
+		return statusReports;
+	}
+
+	public void addStatusReport(StatusReport statusReport) {
+		this.statusReports.add(statusReport);
+		statusReport.setMessage(this);
+	}
+
 	public Long getGroupRefId() {
 		return groupRefId;
 	}
@@ -228,6 +232,23 @@ public class Message {
 		this.contactRefId = contactRefId;
 	}
 
+	public MessageStatus getOverallStatus() {
+
+		if (statusReports.size() == 0)
+			return MessageStatus.READ;
+
+		int minOrder = Integer.MAX_VALUE;
+
+		for (StatusReport statusReport : statusReports) {
+
+			minOrder = Math.min(minOrder, statusReport.getMessageStatus().ordinal());
+
+		}
+
+		return MessageStatus.values()[minOrder];
+
+	}
+
 	@PrePersist
 	protected void onCreate() {
 		this.date = new Date();
@@ -240,11 +261,11 @@ public class Message {
 	}
 
 	public String toJson() {
-		return CommonMethods.toDbJson(this);
+		return CommonMethods.toMessageJson(this);
 	}
 
 	public static Message fromJson(String json) throws Exception {
-		return CommonMethods.fromDbJson(json, Message.class);
+		return CommonMethods.fromMessageJson(json);
 	}
 
 }
