@@ -392,9 +392,6 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Message outgoingMessage = new Message(contact, group, receiverType, messageType, messageTxt);
 
-		if (group != null)
-			outgoingMessage.setGroupRefId(group.getGroupRefId());
-
 		outgoingMessage.setMessageDirection(MessageDirection.OUT);
 
 		if (messageCode != null)
@@ -624,6 +621,13 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	private void dmsSendMessage(Message message, Runnable runnable) {
 
 		message.setMessageRefId(message.getId());
+
+		if (message.getDgroup() != null)
+			message.setGroupRefId(message.getDgroup().getGroupRefId());
+
+		if (Objects.equals(message.getMessageDirection(), MessageDirection.IN)
+				&& Objects.equals(message.getReceiverType(), ReceiverType.GROUP_MEMBER))
+			message.setContactRefId(message.getContact().getId());
 
 		switch (message.getMessageType()) {
 
@@ -1543,8 +1547,6 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (messageToBeRedirected) {
 
 					newMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
-
-					newMessage.setContactRefId(owner.getId());
 
 					sendGroupMessage(newMessage);
 

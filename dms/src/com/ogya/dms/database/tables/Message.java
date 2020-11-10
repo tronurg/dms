@@ -19,6 +19,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.common.CommonMethods;
@@ -91,10 +92,10 @@ public class Message {
 	@SerializedName(value = "l")
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
-	@Column(name = "group_ref_id")
+	@Transient
 	@SerializedName(value = "m")
 	private Long groupRefId;
-	@Column(name = "contact_ref_id")
+	@Transient
 	@SerializedName(value = "n")
 	private Long contactRefId;
 
