@@ -15,6 +15,7 @@ import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.MessageDirection;
@@ -39,8 +40,9 @@ public class DbManager {
 					.setProperty("hibernate.connection.url",
 							"jdbc:h2:" + CommonConstants.DB_PATH + File.separator + dbName)
 					.setProperty("hibernate.connection.username", dbName)
-					.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Dgroup.class)
-					.addAnnotatedClass(Contact.class).addAnnotatedClass(Message.class).buildSessionFactory();
+					.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Contact.class)
+					.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Message.class)
+					.addAnnotatedClass(StatusReport.class).buildSessionFactory();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
 
@@ -391,16 +393,15 @@ public class DbManager {
 
 	}
 
-	public List<Message> getGroupMessagesWaitingToContact(String contactUuid) throws HibernateException {
+	public List<Message> getGroupMessagesWaitingToContact(Long contactId) throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where messageDirection like :out and waitStatus like :waiting and ((receiverType like :groupOwner and contact.uuid like :contactUuid) or (receiverType like :groupMember and statusReportStr like :statusReportStr))",
+				"select m from Message m join m.statusReports s where m.messageDirection like :out and m.waitStatus like :waiting and ((m.receiverType like :groupOwner and m.contact.id=:contactId) or (m.receiverType like :groupMember and s.contactId=:contactId and s.messageStatus not like :read))",
 				Message.class).setParameter("out", MessageDirection.OUT).setParameter("waiting", WaitStatus.WAITING)
-				.setParameter("groupOwner", ReceiverType.GROUP_OWNER).setParameter("contactUuid", contactUuid)
-				.setParameter("groupMember", ReceiverType.GROUP_MEMBER)
-				.setParameter("statusReportStr", String.format("%%%s%%", contactUuid)).list();
+				.setParameter("groupOwner", ReceiverType.GROUP_OWNER).setParameter("contactId", contactId)
+				.setParameter("groupMember", ReceiverType.GROUP_MEMBER).setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 
@@ -408,13 +409,13 @@ public class DbManager {
 
 	}
 
-	public List<Message> getGroupMessagesNotReadToItsGroup(String contactUuid) throws HibernateException {
+	public List<Message> getGroupMessagesNotReadToItsGroup(Long contactId) throws HibernateException {
 
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where contact.uuid like :contactUuid and messageDirection like :out and receiverType like :groupOwner and messageStatus not like :read and waitStatus not like :canceled",
-				Message.class).setParameter("contactUuid", contactUuid).setParameter("out", MessageDirection.OUT)
+				"from Message where contact.id=:contactId and messageDirection like :out and receiverType like :groupOwner and messageStatus not like :read and waitStatus not like :canceled",
+				Message.class).setParameter("contactId", contactId).setParameter("out", MessageDirection.OUT)
 				.setParameter("groupOwner", ReceiverType.GROUP_OWNER).setParameter("read", MessageStatus.READ)
 				.setParameter("canceled", WaitStatus.CANCELED).list();
 

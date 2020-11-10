@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -40,6 +41,8 @@ import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
+import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.MessageType;
@@ -52,8 +55,9 @@ public class CommonMethods {
 
 	private static ResourceBundle langFile;
 
-	private static final List<String> gsonExcludedNames = Arrays.asList("id", "messageDirection", "messageStatus",
-			"waitStatus", "statusReportStr", "date", "contact", "dgroup");
+	private static final List<String> messageGsonExcludedNames = Arrays.asList("id", "messageDirection",
+			"messageStatus", "waitStatus", "statusReports", "date", "contact", "dgroup");
+	private static final List<String> statusReportGsonExcludedNames = Arrays.asList("id", "message");
 
 	private static Gson gson = new GsonBuilder()
 			.registerTypeAdapter(MessageStatus.class, new TypeAdapter<MessageStatus>() {
@@ -78,11 +82,11 @@ public class CommonMethods {
 
 			}).create();
 
-	private static Gson gsonDb = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
+	private static Gson gsonMessage = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
 
 		@Override
 		public boolean shouldSkipField(FieldAttributes arg0) {
-			return gsonExcludedNames.contains(arg0.getName());
+			return messageGsonExcludedNames.contains(arg0.getName());
 		}
 
 		@Override
@@ -143,6 +147,40 @@ public class CommonMethods {
 
 		@Override
 		public void write(JsonWriter writer, ReceiverType value) throws IOException {
+			if (value == null) {
+				writer.nullValue();
+				return;
+			}
+			writer.value(value.ordinal());
+		}
+
+	}).create();
+
+	private static Gson gsonStatusReport = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
+
+		@Override
+		public boolean shouldSkipField(FieldAttributes arg0) {
+			return statusReportGsonExcludedNames.contains(arg0.getName());
+		}
+
+		@Override
+		public boolean shouldSkipClass(Class<?> arg0) {
+			return false;
+		}
+
+	}).registerTypeAdapter(MessageStatus.class, new TypeAdapter<MessageStatus>() {
+
+		@Override
+		public MessageStatus read(JsonReader reader) throws IOException {
+			if (reader.peek() == JsonToken.NULL) {
+				reader.nextNull();
+				return null;
+			}
+			return MessageStatus.values()[reader.nextInt()];
+		}
+
+		@Override
+		public void write(JsonWriter writer, MessageStatus value) throws IOException {
 			if (value == null) {
 				writer.nullValue();
 				return;
@@ -369,15 +407,32 @@ public class CommonMethods {
 
 	}
 
-	public static String toDbJson(Object src) {
+	public static String toMessageJson(Message src) {
 
-		return gsonDb.toJson(src);
+		return gsonMessage.toJson(src);
 
 	}
 
-	public static <T> T fromDbJson(String json, Class<T> classOfT) throws Exception {
+	public static Message fromMessageJson(String json) throws Exception {
 
-		T result = gsonDb.fromJson(json, classOfT);
+		Message result = gsonMessage.fromJson(json, Message.class);
+
+		if (result == null)
+			throw new Exception();
+
+		return result;
+
+	}
+
+	public static String toStatusReportJson(Set<StatusReport> src) {
+
+		return gsonStatusReport.toJson(src);
+
+	}
+
+	public static StatusReport[] fromStatusReportJson(String json) throws Exception {
+
+		StatusReport[] result = gsonStatusReport.fromJson(json, StatusReport[].class);
 
 		if (result == null)
 			throw new Exception();
