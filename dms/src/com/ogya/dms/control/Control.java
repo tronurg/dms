@@ -1727,8 +1727,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (dbMessage == null)
 					return;
 
-				dmsClient.feedStatusReport(messageId, CommonMethods.toStatusReportJson(dbMessage.getStatusReports()),
-						remoteUuid);
+				dmsClient.feedStatusReport(messageId, dbMessage.getStatusReports(), remoteUuid);
 
 			} catch (Exception e) {
 
@@ -1741,7 +1740,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	}
 
 	@Override
-	public void statusReportFed(final Long messageId, final String message) {
+	public void statusReportFed(final Long messageId, final StatusReport[] statusReports) {
 
 		taskQueue.execute(() -> {
 
@@ -1759,8 +1758,6 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				if (group == null)
 					return;
-
-				StatusReport[] statusReports = CommonMethods.fromJson(message, StatusReport[].class);
 
 				Map<Long, StatusReport> statusReportMap = new HashMap<Long, StatusReport>();
 

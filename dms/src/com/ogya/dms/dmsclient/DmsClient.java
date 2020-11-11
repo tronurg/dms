@@ -1,6 +1,7 @@
 package com.ogya.dms.dmsclient;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -8,8 +9,10 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
+import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.factory.DmsFactory;
 import com.ogya.dms.structures.GroupMessageStatus;
@@ -132,10 +135,10 @@ public class DmsClient {
 
 	}
 
-	public void feedStatusReport(Long messageId, String message, String receiverUuid) {
+	public void feedStatusReport(Long messageId, Set<StatusReport> statusReports, String receiverUuid) {
 
-		dealerQueue.offer(
-				new MessagePojo(message, null, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId).toJson());
+		dealerQueue.offer(new MessagePojo(CommonMethods.toStatusReportJson(statusReports), null, receiverUuid,
+				ContentType.FEED_STATUS_REPORT, messageId).toJson());
 
 	}
 
@@ -311,7 +314,8 @@ public class DmsClient {
 
 			case FEED_STATUS_REPORT:
 
-				statusReportFedToListener(messagePojo.messageId, messagePojo.message);
+				statusReportFedToListener(messagePojo.messageId,
+						CommonMethods.fromStatusReportJson(messagePojo.message));
 
 				break;
 
@@ -437,11 +441,11 @@ public class DmsClient {
 
 	}
 
-	private void statusReportFedToListener(final Long messageId, final String message) {
+	private void statusReportFedToListener(final Long messageId, final StatusReport[] statusReports) {
 
 		taskQueue.execute(() -> {
 
-			listener.statusReportFed(messageId, message);
+			listener.statusReportFed(messageId, statusReports);
 
 		});
 

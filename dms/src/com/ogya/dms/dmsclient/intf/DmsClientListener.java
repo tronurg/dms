@@ -1,5 +1,6 @@
 package com.ogya.dms.dmsclient.intf;
 
+import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.structures.GroupMessageStatus;
 import com.ogya.dms.structures.MessageStatus;
 
@@ -25,7 +26,7 @@ public interface DmsClientListener {
 
 	void statusReportClaimed(Long messageId, String remoteUuid);
 
-	void statusReportFed(Long messageId, String message);
+	void statusReportFed(Long messageId, StatusReport[] statusReports);
 
 	void transientMessageReceived(String message, String remoteUuid);
 
