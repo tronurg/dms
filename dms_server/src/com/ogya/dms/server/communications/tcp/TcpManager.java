@@ -293,6 +293,9 @@ public class TcpManager implements TcpServerListener {
 
 				for (Connection connection : dmsServer.connections) {
 
+					if (!(sendStatus == null || sendStatus.get()))
+						break;
+
 					if (connection.sendFunction == null)
 						continue;
 
@@ -377,10 +380,12 @@ public class TcpManager implements TcpServerListener {
 			if (address == null)
 				return;
 
-			Connection connection = connections.remove(address);
+			Connection connection = connections.get(address);
 
-			if (connection == null)
+			if (connection == null || connection.id != id)
 				return;
+
+			connections.remove(address);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -411,6 +416,8 @@ public class TcpManager implements TcpServerListener {
 			connections.putIfAbsent(address, new Connection(address));
 
 			Connection connection = connections.get(address);
+
+			connection.id = id;
 
 			connection.sendFunction = (message, chunkSize, sendCheck, success) -> tcpServer.sendMessage(id, message,
 					chunkSize, sendCheck, success);
@@ -471,6 +478,8 @@ public class TcpManager implements TcpServerListener {
 		final int order;
 
 		final InetAddress remoteAddress;
+
+		int id = -1;
 
 		final Queue<String> waitingMessages = new ArrayDeque<String>();
 

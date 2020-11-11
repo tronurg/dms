@@ -537,7 +537,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		final List<String> onlineUuids = new ArrayList<String>();
 
-		if (Objects.equals(message.getReceiverType(), ReceiverType.GROUP_MEMBER)) {
+		if (Objects.equals(group.getOwner().getUuid(), model.getLocalUuid())) {
 			// It's my group, so I have to send this message to all the members except the
 			// original sender.
 
@@ -624,6 +624,10 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		if (message.getDgroup() != null)
 			message.setGroupRefId(message.getDgroup().getGroupRefId());
+
+		if (Objects.equals(message.getMessageDirection(), MessageDirection.IN)
+				&& Objects.equals(message.getReceiverType(), ReceiverType.GROUP_OWNER))
+			message.setReceiverType(ReceiverType.GROUP_MEMBER);
 
 		if (Objects.equals(message.getMessageDirection(), MessageDirection.IN)
 				&& Objects.equals(message.getReceiverType(), ReceiverType.GROUP_MEMBER))
@@ -958,7 +962,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	}
 
-	private void updateMessageStatus(Message message, Long[] contactIds, MessageStatus messageStatus,
+	private void updateMessageStatus(Message message, List<Long> contactIds, MessageStatus messageStatus,
 			boolean resendIfNecessary) throws Exception {
 
 		if (Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
@@ -971,10 +975,9 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				&& Objects.equals(message.getReceiverType(), ReceiverType.GROUP_OWNER)
 				&& model.isContactOnline(contactUuid)) {
 
-			GroupMessageStatus groupMessageStatus = new GroupMessageStatus(messageStatus);
-			groupMessageStatus.ids = contactIds;
+			GroupMessageStatus groupMessageStatus = new GroupMessageStatus(messageStatus, contactIds);
 
-			dmsClient.feedMessageStatus(contactUuid, message.getMessageRefId(), groupMessageStatus.toJson());
+			dmsClient.feedGroupMessageStatus(contactUuid, message.getMessageRefId(), groupMessageStatus);
 
 		}
 
@@ -1338,9 +1341,16 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (message == null)
 					return;
 
-				Long[] remoteIds = new Long[remoteUuids.length];
+				List<Long> remoteIds = new ArrayList<Long>();
 
-				Arrays.setAll(remoteIds, i -> getContact(remoteUuids[i]).getId());
+				for (String remoteUuid : remoteUuids) {
+
+					Contact contact = getContact(remoteUuid);
+
+					if (contact != null)
+						remoteIds.add(contact.getId());
+
+				}
 
 				if (progress == 100) {
 
@@ -1454,9 +1464,17 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 					Dgroup dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
 
-					if (incomingMessage.getContactRefId() != null)
-						incomingMessage.setContact(getContact(ContactMap.fromJson(dgroup.getContactMapStr()).map
-								.get(incomingMessage.getContactRefId())));
+					if (dgroup == null) {
+						groupUpdateReceived(remoteUuid, incomingMessage.getGroupRefId(), new GroupUpdate());
+						dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
+					}
+
+					if (!(incomingMessage.getContactRefId() == null || dgroup.getContactMapStr() == null)) {
+						Contact contact = getContact(ContactMap.fromJson(dgroup.getContactMapStr()).map
+								.get(incomingMessage.getContactRefId()));
+						if (contact != null)
+							incomingMessage.setContact(contact);
+					}
 
 					incomingMessage.setDgroup(dgroup);
 
@@ -1520,7 +1538,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					privateMessageReceived(newMessage);
 
 					dmsClient.feedMessageStatus(remoteUuid, newMessage.getMessageRefId(),
-							newMessage.getMessageStatus().toJson());
+							newMessage.getMessageStatus());
 
 					break;
 
@@ -1529,7 +1547,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					groupMessageReceived(newMessage);
 
 					dmsClient.feedMessageStatus(remoteUuid, newMessage.getMessageRefId(),
-							new GroupMessageStatus(newMessage.getMessageStatus()).toJson());
+							newMessage.getMessageStatus());
 
 					break;
 
@@ -1538,15 +1556,13 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					groupMessageReceived(newMessage);
 
 					dmsClient.feedMessageStatus(remoteUuid, newMessage.getMessageRefId(),
-							newMessage.getMessageStatus().toJson());
+							newMessage.getMessageStatus());
 
 					break;
 
 				}
 
 				if (messageToBeRedirected) {
-
-					newMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
 
 					sendGroupMessage(newMessage);
 
@@ -1616,11 +1632,11 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (incomingMessage == null) {
 
 					// Not received
-					dmsClient.feedMessageStatus(remoteUuid, messageId, MessageStatus.FRESH.toJson());
+					dmsClient.feedMessageStatus(remoteUuid, messageId, MessageStatus.FRESH);
 
 				} else {
 
-					dmsClient.feedMessageStatus(remoteUuid, messageId, incomingMessage.getMessageStatus().toJson());
+					dmsClient.feedMessageStatus(remoteUuid, messageId, incomingMessage.getMessageStatus());
 
 				}
 
@@ -1635,7 +1651,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 	}
 
 	@Override
-	public void messageStatusFed(final Long messageId, final String message, String remoteUuid) {
+	public void messageStatusFed(final Long messageId, final MessageStatus messageStatus, String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1646,59 +1662,48 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (dbMessage == null)
 					return;
 
-				switch (dbMessage.getReceiverType()) {
+				Contact contact = getContact(remoteUuid);
 
-				case CONTACT:
+				if (contact != null)
+					updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus, true);
 
-					updateMessageStatus(dbMessage, null, MessageStatus.fromJson(message), true);
+			} catch (Exception e) {
 
-					break;
+				e.printStackTrace();
 
-				case GROUP_OWNER:
+			}
 
-					if (Objects.equals(dbMessage.getMessageDirection(), MessageDirection.OUT)) {
+		});
 
-						GroupMessageStatus groupMessageStatus = GroupMessageStatus.fromJson(message);
+	}
 
-						if (groupMessageStatus.ids == null) {
+	@Override
+	public void groupMessageStatusFed(final Long messageId, final GroupMessageStatus groupMessageStatus,
+			String remoteUuid) {
 
-							updateMessageStatus(dbMessage, new Long[] { getContact(remoteUuid).getId() },
-									groupMessageStatus.messageStatus, true);
+		taskQueue.execute(() -> {
 
-						} else {
+			try {
 
-							Long[] refIds = new Long[groupMessageStatus.ids.length];
+				Message dbMessage = dbManager.getMessage(messageId);
 
-							ContactMap contactMap = ContactMap.fromJson(dbMessage.getDgroup().getContactMapStr());
+				if (dbMessage == null)
+					return;
 
-							Arrays.setAll(refIds,
-									i -> getContact(contactMap.map.get(groupMessageStatus.ids[i])).getId());
+				ContactMap contactMap = ContactMap.fromJson(dbMessage.getDgroup().getContactMapStr());
 
-							updateMessageStatus(dbMessage, refIds, groupMessageStatus.messageStatus, true);
+				List<Long> ids = new ArrayList<Long>();
 
-						}
+				groupMessageStatus.refIds.forEach(refId -> {
 
-					} else {
+					Contact contact = getContact(contactMap.map.get(refId));
 
-						updateMessageStatus(dbMessage, new Long[] { getContact(remoteUuid).getId() },
-								MessageStatus.fromJson(message), true);
+					if (contact != null)
+						ids.add(contact.getId());
 
-					}
+				});
 
-					break;
-
-				case GROUP_MEMBER:
-
-					if (Objects.equals(dbMessage.getMessageDirection(), MessageDirection.OUT)) {
-
-						updateMessageStatus(dbMessage, new Long[] { getContact(remoteUuid).getId() },
-								MessageStatus.fromJson(message), true);
-
-					}
-
-					break;
-
-				}
+				updateMessageStatus(dbMessage, ids, groupMessageStatus.messageStatus, true);
 
 			} catch (Exception e) {
 
@@ -2002,7 +2007,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
 
 					dmsClient.feedMessageStatus(newMessage.getContact().getUuid(), newMessage.getMessageRefId(),
-							MessageStatus.READ.toJson());
+							MessageStatus.READ);
 
 				} catch (JsonSyntaxException | HibernateException e) {
 
@@ -2047,12 +2052,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_OWNER)) {
 
 						dmsClient.feedMessageStatus(newMessage.getContact().getUuid(), newMessage.getMessageRefId(),
-								new GroupMessageStatus(newMessage.getMessageStatus()).toJson());
+								newMessage.getMessageStatus());
 
 					} else if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_MEMBER)) {
 
 						dmsClient.feedMessageStatus(group.getOwner().getUuid(), newMessage.getMessageRefId(),
-								newMessage.getMessageStatus().toJson());
+								newMessage.getMessageStatus());
 
 					}
 
