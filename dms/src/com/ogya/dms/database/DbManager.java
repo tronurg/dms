@@ -398,7 +398,7 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"select m from Message m join m.statusReports s where m.waitStatus like :waiting and s.contactId=:contactId and s.messageStatus not like :read",
+				"select m from Message m join m.statusReports s where m.waitStatus like :waiting and s.contactId=:contactId and s.messageStatus not like :read and (m.dgroup.owner.id=1 or m.dgroup.owner.id=:contactId)",
 				Message.class).setParameter("waiting", WaitStatus.WAITING).setParameter("contactId", contactId)
 				.setParameter("read", MessageStatus.READ).list();
 
