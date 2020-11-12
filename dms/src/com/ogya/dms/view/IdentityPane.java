@@ -37,11 +37,13 @@ import javafx.scene.text.FontWeight;
 
 class IdentityPane extends GridPane {
 
-	private static final double SIZE = 30.0;
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double unitSize = 30.0 * ViewFactory.getUnitSize();
 
 	private final Group profilePicture = new Group();
-	private final Circle statusCircle = new Circle(SIZE);
-	private final Circle profileRound = new Circle(SIZE * 0.8);
+	private final Circle statusCircle = new Circle(unitSize);
+	private final Circle profileRound = new Circle(unitSize * 0.8);
 	private final Label profileLabel = new Label();
 
 	private final Label nameLabel = new Label();
@@ -72,7 +74,7 @@ class IdentityPane extends GridPane {
 		initCommentTextField();
 		initCoordinatesLabel();
 
-		setHgap(5.0);
+		setHgap(GAP);
 		setValignment(profilePicture, VPos.TOP);
 		setHgrow(commentTextField, Priority.ALWAYS);
 
@@ -130,7 +132,7 @@ class IdentityPane extends GridPane {
 
 	private void initStatusCircle() {
 
-		statusCircle.setStrokeWidth(SIZE * 0.2);
+		statusCircle.setStrokeWidth(unitSize * 0.2);
 		statusCircle.setFill(Color.TRANSPARENT);
 
 	}
@@ -145,7 +147,7 @@ class IdentityPane extends GridPane {
 
 		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		profileLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
+		profileLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
 		profileLabel.translateXProperty().bind(Bindings
 				.createDoubleBinding(() -> -profileLabel.widthProperty().get() / 2, profileLabel.widthProperty()));
@@ -158,7 +160,7 @@ class IdentityPane extends GridPane {
 
 		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
 
 	}
 
@@ -215,7 +217,7 @@ class IdentityPane extends GridPane {
 		});
 
 		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
-				BorderStrokeStyle.SOLID, new CornerRadii(15.0), BorderWidths.DEFAULT) }));
+				BorderStrokeStyle.SOLID, new CornerRadii(unitSize * 15.0), BorderWidths.DEFAULT) }));
 
 	}
 

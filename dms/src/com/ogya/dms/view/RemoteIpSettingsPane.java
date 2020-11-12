@@ -25,7 +25,9 @@ import javafx.scene.text.FontWeight;
 
 public class RemoteIpSettingsPane extends BorderPane {
 
-	private static final double GAP = 5.0;
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double unitSize = ViewFactory.getUnitSize();
 
 	private final HBox topPane = new HBox(GAP);
 	private final VBox centerPane = new VBox(GAP);
@@ -114,7 +116,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 			HBox ipField = new HBox(GAP);
 
 			Label ipLabel = new Label(ip);
-			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * unitSize));
 
 			Button removeIpButton = ViewFactory.newRemoveBtn();
 
@@ -159,7 +161,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private void initHeadingLabel() {
 
 		headingLabel.getStyleClass().add("blackLabel");
-		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
+		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * unitSize));
 
 	}
 
@@ -193,7 +195,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		ipField.setDisable(true);
 
-		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0));
+		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0 * unitSize));
 
 	}
 

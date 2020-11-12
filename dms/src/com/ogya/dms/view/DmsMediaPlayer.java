@@ -5,6 +5,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import com.ogya.dms.view.factory.ViewFactory;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -23,6 +25,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 public class DmsMediaPlayer extends GridPane {
+
+	private static final double GAP = ViewFactory.GAP;
 
 	private final MediaPlayer mediaPlayer;
 
@@ -50,7 +54,7 @@ public class DmsMediaPlayer extends GridPane {
 		initProgressBar();
 		initDurationLbl();
 
-		setHgap(10.0);
+		setHgap(2 * GAP);
 
 		add(btn, 0, 0, 1, 1);
 		add(progressBar, 1, 0, 1, 1);
@@ -82,6 +86,8 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initBtn() {
 
+		double unitSize = ViewFactory.getUnitSize();
+
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.setPrefSize(16.0, 16.0);
@@ -103,6 +109,9 @@ public class DmsMediaPlayer extends GridPane {
 				mediaPlayer.play();
 			}
 		});
+
+		btn.setScaleX(unitSize);
+		btn.setScaleY(unitSize);
 
 	}
 

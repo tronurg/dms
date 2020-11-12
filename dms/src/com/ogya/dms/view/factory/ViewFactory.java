@@ -23,6 +23,22 @@ import javafx.scene.text.FontWeight;
 
 public class ViewFactory {
 
+	public static final double GAP = 5.0;
+
+	private static double unitSize = 0.0;
+
+	public static double getUnitSize() {
+
+		if (unitSize == 0.0) {
+
+			unitSize = Font.getDefault().getSize() / 15.0;
+
+		}
+
+		return unitSize;
+
+	}
+
 	public static Button newBackBtn() {
 
 		Button btn = new Button();
@@ -37,6 +53,9 @@ public class ViewFactory {
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
+
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
 
 		return btn;
 
@@ -56,6 +75,9 @@ public class ViewFactory {
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
+
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
 
 		return btn;
 
@@ -87,6 +109,9 @@ public class ViewFactory {
 		line2.strokeProperty().bind(
 				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
 
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
+
 		return btn;
 
 	}
@@ -111,6 +136,9 @@ public class ViewFactory {
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
 		line.strokeProperty()
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
+
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
 
 		return btn;
 
@@ -143,6 +171,9 @@ public class ViewFactory {
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
+
 		return btn;
 
 	}
@@ -168,6 +199,9 @@ public class ViewFactory {
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
+
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
 
 		return btn;
 
@@ -198,6 +232,9 @@ public class ViewFactory {
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
+
 		return btn;
 
 	}
@@ -218,6 +255,9 @@ public class ViewFactory {
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
+
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
 
 		return btn;
 
@@ -241,6 +281,9 @@ public class ViewFactory {
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
+
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
 
 		return btn;
 
@@ -272,6 +315,9 @@ public class ViewFactory {
 		btn.effectProperty()
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? dropShadow : null, btn.hoverProperty()));
 
+		btn.setScaleX(getUnitSize());
+		btn.setScaleY(getUnitSize());
+
 		return btn;
 
 	}
@@ -295,6 +341,9 @@ public class ViewFactory {
 		lbl.setGraphic(group);
 		lbl.setPadding(Insets.EMPTY);
 		lbl.setPickOnBounds(false);
+
+		lbl.setScaleX(getUnitSize());
+		lbl.setScaleY(getUnitSize());
 
 		return lbl;
 

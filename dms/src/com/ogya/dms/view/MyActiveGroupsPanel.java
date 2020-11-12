@@ -40,6 +40,10 @@ import javafx.scene.text.FontWeight;
 
 public class MyActiveGroupsPanel extends BorderPane {
 
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double unitSize = ViewFactory.getUnitSize();
+
 	private final TextField searchTextField = new TextField();
 
 	private final VBox groups = new VBox();
@@ -102,7 +106,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 		initSearchTextField();
 
-		groups.setPadding(new Insets(10.0));
+		groups.setPadding(new Insets(2 * GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
@@ -261,7 +265,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 		private void initContactCards() {
 
-			contactCards.setPadding(new Insets(0.0, 0.0, 15.0, 66.0));
+			contactCards.setPadding(new Insets(0.0, 0.0, 15.0 * unitSize, 66.0 * unitSize));
 
 			contactCards.managedProperty().bind(contactCards.visibleProperty());
 
@@ -289,11 +293,9 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	private final class Card extends GridPane {
 
-		private static final double GAP = 5.0;
-
 		private final ObjectProperty<Color> statusColorProperty;
 
-		private final Circle statusCircle = new Circle(7.0);
+		private final Circle statusCircle = new Circle(7.0 * unitSize);
 		private final Label nameLabel;
 
 		private Card(String name, ObjectProperty<Color> statusColorProperty) {
@@ -331,7 +333,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 		private void initNameLabel() {
 
 			HBox.setHgrow(nameLabel, Priority.ALWAYS);
-			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * unitSize));
 
 		}
 

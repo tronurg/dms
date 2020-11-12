@@ -19,6 +19,7 @@ import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
+import com.ogya.dms.view.factory.ViewFactory;
 import com.ogya.dms.view.intf.AppListener;
 
 import javafx.collections.ListChangeListener;
@@ -30,6 +31,8 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane {
+
+	private static final double GAP = ViewFactory.GAP;
 
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
@@ -77,7 +80,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 		});
 
-		VBox.setMargin(identityPane, new Insets(10.0));
+		VBox.setMargin(identityPane, new Insets(2 * GAP));
 
 		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
 

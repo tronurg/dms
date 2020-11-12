@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import com.ogya.dms.view.factory.ViewFactory;
+
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -107,6 +109,9 @@ public class RecordButton extends Button {
 			listeners.forEach(listener -> listener.recordButtonReleased());
 
 		});
+
+		setScaleX(ViewFactory.getUnitSize());
+		setScaleY(ViewFactory.getUnitSize());
 
 	}
 

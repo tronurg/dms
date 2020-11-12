@@ -74,8 +74,11 @@ import javafx.util.Duration;
 
 class MessagePane extends BorderPane {
 
-	private static final double GAP = 5.0;
-	private static final double SMALL_GAP = 2.0;
+	private static final double GAP = ViewFactory.GAP;
+	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
+	private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
+
+	private final double unitSize = ViewFactory.getUnitSize();
 
 	private final HBox topPane = new HBox(GAP);
 	private final VBox centerPane = new VBox(2 * GAP);
@@ -87,7 +90,7 @@ class MessagePane extends BorderPane {
 		}
 	};
 	private final Button backBtn = ViewFactory.newBackBtn();
-	private final Circle statusCircle = new Circle(7.0);
+	private final Circle statusCircle = new Circle(7.0 * unitSize);
 	private final Label nameLabel = new Label();
 	private final TextArea messageArea = new TextArea();
 	private final Button sendBtn = ViewFactory.newSendBtn();
@@ -173,7 +176,7 @@ class MessagePane extends BorderPane {
 
 		HBox.setMargin(statusCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
 		nameLabel.getStyleClass().add("blackLabel");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * unitSize));
 
 		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
 
@@ -591,11 +594,9 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private static class MessageBalloon extends GridPane {
+	private class MessageBalloon extends GridPane {
 
-		private static final double RADIUS = 3.0;
-		private static final double FONT_SIZE = new Label().getFont().getSize();
-		private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
+		private final double radius = 3.0 * unitSize;
 
 		private final String message;
 		private final MessageInfo messageInfo;
@@ -605,8 +606,8 @@ class MessagePane extends BorderPane {
 		private final Label progressLbl = new Label();
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
-		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
-		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
+		private final Circle waitingCircle = new Circle(radius, Color.TRANSPARENT);
+		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
 		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button cancelBtn = ViewFactory.newCancelBtn();
 
@@ -645,8 +646,8 @@ class MessagePane extends BorderPane {
 
 				getColumnConstraints().addAll(colNarrow, colWide);
 
-				messagePane.setBackground(
-						new Background(new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0), Insets.EMPTY)));
+				messagePane.setBackground(new Background(
+						new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * unitSize), Insets.EMPTY)));
 
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
 				GridPane.setHalignment(messageArea, HPos.RIGHT);
@@ -664,8 +665,8 @@ class MessagePane extends BorderPane {
 
 				getColumnConstraints().addAll(colWide, colNarrow);
 
-				messagePane.setBackground(
-						new Background(new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0), Insets.EMPTY)));
+				messagePane.setBackground(new Background(
+						new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * unitSize), Insets.EMPTY)));
 
 				GridPane.setHalignment(messagePane, HPos.LEFT);
 				GridPane.setHalignment(messageArea, HPos.LEFT);
@@ -760,7 +761,7 @@ class MessagePane extends BorderPane {
 
 			messagePane.setBorder(new Border(new BorderStroke(
 					Objects.equals(messageInfo.messageType, MessageType.FILE) ? Color.BLUE : Color.DARKGRAY,
-					BorderStrokeStyle.SOLID, new CornerRadii(2 * GAP), BorderWidths.DEFAULT)));
+					BorderStrokeStyle.SOLID, new CornerRadii(10.0 * unitSize), BorderWidths.DEFAULT)));
 
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setHgap(GAP);
@@ -771,7 +772,7 @@ class MessagePane extends BorderPane {
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
 
-			progressLbl.setFont(Font.font(FONT_SIZE * 0.75));
+			progressLbl.setFont(Font.font(11.25 * unitSize));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.setMinWidth(
@@ -784,14 +785,14 @@ class MessagePane extends BorderPane {
 			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
 			GridPane.setHalignment(infoGrp, HPos.RIGHT);
 
-			transmittedCircle.setLayoutX(2 * RADIUS);
+			transmittedCircle.setLayoutX(2.0 * radius);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 		}
 
 		private void initTimeLbl() {
 
-			timeLbl.setFont(Font.font(FONT_SIZE * 0.75));
+			timeLbl.setFont(Font.font(11.25 * unitSize));
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
