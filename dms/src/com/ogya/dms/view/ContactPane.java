@@ -38,7 +38,7 @@ class ContactPane extends HBox {
 
 	private static final double GAP = ViewFactory.GAP;
 
-	private final double unitSize = 24.0 * ViewFactory.getUnitSize();
+	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
 
 	private final Group profilePicture = new Group();
 	private final Circle statusCircle = new Circle(unitSize);
@@ -265,6 +265,8 @@ class ContactPane extends HBox {
 
 		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
+		commentLabel.setFont(Font.font(ViewFactory.getFontSize()));
+
 		commentLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String comment = commentLabel.getText();
 			if (comment == null || comment.isEmpty())
@@ -277,6 +279,8 @@ class ContactPane extends HBox {
 	private void initCoordinatesLabel() {
 
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+		coordinatesLabel.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 
@@ -301,7 +305,7 @@ class ContactPane extends HBox {
 
 		unreadMessagesLabel.setAlignment(Pos.CENTER);
 
-		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLabel.getFont().getSize()));
+		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, ViewFactory.getFontSize()));
 		unreadMessagesLabel.setTextFill(Color.WHITE);
 
 		unreadMessagesLabel.visibleProperty().bind(Bindings.size(unreadMessages).greaterThan(0));

@@ -25,7 +25,7 @@ public class SettingsPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 
-	private final double unitSize = ViewFactory.getUnitSize();
+	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final HBox topPane = new HBox(GAP);
 
@@ -88,7 +88,7 @@ public class SettingsPane extends BorderPane {
 	private void initHeadingLabel() {
 
 		headingLabel.getStyleClass().add("blackLabel");
-		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * unitSize));
+		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
 	}
 
@@ -97,7 +97,7 @@ public class SettingsPane extends BorderPane {
 		Label editRemoteIpsLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 		editRemoteIpsLabel.getStyleClass().add("linkLabel");
 		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * GAP));
-		editRemoteIpsLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * unitSize));
+		editRemoteIpsLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		editRemoteIpsLabel.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 

@@ -42,7 +42,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 
-	private final double unitSize = ViewFactory.getUnitSize();
+	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final TextField searchTextField = new TextField();
 
@@ -123,6 +123,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 		searchTextField.setPromptText(CommonMethods.translate("FIND"));
 		searchTextField.setFocusTraversable(false);
+		searchTextField.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 
@@ -265,7 +266,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 		private void initContactCards() {
 
-			contactCards.setPadding(new Insets(0.0, 0.0, 15.0 * unitSize, 66.0 * unitSize));
+			contactCards.setPadding(new Insets(0.0, 0.0, 15.0 * viewFactor, 66.0 * viewFactor));
 
 			contactCards.managedProperty().bind(contactCards.visibleProperty());
 
@@ -295,7 +296,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 		private final ObjectProperty<Color> statusColorProperty;
 
-		private final Circle statusCircle = new Circle(7.0 * unitSize);
+		private final Circle statusCircle = new Circle(7.0 * viewFactor);
 		private final Label nameLabel;
 
 		private Card(String name, ObjectProperty<Color> statusColorProperty) {
@@ -333,7 +334,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 		private void initNameLabel() {
 
 			HBox.setHgrow(nameLabel, Priority.ALWAYS);
-			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * unitSize));
+			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 
 		}
 

@@ -46,7 +46,7 @@ public class FoldersPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 
-	private final double unitSize = ViewFactory.getUnitSize();
+	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final StackPane centerPane = new StackPane();
@@ -101,7 +101,7 @@ public class FoldersPane extends BorderPane {
 		scrollPane.setFitToWidth(true);
 
 		nameLabel.getStyleClass().add("blackLabel");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * unitSize));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
 		topPane.getChildren().addAll(backBtn, nameLabel);
 

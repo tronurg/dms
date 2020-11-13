@@ -22,6 +22,7 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
 import javafx.util.Duration;
 
 public class DmsMediaPlayer extends GridPane {
@@ -86,16 +87,17 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initBtn() {
 
-		double unitSize = ViewFactory.getUnitSize();
+		double viewFactor = ViewFactory.getViewFactor();
 
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
-		btn.setPrefSize(16.0, 16.0);
+		btn.setPrefSize(16.0 * viewFactor, 16.0 * viewFactor);
 
 		final Polygon triangle = new Polygon();
-		triangle.getPoints().addAll(new Double[] { -8.0, -8.0, -8.0, 8.0, 6.0, 0.0 });
+		triangle.getPoints().addAll(new Double[] { -8.0 * viewFactor, -8.0 * viewFactor, -8.0 * viewFactor,
+				8.0 * viewFactor, 6.0 * viewFactor, 0.0 });
 		triangle.setFill(Color.GREEN);
-		final Rectangle rectangle = new Rectangle(16.0, 16.0);
+		final Rectangle rectangle = new Rectangle(16.0 * viewFactor, 16.0 * viewFactor);
 		rectangle.setFill(Color.RED);
 		btn.graphicProperty().bind(Bindings.createObjectBinding(
 				() -> Objects.equals(mediaPlayer.getStatus(), MediaPlayer.Status.PLAYING) ? rectangle : triangle,
@@ -109,9 +111,6 @@ public class DmsMediaPlayer extends GridPane {
 				mediaPlayer.play();
 			}
 		});
-
-		btn.setScaleX(unitSize);
-		btn.setScaleY(unitSize);
 
 	}
 
@@ -135,6 +134,7 @@ public class DmsMediaPlayer extends GridPane {
 	private void initDurationLbl() {
 
 		durationLbl.getStyleClass().add("blackLabel");
+		durationLbl.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

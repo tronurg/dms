@@ -12,6 +12,7 @@ import org.zeromq.ZMQ;
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
+import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.factory.DmsFactory;
@@ -86,16 +87,17 @@ public class DmsClient {
 
 	}
 
-	public void sendMessage(String message, String receiverUuid, Long messageId) {
+	public void sendMessage(Message message, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE, messageId).toJson());
+		dealerQueue
+				.offer(new MessagePojo(message.toJson(), uuid, receiverUuid, ContentType.MESSAGE, messageId).toJson());
 
 	}
 
-	public void sendMessage(String message, Iterable<String> receiverUuids, Long messageId) {
+	public void sendMessage(Message message, Iterable<String> receiverUuids, Long messageId) {
 
-		dealerQueue
-				.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)
+		dealerQueue.offer(
+				new MessagePojo(message.toJson(), uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)
 						.toJson());
 
 	}

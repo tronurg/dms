@@ -392,6 +392,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		Message outgoingMessage = new Message(contact, group, receiverType, messageType, messageTxt);
 
+		outgoingMessage.setOwner(model.getIdentity());
 		outgoingMessage.setMessageDirection(MessageDirection.OUT);
 
 		if (messageCode != null)
@@ -608,13 +609,13 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	private void dmsSendMessage(Message message, String receiverUuid) {
 
-		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuid, message.getId()));
+		dmsSendMessage(message, () -> dmsClient.sendMessage(message, receiverUuid, message.getId()));
 
 	}
 
 	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) {
 
-		dmsSendMessage(message, () -> dmsClient.sendMessage(message.toJson(), receiverUuids, message.getId()));
+		dmsSendMessage(message, () -> dmsClient.sendMessage(message, receiverUuids, message.getId()));
 
 	}
 
@@ -806,7 +807,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Long messageId = Long.parseLong(message.getContent());
 
-				Message dbMessage = dbManager.getMessage(message.getContact().getUuid(), messageId);
+				Message dbMessage = dbManager.getMessageBySender(message.getContact().getUuid(), messageId);
 
 				if (dbMessage != null)
 					cancelMessage(dbMessage);
@@ -962,8 +963,8 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 	}
 
-	private void updateMessageStatus(Message message, List<Long> contactIds, MessageStatus messageStatus,
-			boolean resendIfNecessary) throws Exception {
+	private void updateMessageStatus(Message message, List<Long> contactIds, MessageStatus messageStatus)
+			throws Exception {
 
 		if (Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
 			return;
@@ -997,7 +998,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 			if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
 				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
 
-			if (resendIfNecessary && Objects.equals(messageStatus, MessageStatus.FRESH))
+			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				sendPrivateMessage(newMessage);
 
 			break;
@@ -1059,7 +1060,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 			if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
 				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
 
-			if (resendIfNecessary && Objects.equals(messageStatus, MessageStatus.FRESH)) {
+			if (Objects.equals(messageStatus, MessageStatus.FRESH)) {
 				// If the message is not received remotely and;
 				// I am the group owner
 				// or
@@ -1336,7 +1337,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message message = dbManager.getMessage(messageId);
+				Message message = dbManager.getMessageById(messageId);
 
 				if (message == null)
 					return;
@@ -1356,7 +1357,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 					// Update status in database and view; send update to message owner if necessary
 
-					updateMessageStatus(message, remoteIds, MessageStatus.SENT, false);
+					updateMessageStatus(message, remoteIds, MessageStatus.SENT);
 
 				}
 
@@ -1423,14 +1424,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Message incomingMessage = Message.fromJson(message);
 
-				Message dbMessage = dbManager.getMessage(remoteUuid, incomingMessage.getMessageRefId());
+				Message dbMessage = dbManager.getMessageBySender(remoteUuid, incomingMessage.getMessageRefId());
 
 				if (dbMessage != null)
 					return;
 
-				Contact owner = getContact(remoteUuid);
-
-				incomingMessage.setContact(owner);
+				incomingMessage.setContact(getContact(remoteUuid));
 
 				if (Objects.equals(incomingMessage.getMessageType(), MessageType.UPDATE))
 					updateMessageReceived(incomingMessage);
@@ -1445,12 +1444,12 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 					incomingMessage.setDgroup(dgroup);
 
-					dgroup.getMembers().forEach(contact -> {
+					dgroup.getMembers().forEach(member -> {
 
-						if (Objects.equals(contact.getUuid(), remoteUuid))
+						if (Objects.equals(member.getUuid(), remoteUuid))
 							return;
 
-						incomingMessage.addStatusReport(new StatusReport(contact.getId(), MessageStatus.FRESH));
+						incomingMessage.addStatusReport(new StatusReport(member.getId(), MessageStatus.FRESH));
 
 					});
 
@@ -1472,8 +1471,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 					if (!(incomingMessage.getContactRefId() == null || dgroup.getContactMapStr() == null)) {
 						Contact contact = getContact(ContactMap.fromJson(dgroup.getContactMapStr()).map
 								.get(incomingMessage.getContactRefId()));
-						if (contact != null)
-							incomingMessage.setContact(contact);
+						incomingMessage.setOwner(contact);
 					}
 
 					incomingMessage.setDgroup(dgroup);
@@ -1627,7 +1625,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message incomingMessage = dbManager.getMessage(remoteUuid, messageId);
+				Message incomingMessage = dbManager.getMessageBySender(remoteUuid, messageId);
 
 				if (incomingMessage == null) {
 
@@ -1657,7 +1655,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message dbMessage = dbManager.getMessage(messageId);
+				Message dbMessage = dbManager.getMessageById(messageId);
 
 				if (dbMessage == null)
 					return;
@@ -1665,7 +1663,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				Contact contact = getContact(remoteUuid);
 
 				if (contact != null)
-					updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus, true);
+					updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus);
 
 			} catch (Exception e) {
 
@@ -1685,7 +1683,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message dbMessage = dbManager.getMessage(messageId);
+				Message dbMessage = dbManager.getMessageById(messageId);
 
 				if (dbMessage == null)
 					return;
@@ -1703,7 +1701,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				});
 
-				updateMessageStatus(dbMessage, ids, groupMessageStatus.messageStatus, true);
+				updateMessageStatus(dbMessage, ids, groupMessageStatus.messageStatus);
 
 			} catch (Exception e) {
 
@@ -1722,7 +1720,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message dbMessage = dbManager.getMessage(remoteUuid, messageId);
+				Message dbMessage = dbManager.getMessageBySender(remoteUuid, messageId);
 
 				if (dbMessage == null)
 					return;
@@ -1749,7 +1747,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				// A status report can only be claimed by a group message owner. So at this
 				// point, I must be a group message owner. Let's find that message.
 
-				Message dbMessage = dbManager.getMessage(messageId);
+				Message dbMessage = dbManager.getMessageById(messageId);
 
 				if (dbMessage == null || Objects.equals(dbMessage.getWaitStatus(), WaitStatus.CANCELED))
 					return;
@@ -2495,7 +2493,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message message = dbManager.getMessage(messageId);
+				Message message = dbManager.getMessageById(messageId);
 
 				if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
 
@@ -2525,7 +2523,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message message = dbManager.getMessage(messageId);
+				Message message = dbManager.getMessageById(messageId);
 
 				if (message == null || Objects.equals(message.getReceiverType(), ReceiverType.CONTACT)
 						|| Objects.equals(message.getMessageDirection(), MessageDirection.IN))
@@ -2595,7 +2593,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 			try {
 
-				Message message = dbManager.getMessage(messageId);
+				Message message = dbManager.getMessageById(messageId);
 
 				Message newMessage = cancelMessage(message);
 

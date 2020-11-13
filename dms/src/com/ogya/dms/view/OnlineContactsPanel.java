@@ -29,6 +29,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 
 public class OnlineContactsPanel extends BorderPane {
 
@@ -94,6 +95,7 @@ public class OnlineContactsPanel extends BorderPane {
 		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 		searchTextField.setPromptText(CommonMethods.translate("FIND"));
 		searchTextField.setFocusTraversable(false);
+		searchTextField.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

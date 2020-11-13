@@ -39,7 +39,7 @@ class IdentityPane extends GridPane {
 
 	private static final double GAP = ViewFactory.GAP;
 
-	private final double unitSize = 30.0 * ViewFactory.getUnitSize();
+	private final double unitSize = 30.0 * ViewFactory.getViewFactor();
 
 	private final Group profilePicture = new Group();
 	private final Circle statusCircle = new Circle(unitSize);
@@ -66,9 +66,6 @@ class IdentityPane extends GridPane {
 	private void init() {
 
 		initProfilePicture();
-		initStatusCircle();
-		initProfileRound();
-		initProfileLabel();
 		initNameLabel();
 		initSettingsButton();
 		initCommentTextField();
@@ -116,6 +113,10 @@ class IdentityPane extends GridPane {
 	}
 
 	private void initProfilePicture() {
+
+		initStatusCircle();
+		initProfileRound();
+		initProfileLabel();
 
 		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel);
 
@@ -219,11 +220,15 @@ class IdentityPane extends GridPane {
 		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
 				BorderStrokeStyle.SOLID, new CornerRadii(unitSize * 15.0), BorderWidths.DEFAULT) }));
 
+		commentTextField.setFont(Font.font(ViewFactory.getFontSize()));
+
 	}
 
 	private void initCoordinatesLabel() {
 
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+		coordinatesLabel.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

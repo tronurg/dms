@@ -40,7 +40,7 @@ class GroupPane extends HBox {
 
 	private static final double GAP = ViewFactory.GAP;
 
-	private final double unitSize = 24.0 * ViewFactory.getUnitSize();
+	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
 
 	private final Group profilePicture = new Group();
 	private final Circle statusCircle = new Circle(unitSize);
@@ -235,8 +235,7 @@ class GroupPane extends HBox {
 
 		groupSign.setTextFill(Color.WHITE);
 		groupSign.setContentDisplay(ContentDisplay.CENTER);
-		Font defaultFont = groupSign.getFont();
-		groupSign.setFont(Font.font(defaultFont.getFamily(), FontWeight.EXTRA_BOLD, unitSize * 0.5));
+		groupSign.setFont(Font.font(null, FontWeight.EXTRA_BOLD, unitSize * 0.5));
 
 		Circle circle = new Circle(unitSize * 0.3);
 		circle.setFill(Color.TOMATO);
@@ -255,7 +254,10 @@ class GroupPane extends HBox {
 
 		setHgrow(middlePane, Priority.ALWAYS);
 
-		middlePane.getChildren().addAll(nameLabel, commentLabel, new Label());
+		Label emptyLabel = new Label();
+		emptyLabel.setFont(Font.font(ViewFactory.getFontSize()));
+
+		middlePane.getChildren().addAll(nameLabel, commentLabel, emptyLabel);
 
 	}
 
@@ -277,6 +279,8 @@ class GroupPane extends HBox {
 	private void initCommentLabel() {
 
 		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+		commentLabel.setFont(Font.font(ViewFactory.getFontSize()));
 
 		commentLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String comment = commentLabel.getText();
@@ -308,7 +312,7 @@ class GroupPane extends HBox {
 
 		unreadMessagesLabel.setAlignment(Pos.CENTER);
 
-		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLabel.getFont().getSize()));
+		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, ViewFactory.getFontSize()));
 		unreadMessagesLabel.setTextFill(Color.WHITE);
 
 		unreadMessagesLabel.visibleProperty().bind(Bindings.size(unreadMessages).greaterThan(0));

@@ -84,19 +84,24 @@ public class Message {
 	private Contact contact;
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "dgroup_id", updatable = false)
+	@JoinColumn(name = "owner_id", nullable = false, updatable = false)
 	@SerializedName(value = "k")
+	private Contact owner;
+
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "dgroup_id", updatable = false)
+	@SerializedName(value = "l")
 	private Dgroup dgroup;
 
 	@OneToMany(mappedBy = "message", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	@SerializedName(value = "l")
+	@SerializedName(value = "m")
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
 	@Transient
-	@SerializedName(value = "m")
+	@SerializedName(value = "n")
 	private Long groupRefId;
 	@Transient
-	@SerializedName(value = "n")
+	@SerializedName(value = "o")
 	private Long contactRefId;
 
 	public Message() {
@@ -200,6 +205,14 @@ public class Message {
 		this.contact = contact;
 	}
 
+	public Contact getOwner() {
+		return owner;
+	}
+
+	public void setOwner(Contact owner) {
+		this.owner = owner;
+	}
+
 	public Dgroup getDgroup() {
 		return dgroup;
 	}
@@ -253,6 +266,8 @@ public class Message {
 	@PrePersist
 	protected void onCreate() {
 		this.date = new Date();
+		if (this.owner == null)
+			this.owner = this.contact;
 	}
 
 	@PostPersist

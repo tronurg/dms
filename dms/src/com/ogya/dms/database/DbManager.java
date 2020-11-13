@@ -260,14 +260,14 @@ public class DbManager {
 
 	}
 
-	public Message getMessage(String contactUuid, long messageRefId) throws HibernateException {
+	public Message getMessageBySender(String contactUuid, long messageRefId) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		Message dbMessage = session
-				.createQuery("from Message where contact.uuid like :contactUuid and messageRefId=:messageRefId",
-						Message.class)
-				.setParameter("contactUuid", contactUuid).setParameter("messageRefId", messageRefId).uniqueResult();
+		Message dbMessage = session.createQuery(
+				"from Message where contact.uuid like :contactUuid and messageRefId=:messageRefId and messageDirection like :in",
+				Message.class).setParameter("contactUuid", contactUuid).setParameter("messageRefId", messageRefId)
+				.setParameter("in", MessageDirection.IN).uniqueResult();
 
 		session.close();
 
@@ -275,7 +275,7 @@ public class DbManager {
 
 	}
 
-	public Message getMessage(long id) throws HibernateException {
+	public Message getMessageById(long id) throws HibernateException {
 
 		Session session = factory.openSession();
 
