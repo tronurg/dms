@@ -22,7 +22,6 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
 import javafx.util.Duration;
 
 public class DmsMediaPlayer extends GridPane {
@@ -134,7 +133,6 @@ public class DmsMediaPlayer extends GridPane {
 	private void initDurationLbl() {
 
 		durationLbl.getStyleClass().add("blackLabel");
-		durationLbl.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

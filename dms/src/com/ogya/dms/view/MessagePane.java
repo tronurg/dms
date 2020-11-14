@@ -146,7 +146,6 @@ class MessagePane extends BorderPane {
 
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
 
-		messageArea.setFont(Font.font(ViewFactory.getFontSize()));
 		messageArea.setPrefRowCount(1);
 		messageArea.setWrapText(true);
 		messageArea.setTextFormatter(
@@ -724,7 +723,6 @@ class MessagePane extends BorderPane {
 				Label messageLbl = new Label(message);
 
 				messageLbl.getStyleClass().add("blackLabel");
-				messageLbl.setFont(Font.font(ViewFactory.getFontSize()));
 				messageLbl.setWrapText(true);
 
 				messageArea.add(messageLbl, 0, 0, 1, 1);
@@ -837,7 +835,7 @@ class MessagePane extends BorderPane {
 			if (!(messageInfo.name == null || messageInfo.name.isEmpty())) {
 
 				nameLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-				nameLabel.setFont(Font.font(null, FontWeight.BOLD, ViewFactory.getFontSize()));
+				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
 				nameLabel.setTextFill(Color.GRAY);
 				BorderPane.setAlignment(nameLabel, messageInfo.isOutgoing ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
 				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, GAP, 0.0));
@@ -891,7 +889,7 @@ class MessagePane extends BorderPane {
 
 			// init dateLabel
 			dateLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-			dateLabel.setFont(Font.font(null, FontWeight.BOLD, ViewFactory.getFontSize()));
+			dateLabel.setFont(Font.font(null, FontWeight.BOLD, dateLabel.getFont().getSize()));
 			dateLabel.setTextFill(Color.GRAY);
 			dateLabel.setBackground(
 					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY)));

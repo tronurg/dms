@@ -282,9 +282,6 @@ public class AddUpdateGroupPane extends BorderPane {
 		addedContactsTitledPane.setStyle("-fx-box-border: transparent;");
 		notAddedContactsTitledPane.setStyle("-fx-box-border: transparent;");
 
-		addedContactsTitledPane.setFont(Font.font(ViewFactory.getFontSize()));
-		notAddedContactsTitledPane.setFont(Font.font(ViewFactory.getFontSize()));
-
 		scrollableContent.getChildren().addAll(addedContactsTitledPane, notAddedContactsTitledPane);
 
 	}
@@ -306,7 +303,6 @@ public class AddUpdateGroupPane extends BorderPane {
 		searchContactTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 		searchContactTextField.setPromptText(CommonMethods.translate("FIND"));
 		searchContactTextField.setFocusTraversable(false);
-		searchContactTextField.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

@@ -254,10 +254,7 @@ class GroupPane extends HBox {
 
 		setHgrow(middlePane, Priority.ALWAYS);
 
-		Label emptyLabel = new Label();
-		emptyLabel.setFont(Font.font(ViewFactory.getFontSize()));
-
-		middlePane.getChildren().addAll(nameLabel, commentLabel, emptyLabel);
+		middlePane.getChildren().addAll(nameLabel, commentLabel, new Label());
 
 	}
 
@@ -279,8 +276,6 @@ class GroupPane extends HBox {
 	private void initCommentLabel() {
 
 		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		commentLabel.setFont(Font.font(ViewFactory.getFontSize()));
 
 		commentLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String comment = commentLabel.getText();
@@ -312,7 +307,7 @@ class GroupPane extends HBox {
 
 		unreadMessagesLabel.setAlignment(Pos.CENTER);
 
-		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, ViewFactory.getFontSize()));
+		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLabel.getFont().getSize()));
 		unreadMessagesLabel.setTextFill(Color.WHITE);
 
 		unreadMessagesLabel.visibleProperty().bind(Bindings.size(unreadMessages).greaterThan(0));

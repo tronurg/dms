@@ -21,7 +21,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 
 class EntitiesPane extends BorderPane {
 
@@ -112,7 +111,6 @@ class EntitiesPane extends BorderPane {
 	private void initCreateGroupBtn() {
 
 		createGroupBtn.getStyleClass().add("dimButton");
-		createGroupBtn.setStyle(String.format("-fx-font-size: %f;", ViewFactory.getFontSize()));
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
 		createGroupBtn.setPadding(new Insets(2 * GAP));
@@ -127,7 +125,6 @@ class EntitiesPane extends BorderPane {
 		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 		searchTextField.setPromptText(CommonMethods.translate("FIND"));
 		searchTextField.setFocusTraversable(false);
-		searchTextField.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

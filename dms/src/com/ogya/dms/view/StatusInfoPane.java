@@ -211,7 +211,7 @@ public class StatusInfoPane extends BorderPane {
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
 
-			progressLbl.setFont(Font.font(0.75 * ViewFactory.getFontSize()));
+			progressLbl.setFont(Font.font(11.25 * viewFactor));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.setMinWidth(

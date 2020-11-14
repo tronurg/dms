@@ -25,26 +25,13 @@ public class ViewFactory {
 
 	public static final double GAP = 5.0;
 
-	private static double fontSize = 0.0;
 	private static double viewFactor = 0.0;
-
-	public static double getFontSize() {
-
-		if (fontSize == 0.0) {
-
-			fontSize = Font.getDefault().getSize();
-
-		}
-
-		return fontSize;
-
-	}
 
 	public static double getViewFactor() {
 
 		if (viewFactor == 0.0) {
 
-			viewFactor = getFontSize() / 15.0;
+			viewFactor = Font.getDefault().getSize() / 15.0;
 
 		}
 

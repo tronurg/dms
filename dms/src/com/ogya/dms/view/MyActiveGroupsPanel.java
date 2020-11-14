@@ -123,7 +123,6 @@ public class MyActiveGroupsPanel extends BorderPane {
 		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 		searchTextField.setPromptText(CommonMethods.translate("FIND"));
 		searchTextField.setFocusTraversable(false);
-		searchTextField.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 

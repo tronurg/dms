@@ -220,15 +220,11 @@ class IdentityPane extends GridPane {
 		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
 				BorderStrokeStyle.SOLID, new CornerRadii(unitSize * 15.0), BorderWidths.DEFAULT) }));
 
-		commentTextField.setFont(Font.font(ViewFactory.getFontSize()));
-
 	}
 
 	private void initCoordinatesLabel() {
 
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		coordinatesLabel.setFont(Font.font(ViewFactory.getFontSize()));
 
 	}
 
