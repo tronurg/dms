@@ -30,7 +30,9 @@ import javafx.scene.text.FontWeight;
 
 public class StatusInfoPane extends BorderPane {
 
-	private static final double GAP = 5.0;
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final HBox topPane = new HBox(GAP);
 	private final VBox centerPane = new VBox(2 * GAP);
@@ -133,16 +135,16 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	private static final class Card extends GridPane {
+	private final class Card extends GridPane {
 
-		private static final double RADIUS = 3.0;
+		private final double radius = 3.0 * viewFactor;
 
-		private final Circle statusCircle = new Circle(7.0);
+		private final Circle statusCircle = new Circle(7.0 * viewFactor);
 		private final Label nameLabel = new Label();
 		private final Label progressLbl = new Label();
 		private final Group infoGrp = new Group();
-		private final Circle waitingCircle = new Circle(RADIUS, Color.TRANSPARENT);
-		private final Circle transmittedCircle = new Circle(RADIUS, Color.TRANSPARENT);
+		private final Circle waitingCircle = new Circle(radius, Color.TRANSPARENT);
+		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
 
 		private Card() {
 
@@ -201,7 +203,7 @@ public class StatusInfoPane extends BorderPane {
 
 		private void initNameLabel() {
 
-			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 
 		}
 
@@ -209,7 +211,7 @@ public class StatusInfoPane extends BorderPane {
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
 
-			progressLbl.setFont(Font.font(nameLabel.getFont().getSize() * 0.75));
+			progressLbl.setFont(Font.font(11.25 * viewFactor));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.setMinWidth(
@@ -219,7 +221,7 @@ public class StatusInfoPane extends BorderPane {
 
 		private void initInfoGrp() {
 
-			transmittedCircle.setLayoutX(2 * RADIUS);
+			transmittedCircle.setLayoutX(2 * radius);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 		}

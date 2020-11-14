@@ -48,7 +48,9 @@ import javafx.scene.text.FontWeight;
 
 public class AddUpdateGroupPane extends BorderPane {
 
-	private static final double GAP = 5.0;
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final HBox topPane = new HBox(GAP);
 
@@ -240,7 +242,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
-		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 
 	}
 
@@ -324,7 +326,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		}, updateMode, deleteMode));
 
-		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
+		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 
 		addUpdateGroupBtn.setMnemonicParsing(false);
 
@@ -357,10 +359,12 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private static abstract class AddRemoveContactBox extends HBox {
 
+		protected final double viewFactor = ViewFactory.getViewFactor();
+
 		protected final String name;
 
 		protected Button addRemoveBtn;
-		private final Circle addRemoveStatusCircle = new Circle(7.0);
+		private final Circle addRemoveStatusCircle = new Circle(7.0 * viewFactor);
 
 		AddRemoveContactBox(String name) {
 
@@ -427,8 +431,8 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
-			addRemoveBtn.setPadding(new Insets(5.0));
+			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
 
@@ -451,8 +455,8 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0));
-			addRemoveBtn.setPadding(new Insets(5.0));
+			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
 

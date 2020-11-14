@@ -8,6 +8,7 @@ import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
+import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -35,11 +36,13 @@ import javafx.scene.text.FontWeight;
 
 class ContactPane extends HBox {
 
-	private static final double SIZE = 24.0;
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
 
 	private final Group profilePicture = new Group();
-	private final Circle statusCircle = new Circle(SIZE);
-	private final Circle profileRound = new Circle(SIZE * 0.8);
+	private final Circle statusCircle = new Circle(unitSize);
+	private final Circle profileRound = new Circle(unitSize * 0.8);
 	private final Label initialLabel = new Label();
 
 	private final VBox middlePane = new VBox();
@@ -68,7 +71,7 @@ class ContactPane extends HBox {
 
 	ContactPane() {
 
-		super(5.0);
+		super(GAP);
 
 		init();
 
@@ -207,7 +210,7 @@ class ContactPane extends HBox {
 
 	private void initStatusCircle() {
 
-		statusCircle.setStrokeWidth(SIZE * 0.2);
+		statusCircle.setStrokeWidth(unitSize * 0.2);
 		statusCircle.setFill(Color.TRANSPARENT);
 
 	}
@@ -222,7 +225,7 @@ class ContactPane extends HBox {
 
 		initialLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		initialLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE));
+		initialLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
 		initialLabel.translateXProperty().bind(Bindings
 				.createDoubleBinding(() -> -initialLabel.widthProperty().get() / 2, initialLabel.widthProperty()));
@@ -239,7 +242,7 @@ class ContactPane extends HBox {
 
 		setHgrow(middlePane, Priority.ALWAYS);
 
-		middlePane.getChildren().addAll(nameLabel, commentLabel, new Label());
+		middlePane.getChildren().addAll(nameLabel, commentLabel, coordinatesLabel);
 
 	}
 
@@ -247,7 +250,7 @@ class ContactPane extends HBox {
 
 		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, SIZE * 0.8));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
 
 		nameLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String name = nameLabel.getText();

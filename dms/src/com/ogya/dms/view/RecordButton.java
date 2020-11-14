@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import com.ogya.dms.view.factory.ViewFactory;
+
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -44,11 +46,13 @@ public class RecordButton extends Button {
 
 	private void init() {
 
+		double viewFactor = ViewFactory.getViewFactor();
+
 		setBackground(Background.EMPTY);
 		setPadding(Insets.EMPTY);
 		setPickOnBounds(false);
 
-		Circle circle = new Circle(16.0);
+		Circle circle = new Circle(16.0 * viewFactor);
 		circle.setFill(Color.GREEN);
 		final Arc recordArc = new Arc();
 		recordArc.setCenterX(0.0);
@@ -57,13 +61,13 @@ public class RecordButton extends Button {
 		recordArc.setType(ArcType.ROUND);
 		recordArc.setFill(Color.RED);
 		recordArc.visibleProperty().bind(timeline.statusProperty().isNotEqualTo(Animation.Status.STOPPED));
-		Rectangle rectangle = new Rectangle(-3.0, -10.0, 6.0, 16.0);
-		rectangle.setArcWidth(6.0);
-		rectangle.setArcHeight(6.0);
+		Rectangle rectangle = new Rectangle(-3.0 * viewFactor, -10.0 * viewFactor, 6.0 * viewFactor, 16.0 * viewFactor);
+		rectangle.setArcWidth(6.0 * viewFactor);
+		rectangle.setArcHeight(6.0 * viewFactor);
 		rectangle.setFill(Color.ANTIQUEWHITE);
 		rectangle.setStroke(Color.ANTIQUEWHITE);
-		Arc arc = new Arc(0.0, 3.0, 7.0, 7.0, 180.0, 180.0);
-		arc.setStrokeWidth(3.0);
+		Arc arc = new Arc(0.0, 3.0 * viewFactor, 7.0 * viewFactor, 7.0 * viewFactor, 180.0, 180.0);
+		arc.setStrokeWidth(3.0 * viewFactor);
 		arc.setStrokeLineCap(StrokeLineCap.ROUND);
 		arc.setFill(Color.TRANSPARENT);
 		arc.setStroke(Color.ANTIQUEWHITE);
@@ -78,7 +82,8 @@ public class RecordButton extends Button {
 		KeyFrame key1 = new KeyFrame(Duration.millis(1000.0), e -> {
 			if (isPressed())
 				listeners.forEach(listener -> listener.recordEventTriggered());
-		}, new KeyValue(recordArc.radiusXProperty(), 15.9), new KeyValue(recordArc.radiusYProperty(), 15.9),
+		}, new KeyValue(recordArc.radiusXProperty(), 15.9 * viewFactor),
+				new KeyValue(recordArc.radiusYProperty(), 15.9 * viewFactor),
 				new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), new KeyValue(recordArc.lengthProperty(), 0.0));

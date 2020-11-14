@@ -24,6 +24,8 @@ import javafx.scene.layout.VBox;
 
 class EntitiesPane extends BorderPane {
 
+	private static final double GAP = ViewFactory.GAP;
+
 	private final VBox topArea = new VBox();
 
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
@@ -65,7 +67,7 @@ class EntitiesPane extends BorderPane {
 
 		initTopArea();
 
-		entities.setPadding(new Insets(10.0));
+		entities.setPadding(new Insets(2 * GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
@@ -111,7 +113,7 @@ class EntitiesPane extends BorderPane {
 		createGroupBtn.getStyleClass().add("dimButton");
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
-		createGroupBtn.setPadding(new Insets(10.0));
+		createGroupBtn.setPadding(new Insets(2 * GAP));
 
 		createGroupBtn
 				.setOnAction(e -> entityListeners.forEach(listener -> listener.showAddUpdateGroupPaneClicked(null)));

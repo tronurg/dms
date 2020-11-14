@@ -24,7 +24,7 @@ public class Contact {
 	@Column(name = "uuid", unique = true, nullable = false, updatable = false)
 	private String uuid;
 
-	@Column(name = "name", nullable = false, updatable = false)
+	@Column(name = "name")
 	private String name;
 
 	@Column(name = "comment")

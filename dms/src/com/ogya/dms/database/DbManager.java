@@ -260,14 +260,14 @@ public class DbManager {
 
 	}
 
-	public Message getMessage(String contactUuid, long messageRefId) throws HibernateException {
+	public Message getMessageBySender(String contactUuid, long messageRefId) throws HibernateException {
 
 		Session session = factory.openSession();
 
-		Message dbMessage = session
-				.createQuery("from Message where contact.uuid like :contactUuid and messageRefId=:messageRefId",
-						Message.class)
-				.setParameter("contactUuid", contactUuid).setParameter("messageRefId", messageRefId).uniqueResult();
+		Message dbMessage = session.createQuery(
+				"from Message where contact.uuid like :contactUuid and messageRefId=:messageRefId and messageDirection like :in",
+				Message.class).setParameter("contactUuid", contactUuid).setParameter("messageRefId", messageRefId)
+				.setParameter("in", MessageDirection.IN).uniqueResult();
 
 		session.close();
 
@@ -275,7 +275,7 @@ public class DbManager {
 
 	}
 
-	public Message getMessage(long id) throws HibernateException {
+	public Message getMessageById(long id) throws HibernateException {
 
 		Session session = factory.openSession();
 
@@ -398,10 +398,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"select m from Message m join m.statusReports s where m.messageDirection like :out and m.waitStatus like :waiting and ((m.receiverType like :groupOwner and m.contact.id=:contactId) or (m.receiverType like :groupMember and s.contactId=:contactId and s.messageStatus not like :read))",
-				Message.class).setParameter("out", MessageDirection.OUT).setParameter("waiting", WaitStatus.WAITING)
-				.setParameter("groupOwner", ReceiverType.GROUP_OWNER).setParameter("contactId", contactId)
-				.setParameter("groupMember", ReceiverType.GROUP_MEMBER).setParameter("read", MessageStatus.READ).list();
+				"select m from Message m join m.statusReports s where m.waitStatus like :waiting and s.contactId=:contactId and s.messageStatus not like :read and (m.dgroup.owner.id=1 or m.dgroup.owner.id=:contactId)",
+				Message.class).setParameter("waiting", WaitStatus.WAITING).setParameter("contactId", contactId)
+				.setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 

@@ -1,6 +1,7 @@
 package com.ogya.dms.dmsclient;
 
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -8,10 +9,15 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.common.structures.ContentType;
 import com.ogya.dms.common.structures.MessagePojo;
+import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.factory.DmsFactory;
+import com.ogya.dms.structures.GroupMessageStatus;
+import com.ogya.dms.structures.MessageStatus;
 
 public class DmsClient {
 
@@ -81,16 +87,17 @@ public class DmsClient {
 
 	}
 
-	public void sendMessage(String message, String receiverUuid, Long messageId) {
+	public void sendMessage(Message message, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(new MessagePojo(message, uuid, receiverUuid, ContentType.MESSAGE, messageId).toJson());
+		dealerQueue
+				.offer(new MessagePojo(message.toJson(), uuid, receiverUuid, ContentType.MESSAGE, messageId).toJson());
 
 	}
 
-	public void sendMessage(String message, Iterable<String> receiverUuids, Long messageId) {
+	public void sendMessage(Message message, Iterable<String> receiverUuids, Long messageId) {
 
-		dealerQueue
-				.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)
+		dealerQueue.offer(
+				new MessagePojo(message.toJson(), uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)
 						.toJson());
 
 	}
@@ -108,10 +115,18 @@ public class DmsClient {
 
 	}
 
-	public void feedMessageStatus(String receiverUuid, Long messageId, String message) {
+	public void feedMessageStatus(String receiverUuid, Long messageId, MessageStatus messageStatus) {
 
 		dealerQueue.offer(
-				new MessagePojo(message, uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS, messageId).toJson());
+				new MessagePojo(messageStatus.toJson(), uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS, messageId)
+						.toJson());
+
+	}
+
+	public void feedGroupMessageStatus(String receiverUuid, Long messageId, GroupMessageStatus groupMessageStatus) {
+
+		dealerQueue.offer(new MessagePojo(groupMessageStatus.toJson(), uuid, receiverUuid,
+				ContentType.FEED_GROUP_MESSAGE_STATUS, messageId).toJson());
 
 	}
 
@@ -122,10 +137,10 @@ public class DmsClient {
 
 	}
 
-	public void feedStatusReport(Long messageId, String message, String receiverUuid) {
+	public void feedStatusReport(Long messageId, Set<StatusReport> statusReports, String receiverUuid) {
 
-		dealerQueue.offer(
-				new MessagePojo(message, null, receiverUuid, ContentType.FEED_STATUS_REPORT, messageId).toJson());
+		dealerQueue.offer(new MessagePojo(CommonMethods.toStatusReportJson(statusReports), null, receiverUuid,
+				ContentType.FEED_STATUS_REPORT, messageId).toJson());
 
 	}
 
@@ -281,7 +296,15 @@ public class DmsClient {
 
 			case FEED_MESSAGE_STATUS:
 
-				messageStatusFedToListener(messagePojo.messageId, messagePojo.message, messagePojo.senderUuid);
+				messageStatusFedToListener(messagePojo.messageId, MessageStatus.fromJson(messagePojo.message),
+						messagePojo.senderUuid);
+
+				break;
+
+			case FEED_GROUP_MESSAGE_STATUS:
+
+				groupMessageStatusFedToListener(messagePojo.messageId, GroupMessageStatus.fromJson(messagePojo.message),
+						messagePojo.senderUuid);
 
 				break;
 
@@ -293,7 +316,8 @@ public class DmsClient {
 
 			case FEED_STATUS_REPORT:
 
-				statusReportFedToListener(messagePojo.messageId, messagePojo.message);
+				statusReportFedToListener(messagePojo.messageId,
+						CommonMethods.fromStatusReportJson(messagePojo.message));
 
 				break;
 
@@ -387,11 +411,23 @@ public class DmsClient {
 
 	}
 
-	private void messageStatusFedToListener(final Long messageId, final String message, String remoteUuid) {
+	private void messageStatusFedToListener(final Long messageId, final MessageStatus messageStatus,
+			String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusFed(messageId, message, remoteUuid);
+			listener.messageStatusFed(messageId, messageStatus, remoteUuid);
+
+		});
+
+	}
+
+	private void groupMessageStatusFedToListener(final Long messageId, final GroupMessageStatus groupMessageStatus,
+			String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.groupMessageStatusFed(messageId, groupMessageStatus, remoteUuid);
 
 		});
 
@@ -407,11 +443,11 @@ public class DmsClient {
 
 	}
 
-	private void statusReportFedToListener(final Long messageId, final String message) {
+	private void statusReportFedToListener(final Long messageId, final StatusReport[] statusReports) {
 
 		taskQueue.execute(() -> {
 
-			listener.statusReportFed(messageId, message);
+			listener.statusReportFed(messageId, statusReports);
 
 		});
 

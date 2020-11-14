@@ -44,7 +44,9 @@ import javafx.scene.text.FontWeight;
 
 public class FoldersPane extends BorderPane {
 
-	private static final double GAP = 5.0;
+	private static final double GAP = ViewFactory.GAP;
+
+	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final StackPane centerPane = new StackPane();
@@ -99,7 +101,7 @@ public class FoldersPane extends BorderPane {
 		scrollPane.setFitToWidth(true);
 
 		nameLabel.getStyleClass().add("blackLabel");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
 		topPane.getChildren().addAll(backBtn, nameLabel);
 
@@ -271,8 +273,8 @@ public class FoldersPane extends BorderPane {
 			setMaxWidth(Double.MAX_VALUE);
 
 			setAlignment(Pos.CENTER_LEFT);
-			setPadding(new Insets(5));
-			setGraphicTextGap(5.0);
+			setPadding(new Insets(GAP));
+			setGraphicTextGap(GAP);
 			setFocusTraversable(false);
 
 		}

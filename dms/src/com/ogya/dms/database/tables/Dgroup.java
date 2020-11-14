@@ -31,7 +31,7 @@ public class Dgroup {
 	@Column(name = "group_ref_id")
 	private Long groupRefId;
 
-	@Column(name = "name", nullable = false)
+	@Column(name = "name")
 	private String name;
 
 	@Column(name = "comment", length = Integer.MAX_VALUE)
