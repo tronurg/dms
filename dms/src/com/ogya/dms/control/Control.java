@@ -1339,7 +1339,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				Message message = dbManager.getMessageById(messageId);
 
-				if (message == null)
+				if (message == null || Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
 					return;
 
 				List<Long> remoteIds = new ArrayList<Long>();
@@ -1757,12 +1757,22 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 				if (group == null)
 					return;
 
+				ContactMap contactMap = ContactMap.fromJson(group.getContactMapStr());
+
 				Map<Long, StatusReport> statusReportMap = new HashMap<Long, StatusReport>();
 
 				dbMessage.getStatusReports()
 						.forEach(statusReport -> statusReportMap.put(statusReport.getContactId(), statusReport));
 
-				ContactMap contactMap = ContactMap.fromJson(group.getContactMapStr());
+				// Clean status reports to refill it (so to discard the unnecessary ones)
+				statusReportMap.forEach((contactId, statusReport) -> {
+
+					if (Objects.equals(dbMessage.getContact().getId(), contactId))
+						return;
+
+					dbMessage.removeStatusReport(statusReport);
+
+				});
 
 				for (StatusReport statusReport : statusReports) {
 
@@ -1773,9 +1783,13 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 					Long contactId = contact.getId();
 
-					if (statusReportMap.containsKey(contactId)) {
+					StatusReport oldStatusReport = statusReportMap.get(contactId);
 
-						statusReportMap.get(contactId).setMessageStatus(statusReport.getMessageStatus());
+					if (oldStatusReport != null) {
+
+						oldStatusReport.setMessageStatus(statusReport.getMessageStatus());
+
+						dbMessage.addStatusReport(oldStatusReport);
 
 					} else {
 
@@ -1794,6 +1808,13 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 				if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+
+				if (Objects.equals(newMessage.getId(), model.getDetailedGroupMessageId())) {
+					newMessage.getStatusReports()
+							.forEach(statusReport -> Platform
+									.runLater(() -> dmsPanel.updateDetailedMessageStatus(statusReport.getContactId(),
+											statusReport.getMessageStatus())));
+				}
 
 			} catch (Exception e) {
 
@@ -2614,7 +2635,7 @@ public class Control implements DmsClientListener, AppListener, ReportsListener,
 
 		taskQueue.execute(() -> {
 
-			model.setDetailedGroupMessageId(0);
+			model.setDetailedGroupMessageId(-1L);
 
 		});
 

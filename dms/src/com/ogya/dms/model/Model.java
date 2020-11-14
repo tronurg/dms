@@ -40,7 +40,7 @@ public class Model {
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
-	private final AtomicLong detailedGroupMessageId = new AtomicLong();
+	private final AtomicLong detailedGroupMessageId = new AtomicLong(-1L);
 
 	private final AtomicReference<Long> referenceId = new AtomicReference<Long>();
 

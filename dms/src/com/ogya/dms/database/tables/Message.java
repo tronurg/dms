@@ -230,6 +230,11 @@ public class Message {
 		statusReport.setMessage(this);
 	}
 
+	public void removeStatusReport(StatusReport statusReport) {
+		this.statusReports.remove(statusReport);
+		statusReport.setMessage(null);
+	}
+
 	public Long getGroupRefId() {
 		return groupRefId;
 	}
