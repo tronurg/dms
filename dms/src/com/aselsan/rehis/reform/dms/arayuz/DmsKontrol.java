@@ -37,6 +37,8 @@ public interface DmsKontrol {
 
 	DmsKisi getDmsKisi(Long kisiId);
 
+	List<DmsKisi> getTumDmsKisiler();
+
 	DmsGrup getDmsGrup(Long grupId);
 
 	List<Long> getAdrestekiIdler(InetAddress adres);

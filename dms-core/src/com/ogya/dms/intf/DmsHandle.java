@@ -37,6 +37,8 @@ public interface DmsHandle {
 
 	ContactHandle getContactHandle(Long contactId);
 
+	List<ContactHandle> getAllContactHandles();
+
 	GroupHandle getGroupHandle(Long groupId);
 
 	List<Long> getIdsByAddress(InetAddress address);

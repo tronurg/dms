@@ -2893,19 +2893,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void addListener(DmsListener listener) {
 
-		taskQueue.execute(() -> {
-
-			dmsListeners.add(listener);
-
-			model.getContacts().forEach((id, contact) -> {
-
-				listener.contactUpdated(
-						new ContactHandleImpl(id, contact.getName(), contact.getComment(), contact.getLattitude(),
-								contact.getLongitude(), !Objects.equals(contact.getStatus(), Availability.OFFLINE)));
-
-			});
-
-		});
+		dmsListeners.add(listener);
 
 	}
 
@@ -3015,6 +3003,23 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		}
 
 		return null;
+
+	}
+
+	@Override
+	public List<ContactHandle> getAllContactHandles() {
+
+		List<ContactHandle> allContactHandles = new ArrayList<ContactHandle>();
+
+		model.getContacts().forEach((id, contact) -> {
+
+			allContactHandles
+					.add(new ContactHandleImpl(id, contact.getName(), contact.getComment(), contact.getLattitude(),
+							contact.getLongitude(), !Objects.equals(contact.getStatus(), Availability.OFFLINE)));
+
+		});
+
+		return allContactHandles;
 
 	}
 

@@ -2,6 +2,7 @@ package com.aselsan.rehis.reform.dms.kontrol;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -206,6 +207,14 @@ public class Kontrol implements DmsKontrol {
 	@Override
 	public DmsKisi getDmsKisi(Long kisiId) {
 		return new DmsKisiGercekleme(dmsHandle.getContactHandle(kisiId));
+	}
+
+	@Override
+	public List<DmsKisi> getTumDmsKisiler() {
+		List<DmsKisi> tumDmsKisiler = new ArrayList<DmsKisi>();
+		dmsHandle.getAllContactHandles()
+				.forEach(contactHandle -> tumDmsKisiler.add(new DmsKisiGercekleme(contactHandle)));
+		return tumDmsKisiler;
 	}
 
 	@Override
