@@ -313,9 +313,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
-				listenerTaskQueue.execute(() -> dmsListeners.forEach(listener -> listener
-						.contactUpdated(new ContactHandleImpl(id, newContact.getName(), newContact.getComment(),
-								newContact.getLattitude(), newContact.getLongitude(), false))));
+				listenerTaskQueue.execute(() -> dmsListeners
+						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
 			} catch (HibernateException e) {
 
@@ -336,6 +335,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						model.addGroup(newGroup);
 
 						Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+						listenerTaskQueue.execute(() -> dmsListeners
+								.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
 
 					} catch (HibernateException e) {
 
@@ -479,6 +481,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		group.setComment(String.join(",", contactNames));
 
 		Dgroup newGroup = dbManager.addUpdateGroup(group);
+
+		listenerTaskQueue
+				.execute(() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
 
 		return newGroup;
 
@@ -867,9 +872,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					Contact newContact = dbManager.addUpdateContact(contact);
 					model.addContact(newContact);
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
-					listenerTaskQueue.execute(() -> dmsListeners.forEach(listener -> listener.contactUpdated(
-							new ContactHandleImpl(newContact.getId(), newContact.getName(), newContact.getComment(),
-									newContact.getLattitude(), newContact.getLongitude(), false))));
+					listenerTaskQueue.execute(() -> dmsListeners
+							.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 					contactsToBeAdded.add(newContact);
 				} else {
 					contactsToBeAdded.add(contact);
@@ -1163,9 +1167,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
-				listenerTaskQueue.execute(() -> dmsListeners.forEach(
-						listener -> listener.contactUpdated(new ContactHandleImpl(contactId, newContact.getName(),
-								newContact.getComment(), newContact.getLattitude(), newContact.getLongitude(), true))));
+				listenerTaskQueue.execute(() -> dmsListeners
+						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
 				if (!wasOnline) {
 
@@ -1276,6 +1279,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 									model.addGroup(newGroup);
 
 									Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+									listenerTaskQueue.execute(() -> dmsListeners
+											.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
 
 								} catch (HibernateException e) {
 
@@ -1915,7 +1921,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				if (Objects.equals(comment, identity.getComment()))
+				if (Objects.equals(identity.getComment(), comment))
 					return;
 
 				identity.setComment(comment);
@@ -1939,7 +1945,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void updateStatusClicked() {
+	public void statusUpdated(final Availability availability) {
 
 		taskQueue.execute(() -> {
 
@@ -1947,15 +1953,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				if (Objects.equals(identity.getStatus(), Availability.AVAILABLE)) {
+				if (Objects.equals(identity.getStatus(), availability))
+					return;
 
-					identity.setStatus(Availability.BUSY);
-
-				} else if (Objects.equals(identity.getStatus(), Availability.BUSY)) {
-
-					identity.setStatus(Availability.AVAILABLE);
-
-				}
+				identity.setStatus(availability);
 
 				Contact newIdentity = dbManager.updateIdentity(identity);
 
@@ -2955,9 +2956,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void setComment(String comment) {
 
+		if (comment.length() > 40)
+			comment = comment.substring(0, 40);
+
 		Platform.runLater(() -> dmsPanel.setCommentEditable(false));
 
 		commentUpdated(comment);
+
+	}
+
+	@Override
+	public void setAvailability(Availability availability) {
+
+		statusUpdated(availability);
 
 	}
 
@@ -2966,8 +2977,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Contact identity = model.getIdentity();
 
-		return new ContactHandleImpl(identity.getId(), identity.getName(), identity.getComment(),
-				identity.getLattitude(), identity.getLongitude(), true);
+		return new ContactHandleImpl(identity);
 
 	}
 
@@ -2992,9 +3002,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Contact contact = model.getContact(contactId);
 
-			return new ContactHandleImpl(contact.getId(), contact.getName(), contact.getComment(),
-					contact.getLattitude(), contact.getLongitude(),
-					!Objects.equals(contact.getStatus(), Availability.OFFLINE));
+			return new ContactHandleImpl(contact);
 
 		} catch (Exception e) {
 
@@ -3011,15 +3019,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		List<ContactHandle> allContactHandles = new ArrayList<ContactHandle>();
 
-		model.getContacts().forEach((id, contact) -> {
-
-			allContactHandles
-					.add(new ContactHandleImpl(id, contact.getName(), contact.getComment(), contact.getLattitude(),
-							contact.getLongitude(), !Objects.equals(contact.getStatus(), Availability.OFFLINE)));
-
-		});
+		model.getContacts().forEach((id, contact) -> allContactHandles.add(new ContactHandleImpl(contact)));
 
 		return allContactHandles;
+
+	}
+
+	@Override
+	public List<GroupHandle> getAllGroupHandles() {
+
+		List<GroupHandle> allGroupHandles = new ArrayList<GroupHandle>();
+
+		model.getGroups().forEach((id, group) -> allGroupHandles.add(new GroupHandleImpl(group)));
+
+		return allGroupHandles;
 
 	}
 
@@ -3031,10 +3044,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (group == null)
 			return null;
 
-		List<Long> contactIds = new ArrayList<Long>();
-		group.getMembers().forEach(contact -> contactIds.add(contact.getId()));
-
-		return new GroupHandleImpl(group.getId(), group.getName(), group.getComment(), contactIds);
+		return new GroupHandleImpl(group);
 
 	}
 

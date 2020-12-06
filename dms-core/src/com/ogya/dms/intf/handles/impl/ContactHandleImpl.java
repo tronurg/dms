@@ -1,24 +1,28 @@
 package com.ogya.dms.intf.handles.impl;
 
+import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.intf.handles.ContactHandle;
+import com.ogya.dms.structures.Availability;
 
 public class ContactHandleImpl implements ContactHandle {
 
 	private final Long id;
+	private final String uuid;
 	private final String name;
 	private final String comment;
 	private final Double lattitude;
 	private final Double longitude;
-	private final boolean online;
+	private final Availability availability;
 
-	public ContactHandleImpl(Long id, String name, String comment, Double lattitude, Double longitude, boolean online) {
+	public ContactHandleImpl(Contact contact) {
 
-		this.id = id;
-		this.name = name;
-		this.comment = comment;
-		this.lattitude = lattitude;
-		this.longitude = longitude;
-		this.online = online;
+		this.id = contact.getId();
+		this.uuid = contact.getUuid();
+		this.name = contact.getName();
+		this.comment = contact.getComment();
+		this.lattitude = contact.getLattitude();
+		this.longitude = contact.getLongitude();
+		this.availability = contact.getStatus();
 
 	}
 
@@ -26,6 +30,13 @@ public class ContactHandleImpl implements ContactHandle {
 	public Long getId() {
 
 		return id;
+
+	}
+
+	@Override
+	public String getUuid() {
+
+		return uuid;
 
 	}
 
@@ -58,9 +69,9 @@ public class ContactHandleImpl implements ContactHandle {
 	}
 
 	@Override
-	public boolean isOnline() {
+	public Availability getAvailability() {
 
-		return online;
+		return availability;
 
 	}
 

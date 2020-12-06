@@ -3,11 +3,13 @@ package com.ogya.dms.view.intf;
 import java.nio.file.Path;
 import java.util.Set;
 
+import com.ogya.dms.structures.Availability;
+
 public interface AppListener {
 
 	void commentUpdated(String comment);
 
-	void updateStatusClicked();
+	void statusUpdated(Availability availability);
 
 	void messagePaneOpened(Long id);
 

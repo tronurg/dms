@@ -12,6 +12,7 @@ import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrup;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrupSecim;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisi;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisiSecim;
+import com.aselsan.rehis.reform.dms.arayuz.veriyapisi.DmsDurum;
 
 public interface DmsKontrol {
 
@@ -29,6 +30,8 @@ public interface DmsKontrol {
 
 	void setAciklama(String aciklama);
 
+	void setDurum(DmsDurum dmsDurum);
+
 	DmsKisi getDmsKisim();
 
 	DmsGrupSecim getDmsAktifGruplarim();
@@ -37,9 +40,11 @@ public interface DmsKontrol {
 
 	DmsKisi getDmsKisi(Long kisiId);
 
+	DmsGrup getDmsGrup(Long grupId);
+
 	List<DmsKisi> getTumDmsKisiler();
 
-	DmsGrup getDmsGrup(Long grupId);
+	List<DmsGrup> getTumDmsGruplar();
 
 	List<Long> getAdrestekiIdler(InetAddress adres);
 

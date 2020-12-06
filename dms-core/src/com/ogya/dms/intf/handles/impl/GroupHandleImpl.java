@@ -1,22 +1,31 @@
 package com.ogya.dms.intf.handles.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.intf.handles.GroupHandle;
+import com.ogya.dms.structures.Availability;
 
 public class GroupHandleImpl implements GroupHandle {
 
 	private final Long groupId;
+	private final Long groupRefId;
+	private final Long ownerId;
 	private final String name;
 	private final String comment;
-	private final List<Long> contactIds;
+	private final List<Long> contactIds = new ArrayList<Long>();
+	private final Availability availability;
 
-	public GroupHandleImpl(Long groupId, String name, String comment, List<Long> contactIds) {
+	public GroupHandleImpl(Dgroup group) {
 
-		this.groupId = groupId;
-		this.name = name;
-		this.comment = comment;
-		this.contactIds = contactIds;
+		this.groupId = group.getId();
+		this.groupRefId = group.getGroupRefId();
+		this.ownerId = group.getOwner().getId();
+		this.name = group.getName();
+		this.comment = group.getComment();
+		group.getMembers().forEach(contact -> contactIds.add(contact.getId()));
+		this.availability = group.getStatus();
 
 	}
 
@@ -24,6 +33,20 @@ public class GroupHandleImpl implements GroupHandle {
 	public Long getGroupId() {
 
 		return groupId;
+
+	}
+
+	@Override
+	public Long getGroupRefId() {
+
+		return groupRefId;
+
+	}
+
+	@Override
+	public Long getOwnerId() {
+
+		return ownerId;
 
 	}
 
@@ -45,6 +68,13 @@ public class GroupHandleImpl implements GroupHandle {
 	public List<Long> getContactIds() {
 
 		return contactIds;
+
+	}
+
+	@Override
+	public Availability getAvailability() {
+
+		return availability;
 
 	}
 

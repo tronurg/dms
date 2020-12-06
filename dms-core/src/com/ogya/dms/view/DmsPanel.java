@@ -17,6 +17,7 @@ import com.ogya.dms.common.CommonConstants;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
 import com.ogya.dms.database.tables.Message;
+import com.ogya.dms.structures.Availability;
 import com.ogya.dms.structures.MessageStatus;
 import com.ogya.dms.structures.ReceiverType;
 import com.ogya.dms.view.factory.ViewFactory;
@@ -381,9 +382,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void updateStatusClicked() {
+	public void statusUpdated(final Availability availability) {
 
-		listeners.forEach(listener -> listener.updateStatusClicked());
+		listeners.forEach(listener -> listener.statusUpdated(availability));
 
 	}
 

@@ -1,8 +1,12 @@
 package com.ogya.dms.intf.handles;
 
+import com.ogya.dms.structures.Availability;
+
 public interface ContactHandle {
 
 	Long getId();
+
+	String getUuid();
 
 	String getName();
 
@@ -12,6 +16,6 @@ public interface ContactHandle {
 
 	Double getLongitude();
 
-	boolean isOnline();
+	Availability getAvailability();
 
 }

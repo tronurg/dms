@@ -12,6 +12,7 @@ import com.ogya.dms.intf.handles.GroupHandle;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.intf.listeners.DmsGuiListener;
 import com.ogya.dms.intf.listeners.DmsListener;
+import com.ogya.dms.structures.Availability;
 
 public interface DmsHandle {
 
@@ -29,6 +30,8 @@ public interface DmsHandle {
 
 	void setComment(String comment);
 
+	void setAvailability(Availability availability);
+
 	ContactHandle getMyContactHandle();
 
 	GroupSelectionHandle getMyActiveGroupsHandle();
@@ -37,9 +40,11 @@ public interface DmsHandle {
 
 	ContactHandle getContactHandle(Long contactId);
 
+	GroupHandle getGroupHandle(Long groupId);
+
 	List<ContactHandle> getAllContactHandles();
 
-	GroupHandle getGroupHandle(Long groupId);
+	List<GroupHandle> getAllGroupHandles();
 
 	List<Long> getIdsByAddress(InetAddress address);
 

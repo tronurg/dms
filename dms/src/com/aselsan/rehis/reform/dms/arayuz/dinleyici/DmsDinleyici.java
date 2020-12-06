@@ -3,6 +3,7 @@ package com.aselsan.rehis.reform.dms.arayuz.dinleyici;
 import java.nio.file.Path;
 
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsDosya;
+import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrup;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisi;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsListe;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsMesaj;
@@ -21,5 +22,7 @@ public interface DmsDinleyici {
 	void dosyaAlindi(DmsDosya dmsDosya);
 
 	void kisiGuncellendi(DmsKisi dmsKisi);
+
+	void grupGuncellendi(DmsGrup dmsGrup);
 
 }

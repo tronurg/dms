@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import com.aselsan.rehis.reform.dms.arayuz.DmsKontrol;
 import com.aselsan.rehis.reform.dms.arayuz.dinleyici.DmsDinleyici;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsDosya;
+import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrup;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisi;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsListe;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsMesaj;
@@ -100,7 +101,14 @@ public class DmsDinleyiciGercekleme implements DmsDinleyici {
 	@Override
 	public void kisiGuncellendi(DmsKisi dmsKisi) {
 
-//		System.out.println(String.format("Contact updated: %s\n", dmsKisi.getIsim()));
+		System.out.println(String.format("Kisi guncellendi: %s\n", dmsKisi.getIsim()));
+
+	}
+
+	@Override
+	public void grupGuncellendi(DmsGrup dmsGrup) {
+
+		System.out.println(String.format("Grup guncellendi: %s\n", dmsGrup.getIsim()));
 
 	}
 

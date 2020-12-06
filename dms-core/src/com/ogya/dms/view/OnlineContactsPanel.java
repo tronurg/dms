@@ -7,17 +7,22 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import javax.swing.UIManager;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
+import com.ogya.dms.intf.handles.ContactHandle;
+import com.ogya.dms.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -65,6 +70,8 @@ public class OnlineContactsPanel extends BorderPane {
 
 	private final List<Long> selectedIds = Collections.synchronizedList(new ArrayList<Long>());
 
+	private final ObjectProperty<Predicate<ContactHandle>> filterProperty = new SimpleObjectProperty<Predicate<ContactHandle>>();
+
 	OnlineContactsPanel() {
 
 		super();
@@ -101,20 +108,19 @@ public class OnlineContactsPanel extends BorderPane {
 
 		ContactBundle contactBundle = getContactBundle(contact.getId());
 
-		contactBundle.contactPane.updateContact(contact);
-
-		boolean active = !Objects.equals(contact.getStatus(), Availability.OFFLINE);
-
-		contactBundle.activeProperty.set(active);
-
-		if (!active)
-			contactBundle.selectedProperty.set(false);
+		contactBundle.setContact(contact);
 
 	}
 
 	public List<Long> getSelectedIds() {
 
 		return new ArrayList<Long>(selectedIds);
+
+	}
+
+	public void setFilter(Predicate<ContactHandle> filter) {
+
+		filterProperty.set(filter);
 
 	}
 
@@ -181,8 +187,11 @@ public class OnlineContactsPanel extends BorderPane {
 
 		private final ContactPane contactPane = new ContactPane();
 		private final Label selectionLbl = ViewFactory.newSelectionLbl();
+
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
+
+		private final ObjectProperty<Contact> contactProperty = new SimpleObjectProperty<Contact>();
 
 		private ContactBundle() {
 
@@ -196,8 +205,41 @@ public class OnlineContactsPanel extends BorderPane {
 
 			selectionLbl.visibleProperty().bind(selectedProperty);
 
+			activeProperty.addListener((e0, e1, e2) -> {
+
+				if (!e2)
+					selectedProperty.set(false);
+
+			});
+
+			activeProperty.bind(Bindings.createBooleanBinding(() -> {
+
+				Contact contact = contactProperty.get();
+
+				if (contact == null)
+					return false;
+
+				boolean active = !Objects.equals(contact.getStatus(), Availability.OFFLINE);
+
+				Predicate<ContactHandle> filter = filterProperty.get();
+
+				if (filter != null)
+					active = active && filter.test(new ContactHandleImpl(contact));
+
+				return active;
+
+			}, contactProperty, filterProperty));
+
 			add(contactPane, 0, 0, 1, 2);
 			add(selectionLbl, 1, 0, 1, 1);
+
+		}
+
+		private void setContact(Contact contact) {
+
+			contactPane.updateContact(contact);
+
+			contactProperty.set(contact);
 
 		}
 

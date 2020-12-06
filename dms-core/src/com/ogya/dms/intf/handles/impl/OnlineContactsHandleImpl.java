@@ -1,11 +1,13 @@
 package com.ogya.dms.intf.handles.impl;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
+import com.ogya.dms.intf.handles.ContactHandle;
 import com.ogya.dms.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.view.OnlineContactsPanel;
 
@@ -70,6 +72,17 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
 	@Override
 	public JComponent getContactSelectionPanel() {
+
+		return getContactSelectionPanel(null);
+
+	}
+
+	@Override
+	public JComponent getContactSelectionPanel(Predicate<ContactHandle> filter) {
+
+		resetSelection();
+
+		onlineContactsPanel.setFilter(filter);
 
 		return onlineContactsPanelSwing;
 

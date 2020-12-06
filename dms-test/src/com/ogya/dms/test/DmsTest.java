@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -107,7 +106,7 @@ public class DmsTest {
 			DmsGrupSecim gsh = dmsKontrol.getDmsAktifGruplarim();
 
 			JComponent mcPanel = dmsKontrol.getDmsPanel();
-//			JComponent mcPanel = gsh.getGroupSelectionPanel();
+//			JComponent mcPanel = gsh.getGrupSecimPanel(dmsGrup -> dmsGrup.getIsim().startsWith("g"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
@@ -115,10 +114,10 @@ public class DmsTest {
 				List<TestPojo> testList = new ArrayList<TestPojo>();
 				testList.add(testPojo);
 
-//				dmsKontrol.sendMessageToGroup("hello group!", 1, gsh.getSelectedGroupUuid());
+				dmsKontrol.grubaMesajGonder("hello group!", 1, gsh.getSeciliGrupId());
 //				dmsKontrol.sendObjectToGroup(testPojo, 1, gsh.getSelectedGroupUuid());
 //				dmsKontrol.sendListToGroup(testList, TestPojo.class, 1, gsh.getSelectedGroupUuid());
-				dmsKontrol.grubaDosyaGonder(Paths.get("D:/test.txt"), 1, gsh.getSeciliGrupId());
+//				dmsKontrol.grubaDosyaGonder(Paths.get("D:/test.txt"), 1, gsh.getSeciliGrupId());
 
 				gsh.secimiSifirla();
 
@@ -167,7 +166,7 @@ public class DmsTest {
 			DmsKisiSecim csh = dmsKontrol.getDmsCevrimiciKisiler();
 
 			JComponent mcPanel = dmsKontrol.getDmsPanel();
-//			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JComponent mcPanel = csh.getKisiSecimPanel(dmsKisi -> dmsKisi.getDurum().equals(DmsDurum.MESGUL));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
@@ -175,10 +174,10 @@ public class DmsTest {
 				List<TestPojo> testList = new ArrayList<TestPojo>();
 				testList.add(testPojo);
 
-//				dmsKontrol.sendMessageToContacts("hello contact!", 1, csh.getSelectedContactUuids());
+				dmsKontrol.kisilereMesajGonder("hello contact!", 1, csh.getSeciliKisiIdler());
 //				dmsKontrol.sendObjectToContacts(testPojo, 1, csh.getSelectedContactUuids());
 //				dmsKontrol.sendListToContacts(testList, TestPojo.class, 1, csh.getSelectedContactUuids());
-				dmsKontrol.kisilereDosyaGonder(Paths.get("D:/test.txt"), 1, csh.getSeciliKisiIdler());
+//				dmsKontrol.kisilereDosyaGonder(Paths.get("D:/test.txt"), 1, csh.getSeciliKisiIdler());
 
 				csh.secimiSifirla();
 

@@ -26,16 +26,19 @@ import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsKisiGercekleme;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsListeGercekleme;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsMesajGercekleme;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsNesneGercekleme;
+import com.aselsan.rehis.reform.dms.arayuz.veriyapisi.DmsDurum;
 import com.ogya.dms.intf.DmsHandle;
 import com.ogya.dms.intf.exceptions.DbException;
 import com.ogya.dms.intf.handles.ContactHandle;
 import com.ogya.dms.intf.handles.FileHandle;
+import com.ogya.dms.intf.handles.GroupHandle;
 import com.ogya.dms.intf.handles.ListHandle;
 import com.ogya.dms.intf.handles.MessageHandle;
 import com.ogya.dms.intf.handles.ObjectHandle;
 import com.ogya.dms.intf.listeners.DmsGuiListener;
 import com.ogya.dms.intf.listeners.DmsListener;
 import com.ogya.dms.main.DmsCore;
+import com.ogya.dms.structures.Availability;
 
 public class Kontrol implements DmsKontrol {
 
@@ -60,7 +63,7 @@ public class Kontrol implements DmsKontrol {
 
 		} catch (DbException e) {
 
-			throw new VeritabaniHatasi("Veritabanina erisilemiyor. Sifre hatali veya hesap kullanimda olabilir.");
+			throw new VeritabaniHatasi(e.getMessage());
 
 		}
 
@@ -106,6 +109,11 @@ public class Kontrol implements DmsKontrol {
 			@Override
 			public void contactUpdated(ContactHandle arg0) {
 				dmsDinleyici.kisiGuncellendi(new DmsKisiGercekleme(arg0));
+			}
+
+			@Override
+			public void groupUpdated(GroupHandle arg0) {
+				dmsDinleyici.grupGuncellendi(new DmsGrupGercekleme(arg0));
 			}
 
 		};
@@ -190,6 +198,11 @@ public class Kontrol implements DmsKontrol {
 	}
 
 	@Override
+	public void setDurum(DmsDurum dmsDurum) {
+		dmsHandle.setAvailability(Availability.values()[dmsDurum.ordinal()]);
+	}
+
+	@Override
 	public DmsKisi getDmsKisim() {
 		return new DmsKisiGercekleme(dmsHandle.getMyContactHandle());
 	}
@@ -210,6 +223,11 @@ public class Kontrol implements DmsKontrol {
 	}
 
 	@Override
+	public DmsGrup getDmsGrup(Long grupId) {
+		return new DmsGrupGercekleme(dmsHandle.getGroupHandle(grupId));
+	}
+
+	@Override
 	public List<DmsKisi> getTumDmsKisiler() {
 		List<DmsKisi> tumDmsKisiler = new ArrayList<DmsKisi>();
 		dmsHandle.getAllContactHandles()
@@ -218,8 +236,10 @@ public class Kontrol implements DmsKontrol {
 	}
 
 	@Override
-	public DmsGrup getDmsGrup(Long grupId) {
-		return new DmsGrupGercekleme(dmsHandle.getGroupHandle(grupId));
+	public List<DmsGrup> getTumDmsGruplar() {
+		List<DmsGrup> tumDmsGruplar = new ArrayList<DmsGrup>();
+		dmsHandle.getAllGroupHandles().forEach(groupHandle -> tumDmsGruplar.add(new DmsGrupGercekleme(groupHandle)));
+		return tumDmsGruplar;
 	}
 
 	@Override

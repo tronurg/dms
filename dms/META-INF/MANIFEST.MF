@@ -6,7 +6,8 @@ Bundle-Version: 1.0.0.qualifier
 Export-Package: com.aselsan.rehis.reform.dms.arayuz,
  com.aselsan.rehis.reform.dms.arayuz.dinleyici,
  com.aselsan.rehis.reform.dms.arayuz.hata,
- com.aselsan.rehis.reform.dms.arayuz.kontrol
+ com.aselsan.rehis.reform.dms.arayuz.kontrol,
+ com.aselsan.rehis.reform.dms.arayuz.veriyapisi
 Automatic-Module-Name: dms
 Import-Package: org.osgi.service.component.annotations
 Service-Component: OSGI-INF/com.aselsan.rehis.reform.dms.main.Dms.xml

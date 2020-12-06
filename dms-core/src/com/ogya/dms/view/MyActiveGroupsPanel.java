@@ -7,12 +7,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 import javax.swing.UIManager;
 
 import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
+import com.ogya.dms.intf.handles.GroupHandle;
+import com.ogya.dms.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.structures.Availability;
 import com.ogya.dms.view.factory.ViewFactory;
 
@@ -94,6 +97,8 @@ public class MyActiveGroupsPanel extends BorderPane {
 	private final Map<String, ObjectProperty<Color>> contactUuidStatus = Collections
 			.synchronizedMap(new HashMap<String, ObjectProperty<Color>>());
 
+	private final ObjectProperty<Predicate<GroupHandle>> filterProperty = new SimpleObjectProperty<Predicate<GroupHandle>>();
+
 	MyActiveGroupsPanel() {
 
 		super();
@@ -130,17 +135,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 		GroupBundle groupBundle = getGroupBundle(group.getId());
 
-		groupBundle.groupPane.updateGroup(group);
-
-		boolean active = Objects.equals(group.getStatus(), Availability.AVAILABLE);
-
-		groupBundle.activeProperty.set(active);
-
-		if (!active)
-			groupBundle.selectedProperty.set(false);
-
-		if (active)
-			groupBundle.setContacts(group.getMembers());
+		groupBundle.setGroup(group);
 
 	}
 
@@ -154,6 +149,12 @@ public class MyActiveGroupsPanel extends BorderPane {
 	public Long getSelectedId() {
 
 		return selectedId.get();
+
+	}
+
+	public void setFilter(Predicate<GroupHandle> filter) {
+
+		filterProperty.set(filter);
 
 	}
 
@@ -227,6 +228,8 @@ public class MyActiveGroupsPanel extends BorderPane {
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 
+		private final ObjectProperty<Dgroup> groupProperty = new SimpleObjectProperty<Dgroup>();
+
 		private GroupBundle() {
 
 			super();
@@ -241,6 +244,31 @@ public class MyActiveGroupsPanel extends BorderPane {
 			initContactCards();
 
 			selectionLbl.visibleProperty().bind(selectedProperty);
+
+			activeProperty.addListener((e0, e1, e2) -> {
+
+				if (!e2)
+					selectedProperty.set(false);
+
+			});
+
+			activeProperty.bind(Bindings.createBooleanBinding(() -> {
+
+				Dgroup group = groupProperty.get();
+
+				if (group == null)
+					return false;
+
+				boolean active = Objects.equals(group.getStatus(), Availability.AVAILABLE);
+
+				Predicate<GroupHandle> filter = filterProperty.get();
+
+				if (filter != null)
+					active = active && filter.test(new GroupHandleImpl(group));
+
+				return active;
+
+			}, groupProperty, filterProperty));
 
 			setTop(topPane);
 			setCenter(contactCards);
@@ -270,6 +298,16 @@ public class MyActiveGroupsPanel extends BorderPane {
 			contactCards.managedProperty().bind(contactCards.visibleProperty());
 
 			contactCards.visibleProperty().bind(selectedProperty);
+
+		}
+
+		private void setGroup(Dgroup group) {
+
+			groupPane.updateGroup(group);
+
+			setContacts(group.getMembers());
+
+			groupProperty.set(group);
 
 		}
 

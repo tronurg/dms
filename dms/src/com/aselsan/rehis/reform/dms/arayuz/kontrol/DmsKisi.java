@@ -1,8 +1,12 @@
 package com.aselsan.rehis.reform.dms.arayuz.kontrol;
 
+import com.aselsan.rehis.reform.dms.arayuz.veriyapisi.DmsDurum;
+
 public interface DmsKisi {
 
 	Long getId();
+
+	String getUuid();
 
 	String getIsim();
 
@@ -12,6 +16,6 @@ public interface DmsKisi {
 
 	Double getBoylam();
 
-	boolean isCevrimici();
+	DmsDurum getDurum();
 
 }

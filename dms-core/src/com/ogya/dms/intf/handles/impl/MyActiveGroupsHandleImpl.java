@@ -1,9 +1,12 @@
 package com.ogya.dms.intf.handles.impl;
 
+import java.util.function.Predicate;
+
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
+import com.ogya.dms.intf.handles.GroupHandle;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.view.MyActiveGroupsPanel;
 
@@ -68,6 +71,17 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 
 	@Override
 	public JComponent getGroupSelectionPanel() {
+
+		return getGroupSelectionPanel(null);
+
+	}
+
+	@Override
+	public JComponent getGroupSelectionPanel(Predicate<GroupHandle> filter) {
+
+		resetSelection();
+
+		myActiveGroupsPanel.setFilter(filter);
 
 		return myActiveGroupsPanelSwing;
 

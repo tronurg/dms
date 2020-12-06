@@ -1,6 +1,7 @@
 package com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme;
 
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisi;
+import com.aselsan.rehis.reform.dms.arayuz.veriyapisi.DmsDurum;
 import com.ogya.dms.intf.handles.ContactHandle;
 
 public class DmsKisiGercekleme implements DmsKisi {
@@ -16,6 +17,11 @@ public class DmsKisiGercekleme implements DmsKisi {
 	@Override
 	public Long getId() {
 		return contactHandle.getId();
+	}
+
+	@Override
+	public String getUuid() {
+		return contactHandle.getUuid();
 	}
 
 	@Override
@@ -39,8 +45,8 @@ public class DmsKisiGercekleme implements DmsKisi {
 	}
 
 	@Override
-	public boolean isCevrimici() {
-		return contactHandle.isOnline();
+	public DmsDurum getDurum() {
+		return DmsDurum.values()[contactHandle.getAvailability().ordinal()];
 	}
 
 }
