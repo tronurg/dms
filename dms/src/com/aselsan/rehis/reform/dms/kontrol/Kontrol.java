@@ -18,7 +18,7 @@ import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrup;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrupSecim;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisi;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsKisiSecim;
-import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsAktifGruplarimGercekleme;
+import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsAktifGruplarGercekleme;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsCevrimiciKisilerGercekleme;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsDosyaGercekleme;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.gercekleme.DmsGrupGercekleme;
@@ -208,8 +208,8 @@ public class Kontrol implements DmsKontrol {
 	}
 
 	@Override
-	public DmsGrupSecim getDmsAktifGruplarim() {
-		return new DmsAktifGruplarimGercekleme(dmsHandle.getMyActiveGroupsHandle());
+	public DmsGrupSecim getDmsAktifGruplar() {
+		return new DmsAktifGruplarGercekleme(dmsHandle.getActiveGroupsHandle());
 	}
 
 	@Override

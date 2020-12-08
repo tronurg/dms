@@ -41,7 +41,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class MyActiveGroupsPanel extends BorderPane {
+public class ActiveGroupsPanel extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 
@@ -99,7 +99,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 	private final ObjectProperty<Predicate<GroupHandle>> filterProperty = new SimpleObjectProperty<Predicate<GroupHandle>>();
 
-	MyActiveGroupsPanel() {
+	ActiveGroupsPanel() {
 
 		super();
 
@@ -259,7 +259,7 @@ public class MyActiveGroupsPanel extends BorderPane {
 				if (group == null)
 					return false;
 
-				boolean active = Objects.equals(group.getStatus(), Availability.AVAILABLE);
+				boolean active = !Objects.equals(group.getStatus(), Availability.OFFLINE);
 
 				Predicate<GroupHandle> filter = filterProperty.get();
 
@@ -305,17 +305,20 @@ public class MyActiveGroupsPanel extends BorderPane {
 
 			groupPane.updateGroup(group);
 
-			setContacts(group.getMembers());
+			setContacts(group.getOwner(), group.getMembers());
 
 			groupProperty.set(group);
 
 		}
 
-		private void setContacts(Set<Contact> contacts) {
+		private void setContacts(Contact owner, Set<Contact> members) {
 
 			contactCards.getChildren().clear();
 
-			contacts.forEach(contact -> {
+			members.forEach(contact -> {
+
+				if (contact.getId() == 1)
+					return;
 
 				updateContact(contact);
 
@@ -324,6 +327,13 @@ public class MyActiveGroupsPanel extends BorderPane {
 			});
 
 			FXCollections.sort(contactCards.getChildren(), contactsSorter);
+
+			if (owner.getId() == 1)
+				return;
+
+			updateContact(owner);
+
+			contactCards.getChildren().add(0, new Card(owner.getName(), contactUuidStatus.get(owner.getUuid())));
 
 		}
 

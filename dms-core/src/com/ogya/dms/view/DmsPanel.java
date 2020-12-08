@@ -39,7 +39,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	private final IdentityPane identityPane = new IdentityPane();
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
-	private final MyActiveGroupsPanel myActiveGroupsPanel = new MyActiveGroupsPanel();
+	private final ActiveGroupsPanel activeGroupsPanel = new ActiveGroupsPanel();
 	private final OnlineContactsPanel onlineContactsPanel = new OnlineContactsPanel();
 
 	private final FoldersPane foldersPane = new FoldersPane(
@@ -122,9 +122,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public MyActiveGroupsPanel getMyActiveGroupsPanel() {
+	public ActiveGroupsPanel getActiveGroupsPanel() {
 
-		return myActiveGroupsPanel;
+		return activeGroupsPanel;
 
 	}
 
@@ -152,14 +152,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 		entitiesPane.addUpdateGroupPaneUpdateContact(contact);
 		statusInfoPane.updateContact(contact);
 		onlineContactsPanel.updateContact(contact);
-		myActiveGroupsPanel.updateContact(contact);
+		activeGroupsPanel.updateContact(contact);
 
 	}
 
 	public void updateGroup(Dgroup group) {
 
 		entitiesPane.updateGroup(group);
-		myActiveGroupsPanel.updateGroup(group);
+		activeGroupsPanel.updateGroup(group);
 
 	}
 

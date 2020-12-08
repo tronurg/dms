@@ -51,12 +51,12 @@ import com.ogya.dms.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.intf.handles.ListHandle;
 import com.ogya.dms.intf.handles.MessageHandle;
 import com.ogya.dms.intf.handles.ObjectHandle;
+import com.ogya.dms.intf.handles.impl.ActiveGroupsHandleImpl;
 import com.ogya.dms.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.intf.handles.impl.FileHandleImpl;
 import com.ogya.dms.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.intf.handles.impl.ListHandleImpl;
 import com.ogya.dms.intf.handles.impl.MessageHandleImpl;
-import com.ogya.dms.intf.handles.impl.MyActiveGroupsHandleImpl;
 import com.ogya.dms.intf.handles.impl.ObjectHandleImpl;
 import com.ogya.dms.intf.handles.impl.OnlineContactsHandleImpl;
 import com.ogya.dms.intf.listeners.DmsGuiListener;
@@ -94,7 +94,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private final ReportsDialog reportsDialog;
 
-	private final GroupSelectionHandle myActiveGroupsHandle;
+	private final GroupSelectionHandle activeGroupsHandle;
 	private final ContactSelectionHandle onlineContactsHandle;
 
 	private final DmsClient dmsClient;
@@ -161,7 +161,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		//
 
-		myActiveGroupsHandle = new MyActiveGroupsHandleImpl(dmsPanel.getMyActiveGroupsPanel());
+		activeGroupsHandle = new ActiveGroupsHandleImpl(dmsPanel.getActiveGroupsPanel());
 		onlineContactsHandle = new OnlineContactsHandleImpl(dmsPanel.getOnlineContactsPanel());
 
 		//
@@ -1831,10 +1831,69 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Message incomingMessage = Message.fromJson(message);
 
-				Dgroup dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
-
 				Long contactId = getContact(remoteUuid).getId();
-				Long groupId = dgroup == null ? null : dgroup.getId();
+				Long groupId = null;
+
+				switch (incomingMessage.getReceiverType()) {
+
+				case GROUP_MEMBER: {
+
+					Dgroup dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
+
+					if (dgroup == null || incomingMessage.getContactRefId() == null
+							|| dgroup.getContactMapStr() == null)
+						break;
+
+					Contact contact = getContact(
+							ContactMap.fromJson(dgroup.getContactMapStr()).map.get(incomingMessage.getContactRefId()));
+
+					if (contact != null)
+						contactId = contact.getId();
+
+					if (dgroup != null)
+						groupId = dgroup.getId();
+
+					break;
+
+				}
+
+				case GROUP_OWNER: {
+
+					Dgroup dgroup = model.getGroup(incomingMessage.getGroupRefId());
+
+					if (dgroup == null)
+						break;
+
+					groupId = dgroup.getId();
+
+					List<String> contactUuids = new ArrayList<String>();
+
+					dgroup.getMembers().forEach(contact -> {
+
+						if (Objects.equals(contact.getUuid(), remoteUuid))
+							return;
+
+						contactUuids.add(contact.getUuid());
+
+					});
+
+					if (contactUuids.size() == 0)
+						break;
+
+					incomingMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
+					incomingMessage.setContactRefId(contactId);
+
+					dmsClient.sendTransientMessage(incomingMessage.toJson(), contactUuids);
+
+					break;
+
+				}
+
+				default:
+
+					break;
+
+				}
 
 				switch (incomingMessage.getMessageType()) {
 
@@ -2982,9 +3041,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public GroupSelectionHandle getMyActiveGroupsHandle() {
+	public GroupSelectionHandle getActiveGroupsHandle() {
 
-		return myActiveGroupsHandle;
+		return activeGroupsHandle;
 
 	}
 
@@ -3088,18 +3147,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup group = model.getGroup(groupId);
 
-		if (group == null || !Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) || !group.getActive())
+		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
 			return false;
 
-		Message outgoingMessage = new Message(null, null, ReceiverType.GROUP_MEMBER, MessageType.TEXT, message);
+		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
 
-		outgoingMessage.setGroupRefId(groupId);
+		Message outgoingMessage = new Message(null, null, master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER,
+				MessageType.TEXT, message);
+
+		outgoingMessage.setGroupRefId(group.getGroupRefId());
 
 		outgoingMessage.setMessageCode(messageCode);
 
 		List<String> contactUuids = new ArrayList<String>();
 
-		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		if (master)
+			group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		else
+			contactUuids.add(group.getOwner().getUuid());
 
 		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
 
@@ -3141,19 +3206,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup group = model.getGroup(groupId);
 
-		if (group == null || !Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) || !group.getActive())
+		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
 			return false;
 
-		Message outgoingMessage = new Message(null, null, ReceiverType.GROUP_MEMBER, MessageType.OBJECT,
-				CommonMethods.toJson(object));
+		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
 
-		outgoingMessage.setGroupRefId(groupId);
+		Message outgoingMessage = new Message(null, null, master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER,
+				MessageType.OBJECT, CommonMethods.toJson(object));
+
+		outgoingMessage.setGroupRefId(group.getGroupRefId());
 
 		outgoingMessage.setMessageCode(objectCode);
 
 		List<String> contactUuids = new ArrayList<String>();
 
-		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		if (master)
+			group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		else
+			contactUuids.add(group.getOwner().getUuid());
 
 		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
 
@@ -3195,19 +3265,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup group = model.getGroup(groupId);
 
-		if (group == null || !Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) || !group.getActive())
+		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
 			return false;
 
-		Message outgoingMessage = new Message(null, null, ReceiverType.GROUP_MEMBER, MessageType.LIST,
+		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
+
+		Message outgoingMessage = new Message(null, null, master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER,
+				MessageType.LIST,
 				CommonMethods.convertListJsonToCommon(CommonMethods.toJson(list), elementType.getSimpleName()));
 
-		outgoingMessage.setGroupRefId(groupId);
+		outgoingMessage.setGroupRefId(group.getGroupRefId());
 
 		outgoingMessage.setMessageCode(listCode);
 
 		List<String> contactUuids = new ArrayList<String>();
 
-		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		if (master)
+			group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		else
+			contactUuids.add(group.getOwner().getUuid());
 
 		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
 
@@ -3260,24 +3336,30 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup group = model.getGroup(groupId);
 
-		if (group == null || !Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) || !group.getActive())
+		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
 			return false;
+
+		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
 
 		try {
 
 			byte[] fileBytes = Files.readAllBytes(path);
 
-			Message outgoingMessage = new Message(null, null, ReceiverType.GROUP_MEMBER, MessageType.FILE,
+			Message outgoingMessage = new Message(null, null,
+					master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER, MessageType.FILE,
 					new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
 							.toJson());
 
-			outgoingMessage.setGroupRefId(groupId);
+			outgoingMessage.setGroupRefId(group.getGroupRefId());
 
 			outgoingMessage.setMessageCode(fileCode);
 
 			List<String> contactUuids = new ArrayList<String>();
 
-			group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+			if (master)
+				group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+			else
+				contactUuids.add(group.getOwner().getUuid());
 
 			dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids);
 

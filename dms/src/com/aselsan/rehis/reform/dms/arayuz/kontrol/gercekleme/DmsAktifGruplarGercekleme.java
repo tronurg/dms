@@ -8,11 +8,11 @@ import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrup;
 import com.aselsan.rehis.reform.dms.arayuz.kontrol.DmsGrupSecim;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
 
-public class DmsAktifGruplarimGercekleme implements DmsGrupSecim {
+public class DmsAktifGruplarGercekleme implements DmsGrupSecim {
 
 	private final GroupSelectionHandle groupSelectionHandle;
 
-	public DmsAktifGruplarimGercekleme(GroupSelectionHandle groupSelectionHandle) {
+	public DmsAktifGruplarGercekleme(GroupSelectionHandle groupSelectionHandle) {
 
 		this.groupSelectionHandle = groupSelectionHandle;
 

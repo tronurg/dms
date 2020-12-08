@@ -34,7 +34,7 @@ public interface DmsKontrol {
 
 	DmsKisi getDmsKisim();
 
-	DmsGrupSecim getDmsAktifGruplarim();
+	DmsGrupSecim getDmsAktifGruplar();
 
 	DmsKisiSecim getDmsCevrimiciKisiler();
 

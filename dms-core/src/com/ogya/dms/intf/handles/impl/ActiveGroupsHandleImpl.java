@@ -8,22 +8,22 @@ import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.intf.handles.GroupHandle;
 import com.ogya.dms.intf.handles.GroupSelectionHandle;
-import com.ogya.dms.view.MyActiveGroupsPanel;
+import com.ogya.dms.view.ActiveGroupsPanel;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
-public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
+public class ActiveGroupsHandleImpl implements GroupSelectionHandle {
 
-	private final MyActiveGroupsPanel myActiveGroupsPanel;
-	private final JFXPanel myActiveGroupsPanelSwing;
+	private final ActiveGroupsPanel activeGroupsPanel;
+	private final JFXPanel activeGroupsPanelSwing;
 
-	public MyActiveGroupsHandleImpl(MyActiveGroupsPanel myActiveGroupsPanel) {
+	public ActiveGroupsHandleImpl(ActiveGroupsPanel activeGroupsPanel) {
 
-		this.myActiveGroupsPanel = myActiveGroupsPanel;
+		this.activeGroupsPanel = activeGroupsPanel;
 
-		myActiveGroupsPanelSwing = new JFXPanel() {
+		activeGroupsPanelSwing = new JFXPanel() {
 
 			/**
 			 * 
@@ -33,12 +33,12 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 			@Override
 			public void updateUI() {
 				super.updateUI();
-				Platform.runLater(() -> myActiveGroupsPanel.updateUI());
+				Platform.runLater(() -> activeGroupsPanel.updateUI());
 			}
 
 		};
 
-		myActiveGroupsPanelSwing.addAncestorListener(new AncestorListener() {
+		activeGroupsPanelSwing.addAncestorListener(new AncestorListener() {
 
 			@Override
 			public void ancestorRemoved(AncestorEvent arg0) {
@@ -53,7 +53,7 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 			@Override
 			public void ancestorAdded(AncestorEvent arg0) {
 
-				myActiveGroupsPanelSwing.updateUI();
+				activeGroupsPanelSwing.updateUI();
 
 			}
 
@@ -61,9 +61,9 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 
 		Platform.runLater(() -> {
 
-			Scene myActiveGroupsScene = new Scene(myActiveGroupsPanel);
+			Scene myActiveGroupsScene = new Scene(activeGroupsPanel);
 			myActiveGroupsScene.getStylesheets().add("/resources/css/style.css");
-			myActiveGroupsPanelSwing.setScene(myActiveGroupsScene);
+			activeGroupsPanelSwing.setScene(myActiveGroupsScene);
 
 		});
 
@@ -81,23 +81,23 @@ public class MyActiveGroupsHandleImpl implements GroupSelectionHandle {
 
 		resetSelection();
 
-		myActiveGroupsPanel.setFilter(filter);
+		activeGroupsPanel.setFilter(filter);
 
-		return myActiveGroupsPanelSwing;
+		return activeGroupsPanelSwing;
 
 	}
 
 	@Override
 	public Long getSelectedGroupId() {
 
-		return myActiveGroupsPanel.getSelectedId();
+		return activeGroupsPanel.getSelectedId();
 
 	}
 
 	@Override
 	public void resetSelection() {
 
-		myActiveGroupsPanel.resetSelection();
+		activeGroupsPanel.resetSelection();
 
 	}
 

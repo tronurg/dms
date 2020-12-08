@@ -34,7 +34,7 @@ public interface DmsHandle {
 
 	ContactHandle getMyContactHandle();
 
-	GroupSelectionHandle getMyActiveGroupsHandle();
+	GroupSelectionHandle getActiveGroupsHandle();
 
 	ContactSelectionHandle getOnlineContactsHandle();
 
