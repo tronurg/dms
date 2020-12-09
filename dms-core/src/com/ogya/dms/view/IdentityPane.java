@@ -133,7 +133,7 @@ class IdentityPane extends GridPane {
 		initProfileRound();
 		initProfileLabel();
 
-		profilePicture.getChildren().addAll(availableBtn, awayBtn, busyBtn, statusCircle, profileRound, profileLabel);
+		profilePicture.getChildren().addAll(busyBtn, awayBtn, availableBtn, statusCircle, profileRound, profileLabel);
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 
@@ -143,11 +143,10 @@ class IdentityPane extends GridPane {
 			private double awayBtnEnd;
 			private double busyBtnStart;
 			private double busyBtnEnd;
-
-			private int direction = 1;
+			private int position = 0;
 
 			private EventHandler<ActionEvent> onFinished = e -> {
-				if (direction == 1) {
+				if (position == 0) {
 					availableBtn.setVisible(false);
 					awayBtn.setVisible(false);
 					busyBtn.setVisible(false);
@@ -169,16 +168,16 @@ class IdentityPane extends GridPane {
 
 			@Override
 			public void play() {
-				if (direction == 1) {
+				if (position == 0) {
 					availableBtn.setVisible(true);
 					awayBtn.setVisible(true);
 					busyBtn.setVisible(true);
 				}
-				awayBtnStart = awayBtn.getRotate();
-				awayBtnEnd = awayBtnStart + 45.0 * direction;
-				busyBtnStart = busyBtn.getRotate();
-				busyBtnEnd = busyBtnStart + 2 * 45.0 * direction;
-				direction = -direction;
+				awayBtnStart = position * 45.0;
+				busyBtnStart = position * 90.0;
+				position = (position + 1) % 2;
+				awayBtnEnd = position * 45.0;
+				busyBtnEnd = position * 90.0;
 				super.play();
 			}
 
@@ -330,11 +329,11 @@ class IdentityPane extends GridPane {
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 
-		final Transition btnTransition = new Transition() {
+		final Transition circleTransition = new Transition() {
 
-			private double btnStart;
-			private double btnEnd;
-			private int direction = 1;
+			private double circleStart;
+			private double circleEnd;
+			private int position = 0;
 
 			{
 				setCycleDuration(Duration.millis(100.0));
@@ -343,28 +342,23 @@ class IdentityPane extends GridPane {
 			@Override
 			protected void interpolate(double arg0) {
 
-				circle.setScaleX(interpolator.interpolate(btnStart, btnEnd, arg0));
-				circle.setScaleY(interpolator.interpolate(btnStart, btnEnd, arg0));
+				circle.setScaleX(interpolator.interpolate(circleStart, circleEnd, arg0));
+				circle.setScaleY(interpolator.interpolate(circleStart, circleEnd, arg0));
 
 			}
 
 			@Override
 			public void play() {
-				if (direction > 0) {
-					btnStart = 1.0;
-					btnEnd = 2.0;
-				} else {
-					btnStart = 2.0;
-					btnEnd = 1.0;
-				}
-				direction = -direction;
+				circleStart = 1.0 + position * 1.0;
+				position = (position + 1) % 2;
+				circleEnd = 1.0 + position * 1.0;
 				super.play();
 			}
 
 		};
 
-		btn.setOnMouseEntered(e -> btnTransition.play());
-		btn.setOnMouseExited(e -> btnTransition.play());
+		circle.setOnMouseEntered(e -> circleTransition.play());
+		circle.setOnMouseExited(e -> circleTransition.play());
 
 		return btn;
 

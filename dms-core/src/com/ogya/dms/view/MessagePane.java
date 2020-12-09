@@ -495,7 +495,7 @@ class MessagePane extends BorderPane {
 			private double showFoldersBtnEnd;
 			private double reportBtnStart;
 			private double reportBtnEnd;
-			private int direction = -1;
+			private int position = 0;
 
 			@Override
 			protected void interpolate(double arg0) {
@@ -507,12 +507,11 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void play() {
-				showFoldersBtnStart = showFoldersBtn.getTranslateY();
-				showFoldersBtnEnd = showFoldersBtnStart + (GAP + showFoldersBtn.getHeight()) * direction;
-				reportBtnStart = reportBtn.getTranslateY();
-				reportBtnEnd = reportBtnStart
-						+ (2 * GAP + reportBtn.getHeight() + showFoldersBtn.getHeight()) * direction;
-				direction = -direction;
+				showFoldersBtnStart = -position * (GAP + showFoldersBtn.getHeight());
+				reportBtnStart = -position * (2 * GAP + reportBtn.getHeight() + showFoldersBtn.getHeight());
+				position = (position + 1) % 2;
+				showFoldersBtnEnd = -position * (GAP + showFoldersBtn.getHeight());
+				reportBtnEnd = -position * (2 * GAP + reportBtn.getHeight() + showFoldersBtn.getHeight());
 				super.play();
 			}
 
