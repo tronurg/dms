@@ -43,6 +43,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 
 class IdentityPane extends GridPane {
@@ -133,7 +134,18 @@ class IdentityPane extends GridPane {
 		initProfileRound();
 		initProfileLabel();
 
-		profilePicture.getChildren().addAll(busyBtn, awayBtn, availableBtn, statusCircle, profileRound, profileLabel);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel, busyBtn, awayBtn, availableBtn);
+
+		final Rotate awayBtnRotate = new Rotate();
+		final Rotate busyBtnRotate = new Rotate();
+
+		awayBtnRotate.pivotXProperty().bind(awayBtn.widthProperty().divide(2).subtract(awayBtn.getTranslateX()));
+		awayBtnRotate.pivotYProperty().bind(awayBtn.heightProperty().divide(2).subtract(awayBtn.getTranslateY()));
+		busyBtnRotate.pivotXProperty().bind(busyBtn.widthProperty().divide(2).subtract(busyBtn.getTranslateX()));
+		busyBtnRotate.pivotYProperty().bind(busyBtn.heightProperty().divide(2).subtract(busyBtn.getTranslateY()));
+
+		awayBtn.getTransforms().add(awayBtnRotate);
+		busyBtn.getTransforms().add(busyBtnRotate);
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 
@@ -161,8 +173,8 @@ class IdentityPane extends GridPane {
 			@Override
 			protected void interpolate(double arg0) {
 
-				awayBtn.setRotate(interpolator.interpolate(awayBtnStart, awayBtnEnd, arg0));
-				busyBtn.setRotate(interpolator.interpolate(busyBtnStart, busyBtnEnd, arg0));
+				awayBtnRotate.setAngle(interpolator.interpolate(awayBtnStart, awayBtnEnd, arg0));
+				busyBtnRotate.setAngle(interpolator.interpolate(busyBtnStart, busyBtnEnd, arg0));
 
 			}
 
@@ -319,13 +331,14 @@ class IdentityPane extends GridPane {
 
 		final Button btn = new Button();
 		final Circle circle = new Circle(unitSize * 0.2);
-		circle.setTranslateX(unitSize * 1.5);
 		circle.setFill(color);
 		btn.setGraphic(circle);
 		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.setVisible(false);
+
+		btn.setTranslateX(unitSize * 1.5);
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 
@@ -357,8 +370,8 @@ class IdentityPane extends GridPane {
 
 		};
 
-		circle.setOnMouseEntered(e -> circleTransition.play());
-		circle.setOnMouseExited(e -> circleTransition.play());
+		btn.setOnMouseEntered(e -> circleTransition.play());
+		btn.setOnMouseExited(e -> circleTransition.play());
 
 		return btn;
 
