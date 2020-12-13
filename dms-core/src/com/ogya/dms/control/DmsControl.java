@@ -680,7 +680,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			addMessageToPane(message);
 
-			soundPlayer.playDuoTone();
+			if (!model.isMessagePaneOpen(message.getContact().getId()))
+				soundPlayer.playDuoTone();
 
 			break;
 
@@ -740,7 +741,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			addMessageToPane(message);
 
-			soundPlayer.playTriTone();
+			if (!model.isMessagePaneOpen(-message.getDgroup().getId()))
+				soundPlayer.playTriTone();
 
 			break;
 
@@ -1972,7 +1974,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void commentUpdated(String comment) {
+	public void commentUpdateRequested(String comment) {
 
 		taskQueue.execute(() -> {
 
@@ -2004,7 +2006,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void statusUpdated(final Availability availability) {
+	public void statusUpdateRequested(final Availability availability) {
 
 		taskQueue.execute(() -> {
 
@@ -3020,14 +3022,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Platform.runLater(() -> dmsPanel.setCommentEditable(false));
 
-		commentUpdated(comment);
+		commentUpdateRequested(comment);
 
 	}
 
 	@Override
 	public void setAvailability(Availability availability) {
 
-		statusUpdated(availability);
+		statusUpdateRequested(availability);
 
 	}
 

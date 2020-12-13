@@ -101,14 +101,14 @@ public class DmsDinleyiciGercekleme implements DmsDinleyici {
 	@Override
 	public void kisiGuncellendi(DmsKisi dmsKisi) {
 
-		System.out.println(String.format("Kisi guncellendi: %s\n", dmsKisi.getIsim()));
+//		System.out.println(String.format("Kisi guncellendi: %s\n", dmsKisi.getIsim()));
 
 	}
 
 	@Override
 	public void grupGuncellendi(DmsGrup dmsGrup) {
 
-		System.out.println(String.format("Grup guncellendi: %s\n", dmsGrup.getIsim()));
+//		System.out.println(String.format("Grup guncellendi: %s\n", dmsGrup.getIsim()));
 
 	}
 

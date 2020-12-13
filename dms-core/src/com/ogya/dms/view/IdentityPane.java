@@ -199,7 +199,7 @@ class IdentityPane extends GridPane {
 
 			mainTransition.play();
 
-			listeners.forEach(listener -> listener.statusUpdated(Availability.AVAILABLE));
+			listeners.forEach(listener -> listener.statusUpdateRequested(Availability.AVAILABLE));
 
 		});
 
@@ -207,7 +207,7 @@ class IdentityPane extends GridPane {
 
 			mainTransition.play();
 
-			listeners.forEach(listener -> listener.statusUpdated(Availability.AWAY));
+			listeners.forEach(listener -> listener.statusUpdateRequested(Availability.AWAY));
 
 		});
 
@@ -215,7 +215,7 @@ class IdentityPane extends GridPane {
 
 			mainTransition.play();
 
-			listeners.forEach(listener -> listener.statusUpdated(Availability.BUSY));
+			listeners.forEach(listener -> listener.statusUpdateRequested(Availability.BUSY));
 
 		});
 
@@ -312,7 +312,7 @@ class IdentityPane extends GridPane {
 
 			final String comment = commentTextField.getText();
 
-			listeners.forEach(listener -> listener.commentUpdated(comment));
+			listeners.forEach(listener -> listener.commentUpdateRequested(comment));
 
 		});
 
@@ -381,9 +381,9 @@ class IdentityPane extends GridPane {
 
 interface IIdentityPane {
 
-	void commentUpdated(String comment);
+	void commentUpdateRequested(String comment);
 
-	void statusUpdated(Availability availability);
+	void statusUpdateRequested(Availability availability);
 
 	void settingsClicked();
 

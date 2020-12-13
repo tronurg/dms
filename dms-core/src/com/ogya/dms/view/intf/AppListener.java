@@ -7,9 +7,9 @@ import com.ogya.dms.structures.Availability;
 
 public interface AppListener {
 
-	void commentUpdated(String comment);
+	void commentUpdateRequested(String comment);
 
-	void statusUpdated(Availability availability);
+	void statusUpdateRequested(Availability availability);
 
 	void messagePaneOpened(Long id);
 

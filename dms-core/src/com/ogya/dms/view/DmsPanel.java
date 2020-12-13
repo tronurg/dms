@@ -353,9 +353,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 			break;
 
-		default:
-			break;
-
 		}
 
 	}
@@ -375,16 +372,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void commentUpdated(final String comment) {
+	public void commentUpdateRequested(final String comment) {
 
-		listeners.forEach(listener -> listener.commentUpdated(comment));
+		listeners.forEach(listener -> listener.commentUpdateRequested(comment));
 
 	}
 
 	@Override
-	public void statusUpdated(final Availability availability) {
+	public void statusUpdateRequested(final Availability availability) {
 
-		listeners.forEach(listener -> listener.statusUpdated(availability));
+		listeners.forEach(listener -> listener.statusUpdateRequested(availability));
 
 	}
 

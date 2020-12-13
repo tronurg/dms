@@ -54,6 +54,7 @@ public class SettingsPane extends BorderPane {
 		initTopPane();
 		initScrollableContent();
 
+		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
 		setTop(topPane);
@@ -94,6 +95,7 @@ public class SettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
+		// EDIT_REMOTE_IPS
 		Label editRemoteIpsLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 		editRemoteIpsLabel.getStyleClass().add("linkLabel");
 		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * GAP));
