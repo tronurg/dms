@@ -1,9 +1,10 @@
 /.metadata/
 .settings
 bin
-database
-received
-sent
+/workspace/
+/workspace/database
+/workspace/received
+/workspace/sent
 
 .classpath
 .project
