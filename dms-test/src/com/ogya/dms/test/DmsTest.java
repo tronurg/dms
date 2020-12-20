@@ -105,8 +105,8 @@ public class DmsTest {
 
 			DmsGrupSecim gsh = dmsKontrol.getDmsAktifGruplar();
 
-//			JComponent mcPanel = dmsKontrol.getDmsPanel();
-			JComponent mcPanel = gsh.getGrupSecimPanel(dmsGrup -> dmsGrup.getIsim().startsWith("g"));
+			JComponent mcPanel = dmsKontrol.getDmsPanel();
+//			JComponent mcPanel = gsh.getGrupSecimPanel(dmsGrup -> dmsGrup.getIsim().startsWith("g"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 

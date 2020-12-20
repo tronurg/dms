@@ -1,20 +1,20 @@
 package com.ogya.dms.structures;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.ogya.dms.common.CommonMethods;
+import com.google.gson.annotations.SerializedName;
 
 public class ContactMap {
 
-	public final Map<Long, String> map = new HashMap<Long, String>();
+	@SerializedName(value = "a")
+	public Long refId;
+	@SerializedName(value = "b")
+	public String uuid;
+	@SerializedName(value = "c")
+	public String name;
 
-	public String toJson() {
-		return CommonMethods.toJson(this);
-	}
-
-	public static ContactMap fromJson(String json) throws Exception {
-		return CommonMethods.fromJson(json, ContactMap.class);
+	public ContactMap(Long refId, String uuid, String name) {
+		this.refId = refId;
+		this.uuid = uuid;
+		this.name = name;
 	}
 
 }

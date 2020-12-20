@@ -36,6 +36,7 @@ import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.database.DbManager;
 import com.ogya.dms.database.tables.Contact;
 import com.ogya.dms.database.tables.Dgroup;
+import com.ogya.dms.database.tables.Member;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.database.tables.StatusReport;
 import com.ogya.dms.dmsclient.DmsClient;
@@ -498,12 +499,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		groupUpdate.active = active ? null : false;
 
 		if (!(contactsToBeAdded == null || contactsToBeAdded.isEmpty())) {
-			groupUpdate.add = new HashMap<Long, String>();
-			groupUpdate.contactMap = new ContactMap();
-			contactsToBeAdded.forEach(contact -> {
-				groupUpdate.contactMap.map.put(contact.getId(), contact.getUuid());
-				groupUpdate.add.put(contact.getId(), contact.getName());
-			});
+			groupUpdate.add = new ArrayList<ContactMap>();
+			contactsToBeAdded.forEach(contact -> groupUpdate.add
+					.add(new ContactMap(contact.getId(), contact.getUuid(), contact.getName())));
 		}
 
 		if (!(contactsToBeRemoved == null || contactsToBeRemoved.isEmpty())) {
@@ -848,30 +846,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final Set<Contact> contactsToBeAdded = new HashSet<Contact>();
 		final Set<Contact> contactsToBeRemoved = new HashSet<Contact>();
-		final ContactMap contactMap = new ContactMap();
-		if (group.getContactMapStr() != null)
-			contactMap.map.putAll(ContactMap.fromJson(group.getContactMapStr()).map);
-
-		if (groupUpdate.contactMap != null)
-			contactMap.map.putAll(groupUpdate.contactMap.map);
-
-		group.setContactMapStr(contactMap.toJson());
 
 		if (groupUpdate.add != null) {
 
-			groupUpdate.add.forEach((refId, name) -> {
+			groupUpdate.add.forEach(contactMap -> {
 
-				String uuid = contactMap.map.get(refId);
+				String uuid = contactMap.uuid;
 
-				if (uuid == null || Objects.equals(model.getLocalUuid(), uuid))
+				if (Objects.equals(model.getLocalUuid(), uuid))
 					return;
 
 				Contact contact = model.getContact(uuid);
 				if (contact == null) {
 					contact = new Contact(uuid);
-					contact.setName(name);
+					contact.setName(contactMap.name);
 					contact.setStatus(Availability.OFFLINE);
-					Contact newContact = dbManager.addUpdateContact(contact);
+					final Contact newContact = dbManager.addUpdateContact(contact);
 					model.addContact(newContact);
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
 					listenerTaskQueue.execute(() -> dmsListeners
@@ -881,6 +871,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					contactsToBeAdded.add(contact);
 				}
 
+				dbManager.addUpdateMember(new Member(owner, contactMap.refId, model.getContact(uuid)));
+
 			});
 
 		}
@@ -889,14 +881,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			groupUpdate.remove.forEach(refId -> {
 
-				String uuid = contactMap.map.get(refId);
+				Member member = dbManager.getMember(ownerUuid, refId);
 
-				if (uuid == null || Objects.equals(model.getLocalUuid(), uuid))
+				if (member == null)
 					return;
 
-				Contact contact = getContact(uuid);
-				if (contact != null)
-					contactsToBeRemoved.add(contact);
+				contactsToBeRemoved.add(member.getContact());
 
 			});
 
@@ -1466,10 +1456,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
 					}
 
-					if (!(incomingMessage.getContactRefId() == null || dgroup.getContactMapStr() == null)) {
-						Contact contact = getContact(ContactMap.fromJson(dgroup.getContactMapStr()).map
-								.get(incomingMessage.getContactRefId()));
-						incomingMessage.setOwner(contact);
+					Member member = dbManager.getMember(remoteUuid, incomingMessage.getContactRefId());
+
+					if (member != null) {
+						incomingMessage.setOwner(member.getContact());
 					}
 
 					incomingMessage.setDgroup(dgroup);
@@ -1686,16 +1676,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (dbMessage == null)
 					return;
 
-				ContactMap contactMap = ContactMap.fromJson(dbMessage.getDgroup().getContactMapStr());
-
 				List<Long> ids = new ArrayList<Long>();
 
 				groupMessageStatus.refIds.forEach(refId -> {
 
-					Contact contact = getContact(contactMap.map.get(refId));
+					Member member = dbManager.getMember(remoteUuid, refId);
 
-					if (contact != null)
-						ids.add(contact.getId());
+					if (member != null)
+						ids.add(member.getContact().getId());
 
 				});
 
@@ -1755,8 +1743,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (group == null)
 					return;
 
-				ContactMap contactMap = ContactMap.fromJson(group.getContactMapStr());
-
 				Map<Long, StatusReport> statusReportMap = new HashMap<Long, StatusReport>();
 
 				dbMessage.getStatusReports()
@@ -1774,12 +1760,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				for (StatusReport statusReport : statusReports) {
 
-					Contact contact = getContact(contactMap.map.get(statusReport.getContactId()));
+					Member member = dbManager.getMember(group.getOwner().getUuid(), statusReport.getContactId());
 
-					if (contact == null)
+					if (member == null)
 						continue;
 
-					Long contactId = contact.getId();
+					Long contactId = member.getContact().getId();
 
 					StatusReport oldStatusReport = statusReportMap.get(contactId);
 
@@ -1842,15 +1828,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					Dgroup dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
 
-					if (dgroup == null || incomingMessage.getContactRefId() == null
-							|| dgroup.getContactMapStr() == null)
+					if (dgroup == null)
 						break;
 
-					Contact contact = getContact(
-							ContactMap.fromJson(dgroup.getContactMapStr()).map.get(incomingMessage.getContactRefId()));
+					Member member = dbManager.getMember(remoteUuid, incomingMessage.getContactRefId());
 
-					if (contact != null)
-						contactId = contact.getId();
+					if (member != null)
+						contactId = member.getContact().getId();
 
 					if (dgroup != null)
 						groupId = dgroup.getId();

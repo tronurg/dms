@@ -44,9 +44,6 @@ public class Dgroup {
 	@Column(name = "active", nullable = false)
 	private Boolean active;
 
-	@Column(name = "contact_map_str", length = Integer.MAX_VALUE)
-	private String contactMapStr;
-
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", nullable = false, updatable = false)
 	private Contact owner;
@@ -112,14 +109,6 @@ public class Dgroup {
 
 	public void setActive(Boolean active) {
 		this.active = active;
-	}
-
-	public String getContactMapStr() {
-		return contactMapStr;
-	}
-
-	public void setContactMapStr(String contactMapStr) {
-		this.contactMapStr = contactMapStr;
 	}
 
 	public Contact getOwner() {
