@@ -1116,11 +1116,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		try {
 
-			contact = dbManager.addUpdateContact(contact);
+			final Contact newContact = dbManager.addUpdateContact(contact);
 
-			model.addContact(contact);
+			model.addContact(newContact);
 
-			return contact;
+			Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+			listenerTaskQueue.execute(
+					() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
+
+			return newContact;
 
 		} catch (Exception e) {
 
