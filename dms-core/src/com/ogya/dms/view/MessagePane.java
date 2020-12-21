@@ -116,8 +116,8 @@ class MessagePane extends BorderPane {
 
 	private final List<IMessagePane> listeners = Collections.synchronizedList(new ArrayList<IMessagePane>());
 
-	private final AtomicLong minMessageId = new AtomicLong(-1);
-	private final AtomicLong maxMessageId = new AtomicLong(0);
+	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
+	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
 	MessagePane() {
 
@@ -268,9 +268,10 @@ class MessagePane extends BorderPane {
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
-		if (maxMessageId.get() < messageId) {
+		minMessageId.set(Math.min(minMessageId.get(), messageId));
+		maxMessageId.set(Math.max(maxMessageId.get(), messageId));
 
-			maxMessageId.set(messageId);
+		if (maxMessageId.get() == messageId) {
 
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
 
@@ -285,9 +286,7 @@ class MessagePane extends BorderPane {
 
 			}
 
-		} else if (minMessageId.get() < 0 || messageId < minMessageId.get()) {
-
-			minMessageId.set(messageId);
+		} else if (minMessageId.get() == messageId) {
 
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).day, messageDay)) {
 
