@@ -614,7 +614,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void dmsSendMessage(Message message, Runnable runnable) {
 
-		message.setMessageRefId(message.getId());
+		message.setMessageRefId(null);
 
 		if (message.getDgroup() != null)
 			message.setGroupRefId(message.getDgroup().getGroupRefId());
@@ -1416,6 +1416,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				Message incomingMessage = Message.fromJson(message);
+				incomingMessage.setMessageRefId(incomingMessage.getId());
+				incomingMessage.setId(null);
 
 				Message dbMessage = dbManager.getMessageBySender(remoteUuid, incomingMessage.getMessageRefId());
 
@@ -2149,7 +2151,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void sendMessageClicked(final String messageTxt, final Long receiverId) {
+	public void sendMessageClicked(final String messageTxt, final Long refMessageId, final Long receiverId) {
 
 		taskQueue.execute(() -> {
 

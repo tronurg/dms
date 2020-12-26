@@ -295,31 +295,19 @@ public class DbManager {
 
 		Session session = factory.openSession();
 
-		Message dbMessage = session.createQuery(
-				"from Message where contact.uuid like :contactUuid and messageRefId=:messageRefId and messageDirection like :messageDirection",
-				Message.class).setParameter("contactUuid", message.getContact().getUuid())
-				.setParameter("messageRefId", message.getMessageRefId())
-				.setParameter("messageDirection", message.getMessageDirection()).uniqueResult();
-
-		if (dbMessage == null) {
-
-			dbMessage = message;
-
-			dbMessage.setId(null);
+		if (message.getId() == null) {
 
 			session.beginTransaction();
 
-			session.persist(dbMessage);
+			session.persist(message);
 
 			session.getTransaction().commit();
 
 		} else {
 
-			message.setId(dbMessage.getId());
-
 			session.beginTransaction();
 
-			dbMessage = (Message) session.merge(message);
+			message = (Message) session.merge(message);
 
 			session.getTransaction().commit();
 
@@ -327,7 +315,7 @@ public class DbManager {
 
 		session.close();
 
-		return dbMessage;
+		return message;
 
 	}
 

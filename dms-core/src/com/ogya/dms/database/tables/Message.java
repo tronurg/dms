@@ -16,7 +16,6 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-import javax.persistence.PostPersist;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -35,15 +34,15 @@ public class Message {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@SerializedName(value = "a")
 	private Long id;
 
-	@Column(name = "message_ref_id")
-	@SerializedName(value = "a")
+	@Column(name = "message_ref_id", updatable = false)
+	@SerializedName(value = "b")
 	private Long messageRefId;
 
 	@Column(name = "message_direction", nullable = false, updatable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "b")
 	private MessageDirection messageDirection;
 
 	@Column(name = "receiver_type", nullable = false, updatable = false)
@@ -66,42 +65,40 @@ public class Message {
 
 	@Column(name = "message_status", nullable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "g")
 	private MessageStatus messageStatus;
 
 	@Column(name = "wait_status", nullable = false)
 	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "h")
 	private WaitStatus waitStatus;
 
 	@Column(name = "date", nullable = false, updatable = false)
-	@SerializedName(value = "i")
 	private Date date;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
-	@SerializedName(value = "j")
 	private Contact contact;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "owner_id", nullable = false, updatable = false)
-	@SerializedName(value = "k")
 	private Contact owner;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", updatable = false)
-	@SerializedName(value = "l")
 	private Dgroup dgroup;
 
 	@OneToMany(mappedBy = "message", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-	@SerializedName(value = "m")
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
+	@ManyToOne(fetch = FetchType.EAGER)
+	@JoinColumn(name = "message_id", updatable = false)
+	@SerializedName(value = "g")
+	private Message refMessage;
+
 	@Transient
-	@SerializedName(value = "n")
+	@SerializedName(value = "h")
 	private Long groupRefId;
 	@Transient
-	@SerializedName(value = "o")
+	@SerializedName(value = "i")
 	private Long contactRefId;
 
 	public Message() {
@@ -235,6 +232,14 @@ public class Message {
 		statusReport.setMessage(null);
 	}
 
+	public Message getRefMessage() {
+		return refMessage;
+	}
+
+	public void setRefMessage(Message refMessage) {
+		this.refMessage = refMessage;
+	}
+
 	public Long getGroupRefId() {
 		return groupRefId;
 	}
@@ -273,12 +278,6 @@ public class Message {
 		this.date = new Date();
 		if (this.owner == null)
 			this.owner = this.contact;
-	}
-
-	@PostPersist
-	protected void onPersist() {
-		if (this.messageRefId == null)
-			this.messageRefId = this.id;
 	}
 
 	public String toJson() {

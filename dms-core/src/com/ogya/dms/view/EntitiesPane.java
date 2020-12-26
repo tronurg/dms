@@ -395,9 +395,9 @@ class EntitiesPane extends BorderPane {
 			};
 
 			@Override
-			public void sendMessageClicked(final String message) {
+			public void sendMessageClicked(final String message, final Long refMessageId) {
 
-				entityListeners.forEach(listener -> listener.sendMessageClicked(message, id));
+				entityListeners.forEach(listener -> listener.sendMessageClicked(message, refMessageId, id));
 
 			}
 
@@ -476,7 +476,7 @@ interface IEntitiesPane {
 
 	void paneScrolledToTop(Long id, Long topMessageId);
 
-	void sendMessageClicked(String messageTxt, Long id);
+	void sendMessageClicked(String messageTxt, Long refMessageId, Long id);
 
 	void showFoldersClicked(Long id);
 

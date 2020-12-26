@@ -422,9 +422,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void sendMessageClicked(final String messageTxt, final Long id) {
+	public void sendMessageClicked(final String messageTxt, final Long refMessageId, final Long id) {
 
-		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, id));
+		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, refMessageId, id));
 
 	}
 

@@ -416,7 +416,7 @@ class MessagePane extends BorderPane {
 			if (mesajTxt.isEmpty())
 				return;
 
-			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt));
+			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, null));
 
 		});
 
@@ -963,7 +963,7 @@ interface IMessagePane {
 
 	void paneScrolledToTop(Long topMessageId);
 
-	void sendMessageClicked(String message);
+	void sendMessageClicked(String message, Long refMessageId);
 
 	void showFoldersClicked();
 

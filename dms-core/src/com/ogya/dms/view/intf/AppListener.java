@@ -15,7 +15,7 @@ public interface AppListener {
 
 	void messagePaneClosed(Long id);
 
-	void sendMessageClicked(String messageTxt, Long receiverId);
+	void sendMessageClicked(String messageTxt, Long refMessageId, Long receiverId);
 
 	void showFoldersClicked(Long id);
 
