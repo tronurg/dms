@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.ogya.dms.common.CommonMethods;
 import com.ogya.dms.database.tables.Message;
 import com.ogya.dms.structures.MessageDirection;
 import com.ogya.dms.structures.MessageStatus;
@@ -31,14 +32,18 @@ import javafx.animation.Interpolator;
 import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -48,6 +53,8 @@ import javafx.scene.control.TextFormatter;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
@@ -93,6 +100,7 @@ class MessagePane extends BorderPane {
 	private final Circle statusCircle = new Circle(7.0 * viewFactor);
 	private final Label nameLabel = new Label();
 	private final TextArea messageArea = new TextArea();
+	private final HBox referencePane = new HBox();
 	private final Button sendBtn = ViewFactory.newSendBtn();
 	private final RecordButton recordBtn = new RecordButton();
 	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
@@ -103,6 +111,7 @@ class MessagePane extends BorderPane {
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
+	private final ObjectProperty<Long> referenceMessageProperty = new SimpleObjectProperty<Long>(null);
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
@@ -152,8 +161,6 @@ class MessagePane extends BorderPane {
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
 		messageArea.disableProperty().bind(recordBtn.pressedProperty());
 
-		HBox.setHgrow(messageArea, Priority.ALWAYS);
-
 		messageArea.setOnKeyPressed(e -> {
 
 			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
@@ -174,6 +181,16 @@ class MessagePane extends BorderPane {
 
 		});
 
+//		referencePane.translateXProperty().bind(referencePane.layoutXProperty().negate());
+		referencePane.translateYProperty()
+				.bind(referencePane.heightProperty().add(referencePane.layoutYProperty()).add(GAP).negate());
+
+		StackPane messageAndReferenceArea = new StackPane();
+
+		HBox.setHgrow(messageAndReferenceArea, Priority.ALWAYS);
+
+		messageAndReferenceArea.getChildren().addAll(referencePane, messageArea);
+
 		HBox.setMargin(statusCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
 		nameLabel.getStyleClass().add("blackLabel");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
@@ -182,7 +199,7 @@ class MessagePane extends BorderPane {
 
 		initBtnPane();
 
-		bottomPane.getChildren().addAll(messageArea, btnPane);
+		bottomPane.getChildren().addAll(messageAndReferenceArea, btnPane);
 
 		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
 		bottomPane.visibleProperty().bind(activeProperty);
@@ -251,7 +268,7 @@ class MessagePane extends BorderPane {
 			return;
 
 		boolean isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
-		String senderName = isOutgoing ? null : message.getOwner().getName();
+		String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
 		Long ownerId = message.getOwner().getId();
 
 		long messageId = message.getId();
@@ -263,6 +280,19 @@ class MessagePane extends BorderPane {
 				message.getMessageType(), infoAvailable);
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
+
+		// TODO
+
+		messageBalloon.setOnMouseClicked(e -> {
+
+			if (e.getClickCount() != 2)
+				return;
+
+			referenceMessageProperty.set(messageId);
+
+		});
+
+		//
 
 		messageBalloons.put(messageId, messageBalloon);
 
@@ -407,6 +437,20 @@ class MessagePane extends BorderPane {
 
 		});
 
+		referenceMessageProperty.addListener((e0, e1, e2) -> {
+
+			// TODO
+
+			referencePane.getChildren().clear();
+
+			if (e2 != null) {
+
+				referencePane.getChildren().add(messageBalloons.get(e2).getReferenceBalloon());
+
+			}
+
+		});
+
 		sendBtn.setOnAction(e -> {
 
 			final String mesajTxt = messageArea.getText().trim();
@@ -416,7 +460,7 @@ class MessagePane extends BorderPane {
 			if (mesajTxt.isEmpty())
 				return;
 
-			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, null));
+			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, referenceMessageProperty.getValue()));
 
 		});
 
@@ -697,6 +741,70 @@ class MessagePane extends BorderPane {
 		void setProgress(int progress) {
 
 			progressLbl.setText(progress < 0 ? "" : String.format("%d%%", progress));
+
+		}
+
+		Node getReferenceBalloon() {
+
+			VBox referenceBalloon = new VBox();
+
+			HBox.setHgrow(referenceBalloon, Priority.ALWAYS);
+
+			referenceBalloon
+					.setStyle("-fx-background-color: DARKGRAY;-fx-border-stroke: GRAY;-fx-background-radius: 0.4em;");
+
+			Label nameLabel = new Label(messageInfo.name);
+			nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
+			nameLabel.setTextFill(Color.GRAY);
+
+			referenceBalloon.getChildren().add(nameLabel);
+
+			switch (messageInfo.messageType) {
+
+			case AUDIO:
+
+				SnapshotParameters params = new SnapshotParameters();
+				params.setFill(Color.TRANSPARENT);
+
+				Image snapshot = messageArea.snapshot(params, null);
+
+				ImageView imageView = new ImageView(snapshot);
+
+				imageView.setPreserveRatio(true);
+				imageView.setSmooth(true);
+				imageView.setFitWidth(snapshot.getWidth() * 0.8);
+
+				referenceBalloon.getChildren().add(imageView);
+
+				break;
+
+			default:
+
+				Label messageLbl = new Label(message) {
+					@Override
+					public Orientation getContentBias() {
+						return Orientation.HORIZONTAL;
+					}
+
+					@Override
+					protected double computePrefHeight(double arg0) {
+						return Math.min(super.computePrefHeight(arg0), getFont().getSize() * 5.0);
+					}
+
+				};
+
+				messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
+
+				messageLbl.getStyleClass().add("blackLabel");
+				messageLbl.setWrapText(true);
+
+				referenceBalloon.getChildren().add(messageLbl);
+
+				break;
+
+			}
+
+			return referenceBalloon;
 
 		}
 
