@@ -616,6 +616,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		message.setMessageRefId(null);
 
+		Message refMessage = message.getRefMessage();
+
+		if (refMessage != null) {
+
+			Message newRefMessage = new Message();
+
+			newRefMessage.setId(refMessage.getId());
+			newRefMessage.setMessageRefId(refMessage.getMessageRefId());
+
+			message.setRefMessage(newRefMessage);
+
+		}
+
 		if (message.getDgroup() != null)
 			message.setGroupRefId(message.getDgroup().getGroupRefId());
 
@@ -665,6 +678,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			break;
 
 		}
+
+		message.setRefMessage(refMessage);
 
 	}
 

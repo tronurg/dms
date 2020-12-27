@@ -297,6 +297,8 @@ public class DbManager {
 
 		if (message.getId() == null) {
 
+			resolveReferenceOfMessage(message, session);
+
 			session.beginTransaction();
 
 			session.persist(message);
@@ -558,6 +560,23 @@ public class DbManager {
 		session.close();
 
 		return dbGroups;
+
+	}
+
+	private void resolveReferenceOfMessage(Message message, Session session) throws HibernateException {
+
+		Message refMessage = message.getRefMessage();
+
+		if (refMessage == null)
+			return;
+
+		Message dbMessage = session.createQuery(
+				"from Message where (id=:id or messageRefId=:messageRefId) and contact=:contact and dgroup=:dgroup",
+				Message.class).setParameter("id", refMessage.getMessageRefId())
+				.setParameter("messageRefId", refMessage.getId()).setParameter("contact", message.getContact())
+				.setParameter("dgroup", message.getDgroup()).uniqueResult();
+
+		message.setRefMessage(dbMessage);
 
 	}
 
