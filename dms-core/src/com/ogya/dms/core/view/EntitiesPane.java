@@ -110,7 +110,7 @@ class EntitiesPane extends BorderPane {
 
 	private void initCreateGroupBtn() {
 
-		createGroupBtn.getStyleClass().add("dimButton");
+		createGroupBtn.getStyleClass().add("dim-button");
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
 		createGroupBtn.setPadding(new Insets(2 * GAP));

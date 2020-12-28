@@ -100,7 +100,7 @@ public class FoldersPane extends BorderPane {
 
 		scrollPane.setFitToWidth(true);
 
-		nameLabel.getStyleClass().add("blackLabel");
+		nameLabel.getStyleClass().add("black-label");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
 		topPane.getChildren().addAll(backBtn, nameLabel);

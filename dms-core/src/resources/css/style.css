@@ -7,7 +7,7 @@
 Button, RecordButton {
 	-fx-background-color: transparent;
 }
-.dimButton {
+.dim-button {
 	-fx-font-weight: bold;
 	-fx-text-fill: gray;
 }
@@ -15,13 +15,13 @@ TextField {
 	-fx-background-color: transparent;
 	-fx-text-fill: -text-fill;
 }
-.blackTextField {
+.black-text-field {
 	-fx-text-fill: black;
 }
-.blackLabel {
+.black-label {
 	-fx-text-fill: black;
 }
-.linkLabel:hover {
+.link-label:hover {
 	-fx-text-fill: dodgerblue
 }
 ProgressBar .bar {
@@ -34,4 +34,7 @@ ProgressBar .track {
 }
 Text {
 	-fx-fill: -text-fill;
+}
+.reference-panel {
+	-fx-effect: dropshadow(gaussian, -text-fill, 0.5em, 0, 0, 0);
 }

@@ -132,7 +132,7 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initDurationLbl() {
 
-		durationLbl.getStyleClass().add("blackLabel");
+		durationLbl.getStyleClass().add("black-label");
 
 	}
 

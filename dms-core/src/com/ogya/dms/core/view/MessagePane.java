@@ -89,7 +89,7 @@ class MessagePane extends BorderPane {
 
 	private final HBox topPane = new HBox(GAP);
 	private final VBox centerPane = new VBox(2 * GAP);
-	private final HBox bottomPane = new HBox(GAP);
+	private final GridPane bottomPane = new GridPane();
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
@@ -145,6 +145,8 @@ class MessagePane extends BorderPane {
 		topPane.setPadding(new Insets(GAP));
 		centerPane.setPadding(new Insets(GAP));
 		bottomPane.setPadding(new Insets(GAP));
+		bottomPane.setHgap(GAP);
+		bottomPane.setVgap(GAP);
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -181,25 +183,20 @@ class MessagePane extends BorderPane {
 
 		});
 
-//		referencePane.translateXProperty().bind(referencePane.layoutXProperty().negate());
-		referencePane.translateYProperty()
-				.bind(referencePane.heightProperty().add(referencePane.layoutYProperty()).add(GAP).negate());
-
-		StackPane messageAndReferenceArea = new StackPane();
-
-		HBox.setHgrow(messageAndReferenceArea, Priority.ALWAYS);
-
-		messageAndReferenceArea.getChildren().addAll(referencePane, messageArea);
-
 		HBox.setMargin(statusCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
-		nameLabel.getStyleClass().add("blackLabel");
+		nameLabel.getStyleClass().add("black-label");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
 		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
 
 		initBtnPane();
 
-		bottomPane.getChildren().addAll(messageAndReferenceArea, btnPane);
+		referencePane.getStyleClass().add("reference-panel");
+
+		GridPane.setHgrow(messageArea, Priority.ALWAYS);
+		bottomPane.add(referencePane, 0, 0);
+		bottomPane.add(messageArea, 0, 1);
+		bottomPane.add(btnPane, 1, 1);
 
 		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
 		bottomPane.visibleProperty().bind(activeProperty);
@@ -443,11 +440,8 @@ class MessagePane extends BorderPane {
 
 			referencePane.getChildren().clear();
 
-			if (e2 != null) {
-
+			if (e2 != null)
 				referencePane.getChildren().add(messageBalloons.get(e2).getReferenceBalloon());
-
-			}
 
 		});
 
@@ -746,7 +740,8 @@ class MessagePane extends BorderPane {
 
 		Node getReferenceBalloon() {
 
-			VBox referenceBalloon = new VBox();
+			VBox referenceBalloon = new VBox(GAP);
+			referenceBalloon.setPadding(new Insets(GAP));
 
 			HBox.setHgrow(referenceBalloon, Priority.ALWAYS);
 
@@ -795,7 +790,7 @@ class MessagePane extends BorderPane {
 
 				messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
 
-				messageLbl.getStyleClass().add("blackLabel");
+				messageLbl.getStyleClass().add("black-label");
 				messageLbl.setWrapText(true);
 
 				referenceBalloon.getChildren().add(messageLbl);
@@ -828,7 +823,7 @@ class MessagePane extends BorderPane {
 
 				Label messageLbl = new Label(message);
 
-				messageLbl.getStyleClass().add("blackLabel");
+				messageLbl.getStyleClass().add("black-label");
 				messageLbl.setWrapText(true);
 
 				messageArea.add(messageLbl, 0, 0, 1, 1);

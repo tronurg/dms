@@ -88,7 +88,7 @@ public class SettingsPane extends BorderPane {
 
 	private void initHeadingLabel() {
 
-		headingLabel.getStyleClass().add("blackLabel");
+		headingLabel.getStyleClass().add("black-label");
 		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
 	}
@@ -97,7 +97,7 @@ public class SettingsPane extends BorderPane {
 
 		// EDIT_REMOTE_IPS
 		Label editRemoteIpsLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
-		editRemoteIpsLabel.getStyleClass().add("linkLabel");
+		editRemoteIpsLabel.getStyleClass().add("link-label");
 		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * GAP));
 		editRemoteIpsLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		editRemoteIpsLabel.setOnMouseClicked(e -> {
