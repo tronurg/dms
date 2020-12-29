@@ -38,6 +38,8 @@ public class ReportsDialog extends JDialog {
 
 	private void init() {
 
+		reportsPane.setOnCancelAction(this::hideAndReset);
+
 		initMobility();
 
 		Platform.runLater(() -> {
@@ -61,7 +63,9 @@ public class ReportsDialog extends JDialog {
 
 	}
 
-	public void display() {
+	public void display(Long id) {
+
+		reportsPane.setId(id);
 
 		Rectangle screenBounds = MouseInfo.getPointerInfo().getDevice().getDefaultConfiguration().getBounds();
 

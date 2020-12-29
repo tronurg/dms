@@ -15,9 +15,7 @@ public interface AppListener {
 
 	void messagePaneClosed(Long id);
 
-	void sendMessageClicked(String messageTxt, Long refMessageId, Long receiverId);
-
-	void showFoldersClicked(Long id);
+	void sendMessageClicked(Long id, String messageTxt, Long refMessageId);
 
 	void reportClicked(Long id);
 
@@ -29,9 +27,7 @@ public interface AppListener {
 
 	void deleteGroupRequested();
 
-	void showFoldersCanceled();
-
-	void fileSelected(Path file);
+	void fileSelected(Long id, Path file, Long refMessageId);
 
 	void messageClicked(Long messageId);
 
@@ -47,8 +43,8 @@ public interface AppListener {
 
 	void recordButtonPressed(Long id);
 
-	void recordEventTriggered();
+	void recordEventTriggered(Long id, Long refMessageId);
 
-	void recordButtonReleased();
+	void recordButtonReleased(Long id);
 
 }

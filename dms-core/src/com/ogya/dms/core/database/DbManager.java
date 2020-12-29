@@ -3,6 +3,7 @@ package com.ogya.dms.core.database;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.hibernate.HibernateException;
@@ -336,7 +337,10 @@ public class DbManager {
 
 	}
 
-	public Message getMessageById(long id) throws HibernateException {
+	public Message getMessageById(Long id) throws HibernateException {
+
+		if (id == null)
+			return null;
 
 		Session session = factory.openSession();
 
@@ -567,11 +571,11 @@ public class DbManager {
 
 		Message refMessage = message.getRefMessage();
 
-		if (refMessage == null)
+		if (refMessage == null || Objects.equals(refMessage.getMessageDirection(), MessageDirection.OUT))
 			return;
 
 		Message dbMessage = session.createQuery(
-				"from Message where (id=:id or messageRefId=:messageRefId) and contact=:contact and dgroup=:dgroup",
+				"from Message where (id=:id or messageRefId=:messageRefId) and ((:contact is null and contact is null) or contact=:contact) and ((:dgroup is null and dgroup is null) or dgroup=:dgroup)",
 				Message.class).setParameter("id", refMessage.getMessageRefId())
 				.setParameter("messageRefId", refMessage.getId()).setParameter("contact", message.getContact())
 				.setParameter("dgroup", message.getDgroup()).uniqueResult();

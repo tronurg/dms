@@ -26,7 +26,7 @@ TextField {
 }
 ProgressBar .bar {
 	-fx-background-insets: 1 1 2 1;
-	-fx-padding: 0.30em;
+	-fx-padding: 0.3em;
 }
 ProgressBar .track {
 	-fx-text-box-border: gray;
@@ -37,4 +37,6 @@ Text {
 }
 .reference-panel {
 	-fx-effect: dropshadow(gaussian, -text-fill, 0.5em, 0, 0, 0);
+	-fx-background-color: WHITESMOKE;
+	-fx-background-radius: 0.4em;
 }

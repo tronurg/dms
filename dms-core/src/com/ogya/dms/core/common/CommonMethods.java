@@ -55,8 +55,8 @@ public class CommonMethods {
 
 	private static ResourceBundle langFile;
 
-	private static final List<String> messageGsonExcludedNames = Arrays.asList("messageRefId", "messageDirection",
-			"messageStatus", "waitStatus", "statusReports", "date", "contact", "owner", "dgroup");
+	private static final List<String> messageGsonExcludedNames = Arrays.asList("messageDirection", "messageStatus",
+			"waitStatus", "statusReports", "date", "contact", "owner", "dgroup");
 	private static final List<String> statusReportGsonExcludedNames = Arrays.asList("id", "message");
 
 	private static Gson gson = new GsonBuilder()

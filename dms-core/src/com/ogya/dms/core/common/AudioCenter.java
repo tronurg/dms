@@ -8,14 +8,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.sound.sampled.AudioFileFormat.Type;
-
-import com.ogya.dms.core.factory.DmsFactory;
-
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.TargetDataLine;
+
+import com.ogya.dms.core.factory.DmsFactory;
 
 public class AudioCenter {
 
@@ -56,7 +55,7 @@ public class AudioCenter {
 
 	}
 
-	public void startRecording(final RecordObject recordObject) {
+	public void startRecording(final Long id, final Path path, final Long refId) {
 
 		final TargetDataLine line = targetLineRef.get();
 
@@ -69,7 +68,7 @@ public class AudioCenter {
 
 			try (AudioInputStream audioInputStream = new AudioInputStream(line)) {
 
-				AudioSystem.write(audioInputStream, Type.WAVE, recordObject.path.toFile());
+				AudioSystem.write(audioInputStream, Type.WAVE, path.toFile());
 
 			} catch (Exception e) {
 
@@ -79,7 +78,7 @@ public class AudioCenter {
 
 			}
 
-			listeners.forEach(listener -> listener.recordingStopped(recordObject));
+			listeners.forEach(listener -> listener.recordingStopped(id, path, refId));
 
 		});
 
@@ -100,21 +99,7 @@ public class AudioCenter {
 
 	public static interface AudioCenterListener {
 
-		void recordingStopped(RecordObject recordObject);
-
-	}
-
-	public static final class RecordObject {
-
-		public final Path path;
-		public final Long id;
-
-		public RecordObject(Path path, Long id) {
-
-			this.path = path;
-			this.id = id;
-
-		}
+		void recordingStopped(Long id, Path path, Long refId);
 
 	}
 

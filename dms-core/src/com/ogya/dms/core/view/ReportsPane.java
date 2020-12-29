@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,7 +46,9 @@ public class ReportsPane extends GridPane {
 	private final List<ReportsListener> reportListeners = Collections
 			.synchronizedList(new ArrayList<ReportsListener>());
 
-	public ReportsPane(List<ReportTemplate> templates) {
+	private final AtomicReference<Long> idRef = new AtomicReference<Long>();
+
+	ReportsPane(List<ReportTemplate> templates) {
 
 		super();
 
@@ -89,17 +92,31 @@ public class ReportsPane extends GridPane {
 
 	}
 
-	public void addReportsListener(ReportsListener listener) {
+	void addReportsListener(ReportsListener listener) {
 
 		reportListeners.add(listener);
 
 	}
 
-	public void reset() {
+	void reset() {
+
+		idRef.set(null);
 
 		reportPanes.forEach(reportPane -> reportPane.reset());
 
 		reportsComboBox.getSelectionModel().selectFirst();
+
+	}
+
+	void setId(Long id) {
+
+		idRef.set(id);
+
+	}
+
+	void setOnCancelAction(Runnable action) {
+
+		cancelBtn.setOnAction(e -> action.run());
 
 	}
 
@@ -118,8 +135,6 @@ public class ReportsPane extends GridPane {
 		GridPane.setHalignment(cancelBtn, HPos.RIGHT);
 		GridPane.setValignment(cancelBtn, VPos.TOP);
 
-		cancelBtn.setOnAction(e -> reportListeners.forEach(listener -> listener.cancelReportClicked()));
-
 	}
 
 	private void initReportPaneHolder() {
@@ -131,7 +146,7 @@ public class ReportsPane extends GridPane {
 
 	private void initSendBtn() {
 
-		GridPane.setMargin(sendBtn, new Insets(10.0));
+		GridPane.setMargin(sendBtn, new Insets(2 * GAP));
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
 
@@ -139,8 +154,8 @@ public class ReportsPane extends GridPane {
 				.bind(Bindings.createDoubleBinding(() -> sendBtn.isHover() ? 1.0 : 0.5, sendBtn.hoverProperty()));
 		sendBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
-		sendBtn.setOnAction(
-				e -> reportListeners.forEach(listener -> listener.sendReportClicked(reportsComboBox.getValue(),
+		sendBtn.setOnAction(e -> reportListeners
+				.forEach(listener -> listener.sendReportClicked(idRef.get(), reportsComboBox.getValue(),
 						reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getParagraphs())));
 
 	}
@@ -175,9 +190,7 @@ public class ReportsPane extends GridPane {
 
 	public static interface ReportsListener {
 
-		void sendReportClicked(String reportHeading, List<String> reportParagraphs);
-
-		void cancelReportClicked();
+		void sendReportClicked(Long id, String reportHeading, List<String> reportParagraphs);
 
 	}
 

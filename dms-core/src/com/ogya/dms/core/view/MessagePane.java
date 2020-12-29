@@ -193,8 +193,21 @@ class MessagePane extends BorderPane {
 
 		referencePane.getStyleClass().add("reference-panel");
 
+		// Close Button
+
+		Button closeBtn = ViewFactory.newCancelBtn();
+		GridPane.setMargin(closeBtn, new Insets(GAP));
+		GridPane.setHalignment(closeBtn, HPos.RIGHT);
+		GridPane.setValignment(closeBtn, VPos.TOP);
+		closeBtn.setOnAction(e -> referenceMessageProperty.set(null));
+		closeBtn.visibleProperty().bind(referenceMessageProperty.isNotNull());
+		closeBtn.managedProperty().bind(closeBtn.visibleProperty());
+
+		//
+
 		GridPane.setHgrow(messageArea, Priority.ALWAYS);
 		bottomPane.add(referencePane, 0, 0);
+		bottomPane.add(closeBtn, 0, 0);
 		bottomPane.add(messageArea, 0, 1);
 		bottomPane.add(btnPane, 1, 1);
 
@@ -278,19 +291,6 @@ class MessagePane extends BorderPane {
 
 		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
 
-		// TODO
-
-		messageBalloon.setOnMouseClicked(e -> {
-
-			if (e.getClickCount() != 2)
-				return;
-
-			referenceMessageProperty.set(messageId);
-
-		});
-
-		//
-
 		messageBalloons.put(messageId, messageBalloon);
 
 		LocalDate messageDay = messageDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
@@ -299,6 +299,8 @@ class MessagePane extends BorderPane {
 		maxMessageId.set(Math.max(maxMessageId.get(), messageId));
 
 		if (maxMessageId.get() == messageId) {
+
+			referenceMessageProperty.set(null);
 
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
 
@@ -416,6 +418,12 @@ class MessagePane extends BorderPane {
 
 	}
 
+	Long getRefMessageId() {
+
+		return referenceMessageProperty.get();
+
+	}
+
 	private void registerListeners() {
 
 		nameLabel.setOnMouseClicked(e -> {
@@ -435,8 +443,6 @@ class MessagePane extends BorderPane {
 		});
 
 		referenceMessageProperty.addListener((e0, e1, e2) -> {
-
-			// TODO
 
 			referencePane.getChildren().clear();
 
@@ -470,7 +476,7 @@ class MessagePane extends BorderPane {
 			@Override
 			public void recordEventTriggered() {
 
-				listeners.forEach(listener -> listener.recordEventTriggered());
+				listeners.forEach(listener -> listener.recordEventTriggered(referenceMessageProperty.get()));
 
 			}
 
@@ -600,17 +606,24 @@ class MessagePane extends BorderPane {
 							: null,
 					messageBalloon.activeProperty, messageBalloon.messagePane.hoverProperty()));
 
-			messageBalloon.messagePane.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
-				if (messageBalloon.activeProperty.get())
-					return e -> {
-						if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-							return;
-						listeners.forEach(listener -> listener.messageClicked(message.getId()));
-					};
-				return null;
-			}, messageBalloon.activeProperty));
-
 		}
+
+		messageBalloon.messagePane.setOnMouseClicked(e -> {
+
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
+
+			if (!e.isStillSincePress()) {
+
+				referenceMessageProperty.set(message.getId());
+
+			} else if (messageBalloon.activeProperty.get()) {
+
+				listeners.forEach(listener -> listener.messageClicked(message.getId()));
+
+			}
+
+		});
 
 		if (messageInfo.infoAvailable) {
 
@@ -744,9 +757,6 @@ class MessagePane extends BorderPane {
 			referenceBalloon.setPadding(new Insets(GAP));
 
 			HBox.setHgrow(referenceBalloon, Priority.ALWAYS);
-
-			referenceBalloon
-					.setStyle("-fx-background-color: DARKGRAY;-fx-border-stroke: GRAY;-fx-background-radius: 0.4em;");
 
 			Label nameLabel = new Label(messageInfo.name);
 			nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
@@ -915,7 +925,6 @@ class MessagePane extends BorderPane {
 
 		private final MessageInfo messageInfo;
 
-		private final Label nameLabel;
 		private final VBox messageBox = new VBox(SMALL_GAP);
 
 		private MessageGroup(MessageInfo messageInfo) {
@@ -924,8 +933,6 @@ class MessagePane extends BorderPane {
 
 			this.messageInfo = messageInfo;
 
-			nameLabel = new Label(messageInfo.name);
-
 			init();
 
 		}
@@ -933,8 +940,9 @@ class MessagePane extends BorderPane {
 		private void init() {
 
 			// init nameLabel
-			if (!(messageInfo.name == null || messageInfo.name.isEmpty())) {
+			if (!messageInfo.isOutgoing) {
 
+				Label nameLabel = new Label(messageInfo.name);
 				nameLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
 				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
 				nameLabel.setTextFill(Color.GRAY);
@@ -1080,7 +1088,7 @@ interface IMessagePane {
 
 	void recordButtonPressed();
 
-	void recordEventTriggered();
+	void recordEventTriggered(Long refMessageId);
 
 	void recordButtonReleased();
 

@@ -303,6 +303,24 @@ class EntitiesPane extends BorderPane {
 
 	}
 
+	Long getContactRefMessageId(Long id) {
+
+		if (idContactPane.containsKey(id))
+			return idContactPane.get(id).getMessagePane().getRefMessageId();
+
+		return null;
+
+	}
+
+	Long getGroupRefMessageId(Long id) {
+
+		if (idGroupPane.containsKey(id))
+			return idGroupPane.get(id).getMessagePane().getRefMessageId();
+
+		return null;
+
+	}
+
 	private ContactPane getContactPane(final Long id) {
 
 		if (!idContactPane.containsKey(id)) {
@@ -318,13 +336,13 @@ class EntitiesPane extends BorderPane {
 
 			contactPane.setOnShowMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.showMessagePane(messagePane, id));
+				entityListeners.forEach(listener -> listener.showMessagePane(id, messagePane));
 
 			});
 
 			contactPane.setOnHideMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, id));
+				entityListeners.forEach(listener -> listener.hideMessagePane(id, messagePane));
 
 			});
 
@@ -355,13 +373,13 @@ class EntitiesPane extends BorderPane {
 
 			groupPane.setOnShowMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.showMessagePane(messagePane, -id));
+				entityListeners.forEach(listener -> listener.showMessagePane(-id, messagePane));
 
 			});
 
 			groupPane.setOnHideMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane, -id));
+				entityListeners.forEach(listener -> listener.hideMessagePane(-id, messagePane));
 
 			});
 
@@ -388,6 +406,7 @@ class EntitiesPane extends BorderPane {
 
 			}
 
+			@Override
 			public void reportClicked() {
 
 				entityListeners.forEach(listener -> listener.reportClicked(id));
@@ -397,7 +416,7 @@ class EntitiesPane extends BorderPane {
 			@Override
 			public void sendMessageClicked(final String message, final Long refMessageId) {
 
-				entityListeners.forEach(listener -> listener.sendMessageClicked(message, refMessageId, id));
+				entityListeners.forEach(listener -> listener.sendMessageClicked(id, message, refMessageId));
 
 			}
 
@@ -436,21 +455,24 @@ class EntitiesPane extends BorderPane {
 
 			}
 
+			@Override
 			public void recordButtonPressed() {
 
 				entityListeners.forEach(listener -> listener.recordButtonPressed(id));
 
 			};
 
-			public void recordEventTriggered() {
+			@Override
+			public void recordEventTriggered(final Long refMessageId) {
 
-				entityListeners.forEach(listener -> listener.recordEventTriggered());
+				entityListeners.forEach(listener -> listener.recordEventTriggered(id, refMessageId));
 
 			};
 
+			@Override
 			public void recordButtonReleased() {
 
-				entityListeners.forEach(listener -> listener.recordButtonReleased());
+				entityListeners.forEach(listener -> listener.recordButtonReleased(id));
 
 			};
 
@@ -470,13 +492,13 @@ interface IEntitiesPane {
 
 	void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
-	void showMessagePane(MessagePane messagePane, Long id);
+	void showMessagePane(Long id, MessagePane messagePane);
 
-	void hideMessagePane(MessagePane messagePane, Long id);
+	void hideMessagePane(Long id, MessagePane messagePane);
 
 	void paneScrolledToTop(Long id, Long topMessageId);
 
-	void sendMessageClicked(String messageTxt, Long refMessageId, Long id);
+	void sendMessageClicked(Long id, String messageTxt, Long refMessageId);
 
 	void showFoldersClicked(Long id);
 
@@ -490,8 +512,8 @@ interface IEntitiesPane {
 
 	void recordButtonPressed(Long id);
 
-	void recordEventTriggered();
+	void recordEventTriggered(Long id, Long refMessageId);
 
-	void recordButtonReleased();
+	void recordButtonReleased(Long id);
 
 }

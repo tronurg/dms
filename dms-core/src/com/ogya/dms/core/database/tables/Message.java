@@ -90,7 +90,7 @@ public class Message {
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "message_id", updatable = false)
+	@JoinColumn(name = "ref_message_id", updatable = false)
 	@SerializedName(value = "g")
 	private Message refMessage;
 

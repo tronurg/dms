@@ -315,11 +315,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
+	public Long getRefMessageId(Long id) {
+
+		if (id < 0)
+			return entitiesPane.getGroupRefMessageId(id);
+
+		return entitiesPane.getContactRefMessageId(id);
+
+	}
+
 	private void fileSelected(final Path path) {
 
 		getChildren().remove(foldersPane);
 
-		listeners.forEach(listener -> listener.fileSelected(path));
+		listeners.forEach(listener -> listener.fileSelected(getIdOnScreen(), path, getRefMessageIdOnScreen()));
 
 	}
 
@@ -328,8 +337,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 		getChildren().remove(foldersPane);
 
 		foldersPane.reset();
-
-		listeners.forEach(listener -> listener.showFoldersCanceled());
 
 	}
 
@@ -371,6 +378,29 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
+	private Long getIdOnScreen() {
+
+		if (idOnScreenRef.get() == null)
+			return null;
+
+		return idOnScreenRef.get().getKey();
+
+	}
+
+	private Long getRefMessageIdOnScreen() {
+
+		if (idOnScreenRef.get() == null)
+			return null;
+
+		MessagePane messagePaneOnScreen = idOnScreenRef.get().getValue();
+
+		if (messagePaneOnScreen == null)
+			return null;
+
+		return messagePaneOnScreen.getRefMessageId();
+
+	}
+
 	@Override
 	public void commentUpdateRequested(final String comment) {
 
@@ -393,7 +423,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void showMessagePane(MessagePane messagePane, final Long id) {
+	public void showMessagePane(final Long id, MessagePane messagePane) {
 
 		getChildren().add(messagePane);
 
@@ -404,7 +434,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void hideMessagePane(MessagePane messagePane, final Long id) {
+	public void hideMessagePane(final Long id, MessagePane messagePane) {
 
 		listeners.forEach(listener -> listener.messagePaneClosed(id));
 
@@ -422,9 +452,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void sendMessageClicked(final String messageTxt, final Long refMessageId, final Long id) {
+	public void sendMessageClicked(final Long id, final String messageTxt, final Long refMessageId) {
 
-		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, refMessageId, id));
+		listeners.forEach(listener -> listener.sendMessageClicked(id, messageTxt, refMessageId));
 
 	}
 
@@ -432,8 +462,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	public void showFoldersClicked(final Long id) {
 
 		getChildren().add(foldersPane);
-
-		listeners.forEach(listener -> listener.showFoldersClicked(id));
 
 	}
 
@@ -499,16 +527,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void recordEventTriggered() {
+	public void recordEventTriggered(Long id, final Long refMessageId) {
 
-		listeners.forEach(listener -> listener.recordEventTriggered());
+		listeners.forEach(listener -> listener.recordEventTriggered(id, refMessageId));
 
 	}
 
 	@Override
-	public void recordButtonReleased() {
+	public void recordButtonReleased(final Long id) {
 
-		listeners.forEach(listener -> listener.recordButtonReleased());
+		listeners.forEach(listener -> listener.recordButtonReleased(id));
 
 	}
 
