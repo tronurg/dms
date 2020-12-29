@@ -317,10 +317,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	public Long getRefMessageId(Long id) {
 
-		if (id < 0)
-			return entitiesPane.getGroupRefMessageId(id);
+		if (id > 0)
+			return entitiesPane.getContactRefMessageId(id);
 
-		return entitiesPane.getContactRefMessageId(id);
+		return entitiesPane.getGroupRefMessageId(-id);
 
 	}
 
