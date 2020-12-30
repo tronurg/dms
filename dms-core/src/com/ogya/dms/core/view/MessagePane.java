@@ -339,10 +339,15 @@ class MessagePane extends BorderPane {
 
 	void updateMessageStatus(Message message) {
 
-		MessageBalloon messageBalloon = messageBalloons.get(message.getId());
+		Long messageId = message.getId();
+
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
 		if (messageBalloon == null)
 			return;
+
+		if (Objects.equals(referenceMessageProperty.get(), messageId))
+			referenceMessageProperty.set(null);
 
 		messageBalloon.updateMessageStatus(message.getMessageStatus(),
 				Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED));
@@ -447,7 +452,7 @@ class MessagePane extends BorderPane {
 			referencePane.getChildren().clear();
 
 			if (e2 != null)
-				referencePane.getChildren().add(messageBalloons.get(e2).getReferenceBalloon());
+				referencePane.getChildren().add(messageBalloons.get(e2).newReferenceBalloon());
 
 		});
 
@@ -738,7 +743,7 @@ class MessagePane extends BorderPane {
 			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
 
 			if (canceled && messageInfo.isOutgoing)
-				messageArea.setDisable(true);
+				setDisable(true);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());
@@ -751,7 +756,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		Node getReferenceBalloon() {
+		Node newReferenceBalloon() {
 
 			VBox referenceBalloon = new VBox(GAP);
 			referenceBalloon.setPadding(new Insets(GAP));
@@ -846,23 +851,42 @@ class MessagePane extends BorderPane {
 
 		private void initIncomingMessagePane() {
 
-			messagePane.add(messageArea, 0, 0, 1, 1);
-			messagePane.add(timeLbl, 0, 1, 1, 1);
+			// TODO
+
+//			Node referenceBalloon = newReferenceBalloon();
+//			referenceBalloon.getStyleClass().add("reference-balloon");
+//			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
+//
+//			messagePane.add(referenceBalloon, 0, 0);
+
+			//
+
+			messagePane.add(messageArea, 0, 1, 1, 1);
+			messagePane.add(timeLbl, 0, 2, 1, 1);
 
 		}
 
 		private void initOutgoingMessagePane() {
 
-			initMessagePane();
 			initProgressLbl();
 			initInfoGrp();
 			initCancelBtn();
 
-			messagePane.add(messageArea, 0, 0, 2, 1);
-			messagePane.add(infoGrp, 0, 1, 1, 1);
-			messagePane.add(progressLbl, 0, 1, 1, 1);
-			messagePane.add(timeLbl, 1, 1, 1, 1);
-			messagePane.add(cancelBtn, 0, 0, 2, 1);
+			// TODO
+
+//			Node referenceBalloon = newReferenceBalloon();
+//			referenceBalloon.getStyleClass().add("reference-balloon");
+//			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
+//
+//			messagePane.add(referenceBalloon, 0, 0);
+
+			//
+
+			messagePane.add(messageArea, 0, 1, 2, 1);
+			messagePane.add(infoGrp, 0, 2, 1, 1);
+			messagePane.add(progressLbl, 0, 2, 1, 1);
+			messagePane.add(timeLbl, 1, 2, 1, 1);
+			messagePane.add(cancelBtn, 0, 0, 2, 2);
 
 		}
 
@@ -916,6 +940,7 @@ class MessagePane extends BorderPane {
 			cancelBtn.opacityProperty().bind(
 					Bindings.createDoubleBinding(() -> cancelBtn.isHover() ? 1.0 : 0.5, cancelBtn.hoverProperty()));
 			cancelBtn.visibleProperty().bind(messagePane.hoverProperty().and(cancellableProperty));
+			cancelBtn.managedProperty().bind(cancelBtn.visibleProperty());
 
 		}
 

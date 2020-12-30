@@ -571,14 +571,58 @@ public class DbManager {
 
 		Message refMessage = message.getRefMessage();
 
-		if (refMessage == null || Objects.equals(refMessage.getMessageDirection(), MessageDirection.OUT))
+		if (refMessage == null || Objects.equals(message.getMessageDirection(), MessageDirection.OUT))
 			return;
 
-		Message dbMessage = session.createQuery(
-				"from Message where (id=:id or messageRefId=:messageRefId) and ((:contact is null and contact is null) or contact=:contact) and ((:dgroup is null and dgroup is null) or dgroup=:dgroup)",
-				Message.class).setParameter("id", refMessage.getMessageRefId())
-				.setParameter("messageRefId", refMessage.getId()).setParameter("contact", message.getContact())
-				.setParameter("dgroup", message.getDgroup()).uniqueResult();
+		Message dbMessage = null;
+
+		try {
+
+			if (refMessage.getMessageRefId() == null) {
+
+				dbMessage = session
+						.createQuery("from Message where messageRefId=:messageRefId and contact=:contact",
+								Message.class)
+						.setParameter("messageRefId", refMessage.getId()).setParameter("contact", message.getContact())
+						.uniqueResult();
+
+			} else {
+
+				switch (message.getReceiverType()) {
+
+				case CONTACT:
+				case GROUP_OWNER:
+
+					dbMessage = session.createQuery("from Message where id=:id", Message.class)
+							.setParameter("messageRefId", refMessage.getMessageRefId()).uniqueResult();
+
+					break;
+
+				case GROUP_MEMBER:
+
+					dbMessage = session
+							.createQuery("from Message where messageRefId=:messageRefId and contact=:contact",
+									Message.class)
+							.setParameter("messageRefId", refMessage.getId())
+							.setParameter("contact", message.getContact()).uniqueResult();
+
+					if (dbMessage == null) {
+
+						dbMessage = session.createQuery("from Message where id=:id and contact=:contact", Message.class)
+								.setParameter("id", refMessage.getMessageRefId())
+								.setParameter("contact", message.getContact()).uniqueResult();
+
+					}
+
+					break;
+
+				}
+
+			}
+
+		} catch (Exception e) {
+
+		}
 
 		message.setRefMessage(dbMessage);
 
