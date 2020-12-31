@@ -615,9 +615,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void dmsSendMessage(Message message, Runnable runnable) {
 
-		message.setMessageRefId(null);
+		Message copyMessage = new Message(message);
 
-		Message refMessage = message.getRefMessage();
+		copyMessage.setMessageRefId(null);
+
+		Message refMessage = copyMessage.getRefMessage();
 
 		if (refMessage != null) {
 
@@ -626,49 +628,45 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			newRefMessage.setId(refMessage.getId());
 			newRefMessage.setMessageRefId(refMessage.getMessageRefId());
 
-			message.setRefMessage(newRefMessage);
+			copyMessage.setRefMessage(newRefMessage);
 
 		}
 
-		if (message.getDgroup() != null)
-			message.setGroupRefId(message.getDgroup().getGroupRefId());
+		if (copyMessage.getDgroup() != null)
+			copyMessage.setGroupRefId(copyMessage.getDgroup().getGroupRefId());
 
-		if (Objects.equals(message.getMessageDirection(), MessageDirection.IN)
-				&& Objects.equals(message.getReceiverType(), ReceiverType.GROUP_OWNER))
-			message.setReceiverType(ReceiverType.GROUP_MEMBER);
+		if (Objects.equals(copyMessage.getMessageDirection(), MessageDirection.IN)
+				&& Objects.equals(copyMessage.getReceiverType(), ReceiverType.GROUP_OWNER))
+			copyMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
 
-		if (Objects.equals(message.getMessageDirection(), MessageDirection.IN)
-				&& Objects.equals(message.getReceiverType(), ReceiverType.GROUP_MEMBER))
-			message.setContactRefId(message.getContact().getId());
+		if (Objects.equals(copyMessage.getMessageDirection(), MessageDirection.IN)
+				&& Objects.equals(copyMessage.getReceiverType(), ReceiverType.GROUP_MEMBER))
+			copyMessage.setContactRefId(copyMessage.getContact().getId());
 
-		switch (message.getMessageType()) {
+		switch (copyMessage.getMessageType()) {
 
 		case FILE:
 		case AUDIO:
 
-			String messageContent = message.getContent();
-
-			Path path = Paths.get(messageContent);
+			Path path = Paths.get(copyMessage.getContent());
 
 			try {
 
 				byte[] fileBytes = Files.readAllBytes(path);
 
-				message.setContent(
+				copyMessage.setContent(
 						new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
 								.toJson());
 
 			} catch (Exception e) {
 
-				message.setContent("");
+				copyMessage.setContent("");
 
 				e.printStackTrace();
 
 			}
 
 			runnable.run();
-
-			message.setContent(messageContent);
 
 			break;
 
@@ -679,8 +677,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			break;
 
 		}
-
-		message.setRefMessage(refMessage);
 
 	}
 

@@ -114,6 +114,27 @@ public class Message {
 		this.content = content;
 	}
 
+	public Message(Message message) {
+		super();
+		this.id = message.id;
+		this.messageRefId = message.messageRefId;
+		this.messageDirection = message.messageDirection;
+		this.receiverType = message.receiverType;
+		this.messageType = message.messageType;
+		this.messageCode = message.messageCode;
+		this.content = message.content;
+		this.messageStatus = message.messageStatus;
+		this.waitStatus = message.waitStatus;
+		this.date = message.date;
+		this.contact = message.contact;
+		this.owner = message.owner;
+		this.dgroup = message.dgroup;
+		this.statusReports = message.statusReports;
+		this.refMessage = message.refMessage;
+		this.groupRefId = message.groupRefId;
+		this.contactRefId = message.contactRefId;
+	}
+
 	public Long getId() {
 		return id;
 	}
