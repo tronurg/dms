@@ -594,7 +594,7 @@ public class DbManager {
 				case GROUP_OWNER:
 
 					dbMessage = session.createQuery("from Message where id=:id", Message.class)
-							.setParameter("messageRefId", refMessage.getMessageRefId()).uniqueResult();
+							.setParameter("id", refMessage.getMessageRefId()).uniqueResult();
 
 					break;
 

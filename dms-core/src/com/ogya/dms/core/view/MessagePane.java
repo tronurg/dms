@@ -599,34 +599,36 @@ class MessagePane extends BorderPane {
 
 		if (Objects.equals(messageInfo.messageType, MessageType.FILE)) {
 
-			messageBalloon.messagePane.cursorProperty()
+			messageBalloon.messageArea.cursorProperty()
 					.bind(Bindings.createObjectBinding(
 							() -> messageBalloon.activeProperty.get() ? Cursor.HAND : Cursor.DEFAULT,
 							messageBalloon.activeProperty));
 
+			messageBalloon.messageArea.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
+				if (messageBalloon.activeProperty.get())
+					return e -> {
+						if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+							return;
+						listeners.forEach(listener -> listener.messageClicked(message.getId()));
+					};
+				return null;
+			}, messageBalloon.activeProperty));
+
 			final DropShadow dropShadow = new DropShadow();
 
 			messageBalloon.messagePane.effectProperty().bind(Bindings.createObjectBinding(
-					() -> messageBalloon.activeProperty.get() && messageBalloon.messagePane.isHover() ? dropShadow
+					() -> messageBalloon.activeProperty.get() && messageBalloon.messageArea.isHover() ? dropShadow
 							: null,
-					messageBalloon.activeProperty, messageBalloon.messagePane.hoverProperty()));
+					messageBalloon.activeProperty, messageBalloon.messageArea.hoverProperty()));
 
 		}
 
-		messageBalloon.messagePane.setOnMouseClicked(e -> {
+		messageBalloon.setOnMouseClicked(e -> {
 
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY) || e.isStillSincePress())
 				return;
 
-			if (!e.isStillSincePress()) {
-
-				referenceMessageProperty.set(message.getId());
-
-			} else if (messageBalloon.activeProperty.get()) {
-
-				listeners.forEach(listener -> listener.messageClicked(message.getId()));
-
-			}
+			referenceMessageProperty.set(message.getId());
 
 		});
 
@@ -853,11 +855,12 @@ class MessagePane extends BorderPane {
 
 			// TODO
 
-//			Node referenceBalloon = newReferenceBalloon();
-//			referenceBalloon.getStyleClass().add("reference-balloon");
-//			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
-//
-//			messagePane.add(referenceBalloon, 0, 0);
+			Node referenceBalloon = newReferenceBalloon();
+			referenceBalloon.getStyleClass().add("reference-balloon");
+			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
+			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
+
+			messagePane.add(referenceBalloon, 0, 0, 1, 1);
 
 			//
 
@@ -874,11 +877,12 @@ class MessagePane extends BorderPane {
 
 			// TODO
 
-//			Node referenceBalloon = newReferenceBalloon();
-//			referenceBalloon.getStyleClass().add("reference-balloon");
-//			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
-//
-//			messagePane.add(referenceBalloon, 0, 0);
+			Node referenceBalloon = newReferenceBalloon();
+			referenceBalloon.getStyleClass().add("reference-balloon");
+			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
+			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
+
+			messagePane.add(referenceBalloon, 0, 0, 2, 1);
 
 			//
 
@@ -891,6 +895,8 @@ class MessagePane extends BorderPane {
 		}
 
 		private void initMessagePane() {
+
+			messagePane.setStyle("-fx-min-width: 6em;");
 
 			GridPane.setFillWidth(messagePane, false);
 
