@@ -117,6 +117,8 @@ class MessagePane extends BorderPane {
 
 	private final Map<Long, MessageBalloon> messageBalloons = Collections
 			.synchronizedMap(new HashMap<Long, MessageBalloon>());
+	private final Map<Long, MessageBalloon> transientBalloons = Collections
+			.synchronizedMap(new HashMap<Long, MessageBalloon>());
 
 	private final AtomicBoolean autoScroll = new AtomicBoolean(true);
 
@@ -274,22 +276,32 @@ class MessagePane extends BorderPane {
 
 	void addMessage(Message message) {
 
-		if (messageBalloons.containsKey(message.getId()))
+		Long messageId = message.getId();
+
+		if (messageBalloons.containsKey(messageId))
 			return;
 
 		boolean isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
-		String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
-		Long ownerId = message.getOwner().getId();
-
-		long messageId = message.getId();
 		Date messageDate = message.getDate();
 
-		boolean infoAvailable = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) && isOutgoing;
+		MessageBalloon messageBalloon = transientBalloons.remove(messageId);
 
-		MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isOutgoing,
-				message.getMessageType(), infoAvailable);
+		if (messageBalloon == null) {
 
-		MessageBalloon messageBalloon = newMessageBalloon(message, messageInfo);
+			String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
+			Long ownerId = message.getOwner().getId();
+
+			boolean infoAvailable = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) && isOutgoing;
+
+			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isOutgoing,
+					message.getMessageType(), infoAvailable);
+
+			messageBalloon = newMessageBalloon(message, messageInfo);
+
+		}
+
+		if (message.getRefMessage() != null)
+			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
 
 		messageBalloons.put(messageId, messageBalloon);
 
@@ -497,6 +509,38 @@ class MessagePane extends BorderPane {
 		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
 
 		reportBtn.setOnAction(e -> listeners.forEach(listener -> listener.reportClicked()));
+
+	}
+
+	private Node getReferenceBalloon(Message message) {
+
+		Long messageId = message.getId();
+
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
+
+		if (messageBalloon == null)
+			messageBalloon = transientBalloons.get(messageId);
+
+		if (messageBalloon == null) {
+
+			boolean isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
+			Date messageDate = message.getDate();
+
+			String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
+			Long ownerId = message.getOwner().getId();
+
+			boolean infoAvailable = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) && isOutgoing;
+
+			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isOutgoing,
+					message.getMessageType(), infoAvailable);
+
+			messageBalloon = newMessageBalloon(message, messageInfo);
+
+			transientBalloons.put(messageId, messageBalloon);
+
+		}
+
+		return messageBalloon.newReferenceBalloon();
 
 	}
 
@@ -763,8 +807,6 @@ class MessagePane extends BorderPane {
 			VBox referenceBalloon = new VBox(GAP);
 			referenceBalloon.setPadding(new Insets(GAP));
 
-			HBox.setHgrow(referenceBalloon, Priority.ALWAYS);
-
 			Label nameLabel = new Label(messageInfo.name);
 			nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
 			nameLabel.setTextFill(Color.GRAY);
@@ -805,9 +847,9 @@ class MessagePane extends BorderPane {
 
 				};
 
-				messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
-
 				messageLbl.getStyleClass().add("black-label");
+
+				messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
 				messageLbl.setWrapText(true);
 
 				referenceBalloon.getChildren().add(messageLbl);
@@ -817,6 +859,16 @@ class MessagePane extends BorderPane {
 			}
 
 			return referenceBalloon;
+
+		}
+
+		void addReferenceBalloon(Node referenceBalloon) {
+
+			referenceBalloon.getStyleClass().add("reference-balloon");
+			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
+			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
+
+			messagePane.add(referenceBalloon, 0, 0, 2, 1);
 
 		}
 
@@ -853,18 +905,9 @@ class MessagePane extends BorderPane {
 
 		private void initIncomingMessagePane() {
 
-			// TODO
+			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
 
-			Node referenceBalloon = newReferenceBalloon();
-			referenceBalloon.getStyleClass().add("reference-balloon");
-			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
-			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
-
-			messagePane.add(referenceBalloon, 0, 0, 1, 1);
-
-			//
-
-			messagePane.add(messageArea, 0, 1, 1, 1);
+			messagePane.add(messageArea, 0, 1, 2, 1);
 			messagePane.add(timeLbl, 0, 2, 1, 1);
 
 		}
@@ -874,17 +917,6 @@ class MessagePane extends BorderPane {
 			initProgressLbl();
 			initInfoGrp();
 			initCancelBtn();
-
-			// TODO
-
-			Node referenceBalloon = newReferenceBalloon();
-			referenceBalloon.getStyleClass().add("reference-balloon");
-			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
-			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
-
-			messagePane.add(referenceBalloon, 0, 0, 2, 1);
-
-			//
 
 			messagePane.add(messageArea, 0, 1, 2, 1);
 			messagePane.add(infoGrp, 0, 2, 1, 1);

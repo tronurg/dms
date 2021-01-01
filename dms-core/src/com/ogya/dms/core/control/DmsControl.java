@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -603,17 +604,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void dmsSendMessage(Message message, String receiverUuid) {
 
-		dmsSendMessage(message, () -> dmsClient.sendMessage(message, receiverUuid, message.getId()));
+		dmsSendMessage(message, updatedMessage -> dmsClient.sendMessage(updatedMessage, receiverUuid, message.getId()));
 
 	}
 
 	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) {
 
-		dmsSendMessage(message, () -> dmsClient.sendMessage(message, receiverUuids, message.getId()));
+		dmsSendMessage(message,
+				updatedMessage -> dmsClient.sendMessage(updatedMessage, receiverUuids, message.getId()));
 
 	}
 
-	private void dmsSendMessage(Message message, Runnable runnable) {
+	private void dmsSendMessage(Message message, Consumer<Message> consumer) {
 
 		Message copyMessage = new Message(message);
 
@@ -666,17 +668,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
-			runnable.run();
-
 			break;
 
 		default:
 
-			runnable.run();
-
 			break;
 
 		}
+
+		consumer.accept(copyMessage);
 
 	}
 

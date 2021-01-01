@@ -89,7 +89,7 @@ public class Message {
 	@OneToMany(mappedBy = "message", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
-	@ManyToOne(fetch = FetchType.EAGER)
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ref_message_id", updatable = false)
 	@SerializedName(value = "g")
 	private Message refMessage;
