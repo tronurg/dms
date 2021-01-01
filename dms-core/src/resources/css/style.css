@@ -32,6 +32,9 @@ ProgressBar .track {
 	-fx-text-box-border: gray;
 	-fx-control-inner-background: white;
 }
+.dummy .bar  {
+	-fx-padding: 0.2em;
+}
 Text {
 	-fx-fill: -text-fill;
 }

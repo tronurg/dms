@@ -43,7 +43,6 @@ import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.SnapshotParameters;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -53,8 +52,6 @@ import javafx.scene.control.TextFormatter;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
@@ -817,19 +814,11 @@ class MessagePane extends BorderPane {
 
 			case AUDIO:
 
-				SnapshotParameters params = new SnapshotParameters();
-				params.setFill(Color.TRANSPARENT);
+				DmsDummyPlayer dmsDummyPlayer = new DmsDummyPlayer();
 
-				Image snapshot = messageArea.snapshot(params, null);
+				VBox.setMargin(dmsDummyPlayer, new Insets(0.0, 0.0, 0.0, GAP));
 
-				ImageView imageView = new ImageView(snapshot);
-
-				imageView.setPreserveRatio(true);
-				imageView.setSmooth(true);
-				imageView.setFitWidth(snapshot.getWidth() * 0.8);
-				VBox.setMargin(imageView, new Insets(0.0, 0.0, 0.0, GAP));
-
-				referenceBalloon.getChildren().add(imageView);
+				referenceBalloon.getChildren().add(dmsDummyPlayer);
 
 				break;
 
