@@ -291,10 +291,10 @@ class MessagePane extends BorderPane {
 			String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
 			Long ownerId = message.getOwner().getId();
 
-			boolean infoAvailable = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) && isOutgoing;
+			boolean isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
 
-			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isOutgoing,
-					message.getMessageType(), infoAvailable);
+			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isGroup, isOutgoing,
+					message.getMessageType());
 
 			messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -529,10 +529,10 @@ class MessagePane extends BorderPane {
 			String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
 			Long ownerId = message.getOwner().getId();
 
-			boolean infoAvailable = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) && isOutgoing;
+			boolean isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
 
-			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isOutgoing,
-					message.getMessageType(), infoAvailable);
+			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isGroup, isOutgoing,
+					message.getMessageType());
 
 			messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -827,6 +827,7 @@ class MessagePane extends BorderPane {
 				imageView.setPreserveRatio(true);
 				imageView.setSmooth(true);
 				imageView.setFitWidth(snapshot.getWidth() * 0.8);
+				VBox.setMargin(imageView, new Insets(0.0, 0.0, 0.0, GAP));
 
 				referenceBalloon.getChildren().add(imageView);
 
@@ -851,6 +852,7 @@ class MessagePane extends BorderPane {
 
 				messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
 				messageLbl.setWrapText(true);
+				VBox.setMargin(messageLbl, new Insets(0.0, 0.0, 0.0, GAP));
 
 				referenceBalloon.getChildren().add(messageLbl);
 
@@ -1003,7 +1005,7 @@ class MessagePane extends BorderPane {
 		private void init() {
 
 			// init nameLabel
-			if (!messageInfo.isOutgoing) {
+			if (messageInfo.isGroup && !messageInfo.isOutgoing) {
 
 				Label nameLabel = new Label(messageInfo.name);
 				nameLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
@@ -1111,19 +1113,21 @@ class MessagePane extends BorderPane {
 		final Long ownerId;
 		final String name;
 		final Date date;
+		final boolean isGroup;
 		final boolean isOutgoing;
 		final MessageType messageType;
 		final boolean infoAvailable;
 
-		MessageInfo(Long ownerId, String name, Date date, boolean isOutgoing, MessageType messageType,
-				boolean infoAvailable) {
+		MessageInfo(Long ownerId, String name, Date date, boolean isGroup, boolean isOutgoing,
+				MessageType messageType) {
 
 			this.ownerId = ownerId;
 			this.name = name;
 			this.date = date;
+			this.isGroup = isGroup;
 			this.isOutgoing = isOutgoing;
 			this.messageType = messageType;
-			this.infoAvailable = infoAvailable;
+			this.infoAvailable = isGroup && isOutgoing;
 
 		}
 
