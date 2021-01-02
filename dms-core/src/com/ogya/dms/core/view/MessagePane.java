@@ -542,7 +542,15 @@ class MessagePane extends BorderPane {
 
 		}
 
-		return messageBalloon.newReferenceBalloon();
+		Node referenceBalloon = messageBalloon.newReferenceBalloon();
+
+		referenceBalloon.setOnMouseClicked(e -> {
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
+			scrollPaneToMessage(messageId);
+		});
+
+		return referenceBalloon;
 
 	}
 
