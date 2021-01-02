@@ -32,8 +32,10 @@ import javafx.animation.Interpolator;
 import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -66,7 +68,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -104,6 +105,8 @@ class MessagePane extends BorderPane {
 	private final Button reportBtn = ViewFactory.newReportBtn();
 	private final StackPane btnPane = new StackPane();
 
+	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * viewFactor);
+
 	private final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
@@ -121,6 +124,8 @@ class MessagePane extends BorderPane {
 
 	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
+
+	private final DoubleProperty dragPosProperty = new SimpleDoubleProperty(0.0);
 
 	private final List<IMessagePane> listeners = Collections.synchronizedList(new ArrayList<IMessagePane>());
 
@@ -630,6 +635,8 @@ class MessagePane extends BorderPane {
 
 	private MessageBalloon newMessageBalloon(Message message, MessageInfo messageInfo) {
 
+		final Long messageId = message.getId();
+
 		String content = message.getContent();
 		if (Objects.equals(message.getMessageType(), MessageType.FILE))
 			content = Paths.get(content).getFileName().toString();
@@ -650,7 +657,7 @@ class MessagePane extends BorderPane {
 					return e -> {
 						if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 							return;
-						listeners.forEach(listener -> listener.messageClicked(message.getId()));
+						listeners.forEach(listener -> listener.messageClicked(messageId));
 					};
 				return null;
 			}, messageBalloon.activeProperty));
@@ -664,26 +671,41 @@ class MessagePane extends BorderPane {
 
 		}
 
-		messageBalloon.setOnMouseClicked(e -> {
-
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY) || e.isStillSincePress())
+		messageBalloon.setOnMousePressed(e -> {
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
-
-			referenceMessageProperty.set(message.getId());
-
+			dragPosProperty.set(e.getSceneX());
+		});
+		messageBalloon.setOnMouseDragged(e -> {
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
+			if (replyGroup.getParent() != messageBalloon)
+				messageBalloon.addReplyGroup(replyGroup);
+			double diff = e.getSceneX() - dragPosProperty.get();
+			dragPosProperty.set(e.getSceneX());
+			double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
+			double translate = 4.0 * radius;
+			messageBalloon.setTranslateX(translate);
+			replyGroup.inner.setRadius(radius);
+		});
+		messageBalloon.setOnMouseReleased(e -> {
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
+			messageBalloon.setTranslateX(0.0);
+			if (replyGroup.inner.getRadius() == replyGroup.radius)
+				referenceMessageProperty.set(messageId);
+			replyGroup.inner.setRadius(0.0);
 		});
 
 		if (messageInfo.infoAvailable) {
 
-			messageBalloon.infoBtn
-					.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(message.getId())));
+			messageBalloon.infoBtn.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(messageId)));
 
 		}
 
 		if (messageInfo.isOutgoing) {
 
-			messageBalloon.cancelBtn
-					.setOnAction(e -> listeners.forEach(listener -> listener.cancelClicked(message.getId())));
+			messageBalloon.cancelBtn.setOnAction(e -> listeners.forEach(listener -> listener.cancelClicked(messageId)));
 
 		}
 
@@ -707,8 +729,6 @@ class MessagePane extends BorderPane {
 		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
 		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button cancelBtn = ViewFactory.newCancelBtn();
-
-		private final Region gap = new Region();
 
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 		private final BooleanProperty cancellableProperty = new SimpleBooleanProperty(false);
@@ -749,7 +769,6 @@ class MessagePane extends BorderPane {
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
 				GridPane.setHalignment(messageArea, HPos.RIGHT);
 
-				add(gap, 0, 0, 1, 1);
 				add(messagePane, 1, 0, 1, 1);
 				if (messageInfo.infoAvailable) {
 					infoBtn.setPadding(new Insets(0.0, 0.0, 0.0, GAP));
@@ -769,10 +788,13 @@ class MessagePane extends BorderPane {
 				GridPane.setHalignment(messageArea, HPos.LEFT);
 
 				add(messagePane, 0, 0, 1, 1);
-				add(gap, 1, 0, 1, 1);
 
 			}
 
+		}
+
+		void addReplyGroup(ReplyGroup replyGroup) {
+			add(replyGroup, 0, 0, 1, 1);
 		}
 
 		void updateMessageStatus(MessageStatus messageStatus, boolean canceled) {
@@ -1093,6 +1115,29 @@ class MessagePane extends BorderPane {
 				messageGroups.get(messageGroups.size() - 1).addMessageBalloonToBottom(messageBalloon);
 			}
 
+		}
+
+	}
+
+	private class ReplyGroup extends Group {
+
+		private final double radius;
+
+		private final Circle outer = new Circle();
+		private final Circle inner = new Circle();
+
+		private ReplyGroup(double radius) {
+			super();
+			this.radius = radius;
+			init();
+		}
+
+		private void init() {
+			outer.setRadius(radius);
+			outer.setFill(Color.LIGHTSKYBLUE);
+			inner.setFill(Color.DEEPSKYBLUE);
+			getChildren().addAll(outer, inner);
+			setTranslateX(-2.0 * (radius + GAP));
 		}
 
 	}
