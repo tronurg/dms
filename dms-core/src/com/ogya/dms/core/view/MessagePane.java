@@ -132,6 +132,8 @@ class MessagePane extends BorderPane {
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
+	private final AtomicLong futureReference = new AtomicLong();
+
 	MessagePane() {
 
 		super();
@@ -329,6 +331,9 @@ class MessagePane extends BorderPane {
 
 			}
 
+			if (isOutgoing)
+				scrollPaneToBottom();
+
 		} else if (minMessageId.get() == messageId) {
 
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(0).day, messageDay)) {
@@ -344,10 +349,15 @@ class MessagePane extends BorderPane {
 
 			}
 
-		}
+			if (Objects.equals(messageId, futureReference.get())) {
 
-		if (isOutgoing)
-			scrollPaneToBottom();
+				futureReference.set(0L);
+
+				scrollPaneToMessage(messageId);
+
+			}
+
+		}
 
 	}
 
@@ -547,14 +557,19 @@ class MessagePane extends BorderPane {
 		referenceBalloon.setOnMouseClicked(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
-			scrollPaneToMessage(messageId);
+			if (messageBalloons.containsKey(messageId)) {
+				scrollPaneToMessage(messageId);
+			} else {
+				futureReference.set(messageId);
+				listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
+			}
 		});
 
 		return referenceBalloon;
 
 	}
 
-	private void scrollPane(Node kaydirilacakNode, double bias) {
+	private void scrollPane(Node nodeToScrollTo, double bias) {
 
 		scrollPane.applyCss();
 		scrollPane.layout();
@@ -565,7 +580,7 @@ class MessagePane extends BorderPane {
 		if (centerPaneHeight < scrollPaneViewportHeight)
 			return;
 
-		Double scrollY = centerPane.sceneToLocal(kaydirilacakNode.localToScene(0.0, 0.0)).getY() - bias;
+		Double scrollY = centerPane.sceneToLocal(nodeToScrollTo.localToScene(0.0, 0.0)).getY() - bias;
 
 		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
 
@@ -1182,6 +1197,8 @@ interface IMessagePane {
 	void editClicked();
 
 	void paneScrolledToTop(Long topMessageId);
+
+	void messagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
 
 	void sendMessageClicked(String message, Long refMessageId);
 

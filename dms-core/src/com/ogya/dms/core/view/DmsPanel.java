@@ -445,9 +445,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void paneScrolledToTop(final Long id, Long topMessageId) {
+	public void paneScrolledToTop(final Long id, final Long topMessageId) {
 
 		listeners.forEach(listener -> listener.paneScrolledToTop(id, topMessageId));
+
+	}
+
+	@Override
+	public void messagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
+
+		listeners.forEach(listener -> listener.messagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl));
 
 	}
 

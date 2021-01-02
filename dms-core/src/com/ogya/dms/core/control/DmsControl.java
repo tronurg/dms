@@ -2234,20 +2234,28 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void paneScrolledToTop(Long id, Long topMessageId) {
+	public void paneScrolledToTop(final Long id, final Long topMessageId) {
 
 		if (topMessageId == Long.MAX_VALUE)
 			return;
 
 		taskQueue.execute(() -> {
 
-			if (id > 0) {
+			try {
 
-				contactPaneScrolledToTop(id, topMessageId);
+				if (id > 0) {
 
-			} else {
+					contactPaneScrolledToTop(id, topMessageId);
 
-				groupPaneScrolledToTop(id, topMessageId);
+				} else {
+
+					groupPaneScrolledToTop(id, topMessageId);
+
+				}
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -2255,7 +2263,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void contactPaneScrolledToTop(final Long id, final Long topMessageId) {
+	private void contactPaneScrolledToTop(final Long id, final Long topMessageId) throws HibernateException {
 
 		if (topMessageId < 0)
 			return;
@@ -2274,7 +2282,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void groupPaneScrolledToTop(final Long id, final Long topMessageId) {
+	private void groupPaneScrolledToTop(final Long id, final Long topMessageId) throws HibernateException {
 
 		if (topMessageId < 0)
 			return;
@@ -2290,6 +2298,102 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
 		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(id));
+
+	}
+
+	@Override
+	public void messagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
+
+		if (lastMessageIdExcl == Long.MAX_VALUE)
+			return;
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				if (id > 0) {
+
+					contactMessagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl);
+
+				} else {
+
+					groupMessagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl);
+
+				}
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	public void contactMessagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl)
+			throws HibernateException {
+
+		long topMessageId = lastMessageIdExcl;
+
+		List<Message> lastMessagesBetweenIds = new ArrayList<Message>();
+
+		while (firstMessageIdIncl < topMessageId) {
+
+			List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(id, topMessageId,
+					MIN_MESSAGES_PER_PAGE);
+
+			if (lastMessagesBeforeId.size() == 0)
+				break;
+
+			lastMessagesBetweenIds.addAll(lastMessagesBeforeId);
+
+			topMessageId = lastMessagesBeforeId.get(lastMessagesBeforeId.size() - 1).getId();
+
+		}
+
+		if (lastMessagesBetweenIds.size() == 0)
+			return;
+
+		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
+
+		Platform.runLater(() -> {
+			dmsPanel.savePosition(id, firstMessageIdIncl);
+			dmsPanel.scrollToSavedPosition(id);
+		});
+
+	}
+
+	public void groupMessagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl)
+			throws HibernateException {
+
+		long topMessageId = lastMessageIdExcl;
+
+		List<Message> lastMessagesBetweenIds = new ArrayList<Message>();
+
+		while (firstMessageIdIncl < topMessageId) {
+
+			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(-id, topMessageId,
+					MIN_MESSAGES_PER_PAGE);
+
+			if (lastMessagesBeforeId.size() == 0)
+				break;
+
+			lastMessagesBetweenIds.addAll(lastMessagesBeforeId);
+
+			topMessageId = lastMessagesBeforeId.get(lastMessagesBeforeId.size() - 1).getId();
+
+		}
+
+		if (lastMessagesBetweenIds.size() == 0)
+			return;
+
+		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
+
+		Platform.runLater(() -> {
+			dmsPanel.savePosition(id, firstMessageIdIncl);
+			dmsPanel.scrollToSavedPosition(id);
+		});
 
 	}
 

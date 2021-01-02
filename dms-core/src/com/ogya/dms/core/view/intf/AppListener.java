@@ -21,6 +21,8 @@ public interface AppListener {
 
 	void paneScrolledToTop(Long id, Long topMessageId);
 
+	void messagesClaimed(Long id, Long lastMessageIdExcl, Long firstMessageIdIncl);
+
 	void showAddUpdateGroupClicked(Long id);
 
 	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);

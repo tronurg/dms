@@ -428,6 +428,14 @@ class EntitiesPane extends BorderPane {
 			}
 
 			@Override
+			public void messagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl) {
+
+				entityListeners
+						.forEach(listener -> listener.messagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl));
+
+			};
+
+			@Override
 			public void messageClicked(Long messageId) {
 
 				entityListeners.forEach(listener -> listener.messageClicked(messageId));
@@ -474,7 +482,7 @@ class EntitiesPane extends BorderPane {
 
 				entityListeners.forEach(listener -> listener.recordButtonReleased(id));
 
-			};
+			}
 
 		};
 
@@ -497,6 +505,8 @@ interface IEntitiesPane {
 	void hideMessagePane(Long id, MessagePane messagePane);
 
 	void paneScrolledToTop(Long id, Long topMessageId);
+
+	void messagesClaimed(Long id, Long lastMessageIdExcl, Long firstMessageIdIncl);
 
 	void sendMessageClicked(Long id, String messageTxt, Long refMessageId);
 
