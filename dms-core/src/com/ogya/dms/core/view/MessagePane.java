@@ -132,7 +132,7 @@ class MessagePane extends BorderPane {
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
-	private final AtomicLong futureReference = new AtomicLong();
+	private final AtomicLong futureReference = new AtomicLong(-1L);
 
 	MessagePane() {
 
@@ -351,7 +351,7 @@ class MessagePane extends BorderPane {
 
 			if (Objects.equals(messageId, futureReference.get())) {
 
-				futureReference.set(0L);
+				futureReference.set(-1L);
 
 				scrollPaneToMessage(messageId);
 

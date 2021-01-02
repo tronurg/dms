@@ -411,7 +411,7 @@ class EntitiesPane extends BorderPane {
 
 				entityListeners.forEach(listener -> listener.reportClicked(id));
 
-			};
+			}
 
 			@Override
 			public void sendMessageClicked(final String message, final Long refMessageId) {
@@ -433,7 +433,7 @@ class EntitiesPane extends BorderPane {
 				entityListeners
 						.forEach(listener -> listener.messagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl));
 
-			};
+			}
 
 			@Override
 			public void messageClicked(Long messageId) {
@@ -468,14 +468,14 @@ class EntitiesPane extends BorderPane {
 
 				entityListeners.forEach(listener -> listener.recordButtonPressed(id));
 
-			};
+			}
 
 			@Override
 			public void recordEventTriggered(final Long refMessageId) {
 
 				entityListeners.forEach(listener -> listener.recordEventTriggered(id, refMessageId));
 
-			};
+			}
 
 			@Override
 			public void recordButtonReleased() {
