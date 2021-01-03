@@ -1,11 +1,6 @@
 /.metadata/
 .settings
 bin
-/workspace/
 /workspace/database
 /workspace/received
 /workspace/sent
-
-.classpath
-.project
-build.properties
