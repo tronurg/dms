@@ -33,7 +33,7 @@ import javafx.scene.layout.VBox;
 
 public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
@@ -81,7 +81,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 		});
 
-		VBox.setMargin(identityPane, new Insets(2 * GAP));
+		VBox.setMargin(identityPane, new Insets(2 * gap));
 
 		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
 

@@ -34,7 +34,7 @@ import javafx.scene.paint.Color;
 
 public class ReportsPane extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final ComboBox<String> reportsComboBox = new ComboBox<String>();
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
@@ -58,9 +58,9 @@ public class ReportsPane extends GridPane {
 
 	private void init(List<ReportTemplate> templates) {
 
-		setPadding(new Insets(2 * GAP));
-		setHgap(2 * GAP);
-		setVgap(2 * GAP);
+		setPadding(new Insets(2 * gap));
+		setHgap(2 * gap);
+		setVgap(2 * gap);
 
 		setBorder(new Border(
 				new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
@@ -146,7 +146,7 @@ public class ReportsPane extends GridPane {
 
 	private void initSendBtn() {
 
-		GridPane.setMargin(sendBtn, new Insets(2 * GAP));
+		GridPane.setMargin(sendBtn, new Insets(2 * gap));
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
 
@@ -214,7 +214,7 @@ public class ReportsPane extends GridPane {
 
 		private ReportPane(String templateBody) {
 
-			super(2 * GAP);
+			super(2 * gap);
 
 			fillTemplate(templateBody);
 
@@ -224,11 +224,11 @@ public class ReportsPane extends GridPane {
 
 		private void init() {
 
-			valuesPane.setPadding(new Insets(2 * GAP));
-			valuesPane.setHgap(GAP);
-			valuesPane.setVgap(GAP);
+			valuesPane.setPadding(new Insets(2 * gap));
+			valuesPane.setHgap(gap);
+			valuesPane.setVgap(gap);
 
-			preview.setPadding(new Insets(2 * GAP));
+			preview.setPadding(new Insets(2 * gap));
 
 			HBox.setHgrow(previewScrollPane, Priority.ALWAYS);
 

@@ -79,14 +79,16 @@ import javafx.util.Duration;
 
 class MessagePane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
-	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
 	private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
+	private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
+
+	private final double gap = ViewFactory.getGap();
+	private final double smallGap = 2.0 * gap / 5.0;
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(GAP);
-	private final VBox centerPane = new VBox(2 * GAP);
+	private final HBox topPane = new HBox(gap);
+	private final VBox centerPane = new VBox(2 * gap);
 	private final GridPane bottomPane = new GridPane();
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
@@ -148,11 +150,11 @@ class MessagePane extends BorderPane {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		topPane.setPadding(new Insets(GAP));
-		centerPane.setPadding(new Insets(GAP));
-		bottomPane.setPadding(new Insets(GAP));
-		bottomPane.setHgap(GAP);
-		bottomPane.setVgap(GAP);
+		topPane.setPadding(new Insets(gap));
+		centerPane.setPadding(new Insets(gap));
+		bottomPane.setPadding(new Insets(gap));
+		bottomPane.setHgap(gap);
+		bottomPane.setVgap(gap);
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -189,7 +191,7 @@ class MessagePane extends BorderPane {
 
 		});
 
-		HBox.setMargin(statusCircle, new Insets(GAP, GAP, GAP, 3 * GAP));
+		HBox.setMargin(statusCircle, new Insets(gap, gap, gap, 3 * gap));
 		nameLabel.getStyleClass().add("black-label");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 
@@ -202,7 +204,7 @@ class MessagePane extends BorderPane {
 		// Close Button
 
 		Button closeBtn = ViewFactory.newCancelBtn();
-		GridPane.setMargin(closeBtn, new Insets(GAP));
+		GridPane.setMargin(closeBtn, new Insets(gap));
 		GridPane.setHalignment(closeBtn, HPos.RIGHT);
 		GridPane.setValignment(closeBtn, VPos.TOP);
 		closeBtn.setOnAction(e -> referenceMessageProperty.set(null));
@@ -298,7 +300,7 @@ class MessagePane extends BorderPane {
 			boolean isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
 
 			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isGroup, isOutgoing,
-					message.getMessageType());
+					message.getMessageType(), ViewFactory.getColorForUuid(message.getOwner().getUuid()));
 
 			messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -401,7 +403,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		scrollPane(messageBalloon, SMALL_GAP);
+		scrollPane(messageBalloon, smallGap);
 
 	}
 
@@ -544,7 +546,7 @@ class MessagePane extends BorderPane {
 			boolean isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
 
 			MessageInfo messageInfo = new MessageInfo(ownerId, senderName, messageDate, isGroup, isOutgoing,
-					message.getMessageType());
+					message.getMessageType(), ViewFactory.getColorForUuid(message.getOwner().getUuid()));
 
 			messageBalloon = newMessageBalloon(message, messageInfo);
 
@@ -624,11 +626,11 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void play() {
-				showFoldersBtnStart = -position * (GAP + showFoldersBtn.getHeight());
-				reportBtnStart = -position * (2 * GAP + reportBtn.getHeight() + showFoldersBtn.getHeight());
+				showFoldersBtnStart = -position * (gap + showFoldersBtn.getHeight());
+				reportBtnStart = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
 				position = (position + 1) % 2;
-				showFoldersBtnEnd = -position * (GAP + showFoldersBtn.getHeight());
-				reportBtnEnd = -position * (2 * GAP + reportBtn.getHeight() + showFoldersBtn.getHeight());
+				showFoldersBtnEnd = -position * (gap + showFoldersBtn.getHeight());
+				reportBtnEnd = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
 				super.play();
 			}
 
@@ -706,6 +708,8 @@ class MessagePane extends BorderPane {
 				messageBalloon.addReplyGroup(replyGroup);
 			double diff = e.getSceneX() - dragPosProperty.get();
 			dragPosProperty.set(e.getSceneX());
+			if (!activeProperty.get())
+				return;
 			double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
 			double translate = 4.0 * radius;
 			messageBalloon.setTranslateX(translate);
@@ -794,7 +798,7 @@ class MessagePane extends BorderPane {
 
 				add(messagePane, 1, 0, 1, 1);
 				if (messageInfo.infoAvailable) {
-					infoBtn.setPadding(new Insets(0.0, 0.0, 0.0, GAP));
+					infoBtn.setPadding(new Insets(0.0, 0.0, 0.0, gap));
 					add(infoBtn, 2, 0, 1, 1);
 				}
 
@@ -846,12 +850,12 @@ class MessagePane extends BorderPane {
 
 		Node newReferenceBalloon() {
 
-			VBox referenceBalloon = new VBox(GAP);
-			referenceBalloon.setPadding(new Insets(GAP));
+			VBox referenceBalloon = new VBox(gap);
+			referenceBalloon.setPadding(new Insets(gap));
 
 			Label nameLabel = new Label(messageInfo.name);
 			nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
-			nameLabel.setTextFill(Color.GRAY);
+			nameLabel.setTextFill(messageInfo.nameColor);
 
 			referenceBalloon.getChildren().add(nameLabel);
 
@@ -861,7 +865,7 @@ class MessagePane extends BorderPane {
 
 				DmsDummyPlayer dmsDummyPlayer = new DmsDummyPlayer();
 
-				VBox.setMargin(dmsDummyPlayer, new Insets(0.0, 0.0, 0.0, GAP));
+				VBox.setMargin(dmsDummyPlayer, new Insets(0.0, 0.0, 0.0, gap));
 
 				referenceBalloon.getChildren().add(dmsDummyPlayer);
 
@@ -886,7 +890,7 @@ class MessagePane extends BorderPane {
 
 				messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
 				messageLbl.setWrapText(true);
-				VBox.setMargin(messageLbl, new Insets(0.0, 0.0, 0.0, GAP));
+				VBox.setMargin(messageLbl, new Insets(0.0, 0.0, 0.0, gap));
 
 				referenceBalloon.getChildren().add(messageLbl);
 
@@ -901,7 +905,7 @@ class MessagePane extends BorderPane {
 		void addReferenceBalloon(Node referenceBalloon) {
 
 			referenceBalloon.getStyleClass().add("reference-balloon");
-			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
+			GridPane.setMargin(referenceBalloon, new Insets(0, 0, gap, 0));
 			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
 
 			messagePane.add(referenceBalloon, 0, 0, 2, 1);
@@ -972,8 +976,8 @@ class MessagePane extends BorderPane {
 					Objects.equals(messageInfo.messageType, MessageType.FILE) ? Color.BLUE : Color.DARKGRAY,
 					BorderStrokeStyle.SOLID, new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
 
-			messagePane.setPadding(new Insets(GAP));
-			messagePane.setHgap(GAP);
+			messagePane.setPadding(new Insets(gap));
+			messagePane.setHgap(gap);
 
 		}
 
@@ -1020,11 +1024,11 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private static class MessageGroup extends BorderPane {
+	private class MessageGroup extends BorderPane {
 
 		private final MessageInfo messageInfo;
 
-		private final VBox messageBox = new VBox(SMALL_GAP);
+		private final VBox messageBox = new VBox(smallGap);
 
 		private MessageGroup(MessageInfo messageInfo) {
 
@@ -1042,11 +1046,11 @@ class MessagePane extends BorderPane {
 			if (messageInfo.isGroup && !messageInfo.isOutgoing) {
 
 				Label nameLabel = new Label(messageInfo.name);
-				nameLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
+				nameLabel.setPadding(new Insets(0.0, gap, 0.0, gap));
 				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
-				nameLabel.setTextFill(Color.GRAY);
+				nameLabel.setTextFill(messageInfo.nameColor);
 				BorderPane.setAlignment(nameLabel, messageInfo.isOutgoing ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, GAP, 0.0));
+				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, gap, 0.0));
 
 				setTop(nameLabel);
 
@@ -1070,14 +1074,12 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private static class DayBox extends BorderPane {
-
-		private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
+	private class DayBox extends BorderPane {
 
 		private final LocalDate day;
 
 		private final Label dateLabel;
-		private final VBox messageGroupBox = new VBox(GAP);
+		private final VBox messageGroupBox = new VBox(gap);
 
 		private final List<MessageGroup> messageGroups = Collections.synchronizedList(new ArrayList<MessageGroup>());
 
@@ -1096,15 +1098,15 @@ class MessagePane extends BorderPane {
 		private void init() {
 
 			// init dateLabel
-			dateLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
+			dateLabel.setPadding(new Insets(0.0, gap, 0.0, gap));
 			dateLabel.setFont(Font.font(null, FontWeight.BOLD, dateLabel.getFont().getSize()));
 			dateLabel.setTextFill(Color.GRAY);
 			dateLabel.setBackground(
-					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY)));
+					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(gap), Insets.EMPTY)));
 			dateLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY)));
+					new CornerRadii(gap), BorderWidths.DEFAULT, Insets.EMPTY)));
 			BorderPane.setAlignment(dateLabel, Pos.CENTER);
-			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, GAP, 0.0));
+			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, gap, 0.0));
 
 			setTop(dateLabel);
 			setCenter(messageGroupBox);
@@ -1160,12 +1162,12 @@ class MessagePane extends BorderPane {
 			outer.setFill(Color.LIGHTSKYBLUE);
 			inner.setFill(Color.DEEPSKYBLUE);
 			getChildren().addAll(outer, inner);
-			setTranslateX(-2.0 * (radius + GAP));
+			setTranslateX(-2.0 * (radius + gap));
 		}
 
 	}
 
-	private static class MessageInfo {
+	private static final class MessageInfo {
 
 		final Long ownerId;
 		final String name;
@@ -1174,9 +1176,10 @@ class MessagePane extends BorderPane {
 		final boolean isOutgoing;
 		final MessageType messageType;
 		final boolean infoAvailable;
+		final Color nameColor;
 
-		MessageInfo(Long ownerId, String name, Date date, boolean isGroup, boolean isOutgoing,
-				MessageType messageType) {
+		MessageInfo(Long ownerId, String name, Date date, boolean isGroup, boolean isOutgoing, MessageType messageType,
+				Color nameColor) {
 
 			this.ownerId = ownerId;
 			this.name = name;
@@ -1185,6 +1188,7 @@ class MessagePane extends BorderPane {
 			this.isOutgoing = isOutgoing;
 			this.messageType = messageType;
 			this.infoAvailable = isGroup && isOutgoing;
+			this.nameColor = nameColor;
 
 		}
 

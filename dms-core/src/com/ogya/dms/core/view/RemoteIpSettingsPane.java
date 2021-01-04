@@ -25,22 +25,22 @@ import javafx.scene.text.FontWeight;
 
 public class RemoteIpSettingsPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(GAP);
-	private final VBox centerPane = new VBox(GAP);
+	private final HBox topPane = new HBox(gap);
+	private final VBox centerPane = new VBox(gap);
 
 	private final Button backBtn = ViewFactory.newBackBtn();
 	private final Label headingLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 
-	private final HBox addIpPane = new HBox(GAP);
+	private final HBox addIpPane = new HBox(gap);
 
 	private final IpField ipField = new IpField();
 	private final Button addIpButton = ViewFactory.newAddBtn();
 
-	private final VBox scrollableContent = new VBox(GAP);
+	private final VBox scrollableContent = new VBox(gap);
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
 		@Override
 		public void requestFocus() {
@@ -113,7 +113,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		for (String ip : ips) {
 
-			HBox ipField = new HBox(GAP);
+			HBox ipField = new HBox(gap);
 
 			Label ipLabel = new Label(ip);
 			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
@@ -142,7 +142,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 		initHeadingLabel();
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
+		topPane.setPadding(new Insets(gap));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		topPane.getChildren().addAll(backBtn, headingLabel);
@@ -170,7 +170,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 		initIpField();
 		initAddIpButton();
 
-		addIpPane.setPadding(new Insets(GAP));
+		addIpPane.setPadding(new Insets(gap));
 
 		addIpPane.getChildren().addAll(ipField, addIpButton);
 
@@ -187,7 +187,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
-		scrollableContent.setPadding(new Insets(GAP));
+		scrollableContent.setPadding(new Insets(gap));
 
 	}
 

@@ -44,11 +44,11 @@ import javafx.scene.text.FontWeight;
 
 public class FoldersPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(2 * GAP);
+	private final HBox topPane = new HBox(2 * gap);
 	private final StackPane centerPane = new StackPane();
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
@@ -93,8 +93,8 @@ public class FoldersPane extends BorderPane {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		topPane.setPadding(new Insets(GAP));
-		centerPane.setPadding(new Insets(GAP));
+		topPane.setPadding(new Insets(gap));
+		centerPane.setPadding(new Insets(gap));
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -264,7 +264,7 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private static class CustomButton extends Button {
+	private class CustomButton extends Button {
 
 		private CustomButton(String arg0, ImageView arg1) {
 
@@ -273,15 +273,15 @@ public class FoldersPane extends BorderPane {
 			setMaxWidth(Double.MAX_VALUE);
 
 			setAlignment(Pos.CENTER_LEFT);
-			setPadding(new Insets(GAP));
-			setGraphicTextGap(GAP);
+			setPadding(new Insets(gap));
+			setGraphicTextGap(gap);
 			setFocusTraversable(false);
 
 		}
 
 	}
 
-	private static class FolderView extends VBox {
+	private class FolderView extends VBox {
 
 		private static final String FOLDER_ICO_PATH = "/resources/icon/folder.png";
 		private static final String FILE_ICO_PATH = "/resources/icon/file.png";

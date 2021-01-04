@@ -23,11 +23,11 @@ import javafx.scene.text.FontWeight;
 
 public class SettingsPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(GAP);
+	private final HBox topPane = new HBox(gap);
 
 	private final Button backBtn = ViewFactory.newBackBtn();
 	private final Label headingLabel = new Label(CommonMethods.translate("SETTINGS"));
@@ -79,7 +79,7 @@ public class SettingsPane extends BorderPane {
 		initHeadingLabel();
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
+		topPane.setPadding(new Insets(gap));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		topPane.getChildren().addAll(backBtn, headingLabel);
@@ -98,7 +98,7 @@ public class SettingsPane extends BorderPane {
 		// EDIT_REMOTE_IPS
 		Label editRemoteIpsLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 		editRemoteIpsLabel.getStyleClass().add("link-label");
-		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * GAP));
+		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * gap));
 		editRemoteIpsLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		editRemoteIpsLabel.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();

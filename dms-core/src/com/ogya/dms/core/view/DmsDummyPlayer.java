@@ -12,7 +12,7 @@ import javafx.scene.shape.Polygon;
 
 public class DmsDummyPlayer extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final Button btn = new Button();
 	private final ProgressBar progressBar = new ProgressBar(0.0);
@@ -30,7 +30,7 @@ public class DmsDummyPlayer extends GridPane {
 		initBtn();
 		initProgressBar();
 
-		setHgap(2 * GAP);
+		setHgap(2 * gap);
 
 		add(btn, 0, 0, 1, 1);
 		add(progressBar, 1, 0, 1, 1);

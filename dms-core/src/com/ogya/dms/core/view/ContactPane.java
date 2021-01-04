@@ -36,8 +36,6 @@ import javafx.scene.text.FontWeight;
 
 class ContactPane extends HBox {
 
-	private static final double GAP = ViewFactory.GAP;
-
 	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
 
 	private final Group profilePicture = new Group();
@@ -71,7 +69,7 @@ class ContactPane extends HBox {
 
 	ContactPane() {
 
-		super(GAP);
+		super(ViewFactory.getGap());
 
 		init();
 

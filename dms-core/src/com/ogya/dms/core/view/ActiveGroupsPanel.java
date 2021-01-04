@@ -43,7 +43,7 @@ import javafx.scene.text.FontWeight;
 
 public class ActiveGroupsPanel extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
@@ -111,7 +111,7 @@ public class ActiveGroupsPanel extends BorderPane {
 
 		initSearchTextField();
 
-		groups.setPadding(new Insets(2 * GAP));
+		groups.setPadding(new Insets(2 * gap));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
@@ -360,7 +360,7 @@ public class ActiveGroupsPanel extends BorderPane {
 
 		private void init() {
 
-			setHgap(GAP);
+			setHgap(gap);
 
 			GridPane.setHgrow(nameLabel, Priority.ALWAYS);
 

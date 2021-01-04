@@ -48,11 +48,11 @@ import javafx.scene.text.FontWeight;
 
 public class AddUpdateGroupPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(GAP);
+	private final HBox topPane = new HBox(gap);
 
 	private final Button backBtn = ViewFactory.newBackBtn();
 	private final TextField groupNameTextField = new TextField();
@@ -222,7 +222,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	private void initTopPane() {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
+		topPane.setPadding(new Insets(gap));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		initGroupNameTextField();
@@ -357,7 +357,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	private static abstract class AddRemoveContactBox extends HBox {
+	private abstract class AddRemoveContactBox extends HBox {
 
 		protected final double viewFactor = ViewFactory.getViewFactor();
 
@@ -390,7 +390,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		private void initCircle() {
 
-			HBox.setMargin(addRemoveStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
+			HBox.setMargin(addRemoveStatusCircle, new Insets(gap, 3 * gap, gap, gap));
 
 		}
 
@@ -414,7 +414,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	private static class AddContactBox extends AddRemoveContactBox {
+	private class AddContactBox extends AddRemoveContactBox {
 
 		AddContactBox(String name) {
 
@@ -432,13 +432,13 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
 			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-			addRemoveBtn.setPadding(new Insets(GAP));
+			addRemoveBtn.setPadding(new Insets(gap));
 
 		}
 
 	}
 
-	private static class RemoveContactBox extends AddRemoveContactBox {
+	private class RemoveContactBox extends AddRemoveContactBox {
 
 		RemoveContactBox(String name) {
 
@@ -456,7 +456,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
 			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-			addRemoveBtn.setPadding(new Insets(GAP));
+			addRemoveBtn.setPadding(new Insets(gap));
 
 		}
 

@@ -1,5 +1,9 @@
 package com.ogya.dms.core.view.factory;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -23,9 +27,23 @@ import javafx.scene.text.FontWeight;
 
 public class ViewFactory {
 
-	public static final double GAP = 5.0;
+	private static double gap = 0.0;
 
 	private static double viewFactor = 0.0;
+
+	private static final Map<String, Color> colorMap = Collections.synchronizedMap(new HashMap<String, Color>());
+
+	public static double getGap() {
+
+		if (gap == 0.0) {
+
+			gap = Font.getDefault().getSize() / 3.0;
+
+		}
+
+		return gap;
+
+	}
 
 	public static double getViewFactor() {
 
@@ -36,6 +54,48 @@ public class ViewFactory {
 		}
 
 		return viewFactor;
+
+	}
+
+	public static Color getColorForUuid(String uuid) {
+
+		if (!colorMap.containsKey(uuid)) {
+
+			try {
+
+				int red = Integer.valueOf(uuid.substring(0, 2), 16);
+				int green = Integer.valueOf(uuid.substring(2, 4), 16);
+				int blue = Integer.valueOf(uuid.substring(4, 6), 16);
+
+				int minRange = Math.min(Math.min(red, green), blue);
+				int maxRange = Math.max(Math.max(red, green), blue);
+
+				if (red == minRange)
+					red = 0;
+				else if (green == minRange)
+					green = 0;
+				else
+					blue = 0;
+
+				if (red == maxRange)
+					red = 255;
+				else if (green == maxRange)
+					green = 255;
+				else
+					blue = 255;
+
+				Color color = Color.rgb(red, green, blue);
+				color = Color.hsb(color.getHue(), color.getSaturation(), 0.8);
+
+				colorMap.put(uuid, color);
+
+			} catch (Exception e) {
+
+			}
+
+		}
+
+		return colorMap.get(uuid);
 
 	}
 

@@ -37,7 +37,7 @@ import javafx.scene.layout.VBox;
 
 public class OnlineContactsPanel extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final TextField searchTextField = new TextField();
 
@@ -84,7 +84,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 		initSearchTextField();
 
-		contacts.setPadding(new Insets(2 * GAP));
+		contacts.setPadding(new Insets(2 * gap));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);

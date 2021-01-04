@@ -30,12 +30,12 @@ import javafx.scene.text.FontWeight;
 
 public class StatusInfoPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(GAP);
-	private final VBox centerPane = new VBox(2 * GAP);
+	private final HBox topPane = new HBox(gap);
+	private final VBox centerPane = new VBox(2 * gap);
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
@@ -56,8 +56,8 @@ public class StatusInfoPane extends BorderPane {
 
 	private void init() {
 
-		topPane.setPadding(new Insets(GAP));
-		centerPane.setPadding(new Insets(2 * GAP));
+		topPane.setPadding(new Insets(gap));
+		centerPane.setPadding(new Insets(2 * gap));
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -156,7 +156,7 @@ public class StatusInfoPane extends BorderPane {
 
 		private void init() {
 
-			setHgap(GAP);
+			setHgap(gap);
 
 			GridPane.setHgrow(nameLabel, Priority.ALWAYS);
 

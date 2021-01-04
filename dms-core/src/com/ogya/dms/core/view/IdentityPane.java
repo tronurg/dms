@@ -48,7 +48,7 @@ import javafx.util.Duration;
 
 class IdentityPane extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final double unitSize = 30.0 * ViewFactory.getViewFactor();
 
@@ -86,7 +86,7 @@ class IdentityPane extends GridPane {
 		initCommentTextField();
 		initCoordinatesLabel();
 
-		setHgap(GAP);
+		setHgap(gap);
 		setValignment(profilePicture, VPos.TOP);
 		setFillHeight(profilePicture, false);
 		setHgrow(commentTextField, Priority.ALWAYS);

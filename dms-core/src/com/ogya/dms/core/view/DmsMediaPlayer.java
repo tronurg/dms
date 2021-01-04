@@ -26,7 +26,7 @@ import javafx.util.Duration;
 
 public class DmsMediaPlayer extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private final double gap = ViewFactory.getGap();
 
 	private final MediaPlayer mediaPlayer;
 
@@ -54,7 +54,7 @@ public class DmsMediaPlayer extends GridPane {
 		initProgressBar();
 		initDurationLbl();
 
-		setHgap(2 * GAP);
+		setHgap(2 * gap);
 
 		add(btn, 0, 0, 1, 1);
 		add(progressBar, 1, 0, 1, 1);
