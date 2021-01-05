@@ -59,13 +59,15 @@ public class ViewFactory {
 
 	public static Color getColorForUuid(String uuid) {
 
-		if (!colorMap.containsKey(uuid)) {
+		String hex = uuid.substring(0, 6);
+
+		if (!colorMap.containsKey(hex)) {
 
 			try {
 
-				int red = Integer.valueOf(uuid.substring(0, 2), 16);
-				int green = Integer.valueOf(uuid.substring(2, 4), 16);
-				int blue = Integer.valueOf(uuid.substring(4, 6), 16);
+				int red = Integer.valueOf(hex.substring(0, 2), 16);
+				int green = Integer.valueOf(hex.substring(2, 4), 16);
+				int blue = Integer.valueOf(hex.substring(4, 6), 16);
 
 				int minRange = Math.min(Math.min(red, green), blue);
 				int maxRange = Math.max(Math.max(red, green), blue);
@@ -87,7 +89,7 @@ public class ViewFactory {
 				Color color = Color.rgb(red, green, blue);
 				color = Color.hsb(color.getHue(), color.getSaturation(), 0.8);
 
-				colorMap.put(uuid, color);
+				colorMap.put(hex, color);
 
 			} catch (Exception e) {
 
@@ -95,7 +97,7 @@ public class ViewFactory {
 
 		}
 
-		return colorMap.get(uuid);
+		return colorMap.get(hex);
 
 	}
 
