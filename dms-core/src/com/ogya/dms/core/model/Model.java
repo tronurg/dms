@@ -60,7 +60,7 @@ public class Model {
 	public Model(Contact identity) {
 
 		this.identity = identity;
-		this.identity.addAddresses(Arrays.asList(InetAddress.getLoopbackAddress()));
+		this.identity.setAddresses(Arrays.asList(InetAddress.getLoopbackAddress()));
 
 		this.localUuid = identity.getUuid();
 

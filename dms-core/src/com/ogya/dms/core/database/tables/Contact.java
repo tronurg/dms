@@ -126,7 +126,8 @@ public class Contact {
 		return addresses;
 	}
 
-	public void addAddresses(List<InetAddress> addresses) {
+	public void setAddresses(List<InetAddress> addresses) {
+		this.addresses.clear();
 		if (addresses != null)
 			this.addresses.addAll(addresses);
 	}
