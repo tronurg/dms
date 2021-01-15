@@ -3,13 +3,14 @@ package com.ogya.dms.server.model;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -622,9 +623,18 @@ public class Model {
 
 			try {
 
-				beacon.addresses = Arrays.asList(InetAddress.getByName("localhost"));
+				List<InetAddress> inetAddresses = new ArrayList<InetAddress>();
+				for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+					for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
+						if (!(ia instanceof Inet4Address) || ia.isLoopbackAddress())
+							continue;
+						inetAddresses.add(ia);
+					}
+				}
 
-			} catch (UnknownHostException e) {
+				beacon.addresses = inetAddresses;
+
+			} catch (SocketException e) {
 
 				e.printStackTrace();
 

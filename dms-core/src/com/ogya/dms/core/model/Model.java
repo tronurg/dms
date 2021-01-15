@@ -1,10 +1,8 @@
 package com.ogya.dms.core.model;
 
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,9 +30,6 @@ public class Model {
 	private final Map<String, Map<Long, Dgroup>> uuidGroups = Collections
 			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
 	private final Map<Long, Dgroup> idGroups = Collections.synchronizedMap(new HashMap<Long, Dgroup>());
-
-	private final Map<Long, List<InetAddress>> idAddresses = Collections
-			.synchronizedMap(new HashMap<Long, List<InetAddress>>());
 
 	private final List<Long> openUuids = Collections.synchronizedList(new ArrayList<Long>());
 
@@ -65,6 +60,7 @@ public class Model {
 	public Model(Contact identity) {
 
 		this.identity = identity;
+		this.identity.addAddresses(Arrays.asList(InetAddress.getLoopbackAddress()));
 
 		this.localUuid = identity.getUuid();
 
@@ -144,33 +140,23 @@ public class Model {
 
 	}
 
-	public void setContactAddresses(Long id, List<InetAddress> addresses) {
-
-		if (addresses == null)
-			idAddresses.remove(id);
-		else
-			idAddresses.put(id, addresses);
-
-	}
-
-	public List<Long> getIdsByAddress(InetAddress address) {
-
-		try {
-
-			if (NetworkInterface.getByInetAddress(address) != null)
-				address = InetAddress.getByName("localhost");
-
-		} catch (SocketException | UnknownHostException e) {
-
-			e.printStackTrace();
-
-		}
-
-		final InetAddress searchAddress = address;
+	public List<Long> getIdsByAddress(final InetAddress address) {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idAddresses.entrySet().stream().filter(entry -> entry.getValue().contains(searchAddress))
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getAddresses().contains(address))
+				.forEach(entry -> ids.add(entry.getKey()));
+
+		return ids;
+
+	}
+
+	public List<Long> getIdsByAddressAndName(final InetAddress address, final String name) {
+
+		List<Long> ids = new ArrayList<Long>();
+
+		idContacts.entrySet().stream().filter(
+				entry -> entry.getValue().getAddresses().contains(address) && entry.getValue().getName().equals(name))
 				.forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;

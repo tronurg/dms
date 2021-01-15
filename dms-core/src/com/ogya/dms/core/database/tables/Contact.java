@@ -1,5 +1,8 @@
 package com.ogya.dms.core.database.tables;
 
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -10,6 +13,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.ogya.dms.core.structures.Availability;
 
@@ -39,6 +43,9 @@ public class Contact {
 
 	@Column(name = "longitude")
 	private Double longitude;
+
+	@Transient
+	private final List<InetAddress> addresses = new ArrayList<InetAddress>();
 
 	public Contact() {
 		super();
@@ -113,6 +120,15 @@ public class Contact {
 
 	public void setLongitude(Double longitude) {
 		this.longitude = longitude;
+	}
+
+	public List<InetAddress> getAddresses() {
+		return addresses;
+	}
+
+	public void addAddresses(List<InetAddress> addresses) {
+		if (addresses != null)
+			this.addresses.addAll(addresses);
 	}
 
 	@Override

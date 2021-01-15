@@ -310,8 +310,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				model.addContact(newContact);
 
-				model.setContactAddresses(id, null);
-
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
 				listenerTaskQueue.execute(() -> dmsListeners
@@ -1168,11 +1166,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
+				newContact.addAddresses(beacon.addresses);
+
 				model.addContact(newContact);
 
 				Long contactId = newContact.getId();
-
-				model.setContactAddresses(contactId, beacon.addresses);
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -3169,6 +3167,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public List<Long> getIdsByAddress(InetAddress address) {
 
 		return model.getIdsByAddress(address);
+
+	}
+
+	@Override
+	public List<Long> getIdsByAddressAndName(InetAddress address, String name) {
+
+		return model.getIdsByAddressAndName(address, name);
 
 	}
 

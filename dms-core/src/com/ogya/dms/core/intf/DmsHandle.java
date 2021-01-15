@@ -48,6 +48,8 @@ public interface DmsHandle {
 
 	List<Long> getIdsByAddress(InetAddress address);
 
+	List<Long> getIdsByAddressAndName(InetAddress address, String name);
+
 	boolean sendMessageToContacts(String message, Integer messageCode, List<Long> contactIds);
 
 	boolean sendMessageToGroup(String message, Integer messageCode, Long groupId);

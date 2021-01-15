@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -144,8 +146,9 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getOnlineContactsHandle();
 
-			JComponent mcPanel = dmsHandle.getDmsPanel();
-//			JComponent mcPanel = csh.getKisiSecimPanel(dmsKisi -> dmsKisi.getDurum().equals(DmsDurum.MESGUL));
+//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
+			JComponent mcPanel = csh.getContactSelectionPanel(contact -> contact.getAddresses().contains(localAddress));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
@@ -176,7 +179,7 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-		} catch (DbException e) {
+		} catch (DbException | UnknownHostException e) {
 
 			e.printStackTrace();
 

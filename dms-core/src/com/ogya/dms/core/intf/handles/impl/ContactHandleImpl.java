@@ -1,5 +1,9 @@
 package com.ogya.dms.core.intf.handles.impl;
 
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.structures.Availability;
@@ -13,6 +17,7 @@ public class ContactHandleImpl implements ContactHandle {
 	private final Double lattitude;
 	private final Double longitude;
 	private final Availability availability;
+	private final List<InetAddress> addresses = new ArrayList<InetAddress>();
 
 	public ContactHandleImpl(Contact contact) {
 
@@ -23,6 +28,7 @@ public class ContactHandleImpl implements ContactHandle {
 		this.lattitude = contact.getLattitude();
 		this.longitude = contact.getLongitude();
 		this.availability = contact.getStatus();
+		this.addresses.addAll(contact.getAddresses());
 
 	}
 
@@ -72,6 +78,13 @@ public class ContactHandleImpl implements ContactHandle {
 	public Availability getAvailability() {
 
 		return availability;
+
+	}
+
+	@Override
+	public List<InetAddress> getAddresses() {
+
+		return addresses;
 
 	}
 
