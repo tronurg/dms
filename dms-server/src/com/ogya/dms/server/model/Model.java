@@ -359,9 +359,10 @@ public class Model {
 
 	}
 
-	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> addresses) {
+	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> remoteAddresses,
+			List<InetAddress> localAddresses) {
 
-		if (addresses.size() == 0) {
+		if (remoteAddresses.size() == 0) {
 
 			remoteServerDisconnected(dmsUuid);
 
@@ -381,8 +382,10 @@ public class Model {
 //
 //		}
 
-		dmsServer.addresses.clear();
-		dmsServer.addresses.addAll(addresses);
+		dmsServer.remoteAddresses.clear();
+		dmsServer.remoteAddresses.addAll(remoteAddresses);
+		dmsServer.localAddresses.clear();
+		dmsServer.localAddresses.addAll(localAddresses);
 
 		// This block is added upon a half-open connection error.
 		sendAllBeaconsToRemoteServer(dmsUuid);
@@ -632,7 +635,8 @@ public class Model {
 					}
 				}
 
-				beacon.addresses = inetAddresses;
+				beacon.remoteInterfaces = inetAddresses;
+				beacon.localInterfaces = inetAddresses;
 
 			} catch (SocketException e) {
 
@@ -654,7 +658,8 @@ public class Model {
 
 			this.dmsServer = dmsServer;
 
-			this.beacon.addresses = dmsServer.addresses;
+			this.beacon.remoteInterfaces = dmsServer.remoteAddresses;
+			this.beacon.localInterfaces = dmsServer.localAddresses;
 
 		}
 
@@ -664,7 +669,8 @@ public class Model {
 
 		private final String dmsUuid;
 		private final Map<String, User> mappedUsers = Collections.synchronizedMap(new HashMap<String, User>());
-		private final List<InetAddress> addresses = Collections.synchronizedList(new ArrayList<InetAddress>());
+		private final List<InetAddress> remoteAddresses = Collections.synchronizedList(new ArrayList<InetAddress>());
+		private final List<InetAddress> localAddresses = Collections.synchronizedList(new ArrayList<InetAddress>());
 
 		private DmsServer(String dmsUuid) {
 

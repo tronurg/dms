@@ -1166,7 +1166,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
-				newContact.setAddresses(beacon.addresses);
+				newContact.setRemoteInterfaces(beacon.remoteInterfaces);
+				newContact.setLocalInterfaces(beacon.localInterfaces);
 
 				model.addContact(newContact);
 

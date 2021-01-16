@@ -120,6 +120,7 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
+									connection.localAddress = tcpClient.getLocalAddress();
 									connection.sendFunction = tcpClient::sendMessage;
 									dmsServer.connections.add(connection);
 
@@ -339,11 +340,16 @@ public class TcpManager implements TcpServerListener {
 
 	private void serverConnectionsUpdated(DmsServer dmsServer) {
 
-		List<InetAddress> addresses = new ArrayList<InetAddress>();
+		List<InetAddress> remoteAddresses = new ArrayList<InetAddress>();
+		List<InetAddress> localAddresses = new ArrayList<InetAddress>();
 
-		dmsServer.connections.forEach(connection -> addresses.add(connection.remoteAddress));
+		dmsServer.connections.forEach(connection -> {
+			remoteAddresses.add(connection.remoteAddress);
+			localAddresses.add(connection.localAddress);
+		});
 
-		listeners.forEach(listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, addresses));
+		listeners.forEach(
+				listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, remoteAddresses, localAddresses));
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
@@ -416,6 +422,7 @@ public class TcpManager implements TcpServerListener {
 			connections.putIfAbsent(address, new Connection(address));
 
 			Connection connection = connections.get(address);
+			connection.localAddress = tcpServer.getLocalAddress(id);
 
 			connection.id = id;
 
@@ -475,24 +482,25 @@ public class TcpManager implements TcpServerListener {
 
 		private static final AtomicInteger ORDER = new AtomicInteger(0);
 
-		final int order;
+		private final int order;
 
-		final InetAddress remoteAddress;
+		private final InetAddress remoteAddress;
+		private InetAddress localAddress;
 
-		int id = -1;
+		private int id = -1;
 
-		final Queue<String> waitingMessages = new ArrayDeque<String>();
+		private final Queue<String> waitingMessages = new ArrayDeque<String>();
 
-		DmsServer dmsServer;
+		private DmsServer dmsServer;
 
-		SendFunction sendFunction;
+		private SendFunction sendFunction;
 
-		Connection(InetAddress remoteAddress) {
+		private Connection(InetAddress remoteAddress) {
 			order = ORDER.getAndIncrement();
 			this.remoteAddress = remoteAddress;
 		}
 
-		int getPingTime() {
+		private int getPingTime() {
 			int pingTime = 1000;
 			try {
 				long startTimeNanos = System.nanoTime();
@@ -516,9 +524,9 @@ public class TcpManager implements TcpServerListener {
 
 	private class DmsServer {
 
-		final String dmsUuid;
+		private final String dmsUuid;
 
-		final Set<Connection> connections = Collections
+		private final Set<Connection> connections = Collections
 				.synchronizedSortedSet(new TreeSet<Connection>(new Comparator<Connection>() {
 
 					@Override
@@ -536,13 +544,13 @@ public class TcpManager implements TcpServerListener {
 
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-		DmsServer(String dmsUuid) {
+		private DmsServer(String dmsUuid) {
 
 			this.dmsUuid = dmsUuid;
 
 		}
 
-		void close() {
+		private void close() {
 
 			taskQueue.shutdown();
 
@@ -563,7 +571,7 @@ public class TcpManager implements TcpServerListener {
 		 */
 		private static final long serialVersionUID = 1L;
 
-		public NoAvailablePortException() {
+		private NoAvailablePortException() {
 			super("No available port found");
 		}
 

@@ -60,7 +60,9 @@ public class Model {
 	public Model(Contact identity) {
 
 		this.identity = identity;
-		this.identity.setAddresses(Arrays.asList(InetAddress.getLoopbackAddress()));
+		List<InetAddress> interfaces = Arrays.asList(InetAddress.getLoopbackAddress());
+		this.identity.setRemoteInterfaces(interfaces);
+		this.identity.setLocalInterfaces(interfaces);
 
 		this.localUuid = identity.getUuid();
 
@@ -144,7 +146,7 @@ public class Model {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getAddresses().contains(address))
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address))
 				.forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
@@ -155,9 +157,8 @@ public class Model {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(
-				entry -> entry.getValue().getAddresses().contains(address) && entry.getValue().getName().equals(name))
-				.forEach(entry -> ids.add(entry.getKey()));
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address)
+				&& entry.getValue().getName().equals(name)).forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 

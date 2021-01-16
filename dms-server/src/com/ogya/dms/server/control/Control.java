@@ -255,9 +255,10 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> addresses) {
+	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> remoteAddresses,
+			List<InetAddress> localAddresses) {
 
-		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, addresses));
+		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, remoteAddresses, localAddresses));
 
 	}
 

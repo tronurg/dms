@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface TcpManagerListener {
 
-	void serverConnectionsUpdated(String dmsUuid, List<InetAddress> addresses);
+	void serverConnectionsUpdated(String dmsUuid, List<InetAddress> remoteAddresses, List<InetAddress> localAddresses);
 
 	void messageReceivedFromRemoteServer(String message, String dmsUuid);
 

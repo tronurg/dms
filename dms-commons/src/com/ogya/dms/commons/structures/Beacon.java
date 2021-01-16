@@ -20,7 +20,9 @@ public class Beacon {
 	@SerializedName(value = "f")
 	public Double longitude;
 	@SerializedName(value = "g")
-	public List<InetAddress> addresses;
+	public List<InetAddress> remoteInterfaces;
+	@SerializedName(value = "h")
+	public List<InetAddress> localInterfaces;
 
 	public Beacon(String uuid) {
 

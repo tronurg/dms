@@ -148,7 +148,8 @@ public class DmsTest {
 
 //			JComponent mcPanel = dmsHandle.getDmsPanel();
 			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
-			JComponent mcPanel = csh.getContactSelectionPanel(contact -> contact.getAddresses().contains(localAddress));
+			JComponent mcPanel = csh
+					.getContactSelectionPanel(contact -> contact.getLocalInterfaces().contains(localAddress));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 

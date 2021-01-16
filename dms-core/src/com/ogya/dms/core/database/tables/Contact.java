@@ -45,7 +45,9 @@ public class Contact {
 	private Double longitude;
 
 	@Transient
-	private final List<InetAddress> addresses = new ArrayList<InetAddress>();
+	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
+	@Transient
+	private final List<InetAddress> localInterfaces = new ArrayList<InetAddress>();
 
 	public Contact() {
 		super();
@@ -122,14 +124,24 @@ public class Contact {
 		this.longitude = longitude;
 	}
 
-	public List<InetAddress> getAddresses() {
-		return addresses;
+	public List<InetAddress> getRemoteInterfaces() {
+		return remoteInterfaces;
 	}
 
-	public void setAddresses(List<InetAddress> addresses) {
-		this.addresses.clear();
-		if (addresses != null)
-			this.addresses.addAll(addresses);
+	public void setRemoteInterfaces(List<InetAddress> remoteInterfaces) {
+		this.remoteInterfaces.clear();
+		if (remoteInterfaces != null)
+			this.remoteInterfaces.addAll(remoteInterfaces);
+	}
+
+	public List<InetAddress> getLocalInterfaces() {
+		return localInterfaces;
+	}
+
+	public void setLocalInterfaces(List<InetAddress> localInterfaces) {
+		this.localInterfaces.clear();
+		if (localInterfaces != null)
+			this.localInterfaces.addAll(localInterfaces);
 	}
 
 	@Override
