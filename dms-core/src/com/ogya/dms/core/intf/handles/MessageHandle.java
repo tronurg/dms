@@ -6,8 +6,16 @@ public interface MessageHandle {
 
 	String getMessage();
 
-	Long getContactId();
+	FileHandle getFileHandle();
 
-	Long getGroupId();
+	void setFileHandle(FileHandle fileHandle);
+
+	ObjectHandle getObjectHandle();
+
+	void setObjectHandle(ObjectHandle objectHandle);
+
+	ListHandle getListHandle();
+
+	void setListHandle(ListHandle listHandle);
 
 }

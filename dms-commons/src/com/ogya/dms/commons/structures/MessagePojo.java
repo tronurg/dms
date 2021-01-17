@@ -1,5 +1,7 @@
 package com.ogya.dms.commons.structures;
 
+import java.net.InetAddress;
+
 import com.google.gson.annotations.SerializedName;
 
 public class MessagePojo {
@@ -14,21 +16,31 @@ public class MessagePojo {
 	public final ContentType contentType;
 	@SerializedName(value = "e")
 	public final Long messageId;
+	@SerializedName(value = "f")
+	public final InetAddress useLocalAddress;
 
 	public MessagePojo(String message, String senderUuid, ContentType contentType, Long messageId) {
 
-		this(message, senderUuid, null, contentType, messageId);
+		this(message, senderUuid, null, contentType, messageId, null);
 
 	}
 
 	public MessagePojo(String message, String senderUuid, String receiverUuid, ContentType contentType,
 			Long messageId) {
 
+		this(message, senderUuid, receiverUuid, contentType, messageId, null);
+
+	}
+
+	public MessagePojo(String message, String senderUuid, String receiverUuid, ContentType contentType, Long messageId,
+			InetAddress useLocalAddress) {
+
 		this.message = message;
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
 		this.contentType = contentType;
 		this.messageId = messageId;
+		this.useLocalAddress = useLocalAddress;
 
 	}
 

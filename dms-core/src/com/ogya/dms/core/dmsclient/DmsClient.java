@@ -1,5 +1,6 @@
 package com.ogya.dms.core.dmsclient;
 
+import java.net.InetAddress;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -144,10 +145,10 @@ public class DmsClient {
 
 	}
 
-	public void sendTransientMessage(String message, Iterable<String> receiverUuids) {
+	public void sendTransientMessage(String message, Iterable<String> receiverUuids, InetAddress useLocalInterface) {
 
-		dealerQueue.offer(
-				new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null).toJson());
+		dealerQueue.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null,
+				useLocalInterface).toJson());
 
 	}
 

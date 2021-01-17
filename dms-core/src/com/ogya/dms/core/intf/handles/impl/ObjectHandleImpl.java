@@ -1,21 +1,20 @@
 package com.ogya.dms.core.intf.handles.impl;
 
+import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
 
 public class ObjectHandleImpl implements ObjectHandle {
 
+	@SerializedName(value = "a")
 	private final Integer objectCode;
+	@SerializedName(value = "b")
 	private final String objectStr;
-	private final Long contactId;
-	private final Long groupId;
 
-	public ObjectHandleImpl(Integer objectCode, String objectStr, Long contactId, Long groupId) {
+	public ObjectHandleImpl(Integer objectCode, String objectStr) {
 
 		this.objectCode = objectCode;
 		this.objectStr = objectStr;
-		this.contactId = contactId;
-		this.groupId = groupId;
 
 	}
 
@@ -40,20 +39,6 @@ public class ObjectHandleImpl implements ObjectHandle {
 		}
 
 		return null;
-
-	}
-
-	@Override
-	public Long getContactId() {
-
-		return contactId;
-
-	}
-
-	@Override
-	public Long getGroupId() {
-
-		return groupId;
 
 	}
 

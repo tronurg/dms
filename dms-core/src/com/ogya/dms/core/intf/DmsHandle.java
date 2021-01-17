@@ -1,5 +1,6 @@
 package com.ogya.dms.core.intf;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
@@ -8,8 +9,12 @@ import javax.swing.JComponent;
 
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
+import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
+import com.ogya.dms.core.intf.handles.ListHandle;
+import com.ogya.dms.core.intf.handles.MessageHandle;
+import com.ogya.dms.core.intf.handles.ObjectHandle;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
 import com.ogya.dms.core.structures.Availability;
@@ -50,20 +55,20 @@ public interface DmsHandle {
 
 	List<Long> getIdsByAddressAndName(InetAddress address, String name);
 
-	boolean sendMessageToContacts(String message, Integer messageCode, List<Long> contactIds);
+	MessageHandle createMessageHandle(String message, Integer messageCode);
 
-	boolean sendMessageToGroup(String message, Integer messageCode, Long groupId);
+	FileHandle createFileHandle(Path path, Integer fileCode) throws IOException;
 
-	boolean sendObjectToContacts(Object object, Integer objectCode, List<Long> contactIds);
+	ObjectHandle createObjectHandle(Object object, Integer objectCode);
 
-	boolean sendObjectToGroup(Object object, Integer objectCode, Long groupId);
+	<T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode);
 
-	<T> boolean sendListToContacts(List<T> list, Class<T> elementType, Integer listCode, List<Long> contactIds);
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds);
 
-	<T> boolean sendListToGroup(List<T> list, Class<T> elementType, Integer listCode, Long groupId);
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId);
 
-	boolean sendFileToContacts(Path path, Integer fileCode, List<Long> contactIds);
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, InetAddress useLocalInterface);
 
-	boolean sendFileToGroup(Path path, Integer fileCode, Long groupId);
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface);
 
 }

@@ -1,24 +1,23 @@
 package com.ogya.dms.core.intf.listeners;
 
-import com.ogya.dms.core.intf.handles.FileHandle;
-import com.ogya.dms.core.intf.handles.MessageHandle;
+import java.nio.file.Path;
 
 public interface DmsGuiListener {
 
-	void guiMessageSent(MessageHandle messageHandle);
+	void guiMessageSent(String message, Long contactId, Long groupId);
 
-	void guiMessageReceived(MessageHandle messageHandle);
+	void guiMessageReceived(String message, Long contactId, Long groupId);
 
-	void guiFileSent(FileHandle fileHandle);
+	void guiFileSent(Path path, Long contactId, Long groupId);
 
-	void guiFileReceived(FileHandle fileHandle);
+	void guiFileReceived(Path path, Long contactId, Long groupId);
 
-	void guiReportSent(FileHandle fileHandle);
+	void guiReportSent(Path path, Long contactId, Long groupId);
 
-	void guiReportReceived(FileHandle fileHandle);
+	void guiReportReceived(Path path, Long contactId, Long groupId);
 
-	void guiAudioSent(FileHandle fileHandle);
+	void guiAudioSent(Path path, Long contactId, Long groupId);
 
-	void guiAudioReceived(FileHandle fileHandle);
+	void guiAudioReceived(Path path, Long contactId, Long groupId);
 
 }

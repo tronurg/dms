@@ -4,8 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +23,7 @@ import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.exceptions.DbException;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
+import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.main.DmsCore;
 
 public class DmsTest {
@@ -95,10 +98,15 @@ public class DmsTest {
 				List<TestPojo> testList = new ArrayList<TestPojo>();
 				testList.add(testPojo);
 
-				dmsHandle.sendMessageToGroup("hello group!", 1, gsh.getSelectedGroupId());
-//				dmsHandle.sendObjectToGroup(testPojo, 1, gsh.getSelectedGroupUuid());
-//				dmsHandle.sendListToGroup(testList, TestPojo.class, 1, gsh.getSelectedGroupUuid());
-//				dmsHandle.grubaDosyaGonder(Paths.get("D:/test.txt"), 1, gsh.getSeciliGrupId());
+				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
+				try {
+					messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
+				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
+				dmsHandle.sendMessageToGroup(messageHandle, gsh.getSelectedGroupId());
 
 				gsh.resetSelection();
 
@@ -157,10 +165,15 @@ public class DmsTest {
 				List<TestPojo> testList = new ArrayList<TestPojo>();
 				testList.add(testPojo);
 
-				dmsHandle.sendMessageToContacts("hello contact!", 1, csh.getSelectedContactIds());
-//				dmsHandle.sendObjectToContacts(testPojo, 1, csh.getSelectedContactUuids());
-//				dmsHandle.sendListToContacts(testList, TestPojo.class, 1, csh.getSelectedContactUuids());
-//				dmsHandle.kisilereDosyaGonder(Paths.get("D:/test.txt"), 1, csh.getSeciliKisiIdler());
+				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
+				try {
+					messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
+				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
+				dmsHandle.sendMessageToContacts(messageHandle, csh.getSelectedContactIds());
 
 				csh.resetSelection();
 

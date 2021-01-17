@@ -243,7 +243,7 @@ public class Model {
 								if (progress < 0 || progress == 100)
 									statusReceiverMap.remove(sendStatus);
 
-							});
+							}, messagePojo.useLocalAddress);
 
 				});
 
@@ -513,7 +513,7 @@ public class Model {
 
 			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), user.mapId, ContentType.BCON, null).toJson();
 
-			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null);
+			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null, null);
 
 		});
 

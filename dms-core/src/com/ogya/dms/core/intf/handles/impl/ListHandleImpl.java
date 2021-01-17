@@ -4,22 +4,21 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.intf.handles.ListHandle;
 
 public class ListHandleImpl implements ListHandle {
 
+	@SerializedName(value = "a")
 	private final Integer listCode;
+	@SerializedName(value = "b")
 	private final String listStr;
-	private final Long contactId;
-	private final Long groupId;
 
-	public ListHandleImpl(Integer listCode, String listStr, Long contactId, Long groupId) {
+	public ListHandleImpl(Integer listCode, String listStr) {
 
 		this.listCode = listCode;
 		this.listStr = listStr;
-		this.contactId = contactId;
-		this.groupId = groupId;
 
 	}
 
@@ -47,20 +46,6 @@ public class ListHandleImpl implements ListHandle {
 		}
 
 		return null;
-
-	}
-
-	@Override
-	public Long getContactId() {
-
-		return contactId;
-
-	}
-
-	@Override
-	public Long getGroupId() {
-
-		return groupId;
 
 	}
 

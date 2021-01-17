@@ -8,8 +8,4 @@ public interface FileHandle {
 
 	Path getPath();
 
-	Long getContactId();
-
-	Long getGroupId();
-
 }

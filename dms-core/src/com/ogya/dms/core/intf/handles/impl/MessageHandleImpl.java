@@ -1,20 +1,29 @@
 package com.ogya.dms.core.intf.handles.impl;
 
+import com.google.gson.annotations.SerializedName;
+import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.intf.handles.FileHandle;
+import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
+import com.ogya.dms.core.intf.handles.ObjectHandle;
 
 public class MessageHandleImpl implements MessageHandle {
 
+	@SerializedName(value = "a")
 	private final Integer messageCode;
+	@SerializedName(value = "b")
 	private final String message;
-	private final Long contactId;
-	private final Long groupId;
+	@SerializedName(value = "c")
+	private FileHandleImpl fileHandle;
+	@SerializedName(value = "d")
+	private ObjectHandleImpl objectHandle;
+	@SerializedName(value = "e")
+	private ListHandleImpl listHandle;
 
-	public MessageHandleImpl(Integer messageCode, String message, Long contactId, Long groupId) {
+	public MessageHandleImpl(Integer messageCode, String message) {
 
 		this.messageCode = messageCode;
 		this.message = message;
-		this.contactId = contactId;
-		this.groupId = groupId;
 
 	}
 
@@ -33,17 +42,53 @@ public class MessageHandleImpl implements MessageHandle {
 	}
 
 	@Override
-	public Long getContactId() {
+	public FileHandle getFileHandle() {
 
-		return contactId;
+		return fileHandle;
 
 	}
 
 	@Override
-	public Long getGroupId() {
+	public void setFileHandle(FileHandle fileHandle) {
 
-		return groupId;
+		this.fileHandle = (FileHandleImpl) fileHandle;
 
+	}
+
+	@Override
+	public ObjectHandle getObjectHandle() {
+
+		return objectHandle;
+
+	}
+
+	@Override
+	public void setObjectHandle(ObjectHandle objectHandle) {
+
+		this.objectHandle = (ObjectHandleImpl) objectHandle;
+
+	}
+
+	@Override
+	public ListHandle getListHandle() {
+
+		return listHandle;
+
+	}
+
+	@Override
+	public void setListHandle(ListHandle listHandle) {
+
+		this.listHandle = (ListHandleImpl) listHandle;
+
+	}
+
+	public String toJson() {
+		return CommonMethods.toJson(this);
+	}
+
+	public static MessageHandleImpl fromJson(String json) throws Exception {
+		return CommonMethods.fromJson(json, MessageHandleImpl.class);
 	}
 
 }

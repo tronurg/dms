@@ -6,8 +6,4 @@ public interface ObjectHandle {
 
 	<T> T getObject(Class<T> objectClass);
 
-	Long getContactId();
-
-	Long getGroupId();
-
 }

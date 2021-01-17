@@ -2,21 +2,37 @@ package com.ogya.dms.core.intf.handles.impl;
 
 import java.nio.file.Path;
 
+import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.core.intf.handles.FileHandle;
+import com.ogya.dms.core.structures.FilePojo;
 
 public class FileHandleImpl implements FileHandle {
 
+	@SerializedName(value = "a")
 	private final Integer fileCode;
 	private final Path path;
-	private final Long contactId;
-	private final Long groupId;
+	@SerializedName(value = "b")
+	private final FilePojo filePojo;
 
-	public FileHandleImpl(Integer fileCode, Path path, Long contactId, Long groupId) {
+	public FileHandleImpl(Integer fileCode, Path path) {
 
 		this.fileCode = fileCode;
 		this.path = path;
-		this.contactId = contactId;
-		this.groupId = groupId;
+		this.filePojo = null;
+
+	}
+
+	public FileHandleImpl(Integer fileCode, FilePojo filePojo) {
+
+		this.fileCode = fileCode;
+		this.path = null;
+		this.filePojo = filePojo;
+
+	}
+
+	public FilePojo getFilePojo() {
+
+		return filePojo;
 
 	}
 
@@ -31,20 +47,6 @@ public class FileHandleImpl implements FileHandle {
 	public Path getPath() {
 
 		return path;
-
-	}
-
-	@Override
-	public Long getContactId() {
-
-		return contactId;
-
-	}
-
-	@Override
-	public Long getGroupId() {
-
-		return groupId;
 
 	}
 

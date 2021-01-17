@@ -8,8 +8,4 @@ public interface ListHandle {
 
 	<T> List<T> getList(Class<T> elementType);
 
-	Long getContactId();
-
-	Long getGroupId();
-
 }

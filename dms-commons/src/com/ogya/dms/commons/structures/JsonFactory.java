@@ -13,9 +13,9 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
-public class JsonFactory {
+class JsonFactory {
 
-	private static final List<String> gsonExcludedNames = Arrays.asList("addresses");
+	private static final List<String> gsonExcludedNames = Arrays.asList("remoteInterfaces", "localInterfaces");
 
 	private static final Gson gson = new GsonBuilder()
 			.registerTypeAdapter(ContentType.class, new TypeAdapter<ContentType>() {
@@ -54,19 +54,19 @@ public class JsonFactory {
 
 	}).create();
 
-	public static String toJson(Object src) {
+	static String toJson(Object src) {
 
 		return gson.toJson(src);
 
 	}
 
-	public static String toRemoteJson(Object src) {
+	static String toRemoteJson(Object src) {
 
 		return gsonRemote.toJson(src);
 
 	}
 
-	public static <T> T fromJson(String json, Class<T> classOfT) throws Exception {
+	static <T> T fromJson(String json, Class<T> classOfT) throws Exception {
 
 		T result = gson.fromJson(json, classOfT);
 

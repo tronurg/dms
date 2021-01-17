@@ -1,5 +1,6 @@
 package com.ogya.dms.server.model.intf;
 
+import java.net.InetAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
@@ -7,7 +8,8 @@ public interface ModelListener {
 
 	void sendToLocalUser(String receiverUuid, String message);
 
-	void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus, Consumer<Integer> progressMethod);
+	void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus, Consumer<Integer> progressMethod,
+			InetAddress useLocalAddress);
 
 	void sendToAllRemoteServers(String message);
 

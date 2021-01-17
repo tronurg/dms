@@ -193,7 +193,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	public void sendMessageToServer(final String dmsUuid, final String message, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressMethod) {
+			final Consumer<Integer> progressMethod, final InetAddress useLocalAddress) {
 
 		taskQueue.execute(() -> {
 
@@ -206,7 +206,7 @@ public class TcpManager implements TcpServerListener {
 
 				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
-				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod);
+				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod, useLocalAddress);
 
 			} catch (Exception e) {
 
@@ -232,8 +232,8 @@ public class TcpManager implements TcpServerListener {
 
 				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
-				dmsServers
-						.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null));
+				dmsServers.forEach(
+						(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null, null));
 
 			} catch (Exception e) {
 
@@ -278,7 +278,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	private void sendMessageToServer(final DmsServer dmsServer, final String message, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressMethod) {
+			final Consumer<Integer> progressMethod, InetAddress useLocalInterface) {
 
 		dmsServer.taskQueue.execute(() -> {
 
@@ -293,6 +293,9 @@ public class TcpManager implements TcpServerListener {
 			synchronized (dmsServer.connections) {
 
 				for (Connection connection : dmsServer.connections) {
+
+					if (!(useLocalInterface == null || useLocalInterface.equals(connection.localAddress)))
+						continue;
 
 					if (!(sendStatus == null || sendStatus.get()))
 						break;
