@@ -3181,14 +3181,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) {
+	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws IOException {
 
 		return sendMessageToContacts(messageHandle, contactIds, null);
 
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) {
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws IOException {
 
 		return sendMessageToGroup(messageHandle, groupId, null);
 
@@ -3196,7 +3196,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	@Override
 	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds,
-			InetAddress useLocalInterface) {
+			InetAddress useLocalInterface) throws IOException {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3209,16 +3209,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		if (fileHandle != null) {
 
-			try {
-
-				outgoingMessage.setFileHandle(
-						new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
-
-			} catch (Exception e) {
-
-				outgoingMessage.setFileHandle(null);
-
-			}
+			outgoingMessage
+					.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
 
 		}
 
@@ -3238,7 +3230,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface) {
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface)
+			throws IOException {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3260,16 +3253,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		if (fileHandle != null) {
 
-			try {
-
-				outgoingMessage.setFileHandle(
-						new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
-
-			} catch (Exception e) {
-
-				outgoingMessage.setFileHandle(null);
-
-			}
+			outgoingMessage
+					.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
 
 		}
 
