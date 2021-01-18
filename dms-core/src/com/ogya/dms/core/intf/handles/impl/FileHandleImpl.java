@@ -10,7 +10,7 @@ public class FileHandleImpl implements FileHandle {
 
 	@SerializedName(value = "a")
 	private final Integer fileCode;
-	private final Path path;
+	private final transient Path path;
 	@SerializedName(value = "b")
 	private final FilePojo filePojo;
 

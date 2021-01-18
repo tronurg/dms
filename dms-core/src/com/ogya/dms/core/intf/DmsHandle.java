@@ -1,6 +1,5 @@
 package com.ogya.dms.core.intf;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
@@ -57,7 +56,7 @@ public interface DmsHandle {
 
 	MessageHandle createMessageHandle(String message, Integer messageCode);
 
-	FileHandle createFileHandle(Path path, Integer fileCode) throws IOException;
+	FileHandle createFileHandle(Path path, Integer fileCode);
 
 	ObjectHandle createObjectHandle(Object object, Integer objectCode);
 

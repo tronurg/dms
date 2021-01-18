@@ -86,6 +86,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private static final int MIN_MESSAGES_PER_PAGE = 50;
 
+	private static final Object FILE_SYNC = new Object();
+
 	private final DbManager dbManager;
 
 	private final Model model;
@@ -648,15 +650,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		case FILE:
 		case AUDIO:
 
-			Path path = Paths.get(copyMessage.getContent());
-
 			try {
 
-				byte[] fileBytes = Files.readAllBytes(path);
-
-				copyMessage.setContent(
-						new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes))
-								.toJson());
+				copyMessage.setContent(decomposeFile(Paths.get(copyMessage.getContent())).toJson());
 
 			} catch (Exception e) {
 
@@ -1144,6 +1140,34 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
+	private Path composeFile(FilePojo filePojo) throws IOException {
+
+		synchronized (FILE_SYNC) {
+
+			Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
+
+			Path dstFile = getDstFile(dstFolder, filePojo.fileName);
+
+			Files.write(dstFile, Base64.getDecoder().decode(filePojo.fileContent));
+
+			return dstFile;
+
+		}
+
+	}
+
+	private FilePojo decomposeFile(Path path) throws IOException {
+
+		synchronized (FILE_SYNC) {
+
+			byte[] fileBytes = Files.readAllBytes(path);
+
+			return new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes));
+
+		}
+
+	}
+
 	@Override
 	public void beaconReceived(String message) {
 
@@ -1498,17 +1522,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					try {
 
-						FilePojo filePojo = FilePojo.fromJson(incomingMessage.getContent());
-
-						Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
-
-						String fileName = filePojo.fileName;
-
-						Path dstFile = getDstFile(dstFolder, fileName);
-
-						Files.write(dstFile, Base64.getDecoder().decode(filePojo.fileContent));
-
-						incomingMessage.setContent(dstFile.toString());
+						incomingMessage
+								.setContent(composeFile(FilePojo.fromJson(incomingMessage.getContent())).toString());
 
 					} catch (Exception e) {
 
@@ -1830,11 +1845,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void transientMessageReceived(String message, String remoteUuid) {
 
+		System.out.println(message);
+
 		taskQueue.execute(() -> {
 
 			try {
 
-				Message incomingMessage = Message.fromJson(message);
+				MessageHandleImpl incomingMessage = MessageHandleImpl.fromJson(message);
 
 				Long contactId = getContact(remoteUuid).getId();
 				Long groupId = null;
@@ -1898,23 +1915,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				MessageHandle messageHandle = MessageHandleImpl.fromJson(incomingMessage.getContent());
-
-				FileHandle fileHandle = messageHandle.getFileHandle();
+				FileHandleImpl fileHandle = (FileHandleImpl) incomingMessage.getFileHandle();
 
 				if (fileHandle != null) {
 
-					FileHandleImpl fileHandleImpl = (FileHandleImpl) fileHandle;
+					try {
 
-					Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
+						incomingMessage.setFileHandle(new FileHandleImpl(incomingMessage.getMessageCode(),
+								composeFile(fileHandle.getFilePojo())));
 
-					String fileName = fileHandleImpl.getFilePojo().fileName;
+					} catch (IOException e) {
 
-					Path dstFile = getDstFile(dstFolder, fileName);
+						incomingMessage.setFileHandle(null);
 
-					Files.write(dstFile, Base64.getDecoder().decode(fileHandleImpl.getFilePojo().fileContent));
-
-					messageHandle.setFileHandle(new FileHandleImpl(incomingMessage.getMessageCode(), dstFile));
+					}
 
 				}
 
@@ -1922,7 +1936,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				final Long newGroupId = groupId;
 
 				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.messageReceived(messageHandle, newContactId, newGroupId)));
+						.forEach(listener -> listener.messageReceived(incomingMessage, newContactId, newGroupId)));
 
 			} catch (Exception e) {
 
@@ -3145,13 +3159,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public FileHandle createFileHandle(Path path, Integer fileCode) throws IOException {
+	public FileHandle createFileHandle(Path path, Integer fileCode) {
 
-		byte[] fileBytes = Files.readAllBytes(path);
-
-		FilePojo filePojo = new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes));
-
-		return new FileHandleImpl(fileCode, filePojo);
+		return new FileHandleImpl(fileCode, path);
 
 	}
 
@@ -3191,8 +3201,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (!model.isServerConnected())
 			return false;
 
-		Message outgoingMessage = new Message(null, null, ReceiverType.CONTACT, null,
-				((MessageHandleImpl) messageHandle).toJson());
+		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
+
+		outgoingMessage.setReceiverType(ReceiverType.CONTACT);
+
+		FileHandle fileHandle = outgoingMessage.getFileHandle();
+
+		if (fileHandle != null) {
+
+			try {
+
+				outgoingMessage.setFileHandle(
+						new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
+
+			} catch (Exception e) {
+
+				outgoingMessage.setFileHandle(null);
+
+			}
+
+		}
 
 		List<String> contactUuids = new ArrayList<String>();
 
@@ -3222,10 +3250,28 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
 
-		Message outgoingMessage = new Message(null, null, master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER,
-				null, ((MessageHandleImpl) messageHandle).toJson());
+		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
+
+		outgoingMessage.setReceiverType(master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER);
 
 		outgoingMessage.setGroupRefId(group.getGroupRefId());
+
+		FileHandle fileHandle = outgoingMessage.getFileHandle();
+
+		if (fileHandle != null) {
+
+			try {
+
+				outgoingMessage.setFileHandle(
+						new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
+
+			} catch (Exception e) {
+
+				outgoingMessage.setFileHandle(null);
+
+			}
+
+		}
 
 		List<String> contactUuids = new ArrayList<String>();
 

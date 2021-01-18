@@ -80,6 +80,26 @@ public class CommonMethods {
 					writer.value(value.ordinal());
 				}
 
+			}).registerTypeAdapter(ReceiverType.class, new TypeAdapter<ReceiverType>() {
+
+				@Override
+				public ReceiverType read(JsonReader reader) throws IOException {
+					if (reader.peek() == JsonToken.NULL) {
+						reader.nextNull();
+						return null;
+					}
+					return ReceiverType.values()[reader.nextInt()];
+				}
+
+				@Override
+				public void write(JsonWriter writer, ReceiverType value) throws IOException {
+					if (value == null) {
+						writer.nullValue();
+						return;
+					}
+					writer.value(value.ordinal());
+				}
+
 			}).create();
 
 	private static Gson gsonMessage = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {

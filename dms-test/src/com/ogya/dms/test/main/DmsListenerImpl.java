@@ -1,6 +1,8 @@
 package com.ogya.dms.test.main;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Path;
 
 import com.ogya.dms.core.intf.DmsHandle;
@@ -86,6 +88,13 @@ public class DmsListenerImpl implements DmsListener {
 					dmsHandle.getContactHandle(contactId).getName(),
 					groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(),
 					listHandle.getList(TestPojoConverted.class)));
+		}
+
+		try {
+			dmsHandle.sendMessageToContacts(messageHandle,
+					dmsHandle.getIdsByAddressAndName(InetAddress.getByName("192.168.1.88"), "elma"));
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
 		}
 
 	}

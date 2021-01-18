@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
@@ -99,11 +98,7 @@ public class DmsTest {
 				testList.add(testPojo);
 
 				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-				try {
-					messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
 				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
 				dmsHandle.sendMessageToGroup(messageHandle, gsh.getSelectedGroupId());
@@ -166,11 +161,7 @@ public class DmsTest {
 				testList.add(testPojo);
 
 				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-				try {
-					messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
 				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
 				dmsHandle.sendMessageToContacts(messageHandle, csh.getSelectedContactIds());
