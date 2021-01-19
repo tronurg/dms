@@ -1845,8 +1845,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void transientMessageReceived(String message, String remoteUuid) {
 
-		System.out.println(message);
-
 		taskQueue.execute(() -> {
 
 			try {
@@ -1921,8 +1919,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					try {
 
-						incomingMessage.setFileHandle(new FileHandleImpl(incomingMessage.getMessageCode(),
-								composeFile(fileHandle.getFilePojo())));
+						incomingMessage.setFileHandle(
+								new FileHandleImpl(fileHandle.getFileCode(), composeFile(fileHandle.getFilePojo())));
 
 					} catch (IOException e) {
 
