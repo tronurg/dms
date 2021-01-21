@@ -1685,6 +1685,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (contact != null)
 					updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus);
 
+				if (Objects.equals(dbMessage.getMessageCode(), CommonConstants.CODE_API_MESSAGE)) {
+
+					dmsListeners.forEach(listener -> listener.guiMessageStatusUpdated(messageId, messageStatus));
+
+				}
+
 			} catch (Exception e) {
 
 				e.printStackTrace();
@@ -2096,13 +2102,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			if (id > 0) {
+			try {
 
-				sendPrivateMessageClicked(id, messageTxt, refMessageId);
+				if (id > 0) {
 
-			} else {
+					sendPrivateMessageClaimed(id, messageTxt, refMessageId, null);
 
-				sendGroupMessageClicked(-id, messageTxt, refMessageId);
+				} else {
+
+					sendGroupMessageClaimed(-id, messageTxt, refMessageId);
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -2110,55 +2124,45 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void sendPrivateMessageClicked(final Long id, final String messageTxt, final Long refMessageId) {
+	private Long sendPrivateMessageClaimed(final Long id, final String messageTxt, final Long refMessageId,
+			Integer messageCode) throws Exception {
 
-		try {
+		Message refMessage = dbManager.getMessageById(refMessageId);
 
-			Message refMessage = dbManager.getMessageById(refMessageId);
+		Message newMessage = createOutgoingMessage(messageTxt, model.getContact(id), null, null, ReceiverType.CONTACT,
+				MessageType.TEXT, messageCode, refMessage);
 
-			Message newMessage = createOutgoingMessage(messageTxt, model.getContact(id), null, null,
-					ReceiverType.CONTACT, MessageType.TEXT, null, refMessage);
+		addMessageToPane(newMessage);
 
-			addMessageToPane(newMessage);
+		sendPrivateMessage(newMessage);
 
-			sendPrivateMessage(newMessage);
+		listenerTaskQueue.execute(() -> dmsGuiListeners
+				.forEach(guiListener -> guiListener.guiMessageSent(newMessage.getContent(), id, null)));
 
-			listenerTaskQueue.execute(() -> dmsGuiListeners
-					.forEach(guiListener -> guiListener.guiMessageSent(newMessage.getContent(), id, null)));
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
+		return newMessage.getId();
 
 	}
 
-	private void sendGroupMessageClicked(final Long id, final String messageTxt, final Long refMessageId) {
+	private Long sendGroupMessageClaimed(final Long id, final String messageTxt, final Long refMessageId)
+			throws Exception {
 
-		try {
+		Dgroup group = model.getGroup(id);
 
-			Dgroup group = model.getGroup(id);
+		Message refMessage = dbManager.getMessageById(refMessageId);
 
-			Message refMessage = dbManager.getMessageById(refMessageId);
+		Message newMessage = createOutgoingMessage(messageTxt, group.getOwner(), group, createStatusReports(group),
+				Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) ? ReceiverType.GROUP_MEMBER
+						: ReceiverType.GROUP_OWNER,
+				MessageType.TEXT, null, refMessage);
 
-			Message newMessage = createOutgoingMessage(messageTxt, group.getOwner(), group, createStatusReports(group),
-					Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) ? ReceiverType.GROUP_MEMBER
-							: ReceiverType.GROUP_OWNER,
-					MessageType.TEXT, null, refMessage);
+		addMessageToPane(newMessage);
 
-			addMessageToPane(newMessage);
+		sendGroupMessage(newMessage);
 
-			sendGroupMessage(newMessage);
+		listenerTaskQueue.execute(() -> dmsGuiListeners
+				.forEach(guiListener -> guiListener.guiMessageSent(newMessage.getContent(), null, id)));
 
-			listenerTaskQueue.execute(() -> dmsGuiListeners
-					.forEach(guiListener -> guiListener.guiMessageSent(newMessage.getContent(), null, id)));
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
+		return newMessage.getId();
 
 	}
 
@@ -3178,16 +3182,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void sendGuiMessageToContact(String message, Long contactId) {
+	public void sendGuiMessageToContact(String message, Long contactId, final Consumer<Long> future) {
 
-		sendMessageClicked(contactId, message, null);
+		taskQueue.execute(() -> {
 
-	}
+			try {
 
-	@Override
-	public void sendGuiMessageToGroup(String message, Long groupId) {
+				Long messageId = sendPrivateMessageClaimed(contactId, message, null, CommonConstants.CODE_API_MESSAGE);
 
-		sendMessageClicked(-groupId, message, null);
+				if (future != null)
+					future.accept(messageId);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 

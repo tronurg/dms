@@ -3,6 +3,7 @@ package com.ogya.dms.core.intf;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 
@@ -67,8 +68,6 @@ public interface DmsHandle {
 	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, InetAddress useLocalInterface)
 			throws Exception;
 
-	void sendGuiMessageToContact(String message, Long contactId);
-
-	void sendGuiMessageToGroup(String message, Long groupId);
+	void sendGuiMessageToContact(String message, Long contactId, Consumer<Long> future);
 
 }

@@ -113,8 +113,10 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-//			dmsHandle.sendGuiMessageToContact("api deneme", dmsHandle.getAllContactHandles().stream()
-//					.filter(contactHandle -> contactHandle.getName().equals("elma")).findFirst().get().getId());
+			dmsHandle.sendGuiMessageToContact("api deneme",
+					dmsHandle.getAllContactHandles().stream()
+							.filter(contactHandle -> contactHandle.getName().equals("elma")).findFirst().get().getId(),
+					null);
 
 		} catch (DbException e) {
 

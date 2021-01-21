@@ -12,6 +12,7 @@ import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
 import com.ogya.dms.core.intf.listeners.DmsListener;
+import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsListenerImpl implements DmsListener {
 
@@ -97,6 +98,13 @@ public class DmsListenerImpl implements DmsListener {
 
 		System.out.println(String.format("Message #%d transmitted to %s\n", trackingId,
 				dmsHandle.getContactHandle(contactId).getName()));
+
+	}
+
+	@Override
+	public void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus) {
+
+		System.out.println(String.format("Message #%d status: %s\n", messageId, messageStatus));
 
 	}
 
