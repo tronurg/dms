@@ -10,7 +10,9 @@ public interface DmsListener {
 
 	void fileClicked(Path path);
 
-	void messageReceived(MessageHandle messageHandle, Long contactId, Long groupId);
+	void messageReceived(MessageHandle messageHandle, Long contactId);
+
+	void messageTransmitted(Integer trackingId, Long contactId);
 
 	void contactUpdated(ContactHandle contactHandle);
 

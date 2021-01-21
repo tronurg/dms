@@ -1852,64 +1852,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				MessageHandleImpl incomingMessage = MessageHandleImpl.fromJson(message);
 
 				Long contactId = getContact(remoteUuid).getId();
-				Long groupId = null;
 
-				switch (incomingMessage.getReceiverType()) {
+				Integer trackingId = incomingMessage.getTrackingId();
 
-				case GROUP_MEMBER: {
+				if (incomingMessage.getFlag() != null) {
 
-					Dgroup dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
+					dmsListeners.forEach(listener -> listener.messageTransmitted(trackingId, contactId));
 
-					if (dgroup == null)
-						break;
-
-					Member member = dbManager.getMember(remoteUuid, incomingMessage.getContactRefId());
-
-					if (member != null)
-						contactId = member.getContact().getId();
-
-					if (dgroup != null)
-						groupId = dgroup.getId();
-
-					break;
-
-				}
-
-				case GROUP_OWNER: {
-
-					Dgroup dgroup = model.getGroup(incomingMessage.getGroupRefId());
-
-					if (dgroup == null)
-						break;
-
-					groupId = dgroup.getId();
-
-					List<String> contactUuids = new ArrayList<String>();
-
-					dgroup.getMembers().forEach(contact -> {
-
-						if (Objects.equals(contact.getUuid(), remoteUuid))
-							return;
-
-						contactUuids.add(contact.getUuid());
-
-					});
-
-					if (contactUuids.size() == 0)
-						break;
-
-					incomingMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
-					incomingMessage.setContactRefId(contactId);
-
-					dmsClient.sendTransientMessage(incomingMessage.toJson(), contactUuids, null);
-
-					break;
-
-				}
-
-				default:
-
-					break;
+					return;
 
 				}
 
@@ -1931,10 +1881,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				}
 
 				final Long newContactId = contactId;
-				final Long newGroupId = groupId;
 
 				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.messageReceived(incomingMessage, newContactId, newGroupId)));
+						.forEach(listener -> listener.messageReceived(incomingMessage, newContactId)));
+
+				if (trackingId != null) {
+
+					MessageHandleImpl response = new MessageHandleImpl(null, null);
+					response.setTrackingId(trackingId);
+					response.setFlag(1);
+
+					dmsClient.sendTransientMessage(response.toJson(), Arrays.asList(remoteUuid), null);
+
+				}
 
 			} catch (Exception e) {
 
@@ -3186,13 +3145,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws IOException {
-
-		return sendMessageToGroup(messageHandle, groupId, null);
-
-	}
-
-	@Override
 	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds,
 			InetAddress useLocalInterface) throws IOException {
 
@@ -3200,8 +3152,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			return false;
 
 		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
-
-		outgoingMessage.setReceiverType(ReceiverType.CONTACT);
 
 		FileHandle fileHandle = outgoingMessage.getFileHandle();
 
@@ -3228,44 +3178,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface)
-			throws IOException {
+	public void sendGuiMessageToContact(String message, Long contactId) {
 
-		if (!model.isServerConnected())
-			return false;
+		sendMessageClicked(contactId, message, null);
 
-		Dgroup group = model.getGroup(groupId);
+	}
 
-		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
-			return false;
+	@Override
+	public void sendGuiMessageToGroup(String message, Long groupId) {
 
-		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
-
-		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
-
-		outgoingMessage.setReceiverType(master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER);
-
-		outgoingMessage.setGroupRefId(group.getGroupRefId());
-
-		FileHandle fileHandle = outgoingMessage.getFileHandle();
-
-		if (fileHandle != null) {
-
-			outgoingMessage
-					.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
-
-		}
-
-		List<String> contactUuids = new ArrayList<String>();
-
-		if (master)
-			group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
-		else
-			contactUuids.add(group.getOwner().getUuid());
-
-		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids, useLocalInterface);
-
-		return true;
+		sendMessageClicked(-groupId, message, null);
 
 	}
 

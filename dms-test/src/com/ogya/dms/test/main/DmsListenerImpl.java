@@ -54,17 +54,15 @@ public class DmsListenerImpl implements DmsListener {
 	}
 
 	@Override
-	public void messageReceived(MessageHandle messageHandle, Long contactId, Long groupId) {
+	public void messageReceived(MessageHandle messageHandle, Long contactId) {
 
-		System.out.println(String.format("Message received from: %s (group: %s)\nContent: %s\n",
-				dmsHandle.getContactHandle(contactId).getName(),
-				groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(), messageHandle.getMessage()));
+		System.out.println(String.format("Message received from: %s\nContent: %s\n",
+				dmsHandle.getContactHandle(contactId).getName(), messageHandle.getMessage()));
 
 		FileHandle fileHandle = messageHandle.getFileHandle();
 		if (fileHandle != null) {
-			System.out.println(String.format("File received from: %s (group: %s)\nContent: %s\n",
-					dmsHandle.getContactHandle(contactId).getName(),
-					groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(), fileHandle.getPath()));
+			System.out.println(String.format("File received from: %s\nContent: %s\n",
+					dmsHandle.getContactHandle(contactId).getName(), fileHandle.getPath()));
 			try {
 				new ProcessBuilder().directory(fileHandle.getPath().getParent().toFile())
 						.command("cmd", "/C", fileHandle.getPath().getFileName().toString()).start();
@@ -75,26 +73,30 @@ public class DmsListenerImpl implements DmsListener {
 
 		ObjectHandle objectHandle = messageHandle.getObjectHandle();
 		if (objectHandle != null) {
-			System.out.println(String.format("Object received from: %s (group: %s)\nContent: %s\n",
-					dmsHandle.getContactHandle(contactId).getName(),
-					groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(),
-					objectHandle.getObject(TestPojo.class)));
+			System.out.println(String.format("Object received from: %s\nContent: %s\n",
+					dmsHandle.getContactHandle(contactId).getName(), objectHandle.getObject(TestPojo.class)));
 		}
 
 		ListHandle listHandle = messageHandle.getListHandle();
 		if (listHandle != null) {
-			System.out.println(String.format("List received from: %s (group: %s)\nContent: %s\n",
-					dmsHandle.getContactHandle(contactId).getName(),
-					groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName(),
-					listHandle.getList(TestPojoConverted.class)));
+			System.out.println(String.format("List received from: %s\nContent: %s\n",
+					dmsHandle.getContactHandle(contactId).getName(), listHandle.getList(TestPojoConverted.class)));
 		}
 
 		try {
 			dmsHandle.sendMessageToContacts(messageHandle,
 					dmsHandle.getIdsByAddressAndName(InetAddress.getByName("192.168.1.88"), "elma"));
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
+
+	}
+
+	@Override
+	public void messageTransmitted(Integer trackingId, Long contactId) {
+
+		System.out.println(String.format("Message #%d transmitted to %s\n", trackingId,
+				dmsHandle.getContactHandle(contactId).getName()));
 
 	}
 
