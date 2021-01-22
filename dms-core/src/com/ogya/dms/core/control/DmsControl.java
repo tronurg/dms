@@ -701,27 +701,27 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			case TEXT:
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(message.getContent(),
-						message.getContact().getId(), null));
+				listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+						.guiMessageReceived(message.getContent(), message.getContact().getId(), null)));
 
 				break;
 
 			case FILE:
 
 				if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_REPORT)) {
-					dmsGuiListeners.forEach(guiListener -> guiListener
-							.guiReportReceived(Paths.get(message.getContent()), message.getContact().getId(), null));
+					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+							.guiReportReceived(Paths.get(message.getContent()), message.getContact().getId(), null)));
 				} else {
-					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
-							message.getContact().getId(), null));
+					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+							.guiFileReceived(Paths.get(message.getContent()), message.getContact().getId(), null)));
 				}
 
 				break;
 
 			case AUDIO:
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
-						message.getContact().getId(), null));
+				listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
+						.guiAudioReceived(Paths.get(message.getContent()), message.getContact().getId(), null)));
 
 				break;
 
@@ -762,28 +762,31 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			case TEXT:
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(message.getContent(),
-						message.getContact().getId(), message.getDgroup().getId()));
+				listenerTaskQueue.execute(() -> dmsGuiListeners
+						.forEach(guiListener -> guiListener.guiMessageReceived(message.getContent(),
+								message.getContact().getId(), message.getDgroup().getId())));
 
 				break;
 
 			case FILE:
 
 				if (Objects.equals(message.getMessageCode(), CommonConstants.CODE_REPORT)) {
-					dmsGuiListeners
+					listenerTaskQueue.execute(() -> dmsGuiListeners
 							.forEach(guiListener -> guiListener.guiReportReceived(Paths.get(message.getContent()),
-									message.getContact().getId(), message.getDgroup().getId()));
+									message.getContact().getId(), message.getDgroup().getId())));
 				} else {
-					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
-							message.getContact().getId(), message.getDgroup().getId()));
+					listenerTaskQueue.execute(() -> dmsGuiListeners
+							.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
+									message.getContact().getId(), message.getDgroup().getId())));
 				}
 
 				break;
 
 			case AUDIO:
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
-						message.getContact().getId(), message.getDgroup().getId()));
+				listenerTaskQueue.execute(() -> dmsGuiListeners
+						.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
+								message.getContact().getId(), message.getDgroup().getId())));
 
 				break;
 
@@ -1687,7 +1690,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (Objects.equals(dbMessage.getMessageCode(), CommonConstants.CODE_API_MESSAGE)) {
 
-					dmsListeners.forEach(listener -> listener.guiMessageStatusUpdated(messageId, messageStatus));
+					listenerTaskQueue.execute(() -> dmsListeners
+							.forEach(listener -> listener.guiMessageStatusUpdated(messageId, messageStatus)));
 
 				}
 
@@ -1857,15 +1861,77 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				MessageHandleImpl incomingMessage = MessageHandleImpl.fromJson(message);
 
-				Long contactId = getContact(remoteUuid).getId();
-
-				Integer trackingId = incomingMessage.getTrackingId();
+				if (incomingMessage.getReceiverType() == null)
+					incomingMessage.setReceiverType(ReceiverType.CONTACT);
 
 				if (incomingMessage.getFlag() != null) {
 
-					dmsListeners.forEach(listener -> listener.messageTransmitted(trackingId, contactId));
+					transientMessageStatusReceived(incomingMessage, remoteUuid);
 
 					return;
+
+				}
+
+				Long contactId = getContact(remoteUuid).getId();
+				Long groupId = incomingMessage.getGroupRefId();
+
+				if (groupId != null) {
+
+					switch (incomingMessage.getReceiverType()) {
+
+					case GROUP_MEMBER: {
+
+						Dgroup dgroup = model.getGroup(remoteUuid, groupId);
+
+						if (dgroup == null)
+							break;
+
+						groupId = dgroup.getId();
+
+						Member member = dbManager.getMember(remoteUuid, incomingMessage.getContactRefId());
+
+						if (member != null)
+							contactId = member.getContact().getId();
+
+						break;
+
+					}
+
+					case GROUP_OWNER: {
+
+						Dgroup dgroup = model.getGroup(groupId);
+
+						if (dgroup == null)
+							break;
+
+						List<String> contactUuids = new ArrayList<String>();
+
+						dgroup.getMembers().forEach(contact -> {
+							if (Objects.equals(contact.getUuid(), remoteUuid))
+								return;
+							contactUuids.add(contact.getUuid());
+						});
+
+						if (contactUuids.size() == 0)
+							break;
+
+						incomingMessage.setContactRefId(contactId);
+
+						MessageHandleImpl outgoingMessage = new MessageHandleImpl(incomingMessage);
+						outgoingMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
+						outgoingMessage.setContactRefId(contactId);
+						outgoingMessage.setGroupRefId(groupId);
+
+						dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids, null);
+
+						break;
+
+					}
+
+					default:
+						break;
+
+					}
 
 				}
 
@@ -1886,20 +1952,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				final Long newContactId = contactId;
+				final Long finalContactId = contactId;
+				final Long finalGroupId = groupId;
 
 				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.messageReceived(incomingMessage, newContactId)));
+						.forEach(listener -> listener.messageReceived(incomingMessage, finalContactId, finalGroupId)));
 
-				if (trackingId != null) {
-
-					MessageHandleImpl response = new MessageHandleImpl(null, null);
-					response.setTrackingId(trackingId);
-					response.setFlag(1);
-
-					dmsClient.sendTransientMessage(response.toJson(), Arrays.asList(remoteUuid), null);
-
-				}
+				sendTransientMessageStatus(incomingMessage, remoteUuid);
 
 			} catch (Exception e) {
 
@@ -1908,6 +1967,102 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 		});
+
+	}
+
+	private void transientMessageStatusReceived(MessageHandleImpl incomingMessage, String remoteUuid) throws Exception {
+
+		final Integer trackingId = incomingMessage.getTrackingId();
+
+		if (trackingId == null)
+			return;
+
+		Long contactId = getContact(remoteUuid).getId();
+
+		switch (incomingMessage.getReceiverType()) {
+
+		case GROUP_MEMBER: {
+
+			Long contactRefId = incomingMessage.getContactRefId();
+
+			Member member = dbManager.getMember(remoteUuid, contactRefId);
+
+			if (member != null)
+				contactId = member.getContact().getId();
+
+			break;
+
+		}
+
+		case GROUP_OWNER: {
+
+			Long contactRefId = incomingMessage.getContactRefId();
+
+			if (contactRefId != null) {
+
+				incomingMessage.setReceiverType(ReceiverType.GROUP_MEMBER);
+				incomingMessage.setContactRefId(contactId);
+
+				dmsClient.sendTransientMessage(incomingMessage.toJson(),
+						Arrays.asList(model.getContact(contactRefId).getUuid()), null);
+
+				return;
+
+			}
+
+			break;
+
+		}
+
+		default:
+			break;
+
+		}
+
+		final Long finalContactId = contactId;
+
+		listenerTaskQueue.execute(
+				() -> dmsListeners.forEach(listener -> listener.messageTransmitted(trackingId, finalContactId)));
+
+	}
+
+	private void sendTransientMessageStatus(MessageHandleImpl incomingMessage, String remoteUuid) throws Exception {
+
+		Integer trackingId = incomingMessage.getTrackingId();
+
+		if (trackingId == null)
+			return;
+
+		MessageHandleImpl response = new MessageHandleImpl(null, null);
+		response.setTrackingId(trackingId);
+		response.setFlag(1);
+
+		switch (incomingMessage.getReceiverType()) {
+
+		case GROUP_MEMBER: {
+
+			response.setReceiverType(ReceiverType.GROUP_OWNER);
+
+			response.setContactRefId(incomingMessage.getContactRefId());
+
+			break;
+
+		}
+
+		case GROUP_OWNER: {
+
+			response.setReceiverType(ReceiverType.GROUP_MEMBER);
+
+			break;
+
+		}
+
+		default:
+			break;
+
+		}
+
+		dmsClient.sendTransientMessage(response.toJson(), Arrays.asList(remoteUuid), null);
 
 	}
 
@@ -2110,7 +2265,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else {
 
-					sendGroupMessageClaimed(-id, messageTxt, refMessageId);
+					sendGroupMessageClaimed(-id, messageTxt, refMessageId, null);
 
 				}
 
@@ -2143,8 +2298,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Long sendGroupMessageClaimed(final Long id, final String messageTxt, final Long refMessageId)
-			throws Exception {
+	private Long sendGroupMessageClaimed(final Long id, final String messageTxt, final Long refMessageId,
+			Integer messageCode) throws Exception {
 
 		Dgroup group = model.getGroup(id);
 
@@ -3149,6 +3304,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws Exception {
+
+		return sendMessageToGroup(messageHandle, groupId, null);
+
+	}
+
+	@Override
 	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds,
 			InetAddress useLocalInterface) throws IOException {
 
@@ -3182,6 +3344,47 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface)
+			throws Exception {
+
+		if (!model.isServerConnected())
+			return false;
+
+		Dgroup group = model.getGroup(groupId);
+
+		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
+			return false;
+
+		boolean master = Objects.equals(group.getOwner().getUuid(), model.getLocalUuid());
+
+		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
+
+		outgoingMessage.setReceiverType(master ? ReceiverType.GROUP_MEMBER : ReceiverType.GROUP_OWNER);
+		outgoingMessage.setGroupRefId(group.getGroupRefId());
+
+		FileHandle fileHandle = outgoingMessage.getFileHandle();
+
+		if (fileHandle != null) {
+
+			outgoingMessage
+					.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
+
+		}
+
+		List<String> contactUuids = new ArrayList<String>();
+
+		if (master)
+			group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		else
+			contactUuids.add(group.getOwner().getUuid());
+
+		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids, useLocalInterface);
+
+		return true;
+
+	}
+
+	@Override
 	public void sendGuiMessageToContact(String message, Long contactId, final Consumer<Long> future) {
 
 		taskQueue.execute(() -> {
@@ -3189,6 +3392,28 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				Long messageId = sendPrivateMessageClaimed(contactId, message, null, CommonConstants.CODE_API_MESSAGE);
+
+				if (future != null)
+					future.accept(messageId);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void sendGuiMessageToGroup(String message, Long groupId, Consumer<Long> future) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Long messageId = sendGroupMessageClaimed(groupId, message, null, CommonConstants.CODE_API_MESSAGE);
 
 				if (future != null)
 					future.accept(messageId);

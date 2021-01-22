@@ -20,6 +20,7 @@ import javax.swing.UIManager;
 import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.exceptions.DbException;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
+import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.main.DmsCore;
 
@@ -84,7 +85,31 @@ public class DmsTest {
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 
-			JComponent mcPanel = dmsHandle.getDmsPanel();
+			GroupSelectionHandle csh = dmsHandle.getActiveGroupsHandle();
+
+//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = csh.getGroupSelectionPanel();
+			JButton btn = new JButton("test");
+			btn.addActionListener(e -> {
+
+				TestPojo testPojo = new TestPojo();
+				List<TestPojo> testList = new ArrayList<TestPojo>();
+				testList.add(testPojo);
+
+				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
+//				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
+				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
+				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
+				messageHandle.setTrackingId(124);
+				try {
+					dmsHandle.sendMessageToGroup(messageHandle, csh.getSelectedGroupId());
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+
+				csh.resetSelection();
+
+			});
 
 			new Thread(() -> {
 
@@ -106,6 +131,7 @@ public class DmsTest {
 
 			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(mcPanel, BorderLayout.CENTER);
+			panel.add(btn, BorderLayout.SOUTH);
 
 			frame.setContentPane(panel);
 			frame.setSize(400, 600);
@@ -113,10 +139,10 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-			dmsHandle.sendGuiMessageToContact("api deneme",
-					dmsHandle.getAllContactHandles().stream()
-							.filter(contactHandle -> contactHandle.getName().equals("elma")).findFirst().get().getId(),
-					null);
+//			dmsHandle.sendGuiMessageToContact("api deneme",
+//					dmsHandle.getAllContactHandles().stream()
+//							.filter(contactHandle -> contactHandle.getName().equals("elma")).findFirst().get().getId(),
+//					null);
 
 		} catch (DbException e) {
 

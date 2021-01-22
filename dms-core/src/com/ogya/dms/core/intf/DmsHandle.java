@@ -65,9 +65,16 @@ public interface DmsHandle {
 
 	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws Exception;
 
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws Exception;
+
 	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, InetAddress useLocalInterface)
 			throws Exception;
 
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface)
+			throws Exception;
+
 	void sendGuiMessageToContact(String message, Long contactId, Consumer<Long> future);
+
+	void sendGuiMessageToGroup(String message, Long groupId, Consumer<Long> future);
 
 }

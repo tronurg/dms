@@ -279,6 +279,9 @@ public class DbManager {
 
 	public Member getMember(String ownerUuid, Long contactRefId) throws HibernateException {
 
+		if (ownerUuid == null || contactRefId == null)
+			return null;
+
 		Session session = factory.openSession();
 
 		Member dbMember = session
