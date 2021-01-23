@@ -3339,7 +3339,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				Long messageId = sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, 1);
 
 				if (future != null)
-					future.accept(messageId);
+					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
@@ -3361,7 +3361,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				Long messageId = sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, 1);
 
 				if (future != null)
-					future.accept(messageId);
+					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
@@ -3386,7 +3386,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						1);
 
 				if (future != null)
-					future.accept(messageId);
+					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
@@ -3410,7 +3410,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				Long messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, 1);
 
 				if (future != null)
-					future.accept(messageId);
+					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
@@ -3435,7 +3435,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						MessageSubType.FILE_REPORT, 1);
 
 				if (future != null)
-					future.accept(messageId);
+					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
@@ -3460,7 +3460,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						MessageSubType.FILE_REPORT, 1);
 
 				if (future != null)
-					future.accept(messageId);
+					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
