@@ -45,6 +45,7 @@ import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.structures.MessageSubType;
 import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.view.ReportsPane.ReportTemplate;
@@ -147,6 +148,26 @@ public class CommonMethods {
 
 		@Override
 		public void write(JsonWriter writer, MessageType value) throws IOException {
+			if (value == null) {
+				writer.nullValue();
+				return;
+			}
+			writer.value(value.ordinal());
+		}
+
+	}).registerTypeAdapter(MessageSubType.class, new TypeAdapter<MessageSubType>() {
+
+		@Override
+		public MessageSubType read(JsonReader reader) throws IOException {
+			if (reader.peek() == JsonToken.NULL) {
+				reader.nextNull();
+				return null;
+			}
+			return MessageSubType.values()[reader.nextInt()];
+		}
+
+		@Override
+		public void write(JsonWriter writer, MessageSubType value) throws IOException {
 			if (value == null) {
 				writer.nullValue();
 				return;

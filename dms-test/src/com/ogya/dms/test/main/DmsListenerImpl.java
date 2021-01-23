@@ -17,10 +17,12 @@ import com.ogya.dms.core.structures.MessageStatus;
 public class DmsListenerImpl implements DmsListener {
 
 	private final DmsHandle dmsHandle;
+	private final String myName;
 
 	public DmsListenerImpl(DmsHandle dmsHandle) {
 
 		this.dmsHandle = dmsHandle;
+		this.myName = dmsHandle.getMyContactHandle().getName();
 
 	}
 
@@ -59,12 +61,12 @@ public class DmsListenerImpl implements DmsListener {
 
 		String groupName = groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName();
 
-		System.out.println(String.format("Message received from: %s (group: %s)\nContent: %s\n",
+		System.out.println(String.format("%s: Message received from: %s (group: %s)\nContent: %s\n", myName,
 				dmsHandle.getContactHandle(contactId).getName(), groupName, messageHandle.getMessage()));
 
 		FileHandle fileHandle = messageHandle.getFileHandle();
 		if (fileHandle != null) {
-			System.out.println(String.format("File received from: %s (group: %s)\nContent: %s\n",
+			System.out.println(String.format("%s: File received from: %s (group: %s)\nContent: %s\n", myName,
 					dmsHandle.getContactHandle(contactId).getName(), groupName, fileHandle.getPath()));
 			try {
 				new ProcessBuilder().directory(fileHandle.getPath().getParent().toFile())
@@ -76,14 +78,14 @@ public class DmsListenerImpl implements DmsListener {
 
 		ObjectHandle objectHandle = messageHandle.getObjectHandle();
 		if (objectHandle != null) {
-			System.out.println(String.format("Object received from: %s (group: %s)\nContent: %s\n",
+			System.out.println(String.format("%s: Object received from: %s (group: %s)\nContent: %s\n", myName,
 					dmsHandle.getContactHandle(contactId).getName(), groupName,
 					objectHandle.getObject(TestPojo.class)));
 		}
 
 		ListHandle listHandle = messageHandle.getListHandle();
 		if (listHandle != null) {
-			System.out.println(String.format("List received from: %s (group: %s)\nContent: %s\n",
+			System.out.println(String.format("%s: List received from: %s (group: %s)\nContent: %s\n", myName,
 					dmsHandle.getContactHandle(contactId).getName(), groupName,
 					listHandle.getList(TestPojoConverted.class)));
 		}
@@ -100,15 +102,16 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void messageTransmitted(Integer trackingId, Long contactId) {
 
-		System.out.println(String.format("Message #%d transmitted to %s\n", trackingId,
+		System.out.println(String.format("%s: Message #%d transmitted to %s\n", myName, trackingId,
 				dmsHandle.getContactHandle(contactId).getName()));
 
 	}
 
 	@Override
-	public void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus) {
+	public void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId) {
 
-		System.out.println(String.format("Message #%d status: %s\n", messageId, messageStatus));
+		System.out.println(String.format("%s: %s -> message #%d status: %s\n", myName,
+				dmsHandle.getContactHandle(contactId).getName(), messageId, messageStatus));
 
 	}
 

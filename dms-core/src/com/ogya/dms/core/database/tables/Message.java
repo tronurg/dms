@@ -24,6 +24,7 @@ import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.structures.MessageSubType;
 import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.structures.WaitStatus;
@@ -55,9 +56,9 @@ public class Message {
 	@SerializedName(value = "d")
 	private MessageType messageType;
 
-	@Column(name = "message_code", updatable = false)
+	@Column(name = "message_sub_type", updatable = false)
 	@SerializedName(value = "e")
-	private Integer messageCode;
+	private MessageSubType messageSubType;
 
 	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
 	@SerializedName(value = "f")
@@ -121,7 +122,7 @@ public class Message {
 		this.messageDirection = message.messageDirection;
 		this.receiverType = message.receiverType;
 		this.messageType = message.messageType;
-		this.messageCode = message.messageCode;
+		this.messageSubType = message.messageSubType;
 		this.content = message.content;
 		this.messageStatus = message.messageStatus;
 		this.waitStatus = message.waitStatus;
@@ -175,12 +176,12 @@ public class Message {
 		this.messageType = messageType;
 	}
 
-	public Integer getMessageCode() {
-		return messageCode;
+	public MessageSubType getMessageSubType() {
+		return messageSubType;
 	}
 
-	public void setMessageCode(Integer messageCode) {
-		this.messageCode = messageCode;
+	public void setMessageSubType(MessageSubType messageSubType) {
+		this.messageSubType = messageSubType;
 	}
 
 	public String getContent() {

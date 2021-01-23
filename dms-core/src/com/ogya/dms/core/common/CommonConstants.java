@@ -14,9 +14,4 @@ public class CommonConstants {
 
 	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
 
-	public static final Integer CODE_UPDATE_GROUP = 0;
-	public static final Integer CODE_CANCEL_MESSAGE = 1;
-	public static final Integer CODE_REPORT = 10;
-	public static final Integer CODE_API_MESSAGE = 20;
-
 }

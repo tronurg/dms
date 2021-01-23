@@ -85,12 +85,16 @@ public class DmsTest {
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 
-			GroupSelectionHandle csh = dmsHandle.getActiveGroupsHandle();
+			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
 //			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = csh.getGroupSelectionPanel();
+			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
+
+				final Long selectedGroupId = gsh.getSelectedGroupId();
+
+				gsh.resetSelection();
 
 				TestPojo testPojo = new TestPojo();
 				List<TestPojo> testList = new ArrayList<TestPojo>();
@@ -102,12 +106,14 @@ public class DmsTest {
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
 				messageHandle.setTrackingId(124);
 				try {
-					dmsHandle.sendMessageToGroup(messageHandle, csh.getSelectedGroupId());
+					dmsHandle.sendMessageToGroup(messageHandle, selectedGroupId);
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
 
-				csh.resetSelection();
+				dmsHandle.sendGuiMessageToGroup("api grup deneme", selectedGroupId,
+						messageId -> System.out.println(String.format("armut: Message #%d sent to group %s\n",
+								messageId, dmsHandle.getGroupHandle(selectedGroupId).getName())));
 
 			});
 
@@ -139,11 +145,6 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-//			dmsHandle.sendGuiMessageToContact("api deneme",
-//					dmsHandle.getAllContactHandles().stream()
-//							.filter(contactHandle -> contactHandle.getName().equals("elma")).findFirst().get().getId(),
-//					null);
-
 		} catch (DbException e) {
 
 			e.printStackTrace();
@@ -165,6 +166,10 @@ public class DmsTest {
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
+				final List<Long> selectedContactIds = csh.getSelectedContactIds();
+
+				csh.resetSelection();
+
 				TestPojo testPojo = new TestPojo();
 				List<TestPojo> testList = new ArrayList<TestPojo>();
 				testList.add(testPojo);
@@ -175,12 +180,15 @@ public class DmsTest {
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
 				messageHandle.setTrackingId(123);
 				try {
-					dmsHandle.sendMessageToContacts(messageHandle, csh.getSelectedContactIds());
+					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds);
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}
 
-				csh.resetSelection();
+				if (selectedContactIds.size() == 1)
+					dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0),
+							messageId -> System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
+									messageId, dmsHandle.getContactHandle(selectedContactIds.get(0)).getName())));
 
 			});
 

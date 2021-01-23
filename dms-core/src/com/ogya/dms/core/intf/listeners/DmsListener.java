@@ -15,7 +15,7 @@ public interface DmsListener {
 
 	void messageTransmitted(Integer trackingId, Long contactId);
 
-	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus);
+	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId);
 
 	void contactUpdated(ContactHandle contactHandle);
 
