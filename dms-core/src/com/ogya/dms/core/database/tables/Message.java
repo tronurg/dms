@@ -102,6 +102,9 @@ public class Message {
 	@SerializedName(value = "i")
 	private Long contactRefId;
 
+	@Column(name = "api_flag", updatable = false)
+	private Integer apiFlag;
+
 	public Message() {
 		super();
 	}
@@ -276,6 +279,14 @@ public class Message {
 
 	public void setContactRefId(Long contactRefId) {
 		this.contactRefId = contactRefId;
+	}
+
+	public Integer getApiFlag() {
+		return apiFlag;
+	}
+
+	public void setApiFlag(Integer apiFlag) {
+		this.apiFlag = apiFlag;
 	}
 
 	public MessageStatus getOverallStatus() {

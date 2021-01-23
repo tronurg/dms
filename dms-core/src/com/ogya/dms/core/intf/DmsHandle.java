@@ -77,4 +77,12 @@ public interface DmsHandle {
 
 	void sendGuiMessageToGroup(String message, Long groupId, Consumer<Long> future);
 
+	void sendGuiFileToContact(Path path, Long contactId, Consumer<Long> future);
+
+	void sendGuiFileToGroup(Path path, Long groupId, Consumer<Long> future);
+
+	void sendGuiReportToContact(Path path, Long contactId, Consumer<Long> future);
+
+	void sendGuiReportToGroup(Path path, Long groupId, Consumer<Long> future);
+
 }
