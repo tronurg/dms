@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -111,9 +112,13 @@ public class DmsTest {
 					e1.printStackTrace();
 				}
 
-				dmsHandle.sendGuiMessageToGroup("api grup deneme", selectedGroupId,
-						messageId -> System.out.println(String.format("armut: Message #%d sent to group %s\n",
-								messageId, dmsHandle.getGroupHandle(selectedGroupId).getName())));
+				try {
+					System.out.println(String.format("armut: Message #%d sent to group %s\n",
+							dmsHandle.sendGuiMessageToGroup("api grup deneme", selectedGroupId).get(),
+							dmsHandle.getGroupHandle(selectedGroupId).getName()));
+				} catch (InterruptedException | ExecutionException e1) {
+					e1.printStackTrace();
+				}
 
 			});
 
@@ -186,9 +191,13 @@ public class DmsTest {
 				}
 
 				if (selectedContactIds.size() == 1)
-					dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0),
-							messageId -> System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
-									messageId, dmsHandle.getContactHandle(selectedContactIds.get(0)).getName())));
+					try {
+						System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
+								dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0)).get(),
+								dmsHandle.getContactHandle(selectedContactIds.get(0)).getName()));
+					} catch (InterruptedException | ExecutionException e1) {
+						e1.printStackTrace();
+					}
 
 			});
 

@@ -3335,19 +3335,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return taskQueue.submit(() -> {
 
-			Long messageId = null;
-
-			try {
-
-				messageId = sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, 1);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-			return messageId;
+			return sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, 1);
 
 		});
 
@@ -3358,19 +3346,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return taskQueue.submit(() -> {
 
-			Long messageId = null;
-
-			try {
-
-				messageId = sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, 1);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-			return messageId;
+			return sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, 1);
 
 		});
 
@@ -3381,21 +3357,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return taskQueue.submit(() -> {
 
-			Long messageId = null;
+			Path dstFile = copyFileToSendFolder(path);
 
-			try {
-
-				Path dstFile = copyFileToSendFolder(path);
-
-				messageId = sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE, null, 1);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-			return messageId;
+			return sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE, null, 1);
 
 		});
 
@@ -3406,21 +3370,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return taskQueue.submit(() -> {
 
-			Long messageId = null;
+			Path dstFile = copyFileToSendFolder(path);
 
-			try {
-
-				Path dstFile = copyFileToSendFolder(path);
-
-				messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, 1);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-			return messageId;
+			return sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, 1);
 
 		});
 
@@ -3431,22 +3383,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return taskQueue.submit(() -> {
 
-			Long messageId = null;
+			Path dstFile = copyFileToSendFolder(path);
 
-			try {
-
-				Path dstFile = copyFileToSendFolder(path);
-
-				messageId = sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE,
-						MessageSubType.FILE_REPORT, 1);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-			return messageId;
+			return sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE,
+					MessageSubType.FILE_REPORT, 1);
 
 		});
 
@@ -3457,22 +3397,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return taskQueue.submit(() -> {
 
-			Long messageId = null;
+			Path dstFile = copyFileToSendFolder(path);
 
-			try {
-
-				Path dstFile = copyFileToSendFolder(path);
-
-				messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE,
-						MessageSubType.FILE_REPORT, 1);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-			return messageId;
+			return sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE,
+					MessageSubType.FILE_REPORT, 1);
 
 		});
 
