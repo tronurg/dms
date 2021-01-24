@@ -68,7 +68,7 @@ public class CommonMethods {
 						reader.nextNull();
 						return null;
 					}
-					return MessageStatus.values()[reader.nextInt()];
+					return MessageStatus.of(reader.nextInt());
 				}
 
 				@Override
@@ -77,7 +77,7 @@ public class CommonMethods {
 						writer.nullValue();
 						return;
 					}
-					writer.value(value.ordinal());
+					writer.value(value.index());
 				}
 
 			}).registerTypeAdapter(ReceiverType.class, new TypeAdapter<ReceiverType>() {
@@ -88,7 +88,7 @@ public class CommonMethods {
 						reader.nextNull();
 						return null;
 					}
-					return ReceiverType.values()[reader.nextInt()];
+					return ReceiverType.of(reader.nextInt());
 				}
 
 				@Override
@@ -97,7 +97,7 @@ public class CommonMethods {
 						writer.nullValue();
 						return;
 					}
-					writer.value(value.ordinal());
+					writer.value(value.index());
 				}
 
 			}).create();
@@ -122,7 +122,7 @@ public class CommonMethods {
 				reader.nextNull();
 				return null;
 			}
-			return MessageType.values()[reader.nextInt()];
+			return MessageType.of(reader.nextInt());
 		}
 
 		@Override
@@ -131,7 +131,7 @@ public class CommonMethods {
 				writer.nullValue();
 				return;
 			}
-			writer.value(value.ordinal());
+			writer.value(value.index());
 		}
 
 	}).registerTypeAdapter(MessageSubType.class, new TypeAdapter<MessageSubType>() {
@@ -142,7 +142,7 @@ public class CommonMethods {
 				reader.nextNull();
 				return null;
 			}
-			return MessageSubType.values()[reader.nextInt()];
+			return MessageSubType.of(reader.nextInt());
 		}
 
 		@Override
@@ -151,7 +151,7 @@ public class CommonMethods {
 				writer.nullValue();
 				return;
 			}
-			writer.value(value.ordinal());
+			writer.value(value.index());
 		}
 
 	}).registerTypeAdapter(ReceiverType.class, new TypeAdapter<ReceiverType>() {
@@ -162,7 +162,7 @@ public class CommonMethods {
 				reader.nextNull();
 				return null;
 			}
-			return ReceiverType.values()[reader.nextInt()];
+			return ReceiverType.of(reader.nextInt());
 		}
 
 		@Override
@@ -171,7 +171,7 @@ public class CommonMethods {
 				writer.nullValue();
 				return;
 			}
-			writer.value(value.ordinal());
+			writer.value(value.index());
 		}
 
 	}).create();
@@ -196,7 +196,7 @@ public class CommonMethods {
 				reader.nextNull();
 				return null;
 			}
-			return MessageStatus.values()[reader.nextInt()];
+			return MessageStatus.of(reader.nextInt());
 		}
 
 		@Override
@@ -205,7 +205,7 @@ public class CommonMethods {
 				writer.nullValue();
 				return;
 			}
-			writer.value(value.ordinal());
+			writer.value(value.index());
 		}
 
 	}).create();

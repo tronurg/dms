@@ -293,7 +293,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (!model.isServerConnected())
 			return;
 
-		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.ordinal(),
+		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.index(),
 				lattitude, longitude);
 
 		dmsClient.sendBeacon(beacon.toJson());
@@ -1214,7 +1214,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				boolean wasOnline = model.isContactOnline(userUuid);
 
 				Contact incomingContact = new Contact(beacon.uuid, beacon.name, beacon.comment,
-						Availability.values()[beacon.status], beacon.lattitude, beacon.longitude);
+						Availability.of(beacon.status), beacon.lattitude, beacon.longitude);
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 

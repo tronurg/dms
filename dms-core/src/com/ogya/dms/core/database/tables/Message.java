@@ -298,11 +298,11 @@ public class Message {
 
 		for (StatusReport statusReport : statusReports) {
 
-			minOrder = Math.min(minOrder, statusReport.getMessageStatus().ordinal());
+			minOrder = Math.min(minOrder, statusReport.getMessageStatus().index());
 
 		}
 
-		return MessageStatus.values()[minOrder];
+		return MessageStatus.of(minOrder);
 
 	}
 

@@ -26,7 +26,7 @@ class JsonFactory {
 						reader.nextNull();
 						return null;
 					}
-					return ContentType.values()[reader.nextInt()];
+					return ContentType.of(reader.nextInt());
 				}
 
 				@Override
@@ -35,7 +35,7 @@ class JsonFactory {
 						writer.nullValue();
 						return;
 					}
-					writer.value(value.ordinal());
+					writer.value(value.index());
 				}
 
 			}).create();

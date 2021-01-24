@@ -1,22 +1,45 @@
 package com.ogya.dms.core.structures;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.ogya.dms.core.common.CommonMethods;
 
 import javafx.scene.paint.Color;
 
 public enum MessageStatus {
 
-	FRESH(Color.TRANSPARENT, Color.TRANSPARENT), SENT(Color.DARKGRAY, Color.TRANSPARENT),
-	RECEIVED(Color.DARKGRAY, Color.DARKGRAY), READ(Color.DEEPSKYBLUE, Color.DEEPSKYBLUE);
+	FRESH(0, Color.TRANSPARENT, Color.TRANSPARENT), SENT(1, Color.DARKGRAY, Color.TRANSPARENT),
+	RECEIVED(2, Color.DARKGRAY, Color.DARKGRAY), READ(3, Color.DEEPSKYBLUE, Color.DEEPSKYBLUE);
 
+	private static final Map<Integer, MessageStatus> INDEX_MAP = Collections
+			.synchronizedMap(new HashMap<Integer, MessageStatus>());
+
+	private final int index;
 	private transient final Color waitingColor;
 	private transient final Color transmittedColor;
 
-	private MessageStatus(Color waitingColor, Color transmittedColor) {
+	static {
+		for (MessageStatus value : values()) {
+			INDEX_MAP.put(value.index, value);
+		}
+	}
 
+	private MessageStatus(int index, Color waitingColor, Color transmittedColor) {
+
+		this.index = index;
 		this.waitingColor = waitingColor;
 		this.transmittedColor = transmittedColor;
 
+	}
+
+	public static MessageStatus of(int index) {
+		return INDEX_MAP.get(index);
+	}
+
+	public int index() {
+		return index;
 	}
 
 	public Color getWaitingColor() {
