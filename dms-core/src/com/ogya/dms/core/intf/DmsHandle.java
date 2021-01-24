@@ -3,7 +3,7 @@ package com.ogya.dms.core.intf;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.concurrent.Future;
 
 import javax.swing.JComponent;
 
@@ -73,16 +73,16 @@ public interface DmsHandle {
 	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface)
 			throws Exception;
 
-	void sendGuiMessageToContact(String message, Long contactId, Consumer<Long> future);
+	Future<Long> sendGuiMessageToContact(String message, Long contactId);
 
-	void sendGuiMessageToGroup(String message, Long groupId, Consumer<Long> future);
+	Future<Long> sendGuiMessageToGroup(String message, Long groupId);
 
-	void sendGuiFileToContact(Path path, Long contactId, Consumer<Long> future);
+	Future<Long> sendGuiFileToContact(Path path, Long contactId);
 
-	void sendGuiFileToGroup(Path path, Long groupId, Consumer<Long> future);
+	Future<Long> sendGuiFileToGroup(Path path, Long groupId);
 
-	void sendGuiReportToContact(Path path, Long contactId, Consumer<Long> future);
+	Future<Long> sendGuiReportToContact(Path path, Long contactId);
 
-	void sendGuiReportToGroup(Path path, Long groupId, Consumer<Long> future);
+	Future<Long> sendGuiReportToGroup(Path path, Long groupId);
 
 }

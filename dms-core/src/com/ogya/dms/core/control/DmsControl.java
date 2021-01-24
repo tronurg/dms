@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 import javax.swing.JComponent;
@@ -3330,16 +3331,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void sendGuiMessageToContact(String message, Long contactId, final Consumer<Long> future) {
+	public Future<Long> sendGuiMessageToContact(String message, Long contactId) {
 
-		taskQueue.execute(() -> {
+		return taskQueue.submit(() -> {
+
+			Long messageId = null;
 
 			try {
 
-				Long messageId = sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, 1);
-
-				if (future != null)
-					listenerTaskQueue.execute(() -> future.accept(messageId));
+				messageId = sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, 1);
 
 			} catch (Exception e) {
 
@@ -3347,21 +3347,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
+			return messageId;
+
 		});
 
 	}
 
 	@Override
-	public void sendGuiMessageToGroup(String message, Long groupId, Consumer<Long> future) {
+	public Future<Long> sendGuiMessageToGroup(String message, Long groupId) {
 
-		taskQueue.execute(() -> {
+		return taskQueue.submit(() -> {
+
+			Long messageId = null;
 
 			try {
 
-				Long messageId = sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, 1);
-
-				if (future != null)
-					listenerTaskQueue.execute(() -> future.accept(messageId));
+				messageId = sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, 1);
 
 			} catch (Exception e) {
 
@@ -3369,24 +3370,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
+			return messageId;
+
 		});
 
 	}
 
 	@Override
-	public void sendGuiFileToContact(Path path, Long contactId, Consumer<Long> future) {
+	public Future<Long> sendGuiFileToContact(Path path, Long contactId) {
 
-		taskQueue.execute(() -> {
+		return taskQueue.submit(() -> {
+
+			Long messageId = null;
 
 			try {
 
 				Path dstFile = copyFileToSendFolder(path);
 
-				Long messageId = sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE, null,
-						1);
-
-				if (future != null)
-					listenerTaskQueue.execute(() -> future.accept(messageId));
+				messageId = sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE, null, 1);
 
 			} catch (Exception e) {
 
@@ -3394,23 +3395,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
+			return messageId;
+
 		});
 
 	}
 
 	@Override
-	public void sendGuiFileToGroup(Path path, Long groupId, Consumer<Long> future) {
+	public Future<Long> sendGuiFileToGroup(Path path, Long groupId) {
 
-		taskQueue.execute(() -> {
+		return taskQueue.submit(() -> {
+
+			Long messageId = null;
 
 			try {
 
 				Path dstFile = copyFileToSendFolder(path);
 
-				Long messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, 1);
-
-				if (future != null)
-					listenerTaskQueue.execute(() -> future.accept(messageId));
+				messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, 1);
 
 			} catch (Exception e) {
 
@@ -3418,55 +3420,59 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
+			return messageId;
+
 		});
 
 	}
 
 	@Override
-	public void sendGuiReportToContact(Path path, Long contactId, Consumer<Long> future) {
+	public Future<Long> sendGuiReportToContact(Path path, Long contactId) {
 
-		taskQueue.execute(() -> {
+		return taskQueue.submit(() -> {
+
+			Long messageId = null;
 
 			try {
 
 				Path dstFile = copyFileToSendFolder(path);
 
-				Long messageId = sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE,
+				messageId = sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE,
 						MessageSubType.FILE_REPORT, 1);
 
-				if (future != null)
-					listenerTaskQueue.execute(() -> future.accept(messageId));
-
 			} catch (Exception e) {
 
 				e.printStackTrace();
 
 			}
+
+			return messageId;
 
 		});
 
 	}
 
 	@Override
-	public void sendGuiReportToGroup(Path path, Long groupId, Consumer<Long> future) {
+	public Future<Long> sendGuiReportToGroup(Path path, Long groupId) {
 
-		taskQueue.execute(() -> {
+		return taskQueue.submit(() -> {
+
+			Long messageId = null;
 
 			try {
 
 				Path dstFile = copyFileToSendFolder(path);
 
-				Long messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE,
+				messageId = sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE,
 						MessageSubType.FILE_REPORT, 1);
-
-				if (future != null)
-					listenerTaskQueue.execute(() -> future.accept(messageId));
 
 			} catch (Exception e) {
 
 				e.printStackTrace();
 
 			}
+
+			return messageId;
 
 		});
 
