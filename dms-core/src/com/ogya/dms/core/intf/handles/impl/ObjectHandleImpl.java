@@ -6,9 +6,9 @@ import com.ogya.dms.core.intf.handles.ObjectHandle;
 
 public class ObjectHandleImpl implements ObjectHandle {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	private final Integer objectCode;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	private final String objectStr;
 
 	public ObjectHandleImpl(Integer objectCode, String objectStr) {

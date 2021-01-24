@@ -10,9 +10,9 @@ import com.ogya.dms.core.intf.handles.ListHandle;
 
 public class ListHandleImpl implements ListHandle {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	private final Integer listCode;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	private final String listStr;
 
 	public ListHandleImpl(Integer listCode, String listStr) {

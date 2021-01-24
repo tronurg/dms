@@ -38,7 +38,7 @@ public class Dgroup {
 	private String comment;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.ORDINAL)
+	@Enumerated(EnumType.STRING)
 	private Availability status;
 
 	@Column(name = "active", nullable = false)

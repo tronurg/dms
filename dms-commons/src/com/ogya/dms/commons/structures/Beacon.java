@@ -7,21 +7,21 @@ import com.google.gson.annotations.SerializedName;
 
 public class Beacon {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	public final String uuid;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	public String name;
-	@SerializedName(value = "c")
+	@SerializedName("c")
 	public String comment;
-	@SerializedName(value = "d")
+	@SerializedName("d")
 	public Integer status;
-	@SerializedName(value = "e")
+	@SerializedName("e")
 	public Double lattitude;
-	@SerializedName(value = "f")
+	@SerializedName("f")
 	public Double longitude;
-	@SerializedName(value = "g")
+	@SerializedName("g")
 	public List<InetAddress> remoteInterfaces;
-	@SerializedName(value = "h")
+	@SerializedName("h")
 	public List<InetAddress> localInterfaces;
 
 	public Beacon(String uuid) {

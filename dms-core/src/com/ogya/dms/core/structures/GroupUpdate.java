@@ -7,13 +7,13 @@ import com.ogya.dms.core.common.CommonMethods;
 
 public class GroupUpdate {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	public String name;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	public Boolean active;
-	@SerializedName(value = "c")
+	@SerializedName("c")
 	public List<ContactMap> add;
-	@SerializedName(value = "d")
+	@SerializedName("d")
 	public List<Long> remove;
 
 	public String toJson() {

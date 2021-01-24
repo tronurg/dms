@@ -35,7 +35,7 @@ public class Contact {
 	private String comment;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.ORDINAL)
+	@Enumerated(EnumType.STRING)
 	private Availability status;
 
 	@Column(name = "lattitude")

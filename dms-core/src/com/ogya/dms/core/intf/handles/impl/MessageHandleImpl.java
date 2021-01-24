@@ -10,25 +10,25 @@ import com.ogya.dms.core.structures.ReceiverType;
 
 public class MessageHandleImpl implements MessageHandle {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	private final Integer messageCode;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	private final String message;
-	@SerializedName(value = "c")
+	@SerializedName("c")
 	private FileHandleImpl fileHandle;
-	@SerializedName(value = "d")
+	@SerializedName("d")
 	private ObjectHandleImpl objectHandle;
-	@SerializedName(value = "e")
+	@SerializedName("e")
 	private ListHandleImpl listHandle;
-	@SerializedName(value = "f")
+	@SerializedName("f")
 	private Integer trackingId;
-	@SerializedName(value = "g")
+	@SerializedName("g")
 	private Integer flag;
-	@SerializedName(value = "h")
+	@SerializedName("h")
 	private ReceiverType receiverType;
-	@SerializedName(value = "i")
+	@SerializedName("i")
 	private Long groupRefId;
-	@SerializedName(value = "j")
+	@SerializedName("j")
 	private Long contactRefId;
 
 	public MessageHandleImpl(Integer messageCode, String message) {

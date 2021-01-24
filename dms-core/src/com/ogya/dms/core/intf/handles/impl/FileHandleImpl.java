@@ -8,10 +8,10 @@ import com.ogya.dms.core.structures.FilePojo;
 
 public class FileHandleImpl implements FileHandle {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	private final Integer fileCode;
 	private final transient Path path;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	private final FilePojo filePojo;
 
 	public FileHandleImpl(Integer fileCode, Path path) {

@@ -35,41 +35,41 @@ public class Message {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	private Long id;
 
 	@Column(name = "message_ref_id", updatable = false)
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	private Long messageRefId;
 
 	@Column(name = "message_direction", nullable = false, updatable = false)
-	@Enumerated(EnumType.ORDINAL)
+	@Enumerated(EnumType.STRING)
 	private MessageDirection messageDirection;
 
 	@Column(name = "receiver_type", nullable = false, updatable = false)
-	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "c")
+	@Enumerated(EnumType.STRING)
+	@SerializedName("c")
 	private ReceiverType receiverType;
 
 	@Column(name = "message_type", nullable = false, updatable = false)
-	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "d")
+	@Enumerated(EnumType.STRING)
+	@SerializedName("d")
 	private MessageType messageType;
 
 	@Column(name = "message_sub_type", updatable = false)
-	@SerializedName(value = "e")
+	@SerializedName("e")
 	private MessageSubType messageSubType;
 
 	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
-	@SerializedName(value = "f")
+	@SerializedName("f")
 	private String content;
 
 	@Column(name = "message_status", nullable = false)
-	@Enumerated(EnumType.ORDINAL)
+	@Enumerated(EnumType.STRING)
 	private MessageStatus messageStatus;
 
 	@Column(name = "wait_status", nullable = false)
-	@Enumerated(EnumType.ORDINAL)
+	@Enumerated(EnumType.STRING)
 	private WaitStatus waitStatus;
 
 	@Column(name = "date", nullable = false, updatable = false)
@@ -92,14 +92,14 @@ public class Message {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ref_message_id", updatable = false)
-	@SerializedName(value = "g")
+	@SerializedName("g")
 	private Message refMessage;
 
 	@Transient
-	@SerializedName(value = "h")
+	@SerializedName("h")
 	private Long groupRefId;
 	@Transient
-	@SerializedName(value = "i")
+	@SerializedName("i")
 	private Long contactRefId;
 
 	@Column(name = "api_flag", updatable = false)

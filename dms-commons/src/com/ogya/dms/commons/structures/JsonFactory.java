@@ -15,7 +15,7 @@ import com.google.gson.stream.JsonWriter;
 
 class JsonFactory {
 
-	private static final List<String> gsonExcludedNames = Arrays.asList("remoteInterfaces", "localInterfaces");
+	private static final List<String> gsonRemoteExcludedNames = Arrays.asList("remoteInterfaces", "localInterfaces");
 
 	private static final Gson gson = new GsonBuilder()
 			.registerTypeAdapter(ContentType.class, new TypeAdapter<ContentType>() {
@@ -44,7 +44,7 @@ class JsonFactory {
 
 		@Override
 		public boolean shouldSkipField(FieldAttributes arg0) {
-			return gsonExcludedNames.contains(arg0.getName());
+			return gsonRemoteExcludedNames.contains(arg0.getName());
 		}
 
 		@Override

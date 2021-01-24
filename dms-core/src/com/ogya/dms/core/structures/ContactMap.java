@@ -4,11 +4,11 @@ import com.google.gson.annotations.SerializedName;
 
 public class ContactMap {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	public Long refId;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	public String uuid;
-	@SerializedName(value = "c")
+	@SerializedName("c")
 	public String name;
 
 	public ContactMap(Long refId, String uuid, String name) {

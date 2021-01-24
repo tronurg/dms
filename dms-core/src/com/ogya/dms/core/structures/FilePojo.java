@@ -5,9 +5,9 @@ import com.ogya.dms.core.common.CommonMethods;
 
 public class FilePojo {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	public final String fileName;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	public final String fileContent;
 
 	public FilePojo(String fileName, String fileContent) {

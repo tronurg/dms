@@ -23,12 +23,12 @@ public class StatusReport {
 	private Long id;
 
 	@Column(name = "contact_id", nullable = false, updatable = false)
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	private Long contactId;
 
 	@Column(name = "message_status", nullable = false)
-	@Enumerated(EnumType.ORDINAL)
-	@SerializedName(value = "b")
+	@Enumerated(EnumType.STRING)
+	@SerializedName("b")
 	private MessageStatus messageStatus;
 
 	@ManyToOne

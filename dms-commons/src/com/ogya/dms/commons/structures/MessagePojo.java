@@ -6,17 +6,17 @@ import com.google.gson.annotations.SerializedName;
 
 public class MessagePojo {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	public final String message;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	public final String senderUuid;
-	@SerializedName(value = "c")
+	@SerializedName("c")
 	public final String receiverUuid;
-	@SerializedName(value = "d")
+	@SerializedName("d")
 	public final ContentType contentType;
-	@SerializedName(value = "e")
+	@SerializedName("e")
 	public final Long messageId;
-	@SerializedName(value = "f")
+	@SerializedName("f")
 	public final InetAddress useLocalAddress;
 
 	public MessagePojo(String message, String senderUuid, ContentType contentType, Long messageId) {

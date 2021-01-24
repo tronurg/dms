@@ -7,9 +7,9 @@ import com.ogya.dms.core.common.CommonMethods;
 
 public class GroupMessageStatus {
 
-	@SerializedName(value = "a")
+	@SerializedName("a")
 	public final MessageStatus messageStatus;
-	@SerializedName(value = "b")
+	@SerializedName("b")
 	public final List<Long> refIds;
 
 	public GroupMessageStatus(MessageStatus messageStatus, List<Long> refIds) {
