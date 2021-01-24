@@ -43,7 +43,6 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
-import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.MessageSubType;
 import com.ogya.dms.core.structures.MessageType;
@@ -113,26 +112,6 @@ public class CommonMethods {
 		@Override
 		public boolean shouldSkipClass(Class<?> arg0) {
 			return false;
-		}
-
-	}).registerTypeAdapter(Availability.class, new TypeAdapter<Availability>() {
-
-		@Override
-		public Availability read(JsonReader reader) throws IOException {
-			if (reader.peek() == JsonToken.NULL) {
-				reader.nextNull();
-				return null;
-			}
-			return Availability.values()[reader.nextInt()];
-		}
-
-		@Override
-		public void write(JsonWriter writer, Availability value) throws IOException {
-			if (value == null) {
-				writer.nullValue();
-				return;
-			}
-			writer.value(value.ordinal());
 		}
 
 	}).registerTypeAdapter(MessageType.class, new TypeAdapter<MessageType>() {
