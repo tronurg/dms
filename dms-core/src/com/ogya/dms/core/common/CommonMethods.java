@@ -606,6 +606,27 @@ public class CommonMethods {
 
 	}
 
+	static boolean getAutoOpenFile() {
+
+		boolean autoOpenFile = false;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/AUTO_OPEN_FILE")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			autoOpenFile = Boolean.valueOf(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return autoOpenFile;
+
+	}
+
 	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
 
 		if (confDoc == null) {

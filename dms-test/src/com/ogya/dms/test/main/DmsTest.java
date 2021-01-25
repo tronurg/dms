@@ -8,7 +8,9 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -38,6 +40,25 @@ public class DmsTest {
 		try {
 
 			DmsHandle dmsHandle = DmsCore.login("elma", "elma");
+
+			final AtomicReference<String> secretIdRef = new AtomicReference<String>();
+			Thread secretIdThread = new Thread(() -> {
+				while (!Thread.currentThread().isInterrupted()) {
+					if (secretIdRef.get() == null) {
+						secretIdRef.set("sid");
+					} else {
+						secretIdRef.set(null);
+					}
+					dmsHandle.setSecretId(secretIdRef.get());
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			});
+			secretIdThread.setDaemon(true);
+			secretIdThread.start();
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 
@@ -166,8 +187,7 @@ public class DmsTest {
 
 //			JComponent mcPanel = dmsHandle.getDmsPanel();
 			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
-			JComponent mcPanel = csh
-					.getContactSelectionPanel(contact -> contact.getLocalInterfaces().contains(localAddress));
+			JComponent mcPanel = csh.getContactSelectionPanel(contact -> Objects.equals(contact.getSecretId(), "sid"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 

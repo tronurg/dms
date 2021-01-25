@@ -2733,9 +2733,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Message message = dbManager.getMessageById(messageId);
 
-				if (Objects.equals(message.getMessageType(), MessageType.FILE)) {
+				if (!Objects.equals(message.getMessageType(), MessageType.FILE))
+					return;
 
-					Path file = Paths.get(message.getContent());
+				Path file = Paths.get(message.getContent());
+
+				if (CommonConstants.AUTO_OPEN_FILE) {
+
+					new ProcessBuilder().directory(file.getParent().toFile())
+							.command("cmd", "/C", file.getFileName().toString()).start();
+
+				} else {
 
 					listenerTaskQueue.execute(() -> dmsListeners.forEach(listener -> listener.fileClicked(file)));
 

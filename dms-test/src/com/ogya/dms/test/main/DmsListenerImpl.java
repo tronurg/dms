@@ -29,6 +29,8 @@ public class DmsListenerImpl implements DmsListener {
 	@Override
 	public void fileClicked(Path path) {
 
+		System.out.println("File clicked!");
+
 		try {
 
 			new ProcessBuilder().directory(path.getParent().toFile())
