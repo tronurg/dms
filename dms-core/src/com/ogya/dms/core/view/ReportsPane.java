@@ -13,14 +13,14 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.Separator;
+import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -194,7 +194,7 @@ public class ReportsPane extends GridPane {
 
 	}
 
-	private final class ReportPane extends HBox {
+	private final class ReportPane extends SplitPane {
 
 		private final GridPane valuesPane = new GridPane();
 		private final ScrollPane valuesScrollPane = new ScrollPane(valuesPane) {
@@ -214,7 +214,7 @@ public class ReportsPane extends GridPane {
 
 		private ReportPane(String templateBody) {
 
-			super(2 * gap);
+			super();
 
 			fillTemplate(templateBody);
 
@@ -230,12 +230,10 @@ public class ReportsPane extends GridPane {
 
 			preview.setPadding(new Insets(2 * gap));
 
-			HBox.setHgrow(previewScrollPane, Priority.ALWAYS);
-
 			if (textFields.size() > 0)
-				getChildren().addAll(valuesScrollPane, new Separator(Orientation.VERTICAL));
+				getItems().add(valuesScrollPane);
 
-			getChildren().add(previewScrollPane);
+			getItems().add(previewScrollPane);
 
 		}
 
@@ -273,6 +271,8 @@ public class ReportsPane extends GridPane {
 						String tag = matcher.group();
 
 						Label label = new Label(tag.substring(1, tag.length() - 1));
+						label.setMaxWidth(50.0 * gap);
+						label.setTooltip(new Tooltip(label.getText()));
 						TextField textField = new TextField();
 						textField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
 						textFields.add(textField);
