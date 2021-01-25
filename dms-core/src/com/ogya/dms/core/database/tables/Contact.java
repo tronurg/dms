@@ -44,6 +44,9 @@ public class Contact {
 	@Column(name = "longitude")
 	private Double longitude;
 
+	@Column(name = "secret_id")
+	private String secretId;
+
 	@Transient
 	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
 	@Transient
@@ -58,7 +61,8 @@ public class Contact {
 		this.uuid = uuid;
 	}
 
-	public Contact(String uuid, String name, String comment, Availability status, Double lattitude, Double longitude) {
+	public Contact(String uuid, String name, String comment, Availability status, Double lattitude, Double longitude,
+			String secretId) {
 		super();
 		this.uuid = uuid;
 		this.name = name;
@@ -66,6 +70,7 @@ public class Contact {
 		this.status = status;
 		this.lattitude = lattitude;
 		this.longitude = longitude;
+		this.secretId = secretId;
 	}
 
 	public Long getId() {
@@ -122,6 +127,14 @@ public class Contact {
 
 	public void setLongitude(Double longitude) {
 		this.longitude = longitude;
+	}
+
+	public String getSecretId() {
+		return secretId;
+	}
+
+	public void setSecretId(String secretId) {
+		this.secretId = secretId;
 	}
 
 	public List<InetAddress> getRemoteInterfaces() {

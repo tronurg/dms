@@ -1,6 +1,5 @@
 package com.ogya.dms.core.view;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -8,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.swing.UIManager;
 
@@ -68,8 +68,6 @@ public class OnlineContactsPanel extends BorderPane {
 
 	};
 
-	private final List<Long> selectedIds = Collections.synchronizedList(new ArrayList<Long>());
-
 	private final ObjectProperty<Predicate<ContactHandle>> filterProperty = new SimpleObjectProperty<Predicate<ContactHandle>>();
 
 	OnlineContactsPanel() {
@@ -114,7 +112,8 @@ public class OnlineContactsPanel extends BorderPane {
 
 	public List<Long> getSelectedIds() {
 
-		return new ArrayList<Long>(selectedIds);
+		return idContactBundle.entrySet().stream().filter(entry -> entry.getValue().selectedProperty.get())
+				.map(entry -> entry.getKey()).collect(Collectors.toList());
 
 	}
 
@@ -125,8 +124,6 @@ public class OnlineContactsPanel extends BorderPane {
 	}
 
 	public void resetSelection() {
-
-		selectedIds.clear();
 
 		idContactBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
 
@@ -160,16 +157,8 @@ public class OnlineContactsPanel extends BorderPane {
 						|| contactBundle.contactPane.getName().toLowerCase().startsWith(searchContactStr);
 			}, searchTextField.textProperty())));
 
-			contactBundle.setOnMouseClicked(e -> {
-
-				contactBundle.selectedProperty.set(!contactBundle.selectedProperty.get());
-
-				if (contactBundle.selectedProperty.get())
-					selectedIds.add(id);
-				else
-					selectedIds.remove(id);
-
-			});
+			contactBundle
+					.setOnMouseClicked(e -> contactBundle.selectedProperty.set(!contactBundle.selectedProperty.get()));
 
 			idContactBundle.put(id, contactBundle);
 

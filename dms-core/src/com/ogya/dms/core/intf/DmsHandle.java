@@ -37,6 +37,8 @@ public interface DmsHandle {
 
 	void setAvailability(Availability availability);
 
+	void setSecretId(String secretId);
+
 	ContactHandle getMyContactHandle();
 
 	GroupSelectionHandle getActiveGroupsHandle();

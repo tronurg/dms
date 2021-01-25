@@ -99,6 +99,12 @@ public class Model {
 
 	}
 
+	public void updateSecretId(String secretId) {
+
+		identity.setSecretId(secretId);
+
+	}
+
 	public boolean isServerConnected() {
 
 		return isServerConnected.get();

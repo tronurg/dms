@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import javax.swing.UIManager;
@@ -92,8 +91,6 @@ public class ActiveGroupsPanel extends BorderPane {
 
 	};
 
-	private final AtomicReference<Long> selectedId = new AtomicReference<Long>();
-
 	private final Map<String, ObjectProperty<Color>> contactUuidStatus = Collections
 			.synchronizedMap(new HashMap<String, ObjectProperty<Color>>());
 
@@ -148,7 +145,16 @@ public class ActiveGroupsPanel extends BorderPane {
 
 	public Long getSelectedId() {
 
-		return selectedId.get();
+		try {
+
+			return idGroupBundle.entrySet().stream().filter(entry -> entry.getValue().selectedProperty.get()).findAny()
+					.get().getKey();
+
+		} catch (Exception e) {
+
+		}
+
+		return null;
 
 	}
 
@@ -159,8 +165,6 @@ public class ActiveGroupsPanel extends BorderPane {
 	}
 
 	public void resetSelection() {
-
-		selectedId.set(null);
 
 		idGroupBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
 
@@ -201,8 +205,6 @@ public class ActiveGroupsPanel extends BorderPane {
 				idGroupBundle.forEach((uuid, bundle) -> bundle.selectedProperty.set(false));
 
 				groupBundle.selectedProperty.set(!wasSelected);
-
-				selectedId.set(groupBundle.selectedProperty.get() ? groupId : null);
 
 			});
 

@@ -598,6 +598,9 @@ public class Model {
 		if (fromBeacon.longitude != null)
 			toBeacon.longitude = fromBeacon.longitude;
 
+		if (fromBeacon.secretId != null)
+			toBeacon.secretId = fromBeacon.secretId;
+
 	}
 
 	private abstract class User {

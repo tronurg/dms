@@ -17,6 +17,7 @@ public class ContactHandleImpl implements ContactHandle {
 	private final Double lattitude;
 	private final Double longitude;
 	private final Availability availability;
+	private final String secretId;
 	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
 	private final List<InetAddress> localInterfaces = new ArrayList<InetAddress>();
 
@@ -29,6 +30,7 @@ public class ContactHandleImpl implements ContactHandle {
 		this.lattitude = contact.getLattitude();
 		this.longitude = contact.getLongitude();
 		this.availability = contact.getStatus();
+		this.secretId = contact.getSecretId();
 		this.remoteInterfaces.addAll(contact.getRemoteInterfaces());
 		this.localInterfaces.addAll(contact.getLocalInterfaces());
 
@@ -80,6 +82,13 @@ public class ContactHandleImpl implements ContactHandle {
 	public Availability getAvailability() {
 
 		return availability;
+
+	}
+
+	@Override
+	public String getSecretId() {
+
+		return secretId;
 
 	}
 

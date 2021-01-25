@@ -21,6 +21,8 @@ public interface ContactHandle {
 
 	Availability getAvailability();
 
+	String getSecretId();
+
 	List<InetAddress> getRemoteInterfaces();
 
 	List<InetAddress> getLocalInterfaces();

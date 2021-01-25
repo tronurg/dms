@@ -288,13 +288,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude) {
+	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude,
+			String secretId) {
 
 		if (!model.isServerConnected())
 			return;
 
 		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.index(),
-				lattitude, longitude);
+				lattitude, longitude, secretId);
 
 		dmsClient.sendBeacon(beacon.toJson());
 
@@ -704,27 +705,27 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			case TEXT:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-						.guiMessageReceived(message.getContent(), message.getContact().getId(), null)));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(message.getContent(),
+						message.getContact().getId(), null));
 
 				break;
 
 			case FILE:
 
 				if (Objects.equals(message.getMessageSubType(), MessageSubType.FILE_REPORT)) {
-					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-							.guiReportReceived(Paths.get(message.getContent()), message.getContact().getId(), null)));
+					dmsGuiListeners.forEach(guiListener -> guiListener
+							.guiReportReceived(Paths.get(message.getContent()), message.getContact().getId(), null));
 				} else {
-					listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-							.guiFileReceived(Paths.get(message.getContent()), message.getContact().getId(), null)));
+					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
+							message.getContact().getId(), null));
 				}
 
 				break;
 
 			case AUDIO:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners.forEach(guiListener -> guiListener
-						.guiAudioReceived(Paths.get(message.getContent()), message.getContact().getId(), null)));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
+						message.getContact().getId(), null));
 
 				break;
 
@@ -765,31 +766,28 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			case TEXT:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners
-						.forEach(guiListener -> guiListener.guiMessageReceived(message.getContent(),
-								message.getContact().getId(), message.getDgroup().getId())));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(message.getContent(),
+						message.getContact().getId(), message.getDgroup().getId()));
 
 				break;
 
 			case FILE:
 
 				if (Objects.equals(message.getMessageSubType(), MessageSubType.FILE_REPORT)) {
-					listenerTaskQueue.execute(() -> dmsGuiListeners
+					dmsGuiListeners
 							.forEach(guiListener -> guiListener.guiReportReceived(Paths.get(message.getContent()),
-									message.getContact().getId(), message.getDgroup().getId())));
+									message.getContact().getId(), message.getDgroup().getId()));
 				} else {
-					listenerTaskQueue.execute(() -> dmsGuiListeners
-							.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
-									message.getContact().getId(), message.getDgroup().getId())));
+					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
+							message.getContact().getId(), message.getDgroup().getId()));
 				}
 
 				break;
 
 			case AUDIO:
 
-				listenerTaskQueue.execute(() -> dmsGuiListeners
-						.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
-								message.getContact().getId(), message.getDgroup().getId())));
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
+						message.getContact().getId(), message.getDgroup().getId()));
 
 				break;
 
@@ -1214,7 +1212,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				boolean wasOnline = model.isContactOnline(userUuid);
 
 				Contact incomingContact = new Contact(beacon.uuid, beacon.name, beacon.comment,
-						Availability.of(beacon.status), beacon.lattitude, beacon.longitude);
+						Availability.of(beacon.status), beacon.lattitude, beacon.longitude, beacon.secretId);
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
@@ -1647,7 +1645,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			Contact identity = model.getIdentity();
 
 			sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
-					identity.getLongitude());
+					identity.getLongitude(), identity.getSecretId());
 
 			dmsClient.claimStartInfo();
 
@@ -2105,7 +2103,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, comment, null, null, null);
+				sendBeacon(null, comment, null, null, null, null);
 
 			} catch (HibernateException e) {
 
@@ -2137,7 +2135,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, newIdentity.getStatus(), null, null);
+				sendBeacon(null, null, newIdentity.getStatus(), null, null, null);
 
 			} catch (HibernateException e) {
 
@@ -3092,7 +3090,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, null, lattitude, longitude);
+				sendBeacon(null, null, null, lattitude, longitude, null);
 
 			} catch (HibernateException e) {
 
@@ -3120,6 +3118,44 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public void setAvailability(Availability availability) {
 
 		statusUpdateRequested(availability);
+
+	}
+
+	@Override
+	public void setSecretId(String secretId) {
+
+		if (secretId == null)
+			secretId = "";
+
+		if (secretId.length() > 8)
+			secretId = secretId.substring(0, 8);
+
+		final String finalSecretId = secretId;
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Contact identity = model.getIdentity();
+
+				if (Objects.equals(finalSecretId, identity.getSecretId()))
+					return;
+
+				identity.setSecretId(finalSecretId);
+
+				dbManager.updateIdentity(identity);
+
+				model.updateSecretId(finalSecretId);
+
+				sendBeacon(null, null, null, null, null, finalSecretId);
+
+			} catch (HibernateException e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
 
 	}
 

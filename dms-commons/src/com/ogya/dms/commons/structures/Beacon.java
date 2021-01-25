@@ -20,8 +20,10 @@ public class Beacon {
 	@SerializedName("f")
 	public Double longitude;
 	@SerializedName("g")
-	public List<InetAddress> remoteInterfaces;
+	public String secretId;
 	@SerializedName("h")
+	public List<InetAddress> remoteInterfaces;
+	@SerializedName("i")
 	public List<InetAddress> localInterfaces;
 
 	public Beacon(String uuid) {
@@ -30,7 +32,8 @@ public class Beacon {
 
 	}
 
-	public Beacon(String uuid, String name, String comment, Integer status, Double lattitude, Double longitude) {
+	public Beacon(String uuid, String name, String comment, Integer status, Double lattitude, Double longitude,
+			String secretId) {
 
 		this(uuid);
 
@@ -39,6 +42,7 @@ public class Beacon {
 		this.status = status;
 		this.lattitude = lattitude;
 		this.longitude = longitude;
+		this.secretId = secretId;
 
 	}
 
