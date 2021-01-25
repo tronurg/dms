@@ -25,7 +25,7 @@ public enum WaitStatus {
 
 	}
 
-	public static WaitStatus of(int index) {
+	public static WaitStatus of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

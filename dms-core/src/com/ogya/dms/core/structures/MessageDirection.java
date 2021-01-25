@@ -25,7 +25,7 @@ public enum MessageDirection {
 
 	}
 
-	public static MessageDirection of(int index) {
+	public static MessageDirection of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

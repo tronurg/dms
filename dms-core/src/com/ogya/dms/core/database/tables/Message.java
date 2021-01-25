@@ -23,6 +23,7 @@ import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.converters.MessageDirectionConverter;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
+import com.ogya.dms.core.database.converters.MessageSubTypeConverter;
 import com.ogya.dms.core.database.converters.MessageTypeConverter;
 import com.ogya.dms.core.database.converters.ReceiverTypeConverter;
 import com.ogya.dms.core.database.converters.WaitStatusConverter;
@@ -61,6 +62,7 @@ public class Message {
 	private MessageType messageType;
 
 	@Column(name = "message_sub_type", updatable = false)
+	@Convert(converter = MessageSubTypeConverter.class)
 	@SerializedName("e")
 	private MessageSubType messageSubType;
 

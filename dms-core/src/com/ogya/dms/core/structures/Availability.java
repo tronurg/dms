@@ -30,7 +30,7 @@ public enum Availability {
 
 	}
 
-	public static Availability of(int index) {
+	public static Availability of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

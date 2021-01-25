@@ -11,6 +11,9 @@ public class AvailabilityConverter implements AttributeConverter<Availability, I
 	@Override
 	public Integer convertToDatabaseColumn(Availability arg0) {
 
+		if (arg0 == null)
+			return null;
+
 		return arg0.index();
 
 	}

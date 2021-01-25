@@ -25,7 +25,7 @@ public enum MessageType {
 
 	}
 
-	public static MessageType of(int index) {
+	public static MessageType of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

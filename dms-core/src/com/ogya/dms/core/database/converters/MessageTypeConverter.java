@@ -11,6 +11,9 @@ public class MessageTypeConverter implements AttributeConverter<MessageType, Int
 	@Override
 	public Integer convertToDatabaseColumn(MessageType arg0) {
 
+		if (arg0 == null)
+			return null;
+
 		return arg0.index();
 
 	}

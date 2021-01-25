@@ -25,7 +25,7 @@ public enum ReceiverType {
 
 	}
 
-	public static ReceiverType of(int index) {
+	public static ReceiverType of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

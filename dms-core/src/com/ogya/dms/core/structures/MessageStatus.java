@@ -34,7 +34,7 @@ public enum MessageStatus {
 
 	}
 
-	public static MessageStatus of(int index) {
+	public static MessageStatus of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

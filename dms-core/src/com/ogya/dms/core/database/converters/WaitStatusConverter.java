@@ -11,6 +11,9 @@ public class WaitStatusConverter implements AttributeConverter<WaitStatus, Integ
 	@Override
 	public Integer convertToDatabaseColumn(WaitStatus arg0) {
 
+		if (arg0 == null)
+			return null;
+
 		return arg0.index();
 
 	}

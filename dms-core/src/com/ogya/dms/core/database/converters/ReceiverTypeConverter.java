@@ -11,6 +11,9 @@ public class ReceiverTypeConverter implements AttributeConverter<ReceiverType, I
 	@Override
 	public Integer convertToDatabaseColumn(ReceiverType arg0) {
 
+		if (arg0 == null)
+			return null;
+
 		return arg0.index();
 
 	}

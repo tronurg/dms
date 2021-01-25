@@ -27,7 +27,7 @@ public enum ContentType {
 
 	}
 
-	public static ContentType of(int index) {
+	public static ContentType of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

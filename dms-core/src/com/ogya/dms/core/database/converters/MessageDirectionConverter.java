@@ -11,6 +11,9 @@ public class MessageDirectionConverter implements AttributeConverter<MessageDire
 	@Override
 	public Integer convertToDatabaseColumn(MessageDirection arg0) {
 
+		if (arg0 == null)
+			return null;
+
 		return arg0.index();
 
 	}
