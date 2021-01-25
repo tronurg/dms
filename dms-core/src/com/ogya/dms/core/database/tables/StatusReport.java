@@ -1,9 +1,8 @@
 package com.ogya.dms.core.database.tables;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -12,6 +11,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import com.google.gson.annotations.SerializedName;
+import com.ogya.dms.core.database.converters.MessageStatusConverter;
 import com.ogya.dms.core.structures.MessageStatus;
 
 @Entity
@@ -27,7 +27,7 @@ public class StatusReport {
 	private Long contactId;
 
 	@Column(name = "message_status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = MessageStatusConverter.class)
 	@SerializedName("b")
 	private MessageStatus messageStatus;
 

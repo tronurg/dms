@@ -4,9 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -18,6 +17,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.PostPersist;
 import javax.persistence.Table;
 
+import com.ogya.dms.core.database.converters.AvailabilityConverter;
 import com.ogya.dms.core.structures.Availability;
 
 @Entity
@@ -38,7 +38,7 @@ public class Dgroup {
 	private String comment;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = AvailabilityConverter.class)
 	private Availability status;
 
 	@Column(name = "active", nullable = false)

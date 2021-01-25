@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Objects;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.ogya.dms.core.database.converters.AvailabilityConverter;
 import com.ogya.dms.core.structures.Availability;
 
 @Entity
@@ -35,7 +35,7 @@ public class Contact {
 	private String comment;
 
 	@Column(name = "status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = AvailabilityConverter.class)
 	private Availability status;
 
 	@Column(name = "lattitude")

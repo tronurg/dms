@@ -6,9 +6,8 @@ import java.util.Set;
 
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -22,6 +21,11 @@ import javax.persistence.Transient;
 
 import com.google.gson.annotations.SerializedName;
 import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.database.converters.MessageDirectionConverter;
+import com.ogya.dms.core.database.converters.MessageStatusConverter;
+import com.ogya.dms.core.database.converters.MessageTypeConverter;
+import com.ogya.dms.core.database.converters.ReceiverTypeConverter;
+import com.ogya.dms.core.database.converters.WaitStatusConverter;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.MessageSubType;
@@ -43,16 +47,16 @@ public class Message {
 	private Long messageRefId;
 
 	@Column(name = "message_direction", nullable = false, updatable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = MessageDirectionConverter.class)
 	private MessageDirection messageDirection;
 
 	@Column(name = "receiver_type", nullable = false, updatable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = ReceiverTypeConverter.class)
 	@SerializedName("c")
 	private ReceiverType receiverType;
 
 	@Column(name = "message_type", nullable = false, updatable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = MessageTypeConverter.class)
 	@SerializedName("d")
 	private MessageType messageType;
 
@@ -65,11 +69,11 @@ public class Message {
 	private String content;
 
 	@Column(name = "message_status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = MessageStatusConverter.class)
 	private MessageStatus messageStatus;
 
 	@Column(name = "wait_status", nullable = false)
-	@Enumerated(EnumType.STRING)
+	@Convert(converter = WaitStatusConverter.class)
 	private WaitStatus waitStatus;
 
 	@Column(name = "date", nullable = false, updatable = false)
