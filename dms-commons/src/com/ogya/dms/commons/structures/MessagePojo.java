@@ -17,29 +17,22 @@ public class MessagePojo {
 	@SerializedName("e")
 	public final Long messageId;
 	@SerializedName("f")
+	public final Long useTrackingId;
+	@SerializedName("g")
+	public final Long useTimeout;
+	@SerializedName("h")
 	public final InetAddress useLocalAddress;
 
-	public MessagePojo(String message, String senderUuid, ContentType contentType, Long messageId) {
-
-		this(message, senderUuid, null, contentType, messageId, null);
-
-	}
-
-	public MessagePojo(String message, String senderUuid, String receiverUuid, ContentType contentType,
-			Long messageId) {
-
-		this(message, senderUuid, receiverUuid, contentType, messageId, null);
-
-	}
-
 	public MessagePojo(String message, String senderUuid, String receiverUuid, ContentType contentType, Long messageId,
-			InetAddress useLocalAddress) {
+			Long useTrackingId, Long useTimeout, InetAddress useLocalAddress) {
 
 		this.message = message;
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
 		this.contentType = contentType;
 		this.messageId = messageId;
+		this.useTrackingId = useTrackingId;
+		this.useTimeout = useTimeout;
 		this.useLocalAddress = useLocalAddress;
 
 	}

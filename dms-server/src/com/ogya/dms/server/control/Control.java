@@ -278,11 +278,11 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	@Override
 	public void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus,
-			Consumer<Integer> progressMethod, InetAddress useLocalAddress) {
+			Consumer<Integer> progressMethod, long timeout, InetAddress useLocalAddress) {
 
 		try {
 
-			getTcpManager().sendMessageToServer(dmsUuid, message, sendStatus, progressMethod, useLocalAddress);
+			getTcpManager().sendMessageToServer(dmsUuid, message, sendStatus, progressMethod, timeout, useLocalAddress);
 
 		} catch (IOException e) {
 

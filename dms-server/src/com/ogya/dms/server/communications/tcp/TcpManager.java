@@ -193,7 +193,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	public void sendMessageToServer(final String dmsUuid, final String message, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressMethod, final InetAddress useLocalAddress) {
+			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalAddress) {
 
 		taskQueue.execute(() -> {
 
@@ -206,7 +206,9 @@ public class TcpManager implements TcpServerListener {
 
 				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
-				sendMessageToServer(dmsServer, encryptedMessage, sendStatus, progressMethod, useLocalAddress);
+				sendMessageToServer(dmsServer, encryptedMessage,
+						sendStatus == null ? new AtomicBoolean(true) : sendStatus, progressMethod, timeout,
+						useLocalAddress);
 
 			} catch (Exception e) {
 
@@ -232,8 +234,8 @@ public class TcpManager implements TcpServerListener {
 
 				String encryptedMessage = Encryption.compressAndEncryptToString(message);
 
-				dmsServers.forEach(
-						(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage, null, null, null));
+				dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage,
+						new AtomicBoolean(true), null, Long.MAX_VALUE, null));
 
 			} catch (Exception e) {
 
@@ -278,7 +280,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	private void sendMessageToServer(final DmsServer dmsServer, final String message, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressMethod, InetAddress useLocalInterface) {
+			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalInterface) {
 
 		dmsServer.taskQueue.execute(() -> {
 
@@ -297,30 +299,34 @@ public class TcpManager implements TcpServerListener {
 					if (!(useLocalInterface == null || useLocalInterface.equals(connection.localAddress)))
 						continue;
 
-					if (!(sendStatus == null || sendStatus.get()))
-						break;
-
 					if (connection.sendFunction == null)
 						continue;
 
 					final AtomicInteger progress = new AtomicInteger(0);
 					final AtomicInteger progressPercent = new AtomicInteger(0);
 
-					sent = connection.sendFunction.send(message, CHUNK_SIZE, sendStatus,
-							progressMethod == null ? null : () -> {
+					final long startTime = System.currentTimeMillis();
 
-								int bytesSent = progress.addAndGet(CHUNK_SIZE);
-								int bytesSentPercent = 100 * bytesSent / messageLength;
+					sent = connection.sendFunction.send(message, CHUNK_SIZE, sendStatus, () -> {
 
-								if (bytesSentPercent > progressPercent.get() && bytesSentPercent < 100) {
+						if (System.currentTimeMillis() - startTime > timeout)
+							sendStatus.set(false);
 
-									progressPercent.set(bytesSentPercent);
+						if (progressMethod == null)
+							return;
 
-									progressMethod.accept(bytesSentPercent);
+						int bytesSent = progress.addAndGet(CHUNK_SIZE);
+						int bytesSentPercent = 100 * bytesSent / messageLength;
 
-								}
+						if (bytesSentPercent > progressPercent.get() && bytesSentPercent < 100) {
 
-							});
+							progressPercent.set(bytesSentPercent);
+
+							progressMethod.accept(bytesSentPercent);
+
+						}
+
+					});
 
 					if (sent)
 						break;

@@ -126,7 +126,7 @@ public class DmsTest {
 //				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
 				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
-				messageHandle.setTrackingId(124);
+				messageHandle.setTrackingId(124L);
 				try {
 					dmsHandle.sendMessageToGroup(messageHandle, selectedGroupId);
 				} catch (Exception e1) {
@@ -203,7 +203,7 @@ public class DmsTest {
 //				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
 				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
-				messageHandle.setTrackingId(123);
+				messageHandle.setTrackingId(123L);
 				try {
 					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds);
 				} catch (Exception e1) {

@@ -10,7 +10,9 @@ public interface DmsClientListener {
 
 	void remoteIpsReceived(String message);
 
-	void progressReceived(Long messageId, String[] remoteUuids, int progress);
+	void progressMessageReceived(Long messageId, String[] remoteUuids, int progress);
+
+	void progressTransientReceived(Long trackingId, String[] remoteUuids, int progress);
 
 	void messageReceived(String message, String remoteUuid);
 

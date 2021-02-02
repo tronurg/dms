@@ -9,7 +9,7 @@ public interface ModelListener {
 	void sendToLocalUser(String receiverUuid, String message);
 
 	void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus, Consumer<Integer> progressMethod,
-			InetAddress useLocalAddress);
+			long timeout, InetAddress useLocalAddress);
 
 	void sendToAllRemoteServers(String message);
 

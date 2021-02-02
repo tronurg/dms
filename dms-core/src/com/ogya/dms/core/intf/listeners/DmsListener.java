@@ -1,6 +1,7 @@
 package com.ogya.dms.core.intf.listeners;
 
 import java.nio.file.Path;
+import java.util.List;
 
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.GroupHandle;
@@ -13,7 +14,9 @@ public interface DmsListener {
 
 	void messageReceived(MessageHandle messageHandle, Long contactId, Long groupId);
 
-	void messageTransmitted(Integer trackingId, Long contactId);
+	void messageTransmitted(Long trackingId, Long contactId);
+
+	void messageFailed(Long trackingId, List<Long> contactIds);
 
 	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId);
 

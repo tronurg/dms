@@ -21,7 +21,7 @@ public class MessageHandleImpl implements MessageHandle {
 	@SerializedName("e")
 	private ListHandleImpl listHandle;
 	@SerializedName("f")
-	private Integer trackingId;
+	private Long trackingId;
 	@SerializedName("g")
 	private Integer flag;
 	@SerializedName("h")
@@ -51,7 +51,7 @@ public class MessageHandleImpl implements MessageHandle {
 
 	}
 
-	public Integer getTrackingId() {
+	public Long getTrackingId() {
 		return trackingId;
 	}
 
@@ -102,7 +102,7 @@ public class MessageHandleImpl implements MessageHandle {
 	}
 
 	@Override
-	public void setTrackingId(Integer trackingId) {
+	public void setTrackingId(Long trackingId) {
 
 		this.trackingId = trackingId;
 

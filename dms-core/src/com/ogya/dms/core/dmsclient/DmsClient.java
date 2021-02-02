@@ -66,89 +66,90 @@ public class DmsClient {
 
 	public void sendBeacon(String message) {
 
-		dealerQueue.offer(new MessagePojo(message, null, ContentType.BCON, null).toJson());
+		dealerQueue.offer(new MessagePojo(message, null, null, ContentType.BCON, null, null, null, null).toJson());
 
 	}
 
 	public void claimStartInfo() {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, ContentType.REQ_STRT, null).toJson());
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null, null).toJson());
 
 	}
 
 	public void addRemoteIp(String message) {
 
-		dealerQueue.offer(new MessagePojo(message, uuid, ContentType.ADD_IP, null).toJson());
+		dealerQueue.offer(new MessagePojo(message, null, null, ContentType.ADD_IP, null, null, null, null).toJson());
 
 	}
 
 	public void removeRemoteIp(String message) {
 
-		dealerQueue.offer(new MessagePojo(message, uuid, ContentType.REMOVE_IP, null).toJson());
+		dealerQueue.offer(new MessagePojo(message, null, null, ContentType.REMOVE_IP, null, null, null, null).toJson());
 
 	}
 
-	public void sendMessage(Message message, String receiverUuid, Long messageId) {
-
-		dealerQueue
-				.offer(new MessagePojo(message.toJson(), uuid, receiverUuid, ContentType.MESSAGE, messageId).toJson());
-
-	}
-
-	public void sendMessage(Message message, Iterable<String> receiverUuids, Long messageId) {
+	public void sendMessage(Message message, String receiverUuid, Long trackingId) {
 
 		dealerQueue.offer(
-				new MessagePojo(message.toJson(), uuid, String.join(";", receiverUuids), ContentType.MESSAGE, messageId)
+				new MessagePojo(message.toJson(), uuid, receiverUuid, ContentType.MESSAGE, null, trackingId, null, null)
 						.toJson());
 
 	}
 
-	public void cancelMessage(Long messageId) {
+	public void sendMessage(Message message, Iterable<String> receiverUuids, Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, ContentType.CANCEL, messageId).toJson());
+		dealerQueue.offer(new MessagePojo(message.toJson(), uuid, String.join(";", receiverUuids), ContentType.MESSAGE,
+				null, trackingId, null, null).toJson());
+
+	}
+
+	public void cancelMessage(Long trackingId) {
+
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL, null, trackingId, null, null).toJson());
 
 	}
 
 	public void claimMessageStatus(Long messageId, String receiverUuid) {
 
-		dealerQueue
-				.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId).toJson());
+		dealerQueue.offer(
+				new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId, null, null, null)
+						.toJson());
 
 	}
 
 	public void feedMessageStatus(String receiverUuid, Long messageId, MessageStatus messageStatus) {
 
-		dealerQueue.offer(
-				new MessagePojo(messageStatus.toJson(), uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS, messageId)
-						.toJson());
+		dealerQueue.offer(new MessagePojo(messageStatus.toJson(), uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS,
+				messageId, null, null, null).toJson());
 
 	}
 
 	public void feedGroupMessageStatus(String receiverUuid, Long messageId, GroupMessageStatus groupMessageStatus) {
 
 		dealerQueue.offer(new MessagePojo(groupMessageStatus.toJson(), uuid, receiverUuid,
-				ContentType.FEED_GROUP_MESSAGE_STATUS, messageId).toJson());
+				ContentType.FEED_GROUP_MESSAGE_STATUS, messageId, null, null, null).toJson());
 
 	}
 
 	public void claimStatusReport(Long messageId, String receiverUuid) {
 
-		dealerQueue
-				.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId).toJson());
+		dealerQueue.offer(
+				new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId, null, null, null)
+						.toJson());
 
 	}
 
 	public void feedStatusReport(Long messageId, Set<StatusReport> statusReports, String receiverUuid) {
 
 		dealerQueue.offer(new MessagePojo(CommonMethods.toStatusReportJson(statusReports), null, receiverUuid,
-				ContentType.FEED_STATUS_REPORT, messageId).toJson());
+				ContentType.FEED_STATUS_REPORT, messageId, null, null, null).toJson());
 
 	}
 
 	public void sendTransientMessage(String message, Iterable<String> receiverUuids, InetAddress useLocalInterface) {
 
 		dealerQueue.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null,
-				useLocalInterface).toJson());
+				null, null, useLocalInterface).toJson());
 
 	}
 
@@ -270,9 +271,16 @@ public class DmsClient {
 
 				break;
 
-			case PROGRESS:
+			case PROGRESS_MESSAGE:
 
-				progressReceivedToListener(messagePojo.messageId, messagePojo.senderUuid.split(";"),
+				progressMessageReceivedToListener(messagePojo.useTrackingId, messagePojo.senderUuid.split(";"),
+						Integer.parseInt(messagePojo.message));
+
+				break;
+
+			case PROGRESS_TRANSIENT:
+
+				progressTransientReceivedToListener(messagePojo.useTrackingId, messagePojo.senderUuid.split(";"),
 						Integer.parseInt(messagePojo.message));
 
 				break;
@@ -362,11 +370,21 @@ public class DmsClient {
 
 	}
 
-	private void progressReceivedToListener(final Long messageId, final String[] uuids, int progress) {
+	private void progressMessageReceivedToListener(final Long messageId, final String[] uuids, int progress) {
 
 		taskQueue.execute(() -> {
 
-			listener.progressReceived(messageId, uuids, progress);
+			listener.progressMessageReceived(messageId, uuids, progress);
+
+		});
+
+	}
+
+	private void progressTransientReceivedToListener(final Long trackingId, final String[] uuids, int progress) {
+
+		taskQueue.execute(() -> {
+
+			listener.progressTransientReceived(trackingId, uuids, progress);
 
 		});
 

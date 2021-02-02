@@ -1379,7 +1379,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void progressReceived(final Long messageId, final String[] remoteUuids, final int progress) {
+	public void progressMessageReceived(final Long messageId, final String[] remoteUuids, final int progress) {
 		// messageId = local database id of the message (not the message id, which is
 		// the local
 		// database id of the sender)
@@ -1464,6 +1464,29 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				e.printStackTrace();
 
 			}
+
+		});
+
+	}
+
+	@Override
+	public void progressTransientReceived(final Long trackingId, final String[] remoteUuids, final int progress) {
+
+		taskQueue.execute(() -> {
+
+			List<Long> remoteIds = new ArrayList<Long>();
+
+			for (String remoteUuid : remoteUuids) {
+
+				Contact contact = getContact(remoteUuid);
+
+				if (contact != null)
+					remoteIds.add(contact.getId());
+
+			}
+
+			listenerTaskQueue
+					.execute(() -> dmsListeners.forEach(listener -> listener.messageFailed(trackingId, remoteIds)));
 
 		});
 
@@ -1989,7 +2012,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void transientMessageStatusReceived(MessageHandleImpl incomingMessage, String remoteUuid) throws Exception {
 
-		final Integer trackingId = incomingMessage.getTrackingId();
+		final Long trackingId = incomingMessage.getTrackingId();
 
 		if (trackingId == null)
 			return;
@@ -2045,7 +2068,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void sendTransientMessageStatus(MessageHandleImpl incomingMessage, String remoteUuid) throws Exception {
 
-		Integer trackingId = incomingMessage.getTrackingId();
+		Long trackingId = incomingMessage.getTrackingId();
 
 		if (trackingId == null)
 			return;

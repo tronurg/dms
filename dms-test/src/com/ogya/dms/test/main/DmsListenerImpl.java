@@ -3,6 +3,7 @@ package com.ogya.dms.test.main;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.List;
 
 import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.handles.ContactHandle;
@@ -102,10 +103,16 @@ public class DmsListenerImpl implements DmsListener {
 	}
 
 	@Override
-	public void messageTransmitted(Integer trackingId, Long contactId) {
+	public void messageTransmitted(Long trackingId, Long contactId) {
 
 		System.out.println(String.format("%s: Message #%d transmitted to %s\n", myName, trackingId,
 				dmsHandle.getContactHandle(contactId).getName()));
+
+	}
+
+	@Override
+	public void messageFailed(Long trackingId, List<Long> contactIds) {
+		// TODO Auto-generated method stub
 
 	}
 

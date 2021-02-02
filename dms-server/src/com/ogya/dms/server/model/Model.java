@@ -84,10 +84,10 @@ public class Model {
 
 		try {
 
-			MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
+			final MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
 
-			String senderUuid = messagePojo.senderUuid;
-			Long messageId = messagePojo.messageId;
+			final String senderUuid = messagePojo.senderUuid;
+			final Long trackingId = messagePojo.useTrackingId;
 
 			switch (messagePojo.contentType) {
 
@@ -115,8 +115,9 @@ public class Model {
 
 				sendBeaconToLocalUsers(localUser.beacon);
 
-				sendBeaconToRemoteServers(new MessagePojo(messagePojo.message, localUser.mapId,
-						messagePojo.receiverUuid, messagePojo.contentType, messagePojo.messageId).toJson());
+				sendBeaconToRemoteServers(
+						new MessagePojo(messagePojo.message, localUser.mapId, messagePojo.receiverUuid,
+								messagePojo.contentType, messagePojo.messageId, null, null, null).toJson());
 
 				break;
 
@@ -142,7 +143,7 @@ public class Model {
 
 			case CANCEL: {
 
-				if (messageId == null)
+				if (trackingId == null)
 					break;
 
 				LocalUser sender = localUsers.get(senderUuid);
@@ -150,7 +151,7 @@ public class Model {
 				if (sender == null)
 					break;
 
-				AtomicBoolean sendStatus = sender.sendStatusMap.get(messageId);
+				AtomicBoolean sendStatus = sender.sendStatusMap.get(trackingId);
 				if (sendStatus != null)
 					sendStatus.set(false);
 
@@ -163,10 +164,16 @@ public class Model {
 				if (messagePojo.receiverUuid == null)
 					break;
 
+				final long timeout = messagePojo.useTimeout == null ? Long.MAX_VALUE : messagePojo.useTimeout;
+				if (timeout < 0)
+					break;
+
 				final LocalUser sender = localUsers.get(senderUuid);
 
-				final boolean trackedMessage = Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
-						&& sender != null && messageId != null;
+				final boolean trackedMessage = trackingId != null
+						&& Objects.equals(messagePojo.contentType, ContentType.MESSAGE);
+				final boolean trackedTransientMessage = trackingId != null
+						&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT);
 
 				// This piece of code is disabled and commented out on purpose to remind that
 				// in some cases, like conveying a status report, the sender is virtually set to
@@ -201,7 +208,8 @@ public class Model {
 				if (trackedMessage && localReceiverUuids.size() > 0) {
 
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
-							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS, messageId);
+							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS_MESSAGE, null,
+							trackingId, null, null);
 
 					listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
@@ -212,38 +220,45 @@ public class Model {
 					AtomicBoolean sendStatus = new AtomicBoolean(true);
 
 					if (trackedMessage)
-						sender.sendStatusMap.put(messageId, sendStatus);
+						sender.sendStatusMap.put(trackingId, sendStatus);
 					statusReceiverMap.put(sendStatus, uuidList);
 
 					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
 					List<String> receiverMapIdList = new ArrayList<String>();
 					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
 					String remoteMessagePojoStr = new MessagePojo(messagePojo.message, senderMapId,
-							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.messageId)
-									.toJson();
+							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.messageId, null,
+							null, null).toJson();
 
-					listener.sendToRemoteServer(dmsUuid, remoteMessagePojoStr, sendStatus,
-							trackedMessage ? progress -> {
+					listener.sendToRemoteServer(dmsUuid, remoteMessagePojoStr, sendStatus, progress -> {
 
-								if (progress < 0 || progress == 100) {
+						if (trackedMessage) {
 
-									sender.sendStatusMap.remove(messageId);
-									statusReceiverMap.remove(sendStatus);
+							if (progress < 0 || progress == 100)
+								sender.sendStatusMap.remove(trackingId);
 
-								}
+							MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_MESSAGE, null,
+									trackingId, null, null);
 
-								MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
-										String.join(";", uuidList), senderUuid, ContentType.PROGRESS, messageId);
+							if (localUsers.containsKey(senderUuid))
+								listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
-								if (localUsers.containsKey(senderUuid))
-									listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+						} else if (trackedTransientMessage) {
 
-							} : progress -> {
+							MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
+									trackingId, null, null);
 
-								if (progress < 0 || progress == 100)
-									statusReceiverMap.remove(sendStatus);
+							if (localUsers.containsKey(senderUuid))
+								listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
-							}, messagePojo.useLocalAddress);
+						}
+
+						if (progress < 0 || progress == 100)
+							statusReceiverMap.remove(sendStatus);
+
+					}, timeout, messagePojo.useLocalAddress);
 
 				});
 
@@ -283,7 +298,7 @@ public class Model {
 				String receiverUuid = String.join(";", receiverUuids);
 
 				messagePojo = new MessagePojo(messagePojo.message, senderUuid, receiverUuid, messagePojo.contentType,
-						messagePojo.messageId);
+						messagePojo.messageId, null, null, null);
 
 				messagePojoStr = messagePojo.toJson();
 
@@ -401,21 +416,21 @@ public class Model {
 		if (user == null)
 			return;
 
-		synchronized (user.sendStatusMap) {
-			user.sendStatusMap.forEach((messageId, status) -> status.set(false));
-		}
+		user.sendStatusMap.forEach((messageId, status) -> status.set(false));
 
 		mappedUsers.remove(user.mapId);
 
 		String userUuid = user.beacon.uuid;
 
-		String messagePojoStr = new MessagePojo(null, userUuid, ContentType.UUID_DISCONNECTED, null).toJson();
+		String messagePojoStr = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null,
+				null).toJson();
 
 		localUsers.remove(userUuid);
 
 		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
 
-		String remoteMessagePojoStr = new MessagePojo(null, user.mapId, ContentType.UUID_DISCONNECTED, null).toJson();
+		String remoteMessagePojoStr = new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null, null,
+				null, null).toJson();
 
 		listener.sendToAllRemoteServers(remoteMessagePojoStr);
 
@@ -437,14 +452,13 @@ public class Model {
 
 		String userUuid = user.beacon.uuid;
 
-		synchronized (statusReceiverMap) {
-			statusReceiverMap.forEach((sendStatus, receiverUuids) -> {
-				if (receiverUuids.contains(userUuid) && receiverUuids.size() == 1)
-					sendStatus.set(false);
-			});
-		}
+		statusReceiverMap.forEach((sendStatus, receiverUuids) -> {
+			if (receiverUuids.contains(userUuid) && receiverUuids.size() == 1)
+				sendStatus.set(false);
+		});
 
-		String messagePojoStr = new MessagePojo(null, userUuid, ContentType.UUID_DISCONNECTED, null).toJson();
+		String messagePojoStr = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null,
+				null).toJson();
 
 		remoteUsers.remove(userUuid);
 
@@ -460,7 +474,8 @@ public class Model {
 
 	private void sendBeaconToLocalUsers(Beacon beacon) {
 
-		String beaconStr = new MessagePojo(beacon.toJson(), null, ContentType.BCON, null).toJson();
+		String beaconStr = new MessagePojo(beacon.toJson(), null, null, ContentType.BCON, null, null, null, null)
+				.toJson();
 
 		localUsers.forEach((uuid, user) -> {
 
@@ -480,7 +495,8 @@ public class Model {
 			if (Objects.equals(receiverUuid, uuid))
 				return;
 
-			String beaconStr = new MessagePojo(user.beacon.toJson(), null, ContentType.BCON, null).toJson();
+			String beaconStr = new MessagePojo(user.beacon.toJson(), null, null, ContentType.BCON, null, null, null,
+					null).toJson();
 
 			listener.sendToLocalUser(receiverUuid, beaconStr);
 
@@ -488,7 +504,8 @@ public class Model {
 
 		remoteUsers.forEach((uuid, user) -> {
 
-			String beaconStr = new MessagePojo(user.beacon.toJson(), null, ContentType.BCON, null).toJson();
+			String beaconStr = new MessagePojo(user.beacon.toJson(), null, null, ContentType.BCON, null, null, null,
+					null).toJson();
 
 			listener.sendToLocalUser(receiverUuid, beaconStr);
 
@@ -511,9 +528,10 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), user.mapId, ContentType.BCON, null).toJson();
+			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), user.mapId, null, ContentType.BCON, null,
+					null, null, null).toJson();
 
-			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null, null);
+			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null, Long.MAX_VALUE, null);
 
 		});
 
@@ -563,7 +581,8 @@ public class Model {
 
 	private void sendRemoteIpsToLocalUser(String receiverUuid) {
 
-		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null).toJson();
+		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IP, null, null,
+				null, null).toJson();
 
 		listener.sendToLocalUser(receiverUuid, messagePojoStr);
 
@@ -571,7 +590,8 @@ public class Model {
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, ContentType.IP, null).toJson();
+		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IP, null, null,
+				null, null).toJson();
 
 		localUsers.forEach((receiverUuid, user) -> {
 
