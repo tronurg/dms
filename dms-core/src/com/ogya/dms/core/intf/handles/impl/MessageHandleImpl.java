@@ -6,7 +6,6 @@ import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
-import com.ogya.dms.core.structures.ReceiverType;
 
 public class MessageHandleImpl implements MessageHandle {
 
@@ -23,13 +22,7 @@ public class MessageHandleImpl implements MessageHandle {
 	@SerializedName("f")
 	private Long trackingId;
 	@SerializedName("g")
-	private Integer flag;
-	@SerializedName("h")
-	private ReceiverType receiverType;
-	@SerializedName("i")
-	private Long groupRefId;
-	@SerializedName("j")
-	private Long contactRefId;
+	private Integer statusResponseFlag;
 
 	public MessageHandleImpl(Integer messageCode, String message) {
 
@@ -51,40 +44,20 @@ public class MessageHandleImpl implements MessageHandle {
 
 	}
 
+	public void setTrackingId(Long trackingId) {
+		this.trackingId = trackingId;
+	}
+
 	public Long getTrackingId() {
 		return trackingId;
 	}
 
-	public Integer getFlag() {
-		return flag;
+	public Integer getStatusResponseFlag() {
+		return statusResponseFlag;
 	}
 
-	public void setFlag(Integer flag) {
-		this.flag = flag;
-	}
-
-	public ReceiverType getReceiverType() {
-		return receiverType;
-	}
-
-	public void setReceiverType(ReceiverType receiverType) {
-		this.receiverType = receiverType;
-	}
-
-	public Long getGroupRefId() {
-		return groupRefId;
-	}
-
-	public void setGroupRefId(Long groupRefId) {
-		this.groupRefId = groupRefId;
-	}
-
-	public Long getContactRefId() {
-		return contactRefId;
-	}
-
-	public void setContactRefId(Long contactRefId) {
-		this.contactRefId = contactRefId;
+	public void setStatusResponseFlag(Integer statusResponseFlag) {
+		this.statusResponseFlag = statusResponseFlag;
 	}
 
 	@Override
@@ -98,13 +71,6 @@ public class MessageHandleImpl implements MessageHandle {
 	public String getMessage() {
 
 		return message;
-
-	}
-
-	@Override
-	public void setTrackingId(Long trackingId) {
-
-		this.trackingId = trackingId;
 
 	}
 

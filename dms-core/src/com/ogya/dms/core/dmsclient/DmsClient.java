@@ -146,10 +146,11 @@ public class DmsClient {
 
 	}
 
-	public void sendTransientMessage(String message, Iterable<String> receiverUuids, InetAddress useLocalInterface) {
+	public void sendTransientMessage(String message, Iterable<String> receiverUuids, Long useTrackingId,
+			Long useTimeout, InetAddress useLocalInterface) {
 
 		dealerQueue.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null,
-				null, null, useLocalInterface).toJson());
+				useTrackingId, useTimeout, useLocalInterface).toJson());
 
 	}
 

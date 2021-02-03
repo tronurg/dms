@@ -17,6 +17,7 @@ import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
+import com.ogya.dms.core.intf.tools.MessageRules;
 import com.ogya.dms.core.structures.Availability;
 
 public interface DmsHandle {
@@ -65,15 +66,16 @@ public interface DmsHandle {
 
 	<T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode);
 
+	MessageRules createMessageRules();
+
 	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws Exception;
 
 	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws Exception;
 
-	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, InetAddress useLocalInterface)
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules)
 			throws Exception;
 
-	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, InetAddress useLocalInterface)
-			throws Exception;
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules) throws Exception;
 
 	Future<Long> sendGuiMessageToContact(String message, Long contactId);
 

@@ -60,17 +60,15 @@ public class DmsListenerImpl implements DmsListener {
 	}
 
 	@Override
-	public void messageReceived(MessageHandle messageHandle, Long contactId, Long groupId) {
+	public void messageReceived(MessageHandle messageHandle, Long contactId) {
 
-		String groupName = groupId == null ? null : dmsHandle.getGroupHandle(groupId).getName();
-
-		System.out.println(String.format("%s: Message received from: %s (group: %s)\nContent: %s\n", myName,
-				dmsHandle.getContactHandle(contactId).getName(), groupName, messageHandle.getMessage()));
+		System.out.println(String.format("%s: Message received from: %s\nContent: %s\n", myName,
+				dmsHandle.getContactHandle(contactId).getName(), messageHandle.getMessage()));
 
 		FileHandle fileHandle = messageHandle.getFileHandle();
 		if (fileHandle != null) {
-			System.out.println(String.format("%s: File received from: %s (group: %s)\nContent: %s\n", myName,
-					dmsHandle.getContactHandle(contactId).getName(), groupName, fileHandle.getPath()));
+			System.out.println(String.format("%s: File received from: %s\nContent: %s\n", myName,
+					dmsHandle.getContactHandle(contactId).getName(), fileHandle.getPath()));
 			try {
 				new ProcessBuilder().directory(fileHandle.getPath().getParent().toFile())
 						.command("cmd", "/C", fileHandle.getPath().getFileName().toString()).start();
@@ -81,16 +79,14 @@ public class DmsListenerImpl implements DmsListener {
 
 		ObjectHandle objectHandle = messageHandle.getObjectHandle();
 		if (objectHandle != null) {
-			System.out.println(String.format("%s: Object received from: %s (group: %s)\nContent: %s\n", myName,
-					dmsHandle.getContactHandle(contactId).getName(), groupName,
-					objectHandle.getObject(TestPojo.class)));
+			System.out.println(String.format("%s: Object received from: %s\nContent: %s\n", myName,
+					dmsHandle.getContactHandle(contactId).getName(), objectHandle.getObject(TestPojo.class)));
 		}
 
 		ListHandle listHandle = messageHandle.getListHandle();
 		if (listHandle != null) {
-			System.out.println(String.format("%s: List received from: %s (group: %s)\nContent: %s\n", myName,
-					dmsHandle.getContactHandle(contactId).getName(), groupName,
-					listHandle.getList(TestPojoConverted.class)));
+			System.out.println(String.format("%s: List received from: %s\nContent: %s\n", myName,
+					dmsHandle.getContactHandle(contactId).getName(), listHandle.getList(TestPojoConverted.class)));
 		}
 
 		try {

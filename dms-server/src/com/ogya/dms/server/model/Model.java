@@ -186,6 +186,7 @@ public class Model {
 
 				List<String> localReceiverUuids = new ArrayList<String>();
 				Map<String, Set<String>> remoteServerReceiverUuids = new HashMap<String, Set<String>>();
+				List<String> unreachableUuids = new ArrayList<String>();
 
 				for (String receiverUuid : receiverUuids) {
 
@@ -201,6 +202,10 @@ public class Model {
 						remoteServerReceiverUuids.putIfAbsent(remoteUser.dmsServer.dmsUuid, new HashSet<String>());
 						remoteServerReceiverUuids.get(remoteUser.dmsServer.dmsUuid).add(receiverUuid);
 
+					} else {
+
+						unreachableUuids.add(receiverUuid);
+
 					}
 
 				}
@@ -209,6 +214,16 @@ public class Model {
 
 					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS_MESSAGE, null,
+							trackingId, null, null);
+
+					listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+
+				}
+
+				if (trackedTransientMessage && unreachableUuids.size() > 0) {
+
+					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(-1),
+							String.join(";", unreachableUuids), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
 							trackingId, null, null);
 
 					listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
@@ -241,17 +256,15 @@ public class Model {
 									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_MESSAGE, null,
 									trackingId, null, null);
 
-							if (localUsers.containsKey(senderUuid))
-								listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+							listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
-						} else if (trackedTransientMessage) {
+						} else if (trackedTransientMessage && progress < 0) {
 
 							MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
 									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
 									trackingId, null, null);
 
-							if (localUsers.containsKey(senderUuid))
-								listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+							listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
 
 						}
 

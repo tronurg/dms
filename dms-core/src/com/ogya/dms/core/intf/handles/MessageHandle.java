@@ -6,8 +6,6 @@ public interface MessageHandle {
 
 	String getMessage();
 
-	void setTrackingId(Long trackingId);
-
 	FileHandle getFileHandle();
 
 	void setFileHandle(FileHandle fileHandle);
