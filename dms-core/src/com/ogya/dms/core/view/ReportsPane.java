@@ -72,7 +72,7 @@ public class ReportsPane extends GridPane {
 
 			reportsComboBox.getItems().add(template.heading);
 
-			ReportPane reportPane = new ReportPane(template.body);
+			ReportPane reportPane = new ReportPane(template.reportId, template.body);
 			GridPane.setHgrow(reportPane, Priority.ALWAYS);
 			GridPane.setVgrow(reportPane, Priority.ALWAYS);
 
@@ -154,9 +154,12 @@ public class ReportsPane extends GridPane {
 				.bind(Bindings.createDoubleBinding(() -> sendBtn.isHover() ? 1.0 : 0.5, sendBtn.hoverProperty()));
 		sendBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
-		sendBtn.setOnAction(e -> reportListeners
-				.forEach(listener -> listener.sendReportClicked(idRef.get(), reportsComboBox.getValue(),
-						reportPanes.get(reportsComboBox.getSelectionModel().getSelectedIndex()).getParagraphs())));
+		sendBtn.setOnAction(e -> {
+			final ReportPane selectedReportPane = reportPanes
+					.get(reportsComboBox.getSelectionModel().getSelectedIndex());
+			reportListeners.forEach(listener -> listener.sendReportClicked(idRef.get(), selectedReportPane.reportId,
+					reportsComboBox.getValue(), selectedReportPane.getParagraphs()));
+		});
 
 	}
 
@@ -176,11 +179,13 @@ public class ReportsPane extends GridPane {
 
 	public static final class ReportTemplate {
 
+		private final Integer reportId;
 		private final String heading;
 		private final String body;
 
-		public ReportTemplate(String heading, String body) {
+		public ReportTemplate(Integer reportId, String heading, String body) {
 
+			this.reportId = reportId;
 			this.heading = heading;
 			this.body = body;
 
@@ -190,11 +195,13 @@ public class ReportsPane extends GridPane {
 
 	public static interface ReportsListener {
 
-		void sendReportClicked(Long id, String reportHeading, List<String> reportParagraphs);
+		void sendReportClicked(Long id, Integer reportId, String reportHeading, List<String> reportParagraphs);
 
 	}
 
 	private final class ReportPane extends SplitPane {
+
+		private final Integer reportId;
 
 		private final GridPane valuesPane = new GridPane();
 		private final ScrollPane valuesScrollPane = new ScrollPane(valuesPane) {
@@ -212,9 +219,11 @@ public class ReportsPane extends GridPane {
 		private final List<TextField> textFields = Collections.synchronizedList(new ArrayList<TextField>());
 		private final List<List<Label>> lines = Collections.synchronizedList(new ArrayList<List<Label>>());
 
-		private ReportPane(String templateBody) {
+		private ReportPane(Integer reportId, String templateBody) {
 
 			super();
+
+			this.reportId = reportId;
 
 			fillTemplate(templateBody);
 

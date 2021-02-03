@@ -12,10 +12,11 @@ import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
+import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
 import com.ogya.dms.core.structures.MessageStatus;
 
-public class DmsListenerImpl implements DmsListener {
+public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 
 	private final DmsHandle dmsHandle;
 	private final String myName;
@@ -117,6 +118,56 @@ public class DmsListenerImpl implements DmsListener {
 
 		System.out.println(String.format("%s: %s -> message #%d status: %s\n", myName,
 				dmsHandle.getContactHandle(contactId).getName(), messageId, messageStatus));
+
+	}
+
+	@Override
+	public void guiMessageSent(String message, Long contactId, Long groupId) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void guiMessageReceived(String message, Long contactId, Long groupId) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void guiFileSent(Path path, Long contactId, Long groupId) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void guiFileReceived(Path path, Long contactId, Long groupId) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void guiReportSent(Integer reportId, Path path, Long contactId, Long groupId) {
+
+		System.out.println("Report #" + reportId + " sent.");
+
+	}
+
+	@Override
+	public void guiReportReceived(Integer reportId, Path path, Long contactId, Long groupId) {
+
+		System.out.println("Report #" + reportId + " received.");
+
+	}
+
+	@Override
+	public void guiAudioSent(Path path, Long contactId, Long groupId) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void guiAudioReceived(Path path, Long contactId, Long groupId) {
+		// TODO Auto-generated method stub
 
 	}
 

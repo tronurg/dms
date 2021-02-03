@@ -108,6 +108,9 @@ public class Message {
 	@SerializedName("i")
 	private Long contactRefId;
 
+	@Column(name = "message_code", updatable = false)
+	@SerializedName("j")
+	private Integer messageCode;
 	@Column(name = "api_flag", updatable = false)
 	private Integer apiFlag;
 
@@ -143,6 +146,8 @@ public class Message {
 		this.refMessage = message.refMessage;
 		this.groupRefId = message.groupRefId;
 		this.contactRefId = message.contactRefId;
+		this.messageCode = message.messageCode;
+		this.apiFlag = message.apiFlag;
 	}
 
 	public Long getId() {
@@ -285,6 +290,14 @@ public class Message {
 
 	public void setContactRefId(Long contactRefId) {
 		this.contactRefId = contactRefId;
+	}
+
+	public Integer getMessageCode() {
+		return messageCode;
+	}
+
+	public void setMessageCode(Integer messageCode) {
+		this.messageCode = messageCode;
 	}
 
 	public Integer getApiFlag() {

@@ -61,6 +61,7 @@ public class DmsTest {
 			secretIdThread.start();
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
 
 			JComponent mcPanel = dmsHandle.getDmsPanel();
 
@@ -106,6 +107,7 @@ public class DmsTest {
 			DmsHandle dmsHandle = DmsCore.login("armut", "armut");
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
@@ -182,6 +184,7 @@ public class DmsTest {
 			DmsHandle dmsHandle = DmsCore.login("kiraz", "kiraz");
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
 
 			ContactSelectionHandle csh = dmsHandle.getOnlineContactsHandle();
 

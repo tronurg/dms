@@ -85,8 +85,8 @@ public interface DmsHandle {
 
 	Future<Long> sendGuiFileToGroup(Path path, Long groupId);
 
-	Future<Long> sendGuiReportToContact(Path path, Long contactId);
+	Future<Long> sendGuiReportToContact(Integer reportId, Path path, Long contactId);
 
-	Future<Long> sendGuiReportToGroup(Path path, Long groupId);
+	Future<Long> sendGuiReportToGroup(Integer reportId, Path path, Long groupId);
 
 }

@@ -1,5 +1,6 @@
 package com.ogya.dms.core.common;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -264,7 +265,13 @@ public class CommonMethods {
 				if (Files.isDirectory(path) || !path.toString().toLowerCase().endsWith(".txt"))
 					return;
 
-				try (Reader reader = Files.newBufferedReader(path)) {
+				try (BufferedReader reader = Files.newBufferedReader(path)) {
+
+					String idLine = reader.readLine();
+					if (!(idLine.startsWith("#") && idLine.length() > 1))
+						return;
+
+					Integer reportId = Integer.parseInt(idLine.substring(1));
 
 					StringBuilder stringBuilder = new StringBuilder();
 
@@ -275,10 +282,10 @@ public class CommonMethods {
 
 					String fileName = path.getFileName().toString();
 
-					templates.add(
-							new ReportTemplate(fileName.substring(0, fileName.length() - 4), stringBuilder.toString()));
+					templates.add(new ReportTemplate(reportId, fileName.substring(0, fileName.length() - 4),
+							stringBuilder.toString()));
 
-				} catch (IOException e) {
+				} catch (Exception e) {
 
 					e.printStackTrace();
 

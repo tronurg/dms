@@ -12,9 +12,9 @@ public interface DmsGuiListener {
 
 	void guiFileReceived(Path path, Long contactId, Long groupId);
 
-	void guiReportSent(Path path, Long contactId, Long groupId);
+	void guiReportSent(Integer reportId, Path path, Long contactId, Long groupId);
 
-	void guiReportReceived(Path path, Long contactId, Long groupId);
+	void guiReportReceived(Integer reportId, Path path, Long contactId, Long groupId);
 
 	void guiAudioSent(Path path, Long contactId, Long groupId);
 
