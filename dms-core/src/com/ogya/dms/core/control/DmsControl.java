@@ -3241,6 +3241,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
 
+		String ownerUuid = group.getOwner().getUuid();
+		if (!Objects.equals(ownerUuid, model.getLocalUuid()))
+			contactUuids.add(ownerUuid);
+
 		sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
 		return true;

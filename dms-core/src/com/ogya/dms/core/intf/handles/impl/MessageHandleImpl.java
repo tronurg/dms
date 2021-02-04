@@ -44,12 +44,12 @@ public class MessageHandleImpl implements MessageHandle {
 
 	}
 
-	public void setTrackingId(Long trackingId) {
-		this.trackingId = trackingId;
-	}
-
 	public Long getTrackingId() {
 		return trackingId;
+	}
+
+	public void setTrackingId(Long trackingId) {
+		this.trackingId = trackingId;
 	}
 
 	public Integer getStatusResponseFlag() {
