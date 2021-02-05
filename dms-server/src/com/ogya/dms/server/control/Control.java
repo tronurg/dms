@@ -140,7 +140,7 @@ public class Control implements TcpManagerListener, ModelListener {
 		}
 
 		if (isUnicast)
-			taskQueue.execute(() -> model.addRemoteIp(senderAddress.getHostAddress()));
+			taskQueue.execute(() -> model.addRemoteIps(senderAddress.getHostAddress()));
 
 	}
 

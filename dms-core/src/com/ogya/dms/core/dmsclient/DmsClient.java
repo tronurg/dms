@@ -76,15 +76,19 @@ public class DmsClient {
 
 	}
 
-	public void addRemoteIp(String message) {
+	public void addRemoteIps(String... ips) {
 
-		dealerQueue.offer(new MessagePojo(message, null, null, ContentType.ADD_IP, null, null, null, null).toJson());
+		dealerQueue
+				.offer(new MessagePojo(String.join(";", ips), null, null, ContentType.ADD_IPS, null, null, null, null)
+						.toJson());
 
 	}
 
-	public void removeRemoteIp(String message) {
+	public void removeRemoteIps(String... ips) {
 
-		dealerQueue.offer(new MessagePojo(message, null, null, ContentType.REMOVE_IP, null, null, null, null).toJson());
+		dealerQueue.offer(
+				new MessagePojo(String.join(";", ips), null, null, ContentType.REMOVE_IPS, null, null, null, null)
+						.toJson());
 
 	}
 
@@ -266,9 +270,9 @@ public class DmsClient {
 
 				break;
 
-			case IP:
+			case IPS:
 
-				remoteIpsReceivedToListener(messagePojo.message);
+				remoteIpsReceivedToListener(messagePojo.message.split(";"));
 
 				break;
 
@@ -361,11 +365,11 @@ public class DmsClient {
 
 	}
 
-	private void remoteIpsReceivedToListener(final String message) {
+	private void remoteIpsReceivedToListener(final String[] remoteIps) {
 
 		taskQueue.execute(() -> {
 
-			listener.remoteIpsReceived(message);
+			listener.remoteIpsReceived(remoteIps);
 
 		});
 

@@ -113,6 +113,9 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		for (String ip : ips) {
 
+			if (ip.isEmpty())
+				continue;
+
 			HBox ipField = new HBox(gap);
 
 			Label ipLabel = new Label(ip);

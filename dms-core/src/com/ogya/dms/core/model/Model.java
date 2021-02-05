@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,6 +26,8 @@ public class Model {
 	private final String localUuid;
 
 	private final AtomicBoolean isServerConnected = new AtomicBoolean(false);
+
+	private final Queue<Runnable> serverTaskQueue = new ConcurrentLinkedQueue<Runnable>();
 
 	private final Map<String, Contact> uuidContacts = Collections.synchronizedMap(new HashMap<String, Contact>());
 	private final Map<Long, Contact> idContacts = Collections.synchronizedMap(new HashMap<Long, Contact>());
@@ -117,6 +121,18 @@ public class Model {
 
 	}
 
+	public void addServerTaskToQueue(Runnable task) {
+
+		serverTaskQueue.offer(task);
+
+	}
+
+	public Runnable consumeServerTask() {
+
+		return serverTaskQueue.poll();
+
+	}
+
 	public void addContact(Contact contact) {
 
 		uuidContacts.put(contact.getUuid(), contact);
@@ -165,6 +181,17 @@ public class Model {
 
 		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address)
 				&& entry.getValue().getName().equals(name)).forEach(entry -> ids.add(entry.getKey()));
+
+		return ids;
+
+	}
+
+	public List<Long> getIdsByAddressAndSecretId(final InetAddress address, final String secretId) {
+
+		List<Long> ids = new ArrayList<Long>();
+
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address)
+				&& entry.getValue().getSecretId().equals(secretId)).forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 

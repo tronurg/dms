@@ -40,6 +40,10 @@ public interface DmsHandle {
 
 	void setSecretId(String secretId);
 
+	void addRemoteIps(InetAddress... remoteIps);
+
+	void clearRemoteIps();
+
 	ContactHandle getMyContactHandle();
 
 	GroupSelectionHandle getActiveGroupsHandle();
@@ -57,6 +61,8 @@ public interface DmsHandle {
 	List<Long> getIdsByAddress(InetAddress address);
 
 	List<Long> getIdsByAddressAndName(InetAddress address, String name);
+
+	List<Long> getIdsByAddressAndSecretId(InetAddress address, String secretId);
 
 	MessageHandle createMessageHandle(String message, Integer messageCode);
 

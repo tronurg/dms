@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -40,6 +39,9 @@ public class DmsTest {
 		try {
 
 			DmsHandle dmsHandle = DmsCore.login("elma", "elma");
+			dmsHandle.addRemoteIps(InetAddress.getByName("192.168.1.88"), InetAddress.getByName("192.168.1.89"),
+					InetAddress.getByName("192.168.1.90"));
+			dmsHandle.clearRemoteIps();
 
 			final AtomicReference<String> secretIdRef = new AtomicReference<String>();
 			Thread secretIdThread = new Thread(() -> {
@@ -96,7 +98,7 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-		} catch (DbException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 
@@ -173,7 +175,7 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-		} catch (DbException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 
@@ -238,7 +240,7 @@ public class DmsTest {
 
 			SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-		} catch (DbException | UnknownHostException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 

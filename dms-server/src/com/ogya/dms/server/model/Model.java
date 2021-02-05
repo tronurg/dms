@@ -129,15 +129,18 @@ public class Model {
 
 				break;
 
-			case ADD_IP:
+			case ADD_IPS:
 
-				addRemoteIp(messagePojo.message);
+				addRemoteIps(messagePojo.message.split(";"));
 
 				break;
 
-			case REMOVE_IP:
+			case REMOVE_IPS:
 
-				removeRemoteIp(messagePojo.message);
+				if (messagePojo.message.isEmpty())
+					clearRemoteIps();
+				else
+					removeRemoteIps(messagePojo.message.split(";"));
 
 				break;
 
@@ -550,12 +553,23 @@ public class Model {
 
 	}
 
-	public void addRemoteIp(String ip) {
+	public void addRemoteIps(String... ips) {
 
-		if (remoteIps.contains(ip))
+		boolean changed = false;
+
+		for (String ip : ips) {
+
+			if (remoteIps.contains(ip))
+				continue;
+
+			changed = true;
+
+			remoteIps.add(ip);
+
+		}
+
+		if (!changed)
 			return;
-
-		remoteIps.add(ip);
 
 		persistRemoteIps();
 
@@ -563,12 +577,36 @@ public class Model {
 
 	}
 
-	private void removeRemoteIp(String ip) {
+	private void removeRemoteIps(String... ips) {
 
-		if (!remoteIps.contains(ip))
+		boolean changed = false;
+
+		for (String ip : ips) {
+
+			if (!remoteIps.contains(ip))
+				continue;
+
+			changed = true;
+
+			remoteIps.remove(ip);
+
+		}
+
+		if (!changed)
 			return;
 
-		remoteIps.remove(ip);
+		persistRemoteIps();
+
+		sendRemoteIpsToAllLocalUsers();
+
+	}
+
+	private void clearRemoteIps() {
+
+		if (remoteIps.isEmpty())
+			return;
+
+		remoteIps.clear();
 
 		persistRemoteIps();
 
@@ -594,7 +632,7 @@ public class Model {
 
 	private void sendRemoteIpsToLocalUser(String receiverUuid) {
 
-		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IP, null, null,
+		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IPS, null, null,
 				null, null).toJson();
 
 		listener.sendToLocalUser(receiverUuid, messagePojoStr);
@@ -603,7 +641,7 @@ public class Model {
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IP, null, null,
+		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IPS, null, null,
 				null, null).toJson();
 
 		localUsers.forEach((receiverUuid, user) -> {

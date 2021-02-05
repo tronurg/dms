@@ -1372,9 +1372,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void remoteIpsReceived(String message) {
-
-		String[] remoteIps = message.isEmpty() ? new String[0] : message.split(";");
+	public void remoteIpsReceived(String[] remoteIps) {
 
 		Platform.runLater(() -> dmsPanel.updateRemoteIps(remoteIps));
 
@@ -1662,32 +1660,41 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void serverConnStatusUpdated(boolean connStatus) {
+	public void serverConnStatusUpdated(final boolean connStatus) {
 
-		model.setServerConnStatus(connStatus);
+		taskQueue.execute(() -> {
 
-		if (connStatus) {
+			model.setServerConnStatus(connStatus);
 
-			Contact identity = model.getIdentity();
+			if (connStatus) {
 
-			sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
-					identity.getLongitude(), identity.getSecretId());
+				Contact identity = model.getIdentity();
 
-			dmsClient.claimStartInfo();
+				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
+						identity.getLongitude(), identity.getSecretId());
 
-		} else {
+				dmsClient.claimStartInfo();
 
-			model.getContacts().forEach((id, contact) -> {
+				Runnable task;
+				while ((task = model.consumeServerTask()) != null) {
+					task.run();
+				}
 
-				contactDisconnected(contact);
+			} else {
 
-			});
+				model.getContacts().forEach((id, contact) -> {
 
-			clearMessageProgresses();
+					contactDisconnected(contact);
 
-		}
+				});
 
-		Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(connStatus));
+				clearMessageProgresses();
+
+			}
+
+			Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(connStatus));
+
+		});
 
 	}
 
@@ -2764,14 +2771,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void addIpClicked(String ip) {
 
-		dmsClient.addRemoteIp(ip);
+		dmsClient.addRemoteIps(ip);
 
 	}
 
 	@Override
 	public void removeIpClicked(String ip) {
 
-		dmsClient.removeRemoteIp(ip);
+		dmsClient.removeRemoteIps(ip);
 
 	}
 
@@ -3064,6 +3071,42 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void addRemoteIps(InetAddress... remoteIps) {
+
+		if (remoteIps.length == 0)
+			return;
+
+		taskQueue.execute(() -> {
+
+			Runnable task = () -> dmsClient.addRemoteIps(Arrays.stream(remoteIps).filter(remoteIp -> remoteIp != null)
+					.map(remoteIp -> remoteIp.getHostAddress()).toArray(String[]::new));
+
+			if (model.isServerConnected())
+				task.run();
+			else
+				model.addServerTaskToQueue(task);
+
+		});
+
+	}
+
+	@Override
+	public void clearRemoteIps() {
+
+		taskQueue.execute(() -> {
+
+			Runnable task = () -> dmsClient.removeRemoteIps();
+
+			if (model.isServerConnected())
+				task.run();
+			else
+				model.addServerTaskToQueue(task);
+
+		});
+
+	}
+
+	@Override
 	public ContactHandle getMyContactHandle() {
 
 		Contact identity = model.getIdentity();
@@ -3150,6 +3193,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public List<Long> getIdsByAddressAndName(InetAddress address, String name) {
 
 		return model.getIdsByAddressAndName(address, name);
+
+	}
+
+	@Override
+	public List<Long> getIdsByAddressAndSecretId(InetAddress address, String secretId) {
+
+		return model.getIdsByAddressAndSecretId(address, secretId);
 
 	}
 
