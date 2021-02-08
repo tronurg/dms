@@ -43,7 +43,7 @@ public class DbManager {
 
 			factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
 					.setProperty("hibernate.connection.url",
-							"jdbc:h2:" + CommonConstants.DB_PATH + File.separator + dbName)
+							"jdbc:h2:split:24:" + CommonConstants.DB_PATH + File.separator + dbName)
 					.setProperty("hibernate.connection.username", dbName)
 					.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Contact.class)
 					.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Member.class).addAnnotatedClass(Message.class)

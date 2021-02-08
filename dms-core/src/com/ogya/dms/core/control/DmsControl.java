@@ -3038,8 +3038,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (secretId == null)
 			secretId = "";
 
-		if (secretId.length() > 8)
-			secretId = secretId.substring(0, 8);
+		if (secretId.length() > 16)
+			secretId = secretId.substring(0, 16);
 
 		final String finalSecretId = secretId;
 
