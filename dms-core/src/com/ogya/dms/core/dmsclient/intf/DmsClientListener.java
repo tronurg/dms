@@ -1,12 +1,15 @@
 package com.ogya.dms.core.dmsclient.intf;
 
+import com.ogya.dms.commons.structures.Beacon;
+import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
+import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
 
 public interface DmsClientListener {
 
-	void beaconReceived(String message);
+	void beaconReceived(Beacon beacon);
 
 	void remoteIpsReceived(String[] remoteIps);
 
@@ -14,7 +17,7 @@ public interface DmsClientListener {
 
 	void progressTransientReceived(Long trackingId, String[] remoteUuids, int progress);
 
-	void messageReceived(String message, String remoteUuid);
+	void messageReceived(Message message, String remoteUuid);
 
 	void userDisconnected(String uuid);
 
@@ -30,6 +33,6 @@ public interface DmsClientListener {
 
 	void statusReportFed(Long messageId, StatusReport[] statusReports);
 
-	void transientMessageReceived(String message, String remoteUuid);
+	void transientMessageReceived(MessageHandleImpl message, String remoteUuid);
 
 }

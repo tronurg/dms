@@ -10,13 +10,15 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
+import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.commons.structures.MessagePojo;
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.core.factory.DmsFactory;
+import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
 
@@ -31,7 +33,7 @@ public class DmsClient {
 
 	private final DmsClientListener listener;
 
-	private final LinkedBlockingQueue<String> dealerQueue = new LinkedBlockingQueue<String>();
+	private final LinkedBlockingQueue<MessagePojo> dealerQueue = new LinkedBlockingQueue<MessagePojo>();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
@@ -64,97 +66,86 @@ public class DmsClient {
 
 	}
 
-	public void sendBeacon(String message) {
+	public void sendBeacon(Beacon beacon) {
 
-		dealerQueue.offer(new MessagePojo(message, null, null, ContentType.BCON, null, null, null, null).toJson());
+		dealerQueue.offer(
+				new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null, null));
 
 	}
 
 	public void claimStartInfo() {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null, null).toJson());
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null, null));
 
 	}
 
 	public void addRemoteIps(String... ips) {
 
-		dealerQueue
-				.offer(new MessagePojo(String.join(";", ips), null, null, ContentType.ADD_IPS, null, null, null, null)
-						.toJson());
+		dealerQueue.offer(
+				new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null, null));
 
 	}
 
 	public void removeRemoteIps(String... ips) {
 
-		dealerQueue.offer(
-				new MessagePojo(String.join(";", ips), null, null, ContentType.REMOVE_IPS, null, null, null, null)
-						.toJson());
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null,
+				null, null));
 
 	}
 
 	public void sendMessage(Message message, String receiverUuid, Long trackingId) {
 
-		dealerQueue.offer(
-				new MessagePojo(message.toJson(), uuid, receiverUuid, ContentType.MESSAGE, null, trackingId, null, null)
-						.toJson());
-
-	}
-
-	public void sendMessage(Message message, Iterable<String> receiverUuids, Long trackingId) {
-
-		dealerQueue.offer(new MessagePojo(message.toJson(), uuid, String.join(";", receiverUuids), ContentType.MESSAGE,
-				null, trackingId, null, null).toJson());
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid, ContentType.MESSAGE,
+				null, trackingId, null, null));
 
 	}
 
 	public void cancelMessage(Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL, null, trackingId, null, null).toJson());
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL, null, trackingId, null, null));
 
 	}
 
 	public void claimMessageStatus(Long messageId, String receiverUuid) {
 
-		dealerQueue.offer(
-				new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId, null, null, null)
-						.toJson());
+		dealerQueue.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId, null,
+				null, null));
 
 	}
 
-	public void feedMessageStatus(String receiverUuid, Long messageId, MessageStatus messageStatus) {
+	public void feedMessageStatus(MessageStatus messageStatus, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(new MessagePojo(messageStatus.toJson(), uuid, receiverUuid, ContentType.FEED_MESSAGE_STATUS,
-				messageId, null, null, null).toJson());
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageStatus), uuid, receiverUuid,
+				ContentType.FEED_MESSAGE_STATUS, messageId, null, null, null));
 
 	}
 
-	public void feedGroupMessageStatus(String receiverUuid, Long messageId, GroupMessageStatus groupMessageStatus) {
+	public void feedGroupMessageStatus(GroupMessageStatus groupMessageStatus, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(new MessagePojo(groupMessageStatus.toJson(), uuid, receiverUuid,
-				ContentType.FEED_GROUP_MESSAGE_STATUS, messageId, null, null, null).toJson());
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(groupMessageStatus), uuid, receiverUuid,
+				ContentType.FEED_GROUP_MESSAGE_STATUS, messageId, null, null, null));
 
 	}
 
 	public void claimStatusReport(Long messageId, String receiverUuid) {
 
-		dealerQueue.offer(
-				new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId, null, null, null)
-						.toJson());
+		dealerQueue.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId, null,
+				null, null));
 
 	}
 
-	public void feedStatusReport(Long messageId, Set<StatusReport> statusReports, String receiverUuid) {
+	public void feedStatusReport(Set<StatusReport> statusReports, String receiverUuid, Long messageId) {
 
-		dealerQueue.offer(new MessagePojo(CommonMethods.toStatusReportJson(statusReports), null, receiverUuid,
-				ContentType.FEED_STATUS_REPORT, messageId, null, null, null).toJson());
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(statusReports), null, receiverUuid,
+				ContentType.FEED_STATUS_REPORT, messageId, null, null, null));
 
 	}
 
-	public void sendTransientMessage(String message, Iterable<String> receiverUuids, Long useTrackingId,
+	public void sendTransientMessage(MessageHandleImpl message, Iterable<String> receiverUuids, Long useTrackingId,
 			Long useTimeout, InetAddress useLocalInterface) {
 
-		dealerQueue.offer(new MessagePojo(message, uuid, String.join(";", receiverUuids), ContentType.TRANSIENT, null,
-				useTrackingId, useTimeout, useLocalInterface).toJson());
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(message), uuid, String.join(";", receiverUuids),
+				ContentType.TRANSIENT, null, useTrackingId, useTimeout, useLocalInterface));
 
 	}
 
@@ -181,7 +172,7 @@ public class DmsClient {
 
 				if (poller.pollin(pollDealer)) {
 
-					String receivedMessage = dealerSocket.recvStr(ZMQ.DONTWAIT);
+					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
 					processIncomingMessage(receivedMessage);
 
 				} else if (poller.pollin(pollInproc)) {
@@ -207,7 +198,7 @@ public class DmsClient {
 
 				try {
 
-					inprocSocket.send(dealerQueue.take());
+					inprocSocket.send(DmsPackingFactory.pack(dealerQueue.take()));
 
 				} catch (InterruptedException e) {
 
@@ -250,49 +241,48 @@ public class DmsClient {
 
 	}
 
-	private void processIncomingMessage(String message) {
-
-		if (message.isEmpty())
-			return;
+	private void processIncomingMessage(byte[] message) {
 
 		try {
 
-			MessagePojo messagePojo = MessagePojo.fromJson(message);
+			MessagePojo messagePojo = DmsPackingFactory.unpack(message, MessagePojo.class);
 
 			if (Objects.equals(uuid, messagePojo.senderUuid))
 				return;
+
+			byte[] payload = messagePojo.payload;
 
 			switch (messagePojo.contentType) {
 
 			case BCON:
 
-				beaconReceivedToListener(messagePojo.message);
+				beaconReceivedToListener(DmsPackingFactory.unpack(payload, Beacon.class));
 
 				break;
 
 			case IPS:
 
-				remoteIpsReceivedToListener(messagePojo.message.split(";"));
+				remoteIpsReceivedToListener(DmsPackingFactory.unpack(payload, String[].class));
 
 				break;
 
 			case PROGRESS_MESSAGE:
 
 				progressMessageReceivedToListener(messagePojo.useTrackingId, messagePojo.senderUuid.split(";"),
-						Integer.parseInt(messagePojo.message));
+						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case PROGRESS_TRANSIENT:
 
 				progressTransientReceivedToListener(messagePojo.useTrackingId, messagePojo.senderUuid.split(";"),
-						Integer.parseInt(messagePojo.message));
+						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case MESSAGE:
 
-				messageReceivedToListener(messagePojo.message, messagePojo.senderUuid);
+				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class), messagePojo.senderUuid);
 
 				break;
 
@@ -310,15 +300,15 @@ public class DmsClient {
 
 			case FEED_MESSAGE_STATUS:
 
-				messageStatusFedToListener(messagePojo.messageId, MessageStatus.fromJson(messagePojo.message),
-						messagePojo.senderUuid);
+				messageStatusFedToListener(messagePojo.messageId,
+						DmsPackingFactory.unpack(payload, MessageStatus.class), messagePojo.senderUuid);
 
 				break;
 
 			case FEED_GROUP_MESSAGE_STATUS:
 
-				groupMessageStatusFedToListener(messagePojo.messageId, GroupMessageStatus.fromJson(messagePojo.message),
-						messagePojo.senderUuid);
+				groupMessageStatusFedToListener(messagePojo.messageId,
+						DmsPackingFactory.unpack(payload, GroupMessageStatus.class), messagePojo.senderUuid);
 
 				break;
 
@@ -331,13 +321,14 @@ public class DmsClient {
 			case FEED_STATUS_REPORT:
 
 				statusReportFedToListener(messagePojo.messageId,
-						CommonMethods.fromStatusReportJson(messagePojo.message));
+						DmsPackingFactory.unpack(payload, StatusReport[].class));
 
 				break;
 
 			case TRANSIENT:
 
-				transientMessageReceivedToListener(messagePojo.message, messagePojo.senderUuid);
+				transientMessageReceivedToListener(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
+						messagePojo.senderUuid);
 
 				break;
 
@@ -355,11 +346,11 @@ public class DmsClient {
 
 	}
 
-	private void beaconReceivedToListener(final String message) {
+	private void beaconReceivedToListener(final Beacon beacon) {
 
 		taskQueue.execute(() -> {
 
-			listener.beaconReceived(message);
+			listener.beaconReceived(beacon);
 
 		});
 
@@ -395,7 +386,7 @@ public class DmsClient {
 
 	}
 
-	private void messageReceivedToListener(final String message, final String remoteUuid) {
+	private void messageReceivedToListener(final Message message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -477,7 +468,7 @@ public class DmsClient {
 
 	}
 
-	private void transientMessageReceivedToListener(final String message, final String remoteUuid) {
+	private void transientMessageReceivedToListener(final MessageHandleImpl message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 

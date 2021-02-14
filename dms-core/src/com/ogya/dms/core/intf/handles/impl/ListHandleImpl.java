@@ -1,24 +1,22 @@
 package com.ogya.dms.core.intf.handles.impl;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-import com.ogya.dms.core.common.CommonMethods;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.core.intf.handles.ListHandle;
 
 public class ListHandleImpl implements ListHandle {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	private final Integer listCode;
-	@SerializedName("b")
-	private final String listStr;
+	@JsonProperty("b")
+	private final byte[] payload;
 
-	public ListHandleImpl(Integer listCode, String listStr) {
+	public ListHandleImpl(Integer listCode, byte[] payload) {
 
 		this.listCode = listCode;
-		this.listStr = listStr;
+		this.payload = payload;
 
 	}
 
@@ -29,15 +27,14 @@ public class ListHandleImpl implements ListHandle {
 
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T> List<T> getList(Class<T> elementType) {
 
 		try {
 
-			return Arrays.asList((T[]) CommonMethods.fromJson(
-					CommonMethods.convertListJsonFromCommon(listStr, elementType.getSimpleName()),
-					Array.newInstance(elementType, 0).getClass()));
+			// TODO: Conversion
+
+			return DmsPackingFactory.unpackList(payload, elementType);
 
 		} catch (Exception e) {
 

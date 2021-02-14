@@ -2,26 +2,17 @@ package com.ogya.dms.core.structures;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-import com.ogya.dms.core.common.CommonMethods;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class GroupUpdate {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	public String name;
-	@SerializedName("b")
+	@JsonProperty("b")
 	public Boolean active;
-	@SerializedName("c")
+	@JsonProperty("c")
 	public List<ContactMap> add;
-	@SerializedName("d")
+	@JsonProperty("d")
 	public List<Long> remove;
-
-	public String toJson() {
-		return CommonMethods.toJson(this);
-	}
-
-	public static GroupUpdate fromJson(String json) throws Exception {
-		return CommonMethods.fromJson(json, GroupUpdate.class);
-	}
 
 }

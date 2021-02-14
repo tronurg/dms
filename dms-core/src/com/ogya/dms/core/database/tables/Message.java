@@ -19,8 +19,8 @@ import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import com.google.gson.annotations.SerializedName;
-import com.ogya.dms.core.common.CommonMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.database.converters.MessageDirectionConverter;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
 import com.ogya.dms.core.database.converters.MessageSubTypeConverter;
@@ -40,78 +40,89 @@ public class Message {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@SerializedName("a")
+	@JsonProperty("a")
 	private Long id;
 
 	@Column(name = "message_ref_id", updatable = false)
-	@SerializedName("b")
+	@JsonProperty("b")
 	private Long messageRefId;
 
 	@Column(name = "message_direction", nullable = false, updatable = false)
 	@Convert(converter = MessageDirectionConverter.class)
+	@JsonIgnore
 	private MessageDirection messageDirection;
 
 	@Column(name = "receiver_type", nullable = false, updatable = false)
 	@Convert(converter = ReceiverTypeConverter.class)
-	@SerializedName("c")
+	@JsonProperty("c")
 	private ReceiverType receiverType;
 
 	@Column(name = "message_type", nullable = false, updatable = false)
 	@Convert(converter = MessageTypeConverter.class)
-	@SerializedName("d")
+	@JsonProperty("d")
 	private MessageType messageType;
 
 	@Column(name = "message_sub_type", updatable = false)
 	@Convert(converter = MessageSubTypeConverter.class)
-	@SerializedName("e")
+	@JsonProperty("e")
 	private MessageSubType messageSubType;
 
 	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
-	@SerializedName("f")
+	@JsonProperty("f")
 	private String content;
 
 	@Column(name = "message_status", nullable = false)
 	@Convert(converter = MessageStatusConverter.class)
+	@JsonIgnore
 	private MessageStatus messageStatus;
 
 	@Column(name = "wait_status", nullable = false)
 	@Convert(converter = WaitStatusConverter.class)
+	@JsonIgnore
 	private WaitStatus waitStatus;
 
 	@Column(name = "date", nullable = false, updatable = false)
+	@JsonIgnore
 	private Date date;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
+	@JsonIgnore
 	private Contact contact;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "owner_id", nullable = false, updatable = false)
+	@JsonIgnore
 	private Contact owner;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", updatable = false)
+	@JsonIgnore
 	private Dgroup dgroup;
 
 	@OneToMany(mappedBy = "message", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JsonIgnore
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ref_message_id", updatable = false)
-	@SerializedName("g")
+	@JsonProperty("g")
 	private Message refMessage;
 
 	@Transient
-	@SerializedName("h")
+	@JsonProperty("h")
 	private Long groupRefId;
+
 	@Transient
-	@SerializedName("i")
+	@JsonProperty("i")
 	private Long contactRefId;
 
 	@Column(name = "message_code", updatable = false)
-	@SerializedName("j")
+	@JsonProperty("j")
 	private Integer messageCode;
+
 	@Column(name = "api_flag", updatable = false)
+	@JsonIgnore
 	private Integer apiFlag;
 
 	public Message() {
@@ -330,14 +341,6 @@ public class Message {
 		this.date = new Date();
 		if (this.owner == null)
 			this.owner = this.contact;
-	}
-
-	public String toJson() {
-		return CommonMethods.toMessageJson(this);
-	}
-
-	public static Message fromJson(String json) throws Exception {
-		return CommonMethods.fromMessageJson(json);
 	}
 
 }

@@ -1,28 +1,19 @@
 package com.ogya.dms.core.structures;
 
-import com.google.gson.annotations.SerializedName;
-import com.ogya.dms.core.common.CommonMethods;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class FilePojo {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	public final String fileName;
-	@SerializedName("b")
-	public final String fileContent;
+	@JsonProperty("b")
+	public final byte[] payload;
 
-	public FilePojo(String fileName, String fileContent) {
+	public FilePojo(String fileName, byte[] payload) {
 
 		this.fileName = fileName;
-		this.fileContent = fileContent;
+		this.payload = payload;
 
-	}
-
-	public String toJson() {
-		return CommonMethods.toJson(this);
-	}
-
-	public static FilePojo fromJson(String json) throws Exception {
-		return CommonMethods.fromJson(json, FilePojo.class);
 	}
 
 }

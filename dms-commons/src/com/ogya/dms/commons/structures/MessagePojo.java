@@ -2,31 +2,31 @@ package com.ogya.dms.commons.structures;
 
 import java.net.InetAddress;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MessagePojo {
 
-	@SerializedName("a")
-	public final String message;
-	@SerializedName("b")
+	@JsonProperty("a")
+	public final byte[] payload;
+	@JsonProperty("b")
 	public final String senderUuid;
-	@SerializedName("c")
+	@JsonProperty("c")
 	public final String receiverUuid;
-	@SerializedName("d")
+	@JsonProperty("d")
 	public final ContentType contentType;
-	@SerializedName("e")
+	@JsonProperty("e")
 	public final Long messageId;
-	@SerializedName("f")
+	@JsonProperty("f")
 	public final Long useTrackingId;
-	@SerializedName("g")
+	@JsonProperty("g")
 	public final Long useTimeout;
-	@SerializedName("h")
+	@JsonProperty("h")
 	public final InetAddress useLocalAddress;
 
-	public MessagePojo(String message, String senderUuid, String receiverUuid, ContentType contentType, Long messageId,
+	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType, Long messageId,
 			Long useTrackingId, Long useTimeout, InetAddress useLocalAddress) {
 
-		this.message = message;
+		this.payload = payload;
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
 		this.contentType = contentType;
@@ -35,14 +35,6 @@ public class MessagePojo {
 		this.useTimeout = useTimeout;
 		this.useLocalAddress = useLocalAddress;
 
-	}
-
-	public String toJson() {
-		return JsonFactory.toJson(this);
-	}
-
-	public static MessagePojo fromJson(String json) throws Exception {
-		return JsonFactory.fromJson(json, MessagePojo.class);
 	}
 
 }

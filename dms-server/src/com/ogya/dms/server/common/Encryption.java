@@ -1,56 +1,42 @@
 package com.ogya.dms.server.common;
 
 import java.io.File;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 import com.github.luben.zstd.Zstd;
 import com.google.crypto.tink.Aead;
 import com.google.crypto.tink.CleartextKeysetHandle;
 import com.google.crypto.tink.JsonKeysetReader;
 import com.google.crypto.tink.KeysetHandle;
+import com.google.crypto.tink.StreamingAead;
 import com.google.crypto.tink.config.TinkConfig;
 
 public class Encryption {
 
-	private static final Charset CHARSET = StandardCharsets.UTF_8;
-
+	private static KeysetHandle keysetHandle;
 	private static Aead aead;
+	private static StreamingAead streamingAead;
 
-	public static String compressAndEncryptToString(String dataStr) throws Exception {
+	public static byte[] compressAndEncrypt(byte[] data) throws Exception {
 
-		return Base64.getEncoder().encodeToString(encryptBytes(Zstd.compress(dataStr.getBytes(CHARSET))));
-
-	}
-
-	public static byte[] encrypt(String dataStr) throws Exception {
-
-		return encryptBytes(dataStr.getBytes(CHARSET));
+		return encrypt(Zstd.compress(data));
 
 	}
 
-	public static String decryptAndDecompressFromString(String encryptedDataStr) throws Exception {
-
-		byte[] compressedData = decryptBytes(Base64.getDecoder().decode(encryptedDataStr));
-
-		return new String(Zstd.decompress(compressedData, (int) Zstd.decompressedSize(compressedData)), CHARSET);
-
-	}
-
-	public static String decrypt(byte[] encryptedData) throws Exception {
-
-		return new String(decryptBytes(encryptedData), CHARSET);
-
-	}
-
-	private synchronized static byte[] encryptBytes(byte[] data) throws Exception {
+	public static byte[] encrypt(byte[] data) throws Exception {
 
 		return getAead().encrypt(data, null);
 
 	}
 
-	private synchronized static byte[] decryptBytes(byte[] encryptedData) throws Exception {
+	public static byte[] decryptAndDecompress(byte[] encryptedData) throws Exception {
+
+		byte[] compressedData = decrypt(encryptedData);
+
+		return Zstd.decompress(compressedData, (int) Zstd.decompressedSize(compressedData));
+
+	}
+
+	public static byte[] decrypt(byte[] encryptedData) throws Exception {
 
 		return getAead().decrypt(encryptedData, null);
 
@@ -62,14 +48,37 @@ public class Encryption {
 
 			TinkConfig.register();
 
-			KeysetHandle keysetHandle = CleartextKeysetHandle
-					.read(JsonKeysetReader.withFile(new File("./sec/dms.key")));
-
-			aead = keysetHandle.getPrimitive(Aead.class);
+			aead = getKeysetHandle().getPrimitive(Aead.class);
 
 		}
 
 		return aead;
+
+	}
+
+	private static StreamingAead getStreamingAead() throws Exception {
+
+		if (streamingAead == null) {
+
+			TinkConfig.register();
+
+			streamingAead = getKeysetHandle().getPrimitive(StreamingAead.class);
+
+		}
+
+		return streamingAead;
+
+	}
+
+	private static KeysetHandle getKeysetHandle() throws Exception {
+
+		if (keysetHandle == null) {
+
+			keysetHandle = CleartextKeysetHandle.read(JsonKeysetReader.withFile(new File("./sec/dms.key")));
+
+		}
+
+		return keysetHandle;
 
 	}
 

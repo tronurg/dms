@@ -6,12 +6,12 @@ import java.util.function.Consumer;
 
 public interface ModelListener {
 
-	void sendToLocalUser(String receiverUuid, String message);
+	void sendToLocalUser(String receiverUuid, byte[] message);
 
-	void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus, Consumer<Integer> progressMethod,
+	void sendToRemoteServer(String dmsUuid, byte[] message, AtomicBoolean sendStatus, Consumer<Integer> progressMethod,
 			long timeout, InetAddress useLocalAddress);
 
-	void sendToAllRemoteServers(String message);
+	void sendToAllRemoteServers(byte[] message);
 
 	void publishImmediately();
 

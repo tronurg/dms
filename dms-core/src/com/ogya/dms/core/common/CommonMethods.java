@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -16,7 +15,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -34,20 +32,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.google.gson.ExclusionStrategy;
-import com.google.gson.FieldAttributes;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.TypeAdapter;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.JsonWriter;
-import com.ogya.dms.core.database.tables.Message;
-import com.ogya.dms.core.database.tables.StatusReport;
-import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.MessageSubType;
-import com.ogya.dms.core.structures.MessageType;
-import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.view.ReportsPane.ReportTemplate;
 
 public class CommonMethods {
@@ -55,161 +39,6 @@ public class CommonMethods {
 	private static Document confDoc;
 
 	private static ResourceBundle langFile;
-
-	private static final List<String> messageGsonExcludedNames = Arrays.asList("messageDirection", "messageStatus",
-			"waitStatus", "statusReports", "date", "contact", "owner", "dgroup", "apiFlag");
-	private static final List<String> statusReportGsonExcludedNames = Arrays.asList("id", "message");
-
-	private static Gson gson = new GsonBuilder()
-			.registerTypeAdapter(MessageStatus.class, new TypeAdapter<MessageStatus>() {
-
-				@Override
-				public MessageStatus read(JsonReader reader) throws IOException {
-					if (reader.peek() == JsonToken.NULL) {
-						reader.nextNull();
-						return null;
-					}
-					return MessageStatus.of(reader.nextInt());
-				}
-
-				@Override
-				public void write(JsonWriter writer, MessageStatus value) throws IOException {
-					if (value == null) {
-						writer.nullValue();
-						return;
-					}
-					writer.value(value.index());
-				}
-
-			}).registerTypeAdapter(ReceiverType.class, new TypeAdapter<ReceiverType>() {
-
-				@Override
-				public ReceiverType read(JsonReader reader) throws IOException {
-					if (reader.peek() == JsonToken.NULL) {
-						reader.nextNull();
-						return null;
-					}
-					return ReceiverType.of(reader.nextInt());
-				}
-
-				@Override
-				public void write(JsonWriter writer, ReceiverType value) throws IOException {
-					if (value == null) {
-						writer.nullValue();
-						return;
-					}
-					writer.value(value.index());
-				}
-
-			}).create();
-
-	private static Gson gsonMessage = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
-
-		@Override
-		public boolean shouldSkipField(FieldAttributes arg0) {
-			return messageGsonExcludedNames.contains(arg0.getName());
-		}
-
-		@Override
-		public boolean shouldSkipClass(Class<?> arg0) {
-			return false;
-		}
-
-	}).registerTypeAdapter(MessageType.class, new TypeAdapter<MessageType>() {
-
-		@Override
-		public MessageType read(JsonReader reader) throws IOException {
-			if (reader.peek() == JsonToken.NULL) {
-				reader.nextNull();
-				return null;
-			}
-			return MessageType.of(reader.nextInt());
-		}
-
-		@Override
-		public void write(JsonWriter writer, MessageType value) throws IOException {
-			if (value == null) {
-				writer.nullValue();
-				return;
-			}
-			writer.value(value.index());
-		}
-
-	}).registerTypeAdapter(MessageSubType.class, new TypeAdapter<MessageSubType>() {
-
-		@Override
-		public MessageSubType read(JsonReader reader) throws IOException {
-			if (reader.peek() == JsonToken.NULL) {
-				reader.nextNull();
-				return null;
-			}
-			return MessageSubType.of(reader.nextInt());
-		}
-
-		@Override
-		public void write(JsonWriter writer, MessageSubType value) throws IOException {
-			if (value == null) {
-				writer.nullValue();
-				return;
-			}
-			writer.value(value.index());
-		}
-
-	}).registerTypeAdapter(ReceiverType.class, new TypeAdapter<ReceiverType>() {
-
-		@Override
-		public ReceiverType read(JsonReader reader) throws IOException {
-			if (reader.peek() == JsonToken.NULL) {
-				reader.nextNull();
-				return null;
-			}
-			return ReceiverType.of(reader.nextInt());
-		}
-
-		@Override
-		public void write(JsonWriter writer, ReceiverType value) throws IOException {
-			if (value == null) {
-				writer.nullValue();
-				return;
-			}
-			writer.value(value.index());
-		}
-
-	}).create();
-
-	private static Gson gsonStatusReport = new GsonBuilder().addSerializationExclusionStrategy(new ExclusionStrategy() {
-
-		@Override
-		public boolean shouldSkipField(FieldAttributes arg0) {
-			return statusReportGsonExcludedNames.contains(arg0.getName());
-		}
-
-		@Override
-		public boolean shouldSkipClass(Class<?> arg0) {
-			return false;
-		}
-
-	}).registerTypeAdapter(MessageStatus.class, new TypeAdapter<MessageStatus>() {
-
-		@Override
-		public MessageStatus read(JsonReader reader) throws IOException {
-			if (reader.peek() == JsonToken.NULL) {
-				reader.nextNull();
-				return null;
-			}
-			return MessageStatus.of(reader.nextInt());
-		}
-
-		@Override
-		public void write(JsonWriter writer, MessageStatus value) throws IOException {
-			if (value == null) {
-				writer.nullValue();
-				return;
-			}
-			writer.value(value.index());
-		}
-
-	}).create();
 
 	private static final Map<String, String> genericConversionMap = new HashMap<String, String>();
 	private static final Map<String, Map<String, String>> customConversionMap = new HashMap<String, Map<String, String>>();
@@ -414,57 +243,6 @@ public class CommonMethods {
 		}
 
 		return commonJson;
-
-	}
-
-	public static String toJson(Object src) {
-
-		return gson.toJson(src);
-
-	}
-
-	public static <T> T fromJson(String json, Class<T> classOfT) throws Exception {
-
-		T result = gson.fromJson(json, classOfT);
-
-		if (result == null)
-			throw new Exception();
-
-		return result;
-
-	}
-
-	public static String toMessageJson(Message src) {
-
-		return gsonMessage.toJson(src);
-
-	}
-
-	public static Message fromMessageJson(String json) throws Exception {
-
-		Message result = gsonMessage.fromJson(json, Message.class);
-
-		if (result == null)
-			throw new Exception();
-
-		return result;
-
-	}
-
-	public static String toStatusReportJson(Set<StatusReport> src) {
-
-		return gsonStatusReport.toJson(src);
-
-	}
-
-	public static StatusReport[] fromStatusReportJson(String json) throws Exception {
-
-		StatusReport[] result = gsonStatusReport.fromJson(json, StatusReport[].class);
-
-		if (result == null)
-			throw new Exception();
-
-		return result;
 
 	}
 

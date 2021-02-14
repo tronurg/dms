@@ -39,9 +39,9 @@ public interface AppListener {
 
 	void statusInfoClosed();
 
-	void addIpClicked(String ip);
+	void addIpClicked(String... ip);
 
-	void removeIpClicked(String ip);
+	void removeIpClicked(String... ip);
 
 	void recordButtonPressed(Long id);
 

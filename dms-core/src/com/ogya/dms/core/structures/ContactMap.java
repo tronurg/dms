@@ -1,14 +1,14 @@
 package com.ogya.dms.core.structures;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ContactMap {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	public Long refId;
-	@SerializedName("b")
+	@JsonProperty("b")
 	public String uuid;
-	@SerializedName("c")
+	@JsonProperty("c")
 	public String name;
 
 	public ContactMap(Long refId, String uuid, String name) {

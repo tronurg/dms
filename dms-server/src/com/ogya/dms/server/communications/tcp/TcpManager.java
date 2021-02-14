@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,12 +21,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import com.ogya.communications.tcp.TcpClient;
-import com.ogya.communications.tcp.TcpClientListener;
-import com.ogya.communications.tcp.TcpServer;
-import com.ogya.communications.tcp.TcpServerListener;
-import com.ogya.dms.server.common.Encryption;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
+import com.ogya.dms.server.communications.tcp.net.TcpClient;
+import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
+import com.ogya.dms.server.communications.tcp.net.TcpServer;
+import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
 
 public class TcpManager implements TcpServerListener {
@@ -60,9 +60,6 @@ public class TcpManager implements TcpServerListener {
 		nextPort.set(clientPortFrom);
 
 		tcpServer = new TcpServer(serverPort);
-
-		tcpServer.setBlocking(true);
-		tcpServer.setKeepAlive(false);
 
 		tcpServer.addListener(this);
 
@@ -99,19 +96,23 @@ public class TcpManager implements TcpServerListener {
 
 						TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
 
-						tcpClient.setBlocking(true);
-						tcpClient.setKeepAlive(false);
-
 						tcpClient.addListener(new TcpClientListener() {
 
 							@Override
-							public void messageReceived(String arg0) {
+							public void messageReceived(byte[] arg0) {
 
 								taskQueue.execute(() -> {
 
 									messageReceivedToListeners(arg0, dmsUuid);
 
 								});
+
+							}
+
+							@Override
+							public void fileReceived(Path path) {
+
+								// TODO Auto-generated method stub
 
 							}
 
@@ -192,7 +193,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToServer(final String dmsUuid, final String message, final AtomicBoolean sendStatus,
+	public void sendMessageToServer(final String dmsUuid, final byte[] message, final AtomicBoolean sendStatus,
 			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalAddress) {
 
 		taskQueue.execute(() -> {
@@ -204,11 +205,8 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				String encryptedMessage = Encryption.compressAndEncryptToString(message);
-
-				sendMessageToServer(dmsServer, encryptedMessage,
-						sendStatus == null ? new AtomicBoolean(true) : sendStatus, progressMethod, timeout,
-						useLocalAddress);
+				sendMessageToServer(dmsServer, message, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
+						progressMethod, timeout, useLocalAddress);
 
 			} catch (Exception e) {
 
@@ -223,25 +221,15 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToAllServers(final String message) {
+	public void sendMessageToAllServers(final byte[] message) {
 
 		taskQueue.execute(() -> {
 
 			if (dmsServers.isEmpty())
 				return;
 
-			try {
-
-				String encryptedMessage = Encryption.compressAndEncryptToString(message);
-
-				dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, encryptedMessage,
-						new AtomicBoolean(true), null, Long.MAX_VALUE, null));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, message, new AtomicBoolean(true),
+					null, Long.MAX_VALUE, null));
 
 		});
 
@@ -279,7 +267,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void sendMessageToServer(final DmsServer dmsServer, final String message, final AtomicBoolean sendStatus,
+	private void sendMessageToServer(final DmsServer dmsServer, final byte[] message, final AtomicBoolean sendStatus,
 			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalInterface) {
 
 		dmsServer.taskQueue.execute(() -> {
@@ -288,7 +276,7 @@ public class TcpManager implements TcpServerListener {
 			if (progressMethod != null)
 				progressMethod.accept(0);
 
-			final int messageLength = message.length();
+			final int messageLength = message.length;
 
 			boolean sent = false;
 
@@ -369,19 +357,9 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void messageReceivedToListeners(String message, String dmsUuid) {
+	private void messageReceivedToListeners(byte[] message, String dmsUuid) {
 
-		try {
-
-			String decryptedMessage = Encryption.decryptAndDecompressFromString(message);
-
-			listeners.forEach(e -> e.messageReceivedFromRemoteServer(decryptedMessage, dmsUuid));
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
+		listeners.forEach(e -> e.messageReceivedFromRemoteServer(message, dmsUuid));
 
 	}
 
@@ -457,7 +435,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	@Override
-	public void messageReceived(int arg0, String arg1) {
+	public void messageReceived(int arg0, byte[] arg1) {
 
 		taskQueue.execute(() -> {
 
@@ -487,6 +465,13 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
+	@Override
+	public void fileReceived(int id, Path path) {
+
+		// TODO Auto-generated method stub
+
+	}
+
 	private static class Connection {
 
 		private static final AtomicInteger ORDER = new AtomicInteger(0);
@@ -498,7 +483,7 @@ public class TcpManager implements TcpServerListener {
 
 		private int id = -1;
 
-		private final Queue<String> waitingMessages = new ArrayDeque<String>();
+		private final Queue<byte[]> waitingMessages = new ArrayDeque<byte[]>();
 
 		private DmsServer dmsServer;
 
@@ -569,7 +554,7 @@ public class TcpManager implements TcpServerListener {
 
 	private interface SendFunction {
 
-		boolean send(String message, int chunkSize, AtomicBoolean sendCheck, Runnable successMethod);
+		boolean send(byte[] message, int chunkSize, AtomicBoolean sendCheck, Runnable successMethod);
 
 	}
 

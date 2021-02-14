@@ -1,7 +1,6 @@
 package com.ogya.dms.core.intf.handles.impl;
 
-import com.google.gson.annotations.SerializedName;
-import com.ogya.dms.core.common.CommonMethods;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
@@ -9,19 +8,19 @@ import com.ogya.dms.core.intf.handles.ObjectHandle;
 
 public class MessageHandleImpl implements MessageHandle {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	private final Integer messageCode;
-	@SerializedName("b")
+	@JsonProperty("b")
 	private final String message;
-	@SerializedName("c")
+	@JsonProperty("c")
 	private FileHandleImpl fileHandle;
-	@SerializedName("d")
+	@JsonProperty("d")
 	private ObjectHandleImpl objectHandle;
-	@SerializedName("e")
+	@JsonProperty("e")
 	private ListHandleImpl listHandle;
-	@SerializedName("f")
+	@JsonProperty("f")
 	private Long trackingId;
-	@SerializedName("g")
+	@JsonProperty("g")
 	private Integer statusResponseFlag;
 
 	public MessageHandleImpl(Integer messageCode, String message) {
@@ -114,14 +113,6 @@ public class MessageHandleImpl implements MessageHandle {
 
 		this.listHandle = (ListHandleImpl) listHandle;
 
-	}
-
-	public String toJson() {
-		return CommonMethods.toJson(this);
-	}
-
-	public static MessageHandleImpl fromJson(String json) throws Exception {
-		return CommonMethods.fromJson(json, MessageHandleImpl.class);
 	}
 
 }

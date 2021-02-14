@@ -7,6 +7,6 @@ public interface TcpManagerListener {
 
 	void serverConnectionsUpdated(String dmsUuid, List<InetAddress> remoteAddresses, List<InetAddress> localAddresses);
 
-	void messageReceivedFromRemoteServer(String message, String dmsUuid);
+	void messageReceivedFromRemoteServer(byte[] message, String dmsUuid);
 
 }

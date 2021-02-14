@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum MessageSubType {
 
 	FILE_REPORT(0), UPDATE_GROUP(1), UPDATE_CANCEL_MESSAGE(2);
@@ -11,6 +13,7 @@ public enum MessageSubType {
 	private static final Map<Integer, MessageSubType> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, MessageSubType>());
 
+	@JsonValue
 	private final int index;
 
 	static {

@@ -5,6 +5,8 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
@@ -17,6 +19,8 @@ import com.ogya.dms.server.communications.intf.MulticastManagerListener;
 import com.ogya.dms.server.factory.DmsFactory;
 
 public class MulticastManager {
+
+	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
 	private static final int PACKET_SIZE = 128;
 	private static final int SNDBUF_SIZE = (int) Math.pow(2, 13);
@@ -54,7 +58,7 @@ public class MulticastManager {
 
 			try {
 
-				byte[] encryptedData = Encryption.encrypt(dataStr);
+				byte[] encryptedData = Encryption.encrypt(dataStr.getBytes(CHARSET));
 				byte[] encryptedDataWithSuffix = Arrays.copyOf(encryptedData, encryptedData.length + 1);
 
 				DatagramPacket sendPacket = new DatagramPacket(encryptedDataWithSuffix, encryptedDataWithSuffix.length,
@@ -160,7 +164,7 @@ public class MulticastManager {
 				byte[] encryptedData = Arrays.copyOf(encryptedDataWithSuffix, encryptedDataWithSuffix.length - 1);
 
 				InetAddress remoteAddress = receivePacket.getAddress();
-				String data = Encryption.decrypt(encryptedData);
+				String data = new String(Encryption.decrypt(encryptedData), CHARSET);
 
 				listener.udpMessageReceived(remoteAddress, data, isUnicast);
 

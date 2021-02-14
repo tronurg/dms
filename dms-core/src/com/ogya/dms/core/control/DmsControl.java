@@ -19,7 +19,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -27,8 +26,8 @@ import javax.swing.event.AncestorListener;
 
 import org.hibernate.HibernateException;
 
-import com.google.gson.JsonSyntaxException;
 import com.ogya.dms.commons.structures.Beacon;
+import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.core.common.AudioCenter;
 import com.ogya.dms.core.common.AudioCenter.AudioCenterListener;
 import com.ogya.dms.core.common.CommonConstants;
@@ -291,7 +290,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude,
-			String secretId) {
+			String secretId) throws Exception {
 
 		if (!model.isServerConnected())
 			return;
@@ -299,7 +298,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.index(),
 				lattitude, longitude, secretId);
 
-		dmsClient.sendBeacon(beacon.toJson());
+		dmsClient.sendBeacon(beacon);
 
 	}
 
@@ -517,7 +516,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			contactsToBeRemoved.forEach(contact -> groupUpdate.remove.add(contact.getId()));
 		}
 
-		return groupUpdate.toJson();
+		return Base64.getEncoder().encodeToString(DmsPackingFactory.pack(groupUpdate));
 
 	}
 
@@ -558,7 +557,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			if (onlineUuids.size() > 0) {
 
-				dmsSendMessage(message, onlineUuids);
+				dmsSendMessage(message, String.join(";", onlineUuids));
 
 			}
 
@@ -602,26 +601,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		if (onlineUuids.size() > 0) {
 
-			dmsSendMessage(message, onlineUuids);
+			dmsSendMessage(message, String.join(";", onlineUuids));
 
 		}
 
 	}
 
 	private void dmsSendMessage(Message message, String receiverUuid) {
-
-		dmsSendMessage(message, updatedMessage -> dmsClient.sendMessage(updatedMessage, receiverUuid, message.getId()));
-
-	}
-
-	private void dmsSendMessage(Message message, Iterable<String> receiverUuids) {
-
-		dmsSendMessage(message,
-				updatedMessage -> dmsClient.sendMessage(updatedMessage, receiverUuids, message.getId()));
-
-	}
-
-	private void dmsSendMessage(Message message, Consumer<Message> consumer) {
 
 		Message copyMessage = new Message(message);
 
@@ -658,7 +644,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				copyMessage.setContent(decomposeFile(Paths.get(copyMessage.getContent())).toJson());
+				copyMessage.setContent(Base64.getEncoder()
+						.encodeToString(DmsPackingFactory.pack(decomposeFile(Paths.get(copyMessage.getContent())))));
 
 			} catch (Exception e) {
 
@@ -676,7 +663,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		consumer.accept(copyMessage);
+		try {
+
+			dmsClient.sendMessage(copyMessage, receiverUuid, message.getId());
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -826,7 +821,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			if (Objects.equals(message.getMessageSubType(), MessageSubType.UPDATE_GROUP)) {
 
-				GroupUpdate groupUpdate = GroupUpdate.fromJson(message.getContent());
+				GroupUpdate groupUpdate = DmsPackingFactory.unpack(Base64.getDecoder().decode(message.getContent()),
+						GroupUpdate.class);
 
 				groupUpdateReceived(message.getContact().getUuid(), message.getGroupRefId(), groupUpdate);
 
@@ -989,7 +985,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			GroupMessageStatus groupMessageStatus = new GroupMessageStatus(messageStatus, contactIds);
 
-			dmsClient.feedGroupMessageStatus(contactUuid, message.getMessageRefId(), groupMessageStatus);
+			dmsClient.feedGroupMessageStatus(groupMessageStatus, contactUuid, message.getMessageRefId());
 
 		}
 
@@ -1177,7 +1173,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = getDstFile(dstFolder, filePojo.fileName);
 
-			Files.write(dstFile, Base64.getDecoder().decode(filePojo.fileContent));
+			Files.write(dstFile, filePojo.payload);
 
 			return dstFile;
 
@@ -1191,20 +1187,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			byte[] fileBytes = Files.readAllBytes(path);
 
-			return new FilePojo(path.getFileName().toString(), Base64.getEncoder().encodeToString(fileBytes));
+			return new FilePojo(path.getFileName().toString(), fileBytes);
 
 		}
 
 	}
 
 	@Override
-	public void beaconReceived(String message) {
+	public void beaconReceived(final Beacon beacon) {
 
 		taskQueue.execute(() -> {
 
 			try {
-
-				Beacon beacon = Beacon.fromJson(message);
 
 				final String userUuid = beacon.uuid;
 
@@ -1494,46 +1488,45 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messageReceived(final String message, final String remoteUuid) {
+	public void messageReceived(final Message message, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
 			try {
 
-				Message incomingMessage = Message.fromJson(message);
-				incomingMessage.setMessageRefId(incomingMessage.getId());
-				incomingMessage.setId(null);
+				message.setMessageRefId(message.getId());
+				message.setId(null);
 
-				Message dbMessage = dbManager.getMessageBySender(remoteUuid, incomingMessage.getMessageRefId());
+				Message dbMessage = dbManager.getMessageBySender(remoteUuid, message.getMessageRefId());
 
 				if (dbMessage != null)
 					return;
 
-				incomingMessage.setContact(getContact(remoteUuid));
+				message.setContact(getContact(remoteUuid));
 
-				if (Objects.equals(incomingMessage.getMessageType(), MessageType.UPDATE))
-					updateMessageReceived(incomingMessage);
+				if (Objects.equals(message.getMessageType(), MessageType.UPDATE))
+					updateMessageReceived(message);
 
 				boolean messageToBeRedirected = false;
 
-				switch (incomingMessage.getReceiverType()) {
+				switch (message.getReceiverType()) {
 
 				case GROUP_OWNER: {
 
-					Dgroup dgroup = model.getGroup(incomingMessage.getGroupRefId());
+					Dgroup dgroup = model.getGroup(message.getGroupRefId());
 
-					incomingMessage.setDgroup(dgroup);
+					message.setDgroup(dgroup);
 
 					dgroup.getMembers().forEach(member -> {
 
 						if (Objects.equals(member.getUuid(), remoteUuid))
 							return;
 
-						incomingMessage.addStatusReport(new StatusReport(member.getId(), MessageStatus.FRESH));
+						message.addStatusReport(new StatusReport(member.getId(), MessageStatus.FRESH));
 
 					});
 
-					messageToBeRedirected = incomingMessage.getStatusReports().size() > 0;
+					messageToBeRedirected = message.getStatusReports().size() > 0;
 
 					break;
 
@@ -1541,20 +1534,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				case GROUP_MEMBER: {
 
-					Dgroup dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
+					Dgroup dgroup = model.getGroup(remoteUuid, message.getGroupRefId());
 
 					if (dgroup == null) {
-						groupUpdateReceived(remoteUuid, incomingMessage.getGroupRefId(), new GroupUpdate());
-						dgroup = model.getGroup(remoteUuid, incomingMessage.getGroupRefId());
+						groupUpdateReceived(remoteUuid, message.getGroupRefId(), new GroupUpdate());
+						dgroup = model.getGroup(remoteUuid, message.getGroupRefId());
 					}
 
-					Member member = dbManager.getMember(remoteUuid, incomingMessage.getContactRefId());
+					Member member = dbManager.getMember(remoteUuid, message.getContactRefId());
 
 					if (member != null) {
-						incomingMessage.setOwner(member.getContact());
+						message.setOwner(member.getContact());
 					}
 
-					incomingMessage.setDgroup(dgroup);
+					message.setDgroup(dgroup);
 
 					break;
 
@@ -1566,19 +1559,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				switch (incomingMessage.getMessageType()) {
+				switch (message.getMessageType()) {
 
 				case FILE:
 				case AUDIO:
 
 					try {
 
-						incomingMessage
-								.setContent(composeFile(FilePojo.fromJson(incomingMessage.getContent())).toString());
+						message.setContent(composeFile(DmsPackingFactory
+								.unpack(Base64.getDecoder().decode(message.getContent()), FilePojo.class)).toString());
 
 					} catch (Exception e) {
 
-						incomingMessage.setContent("");
+						message.setContent("");
 
 						e.printStackTrace();
 
@@ -1592,13 +1585,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				incomingMessage.setMessageStatus(computeMessageStatus(incomingMessage));
+				message.setMessageStatus(computeMessageStatus(message));
 
-				incomingMessage.setWaitStatus(messageToBeRedirected ? WaitStatus.WAITING : WaitStatus.DONE);
+				message.setWaitStatus(messageToBeRedirected ? WaitStatus.WAITING : WaitStatus.DONE);
 
-				incomingMessage.setMessageDirection(MessageDirection.IN);
+				message.setMessageDirection(MessageDirection.IN);
 
-				Message newMessage = dbManager.addUpdateMessage(incomingMessage);
+				Message newMessage = dbManager.addUpdateMessage(message);
 
 				switch (newMessage.getReceiverType()) {
 
@@ -1606,8 +1599,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					privateMessageReceived(newMessage);
 
-					dmsClient.feedMessageStatus(remoteUuid, newMessage.getMessageRefId(),
-							newMessage.getMessageStatus());
+					dmsClient.feedMessageStatus(newMessage.getMessageStatus(), remoteUuid,
+							newMessage.getMessageRefId());
 
 					break;
 
@@ -1615,8 +1608,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					groupMessageReceived(newMessage);
 
-					dmsClient.feedMessageStatus(remoteUuid, newMessage.getMessageRefId(),
-							newMessage.getMessageStatus());
+					dmsClient.feedMessageStatus(newMessage.getMessageStatus(), remoteUuid,
+							newMessage.getMessageRefId());
 
 					break;
 
@@ -1624,8 +1617,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					groupMessageReceived(newMessage);
 
-					dmsClient.feedMessageStatus(remoteUuid, newMessage.getMessageRefId(),
-							newMessage.getMessageStatus());
+					dmsClient.feedMessageStatus(newMessage.getMessageStatus(), remoteUuid,
+							newMessage.getMessageRefId());
 
 					break;
 
@@ -1670,8 +1663,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
-						identity.getLongitude(), identity.getSecretId());
+				try {
+
+					sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
+							identity.getLongitude(), identity.getSecretId());
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
 
 				dmsClient.claimStartInfo();
 
@@ -1710,11 +1711,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (incomingMessage == null) {
 
 					// Not received
-					dmsClient.feedMessageStatus(remoteUuid, messageId, MessageStatus.FRESH);
+					dmsClient.feedMessageStatus(MessageStatus.FRESH, remoteUuid, messageId);
 
 				} else {
 
-					dmsClient.feedMessageStatus(remoteUuid, messageId, incomingMessage.getMessageStatus());
+					dmsClient.feedMessageStatus(incomingMessage.getMessageStatus(), remoteUuid, messageId);
 
 				}
 
@@ -1803,7 +1804,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (dbMessage == null)
 					return;
 
-				dmsClient.feedStatusReport(messageId, dbMessage.getStatusReports(), remoteUuid);
+				dmsClient.feedStatusReport(dbMessage.getStatusReports(), remoteUuid, messageId);
 
 			} catch (Exception e) {
 
@@ -1903,17 +1904,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void transientMessageReceived(String message, String remoteUuid) {
+	public void transientMessageReceived(final MessageHandleImpl message, String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
 			try {
 
-				MessageHandleImpl incomingMessage = MessageHandleImpl.fromJson(message);
+				if (message.getStatusResponseFlag() != null) {
 
-				if (incomingMessage.getStatusResponseFlag() != null) {
-
-					transientMessageStatusReceived(incomingMessage, remoteUuid);
+					transientMessageStatusReceived(message, remoteUuid);
 
 					return;
 
@@ -1921,27 +1920,27 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Long contactId = getContact(remoteUuid).getId();
 
-				FileHandleImpl fileHandle = (FileHandleImpl) incomingMessage.getFileHandle();
+				FileHandleImpl fileHandle = (FileHandleImpl) message.getFileHandle();
 
 				if (fileHandle != null) {
 
 					try {
 
-						incomingMessage.setFileHandle(
+						message.setFileHandle(
 								new FileHandleImpl(fileHandle.getFileCode(), composeFile(fileHandle.getFilePojo())));
 
 					} catch (IOException e) {
 
-						incomingMessage.setFileHandle(null);
+						message.setFileHandle(null);
 
 					}
 
 				}
 
-				listenerTaskQueue.execute(
-						() -> dmsListeners.forEach(listener -> listener.messageReceived(incomingMessage, contactId)));
+				listenerTaskQueue
+						.execute(() -> dmsListeners.forEach(listener -> listener.messageReceived(message, contactId)));
 
-				sendTransientMessageStatus(incomingMessage, remoteUuid);
+				sendTransientMessageStatus(message, remoteUuid);
 
 			} catch (Exception e) {
 
@@ -1978,7 +1977,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		response.setTrackingId(trackingId);
 		response.setStatusResponseFlag(1);
 
-		dmsClient.sendTransientMessage(response.toJson(), Arrays.asList(remoteUuid), null, null, null);
+		dmsClient.sendTransientMessage(response, Arrays.asList(remoteUuid), null, null, null);
 
 	}
 
@@ -2004,7 +2003,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, comment, null, null, null, null);
 
-			} catch (HibernateException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -2036,7 +2035,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, null, newIdentity.getStatus(), null, null, null);
 
-			} catch (HibernateException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -2083,10 +2082,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
 
-					dmsClient.feedMessageStatus(newMessage.getContact().getUuid(), newMessage.getMessageRefId(),
-							MessageStatus.READ);
+					dmsClient.feedMessageStatus(MessageStatus.READ, newMessage.getContact().getUuid(),
+							newMessage.getMessageRefId());
 
-				} catch (JsonSyntaxException | HibernateException e) {
+				} catch (Exception e) {
 
 					e.printStackTrace();
 
@@ -2128,17 +2127,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_OWNER)) {
 
-						dmsClient.feedMessageStatus(newMessage.getContact().getUuid(), newMessage.getMessageRefId(),
-								newMessage.getMessageStatus());
+						dmsClient.feedMessageStatus(newMessage.getMessageStatus(), newMessage.getContact().getUuid(),
+								newMessage.getMessageRefId());
 
 					} else if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_MEMBER)) {
 
-						dmsClient.feedMessageStatus(group.getOwner().getUuid(), newMessage.getMessageRefId(),
-								newMessage.getMessageStatus());
+						dmsClient.feedMessageStatus(newMessage.getMessageStatus(), group.getOwner().getUuid(),
+								newMessage.getMessageRefId());
 
 					}
 
-				} catch (JsonSyntaxException | HibernateException e) {
+				} catch (Exception e) {
 
 					e.printStackTrace();
 
@@ -2769,16 +2768,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void addIpClicked(String ip) {
+	public void addIpClicked(String... ip) {
 
-		dmsClient.addRemoteIps(ip);
+		try {
+
+			dmsClient.addRemoteIps(ip);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
 	@Override
-	public void removeIpClicked(String ip) {
+	public void removeIpClicked(String... ip) {
 
-		dmsClient.removeRemoteIps(ip);
+		try {
+
+			dmsClient.removeRemoteIps(ip);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -3003,7 +3018,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, null, null, lattitude, longitude, null);
 
-			} catch (HibernateException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -3060,7 +3075,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, null, null, null, null, finalSecretId);
 
-			} catch (HibernateException e) {
+			} catch (Exception e) {
 
 				e.printStackTrace();
 
@@ -3078,8 +3093,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			Runnable task = () -> dmsClient.addRemoteIps(Arrays.stream(remoteIps).filter(remoteIp -> remoteIp != null)
-					.map(remoteIp -> remoteIp.getHostAddress()).toArray(String[]::new));
+			Runnable task = () -> {
+
+				try {
+
+					dmsClient.addRemoteIps(Arrays.stream(remoteIps).filter(remoteIp -> remoteIp != null)
+							.map(remoteIp -> remoteIp.getHostAddress()).toArray(String[]::new));
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			};
 
 			if (model.isServerConnected())
 				task.run();
@@ -3095,7 +3122,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			Runnable task = () -> dmsClient.removeRemoteIps();
+			Runnable task = () -> {
+
+				try {
+
+					dmsClient.removeRemoteIps();
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			};
 
 			if (model.isServerConnected())
 				task.run();
@@ -3220,15 +3259,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public ObjectHandle createObjectHandle(Object object, Integer objectCode) {
 
-		return new ObjectHandleImpl(objectCode, CommonMethods.toJson(object));
+		return new ObjectHandleImpl(objectCode, DmsPackingFactory.pack(object));
 
 	}
 
 	@Override
 	public <T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode) {
 
-		return new ListHandleImpl(listCode,
-				CommonMethods.convertListJsonToCommon(CommonMethods.toJson(list), elementType.getSimpleName()));
+		// TODO: Conversion
+
+		return new ListHandleImpl(listCode, DmsPackingFactory.pack(list));
 
 	}
 
@@ -3240,7 +3280,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws IOException {
+	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws Exception {
 
 		return sendMessageToContacts(messageHandle, contactIds, null);
 
@@ -3255,7 +3295,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	@Override
 	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules)
-			throws IOException {
+			throws Exception {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3302,7 +3342,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules)
-			throws IOException {
+			throws Exception {
 
 		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
 
@@ -3320,7 +3360,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		dmsClient.sendTransientMessage(outgoingMessage.toJson(), contactUuids, messageRulesImpl.getTrackingId(),
+		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, messageRulesImpl.getTrackingId(),
 				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
 
 	}

@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ogya.dms.core.common.CommonMethods;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import javafx.scene.paint.Color;
 
@@ -16,6 +16,7 @@ public enum MessageStatus {
 	private static final Map<Integer, MessageStatus> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, MessageStatus>());
 
+	@JsonValue
 	private final int index;
 	private transient final Color waitingColor;
 	private transient final Color transmittedColor;
@@ -52,14 +53,6 @@ public enum MessageStatus {
 
 		return transmittedColor;
 
-	}
-
-	public String toJson() {
-		return CommonMethods.toJson(this);
-	}
-
-	public static MessageStatus fromJson(String json) throws Exception {
-		return CommonMethods.fromJson(json, MessageStatus.class);
 	}
 
 }

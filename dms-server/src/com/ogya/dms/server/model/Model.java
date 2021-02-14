@@ -23,10 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
+import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
+
+	private static final byte[] TEST = new byte[0];
 
 	private static final AtomicInteger MAP_ID = new AtomicInteger(0);
 
@@ -80,11 +83,13 @@ public class Model {
 
 	}
 
-	public void localMessageReceived(final String messagePojoStr) {
+	public void localMessageReceived(final byte[] messagePojoBytes) {
 
 		try {
 
-			final MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
+			final MessagePojo messagePojo = DmsPackingFactory.unpack(messagePojoBytes, MessagePojo.class);
+
+			final byte[] payload = messagePojo.payload;
 
 			final String senderUuid = messagePojo.senderUuid;
 			final Long trackingId = messagePojo.useTrackingId;
@@ -93,7 +98,7 @@ public class Model {
 
 			case BCON:
 
-				Beacon beacon = Beacon.fromJson(messagePojo.message);
+				Beacon beacon = DmsPackingFactory.unpack(payload, Beacon.class);
 
 				String userUuid = beacon.uuid;
 
@@ -115,9 +120,8 @@ public class Model {
 
 				sendBeaconToLocalUsers(localUser.beacon);
 
-				sendBeaconToRemoteServers(
-						new MessagePojo(messagePojo.message, localUser.mapId, messagePojo.receiverUuid,
-								messagePojo.contentType, messagePojo.messageId, null, null, null).toJson());
+				sendMessageToRemoteServers(new MessagePojo(payload, localUser.mapId, messagePojo.receiverUuid,
+						messagePojo.contentType, messagePojo.messageId, null, null, null));
 
 				break;
 
@@ -131,16 +135,18 @@ public class Model {
 
 			case ADD_IPS:
 
-				addRemoteIps(messagePojo.message.split(";"));
+				addRemoteIps(DmsPackingFactory.unpack(payload, String[].class));
 
 				break;
 
 			case REMOVE_IPS:
 
-				if (messagePojo.message.isEmpty())
+				String[] ips = DmsPackingFactory.unpack(payload, String[].class);
+
+				if (ips.length == 0)
 					clearRemoteIps();
 				else
-					removeRemoteIps(messagePojo.message.split(";"));
+					removeRemoteIps(ips);
 
 				break;
 
@@ -196,7 +202,7 @@ public class Model {
 					if (localUsers.containsKey(receiverUuid)) {
 
 						localReceiverUuids.add(receiverUuid);
-						listener.sendToLocalUser(receiverUuid, messagePojoStr);
+						listener.sendToLocalUser(receiverUuid, messagePojoBytes);
 
 					} else if (remoteUsers.containsKey(receiverUuid)) {
 
@@ -215,21 +221,21 @@ public class Model {
 
 				if (trackedMessage && localReceiverUuids.size() > 0) {
 
-					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(100),
+					MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(100),
 							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS_MESSAGE, null,
 							trackingId, null, null);
 
-					listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+					listener.sendToLocalUser(senderUuid, DmsPackingFactory.pack(progressMessagePojo));
 
 				}
 
 				if (trackedTransientMessage && unreachableUuids.size() > 0) {
 
-					MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(-1),
+					MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(-1),
 							String.join(";", unreachableUuids), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
 							trackingId, null, null);
 
-					listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+					listener.sendToLocalUser(senderUuid, DmsPackingFactory.pack(progressMessagePojo));
 
 				}
 
@@ -244,30 +250,30 @@ public class Model {
 					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
 					List<String> receiverMapIdList = new ArrayList<String>();
 					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
-					String remoteMessagePojoStr = new MessagePojo(messagePojo.message, senderMapId,
-							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.messageId, null,
-							null, null).toJson();
+					byte[] remoteMessagePojoBytes = DmsPackingFactory
+							.pack(new MessagePojo(payload, senderMapId, String.join(";", receiverMapIdList),
+									messagePojo.contentType, messagePojo.messageId, null, null, null));
 
-					listener.sendToRemoteServer(dmsUuid, remoteMessagePojoStr, sendStatus, progress -> {
+					listener.sendToRemoteServer(dmsUuid, remoteMessagePojoBytes, sendStatus, progress -> {
 
 						if (trackedMessage) {
 
 							if (progress < 0 || progress == 100)
 								sender.sendStatusMap.remove(trackingId);
 
-							MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+							MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
 									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_MESSAGE, null,
 									trackingId, null, null);
 
-							listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+							listener.sendToLocalUser(senderUuid, DmsPackingFactory.pack(progressMessagePojo));
 
 						} else if (trackedTransientMessage && progress < 0) {
 
-							MessagePojo progressMessagePojo = new MessagePojo(String.valueOf(progress),
+							MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
 									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
 									trackingId, null, null);
 
-							listener.sendToLocalUser(senderUuid, progressMessagePojo.toJson());
+							listener.sendToLocalUser(senderUuid, DmsPackingFactory.pack(progressMessagePojo));
 
 						}
 
@@ -292,11 +298,13 @@ public class Model {
 
 	}
 
-	public void remoteMessageReceived(String messagePojoStr, String dmsUuid) {
+	public void remoteMessageReceived(byte[] messagePojoBytes, String dmsUuid) {
 
 		try {
 
-			MessagePojo messagePojo = MessagePojo.fromJson(messagePojoStr);
+			MessagePojo messagePojo = DmsPackingFactory.unpack(messagePojoBytes, MessagePojo.class);
+
+			byte[] payload = messagePojo.payload;
 
 			DmsServer remoteServer = remoteServers.get(dmsUuid);
 
@@ -313,10 +321,10 @@ public class Model {
 				}
 				String receiverUuid = String.join(";", receiverUuids);
 
-				messagePojo = new MessagePojo(messagePojo.message, senderUuid, receiverUuid, messagePojo.contentType,
+				messagePojo = new MessagePojo(payload, senderUuid, receiverUuid, messagePojo.contentType,
 						messagePojo.messageId, null, null, null);
 
-				messagePojoStr = messagePojo.toJson();
+				messagePojoBytes = DmsPackingFactory.pack(messagePojo);
 
 			}
 
@@ -324,7 +332,7 @@ public class Model {
 
 			case BCON:
 
-				Beacon beacon = Beacon.fromJson(messagePojo.message);
+				Beacon beacon = DmsPackingFactory.unpack(payload, Beacon.class);
 
 				String userUuid = beacon.uuid;
 
@@ -368,7 +376,7 @@ public class Model {
 				for (String receiverUuid : receiverUuids) {
 
 					if (localUsers.containsKey(receiverUuid))
-						listener.sendToLocalUser(receiverUuid, messagePojoStr);
+						listener.sendToLocalUser(receiverUuid, messagePojoBytes);
 
 				}
 
@@ -386,7 +394,7 @@ public class Model {
 
 	public void testAllLocalUsers() {
 
-		localUsers.forEach((uuid, user) -> listener.sendToLocalUser(uuid, ""));
+		localUsers.forEach((uuid, user) -> listener.sendToLocalUser(uuid, TEST));
 
 	}
 
@@ -438,17 +446,17 @@ public class Model {
 
 		String userUuid = user.beacon.uuid;
 
-		String messagePojoStr = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null,
-				null).toJson();
+		byte[] messagePojoBytes = DmsPackingFactory
+				.pack(new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null, null));
 
 		localUsers.remove(userUuid);
 
-		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoBytes));
 
-		String remoteMessagePojoStr = new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null, null,
-				null, null).toJson();
+		byte[] remoteMessagePojoBytes = DmsPackingFactory
+				.pack(new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null, null, null, null));
 
-		listener.sendToAllRemoteServers(remoteMessagePojoStr);
+		listener.sendToAllRemoteServers(remoteMessagePojoBytes);
 
 	}
 
@@ -473,12 +481,12 @@ public class Model {
 				sendStatus.set(false);
 		});
 
-		String messagePojoStr = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null,
-				null).toJson();
+		byte[] messagePojoBytes = DmsPackingFactory
+				.pack(new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null, null));
 
 		remoteUsers.remove(userUuid);
 
-		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoStr));
+		localUsers.forEach((receiverUuid, localUser) -> listener.sendToLocalUser(receiverUuid, messagePojoBytes));
 
 	}
 
@@ -490,15 +498,15 @@ public class Model {
 
 	private void sendBeaconToLocalUsers(Beacon beacon) {
 
-		String beaconStr = new MessagePojo(beacon.toJson(), null, null, ContentType.BCON, null, null, null, null)
-				.toJson();
+		byte[] beaconBytes = DmsPackingFactory.pack(
+				new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null, null));
 
 		localUsers.forEach((uuid, user) -> {
 
 			if (Objects.equals(beacon.uuid, uuid))
 				return;
 
-			listener.sendToLocalUser(uuid, beaconStr);
+			listener.sendToLocalUser(uuid, beaconBytes);
 
 		});
 
@@ -511,27 +519,27 @@ public class Model {
 			if (Objects.equals(receiverUuid, uuid))
 				return;
 
-			String beaconStr = new MessagePojo(user.beacon.toJson(), null, null, ContentType.BCON, null, null, null,
-					null).toJson();
+			byte[] beaconBytes = DmsPackingFactory.pack(new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null,
+					ContentType.BCON, null, null, null, null));
 
-			listener.sendToLocalUser(receiverUuid, beaconStr);
+			listener.sendToLocalUser(receiverUuid, beaconBytes);
 
 		});
 
 		remoteUsers.forEach((uuid, user) -> {
 
-			String beaconStr = new MessagePojo(user.beacon.toJson(), null, null, ContentType.BCON, null, null, null,
-					null).toJson();
+			byte[] beaconBytes = DmsPackingFactory.pack(new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null,
+					ContentType.BCON, null, null, null, null));
 
-			listener.sendToLocalUser(receiverUuid, beaconStr);
+			listener.sendToLocalUser(receiverUuid, beaconBytes);
 
 		});
 
 	}
 
-	private void sendBeaconToRemoteServers(String beaconStr) {
+	private void sendMessageToRemoteServers(MessagePojo messagePojo) {
 
-		listener.sendToAllRemoteServers(beaconStr);
+		listener.sendToAllRemoteServers(DmsPackingFactory.pack(messagePojo));
 
 	}
 
@@ -544,10 +552,10 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			String beaconStr = new MessagePojo(user.beacon.toRemoteJson(), user.mapId, null, ContentType.BCON, null,
-					null, null, null).toJson();
+			byte[] beaconBytes = DmsPackingFactory.pack(new MessagePojo(DmsPackingFactory.packRemote(user.beacon),
+					user.mapId, null, ContentType.BCON, null, null, null, null));
 
-			listener.sendToRemoteServer(dmsUuid, beaconStr, null, null, Long.MAX_VALUE, null);
+			listener.sendToRemoteServer(dmsUuid, beaconBytes, null, null, Long.MAX_VALUE, null);
 
 		});
 
@@ -632,21 +640,21 @@ public class Model {
 
 	private void sendRemoteIpsToLocalUser(String receiverUuid) {
 
-		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IPS, null, null,
-				null, null).toJson();
+		byte[] messagePojoBytes = DmsPackingFactory.pack(new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null,
+				ContentType.IPS, null, null, null, null));
 
-		listener.sendToLocalUser(receiverUuid, messagePojoStr);
+		listener.sendToLocalUser(receiverUuid, messagePojoBytes);
 
 	}
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		String messagePojoStr = new MessagePojo(String.join(";", remoteIps), null, null, ContentType.IPS, null, null,
-				null, null).toJson();
+		byte[] messagePojoBytes = DmsPackingFactory.pack(new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null,
+				ContentType.IPS, null, null, null, null));
 
 		localUsers.forEach((receiverUuid, user) -> {
 
-			listener.sendToLocalUser(receiverUuid, messagePojoStr);
+			listener.sendToLocalUser(receiverUuid, messagePojoBytes);
 
 		});
 

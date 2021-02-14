@@ -22,7 +22,6 @@
 	<classpathentry kind="lib" path="lib/db/jboss-transaction-api_1.2_spec-1.1.1.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/stax-ex-1.8.jar"/>
 	<classpathentry kind="lib" path="lib/db/txw2-2.3.1.jar"/>
-	<classpathentry kind="lib" path="lib/gson-2.8.6.jar"/>
 	<classpathentry kind="lib" path="lib/jeromq-0.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
 	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.21.jar"/>

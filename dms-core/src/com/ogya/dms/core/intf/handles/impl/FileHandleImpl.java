@@ -2,16 +2,16 @@ package com.ogya.dms.core.intf.handles.impl;
 
 import java.nio.file.Path;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.structures.FilePojo;
 
 public class FileHandleImpl implements FileHandle {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	private final Integer fileCode;
 	private final transient Path path;
-	@SerializedName("b")
+	@JsonProperty("b")
 	private final FilePojo filePojo;
 
 	public FileHandleImpl(Integer fileCode, Path path) {

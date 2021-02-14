@@ -3,27 +3,27 @@ package com.ogya.dms.commons.structures;
 import java.net.InetAddress;
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Beacon {
 
-	@SerializedName("a")
+	@JsonProperty("a")
 	public final String uuid;
-	@SerializedName("b")
+	@JsonProperty("b")
 	public String name;
-	@SerializedName("c")
+	@JsonProperty("c")
 	public String comment;
-	@SerializedName("d")
+	@JsonProperty("d")
 	public Integer status;
-	@SerializedName("e")
+	@JsonProperty("e")
 	public Double lattitude;
-	@SerializedName("f")
+	@JsonProperty("f")
 	public Double longitude;
-	@SerializedName("g")
+	@JsonProperty("g")
 	public String secretId;
-	@SerializedName("h")
+	@JsonProperty("h")
 	public List<InetAddress> remoteInterfaces;
-	@SerializedName("i")
+	@JsonProperty("i")
 	public List<InetAddress> localInterfaces;
 
 	public Beacon(String uuid) {
@@ -44,18 +44,6 @@ public class Beacon {
 		this.longitude = longitude;
 		this.secretId = secretId;
 
-	}
-
-	public String toJson() {
-		return JsonFactory.toJson(this);
-	}
-
-	public String toRemoteJson() {
-		return JsonFactory.toRemoteJson(this);
-	}
-
-	public static Beacon fromJson(String json) throws Exception {
-		return JsonFactory.fromJson(json, Beacon.class);
 	}
 
 }

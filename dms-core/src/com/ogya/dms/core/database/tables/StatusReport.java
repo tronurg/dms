@@ -10,7 +10,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
 import com.ogya.dms.core.structures.MessageStatus;
 
@@ -20,19 +21,21 @@ public class StatusReport {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@JsonIgnore
 	private Long id;
 
 	@Column(name = "contact_id", nullable = false, updatable = false)
-	@SerializedName("a")
+	@JsonProperty("a")
 	private Long contactId;
 
 	@Column(name = "message_status", nullable = false)
 	@Convert(converter = MessageStatusConverter.class)
-	@SerializedName("b")
+	@JsonProperty("b")
 	private MessageStatus messageStatus;
 
 	@ManyToOne
 	@JoinColumn(name = "message_id")
+	@JsonIgnore
 	private Message message;
 
 	public StatusReport() {

@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum ReceiverType {
 
 	CONTACT(0), GROUP_OWNER(1), GROUP_MEMBER(2);
@@ -11,6 +13,7 @@ public enum ReceiverType {
 	private static final Map<Integer, ReceiverType> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, ReceiverType>());
 
+	@JsonValue
 	private final int index;
 
 	static {

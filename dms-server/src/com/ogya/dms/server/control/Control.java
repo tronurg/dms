@@ -48,7 +48,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final ZContext context = new ZContext();
 
-	private final LinkedBlockingQueue<SimpleEntry<String, String>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, String>>();
+	private final LinkedBlockingQueue<SimpleEntry<String, byte[]>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, byte[]>>();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
@@ -166,9 +166,9 @@ public class Control implements TcpManagerListener, ModelListener {
 				if (poller.pollin(pollRouter)) {
 
 					routerSocket.recvStr(ZMQ.DONTWAIT);
-					String messagePojoStr = routerSocket.recvStr(ZMQ.DONTWAIT);
+					byte[] messagePojoBytes = routerSocket.recv(ZMQ.DONTWAIT);
 
-					taskQueue.execute(() -> model.localMessageReceived(messagePojoStr));
+					taskQueue.execute(() -> model.localMessageReceived(messagePojoBytes));
 
 				} else if (poller.pollin(pollInproc)) {
 
@@ -208,7 +208,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				SimpleEntry<String, String> receiverMessage = routerQueue.take();
+				SimpleEntry<String, byte[]> receiverMessage = routerQueue.take();
 
 				inprocSocket.sendMore(receiverMessage.getKey());
 				inprocSocket.send(receiverMessage.getValue());
@@ -263,21 +263,21 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void messageReceivedFromRemoteServer(final String message, final String dmsUuid) {
+	public void messageReceivedFromRemoteServer(final byte[] message, final String dmsUuid) {
 
 		taskQueue.execute(() -> model.remoteMessageReceived(message, dmsUuid));
 
 	}
 
 	@Override
-	public void sendToLocalUser(String receiverUuid, String message) {
+	public void sendToLocalUser(String receiverUuid, byte[] message) {
 
-		routerQueue.offer(new SimpleEntry<String, String>(receiverUuid, message));
+		routerQueue.offer(new SimpleEntry<String, byte[]>(receiverUuid, message));
 
 	}
 
 	@Override
-	public void sendToRemoteServer(String dmsUuid, String message, AtomicBoolean sendStatus,
+	public void sendToRemoteServer(String dmsUuid, byte[] message, AtomicBoolean sendStatus,
 			Consumer<Integer> progressMethod, long timeout, InetAddress useLocalAddress) {
 
 		try {
@@ -293,7 +293,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToAllRemoteServers(String message) {
+	public void sendToAllRemoteServers(byte[] message) {
 
 		try {
 
