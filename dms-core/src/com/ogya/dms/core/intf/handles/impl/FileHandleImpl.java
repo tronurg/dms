@@ -9,10 +9,14 @@ import com.ogya.dms.core.structures.FilePojo;
 public class FileHandleImpl implements FileHandle {
 
 	@JsonProperty("a")
-	private final Integer fileCode;
-	private final transient Path path;
+	private Integer fileCode;
+	private transient Path path;
 	@JsonProperty("b")
-	private final FilePojo filePojo;
+	private FilePojo filePojo;
+
+	public FileHandleImpl() {
+		super();
+	}
 
 	public FileHandleImpl(Integer fileCode, Path path) {
 

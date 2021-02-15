@@ -7,9 +7,13 @@ import com.ogya.dms.core.intf.handles.ObjectHandle;
 public class ObjectHandleImpl implements ObjectHandle {
 
 	@JsonProperty("a")
-	private final Integer objectCode;
+	private Integer objectCode;
 	@JsonProperty("b")
-	private final String payload;
+	private String payload;
+
+	public ObjectHandleImpl() {
+		super();
+	}
 
 	public ObjectHandleImpl(Integer objectCode, String payload) {
 

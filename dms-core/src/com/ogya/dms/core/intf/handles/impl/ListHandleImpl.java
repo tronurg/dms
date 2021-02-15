@@ -11,9 +11,13 @@ import com.ogya.dms.core.intf.handles.ListHandle;
 public class ListHandleImpl implements ListHandle {
 
 	@JsonProperty("a")
-	private final Integer listCode;
+	private Integer listCode;
 	@JsonProperty("b")
-	private final String payload;
+	private String payload;
+
+	public ListHandleImpl() {
+		super();
+	}
 
 	public ListHandleImpl(Integer listCode, String payload) {
 

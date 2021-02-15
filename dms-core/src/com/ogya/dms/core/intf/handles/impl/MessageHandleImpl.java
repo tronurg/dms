@@ -9,9 +9,9 @@ import com.ogya.dms.core.intf.handles.ObjectHandle;
 public class MessageHandleImpl implements MessageHandle {
 
 	@JsonProperty("a")
-	private final Integer messageCode;
+	private Integer messageCode;
 	@JsonProperty("b")
-	private final String message;
+	private String message;
 	@JsonProperty("c")
 	private FileHandleImpl fileHandle;
 	@JsonProperty("d")
@@ -22,6 +22,10 @@ public class MessageHandleImpl implements MessageHandle {
 	private Long trackingId;
 	@JsonProperty("g")
 	private Integer statusResponseFlag;
+
+	public MessageHandleImpl() {
+		super();
+	}
 
 	public MessageHandleImpl(Integer messageCode, String message) {
 
