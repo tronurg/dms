@@ -15,17 +15,12 @@ import com.ogya.dms.commons.structures.Beacon;
 
 public class DmsPackingFactory {
 
-	private static ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
-	static {
-		objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		objectMapper.setSerializationInclusion(Include.NON_NULL);
-		objectMapper.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
-	}
+	private static ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory())
+			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
-	private static ObjectMapper objectMapperRemote = objectMapper.copy();
-	static {
-		objectMapperRemote.addMixIn(Beacon.class, BeaconRemoteMixin.class);
-	}
+	private static ObjectMapper objectMapperRemote = objectMapper.copy().addMixIn(Beacon.class,
+			BeaconRemoteMixin.class);
 
 	public static byte[] pack(Object src) {
 
