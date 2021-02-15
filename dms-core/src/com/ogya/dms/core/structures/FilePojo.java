@@ -5,9 +5,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class FilePojo {
 
 	@JsonProperty("a")
-	public final String fileName;
+	public String fileName;
 	@JsonProperty("b")
-	public final byte[] payload;
+	public byte[] payload;
+
+	public FilePojo() {
+		super();
+	}
 
 	public FilePojo(String fileName, byte[] payload) {
 

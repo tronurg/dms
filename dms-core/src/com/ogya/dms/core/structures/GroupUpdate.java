@@ -15,4 +15,8 @@ public class GroupUpdate {
 	@JsonProperty("d")
 	public List<Long> remove;
 
+	public GroupUpdate() {
+		super();
+	}
+
 }

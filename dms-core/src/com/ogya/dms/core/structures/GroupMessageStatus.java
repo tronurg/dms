@@ -7,9 +7,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class GroupMessageStatus {
 
 	@JsonProperty("a")
-	public final MessageStatus messageStatus;
+	public MessageStatus messageStatus;
 	@JsonProperty("b")
-	public final List<Long> refIds;
+	public List<Long> refIds;
+
+	public GroupMessageStatus() {
+		super();
+	}
 
 	public GroupMessageStatus(MessageStatus messageStatus, List<Long> refIds) {
 

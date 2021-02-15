@@ -7,21 +7,25 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class MessagePojo {
 
 	@JsonProperty("a")
-	public final byte[] payload;
+	public byte[] payload;
 	@JsonProperty("b")
-	public final String senderUuid;
+	public String senderUuid;
 	@JsonProperty("c")
-	public final String receiverUuid;
+	public String receiverUuid;
 	@JsonProperty("d")
-	public final ContentType contentType;
+	public ContentType contentType;
 	@JsonProperty("e")
-	public final Long messageId;
+	public Long messageId;
 	@JsonProperty("f")
-	public final Long useTrackingId;
+	public Long useTrackingId;
 	@JsonProperty("g")
-	public final Long useTimeout;
+	public Long useTimeout;
 	@JsonProperty("h")
-	public final InetAddress useLocalAddress;
+	public InetAddress useLocalAddress;
+
+	public MessagePojo() {
+		super();
+	}
 
 	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType, Long messageId,
 			Long useTrackingId, Long useTimeout, InetAddress useLocalAddress) {

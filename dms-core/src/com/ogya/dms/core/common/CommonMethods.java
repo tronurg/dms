@@ -32,6 +32,7 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
+import com.google.gson.Gson;
 import com.ogya.dms.core.view.ReportsPane.ReportTemplate;
 
 public class CommonMethods {
@@ -39,6 +40,8 @@ public class CommonMethods {
 	private static Document confDoc;
 
 	private static ResourceBundle langFile;
+
+	private static Gson gson = new Gson();
 
 	private static final Map<String, String> genericConversionMap = new HashMap<String, String>();
 	private static final Map<String, Map<String, String>> customConversionMap = new HashMap<String, Map<String, String>>();
@@ -96,11 +99,7 @@ public class CommonMethods {
 
 				try (BufferedReader reader = Files.newBufferedReader(path)) {
 
-					String idLine = reader.readLine();
-					if (!(idLine.startsWith("#") && idLine.length() > 1))
-						return;
-
-					Integer reportId = Integer.parseInt(idLine.substring(1));
+					Integer reportId = Integer.parseInt(reader.readLine());
 
 					StringBuilder stringBuilder = new StringBuilder();
 
@@ -243,6 +242,23 @@ public class CommonMethods {
 		}
 
 		return commonJson;
+
+	}
+
+	public static String toJson(Object src) {
+
+		return gson.toJson(src);
+
+	}
+
+	public static <T> T fromJson(String json, Class<T> classOfT) throws Exception {
+
+		T result = gson.fromJson(json, classOfT);
+
+		if (result == null)
+			throw new Exception();
+
+		return result;
 
 	}
 

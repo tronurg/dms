@@ -1,9 +1,11 @@
 package com.ogya.dms.core.intf.handles.impl;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ogya.dms.commons.DmsPackingFactory;
+import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.intf.handles.ListHandle;
 
 public class ListHandleImpl implements ListHandle {
@@ -11,9 +13,9 @@ public class ListHandleImpl implements ListHandle {
 	@JsonProperty("a")
 	private final Integer listCode;
 	@JsonProperty("b")
-	private final byte[] payload;
+	private final String payload;
 
-	public ListHandleImpl(Integer listCode, byte[] payload) {
+	public ListHandleImpl(Integer listCode, String payload) {
 
 		this.listCode = listCode;
 		this.payload = payload;
@@ -27,14 +29,15 @@ public class ListHandleImpl implements ListHandle {
 
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> List<T> getList(Class<T> elementType) {
 
 		try {
 
-			// TODO: Conversion
-
-			return DmsPackingFactory.unpackList(payload, elementType);
+			return Arrays.asList((T[]) CommonMethods.fromJson(
+					CommonMethods.convertListJsonFromCommon(payload, elementType.getSimpleName()),
+					Array.newInstance(elementType, 0).getClass()));
 
 		} catch (Exception e) {
 

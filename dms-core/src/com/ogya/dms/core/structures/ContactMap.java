@@ -11,6 +11,10 @@ public class ContactMap {
 	@JsonProperty("c")
 	public String name;
 
+	public ContactMap() {
+		super();
+	}
+
 	public ContactMap(Long refId, String uuid, String name) {
 		this.refId = refId;
 		this.uuid = uuid;

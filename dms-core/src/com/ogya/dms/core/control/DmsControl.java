@@ -3203,16 +3203,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public ObjectHandle createObjectHandle(Object object, Integer objectCode) {
 
-		return new ObjectHandleImpl(objectCode, DmsPackingFactory.pack(object));
+		return new ObjectHandleImpl(objectCode, CommonMethods.toJson(object));
 
 	}
 
 	@Override
 	public <T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode) {
 
-		// TODO: Conversion
-
-		return new ListHandleImpl(listCode, DmsPackingFactory.pack(list));
+		return new ListHandleImpl(listCode,
+				CommonMethods.convertListJsonToCommon(CommonMethods.toJson(list), elementType.getSimpleName()));
 
 	}
 

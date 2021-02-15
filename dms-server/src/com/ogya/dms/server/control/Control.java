@@ -173,7 +173,7 @@ public class Control implements TcpManagerListener, ModelListener {
 				} else if (poller.pollin(pollInproc)) {
 
 					String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
-					String message = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					byte[] message = inprocSocket.recv(ZMQ.DONTWAIT);
 
 					try {
 

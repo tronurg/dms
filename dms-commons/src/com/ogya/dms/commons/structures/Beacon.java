@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Beacon {
 
 	@JsonProperty("a")
-	public final String uuid;
+	public String uuid;
 	@JsonProperty("b")
 	public String name;
 	@JsonProperty("c")
@@ -25,6 +25,10 @@ public class Beacon {
 	public List<InetAddress> remoteInterfaces;
 	@JsonProperty("i")
 	public List<InetAddress> localInterfaces;
+
+	public Beacon() {
+		super();
+	}
 
 	public Beacon(String uuid) {
 

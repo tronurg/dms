@@ -177,7 +177,7 @@ public class DmsClient {
 
 				} else if (poller.pollin(pollInproc)) {
 
-					String sentMessage = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					byte[] sentMessage = inprocSocket.recv(ZMQ.DONTWAIT);
 					dealerSocket.send(sentMessage, ZMQ.DONTWAIT);
 
 				}
