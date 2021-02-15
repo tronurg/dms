@@ -10,9 +10,9 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
-import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;

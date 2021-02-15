@@ -21,9 +21,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
-import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.model.intf.ModelListener;
 

@@ -26,8 +26,8 @@ import javax.swing.event.AncestorListener;
 
 import org.hibernate.HibernateException;
 
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
-import com.ogya.dms.commons.structures.DmsPackingFactory;
 import com.ogya.dms.core.common.AudioCenter;
 import com.ogya.dms.core.common.AudioCenter.AudioCenterListener;
 import com.ogya.dms.core.common.CommonConstants;
@@ -290,7 +290,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude,
-			String secretId) throws Exception {
+			String secretId) {
 
 		if (!model.isServerConnected())
 			return;
@@ -663,15 +663,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		try {
-
-			dmsClient.sendMessage(copyMessage, receiverUuid, message.getId());
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
+		dmsClient.sendMessage(copyMessage, receiverUuid, message.getId());
 
 	}
 
@@ -1663,16 +1655,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				try {
-
-					sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
-							identity.getLongitude(), identity.getSecretId());
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
+				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
+						identity.getLongitude(), identity.getSecretId());
 
 				dmsClient.claimStartInfo();
 
@@ -2003,7 +1987,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, comment, null, null, null, null);
 
-			} catch (Exception e) {
+			} catch (HibernateException e) {
 
 				e.printStackTrace();
 
@@ -2035,7 +2019,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, null, newIdentity.getStatus(), null, null, null);
 
-			} catch (Exception e) {
+			} catch (HibernateException e) {
 
 				e.printStackTrace();
 
@@ -2085,7 +2069,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					dmsClient.feedMessageStatus(MessageStatus.READ, newMessage.getContact().getUuid(),
 							newMessage.getMessageRefId());
 
-				} catch (Exception e) {
+				} catch (HibernateException e) {
 
 					e.printStackTrace();
 
@@ -2137,7 +2121,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					}
 
-				} catch (Exception e) {
+				} catch (HibernateException e) {
 
 					e.printStackTrace();
 
@@ -2770,30 +2754,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void addIpClicked(String... ip) {
 
-		try {
-
-			dmsClient.addRemoteIps(ip);
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
+		dmsClient.addRemoteIps(ip);
 
 	}
 
 	@Override
 	public void removeIpClicked(String... ip) {
 
-		try {
-
-			dmsClient.removeRemoteIps(ip);
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
+		dmsClient.removeRemoteIps(ip);
 
 	}
 
@@ -3018,7 +2986,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, null, null, lattitude, longitude, null);
 
-			} catch (Exception e) {
+			} catch (HibernateException e) {
 
 				e.printStackTrace();
 
@@ -3075,7 +3043,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				sendBeacon(null, null, null, null, null, finalSecretId);
 
-			} catch (Exception e) {
+			} catch (HibernateException e) {
 
 				e.printStackTrace();
 
@@ -3093,20 +3061,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			Runnable task = () -> {
-
-				try {
-
-					dmsClient.addRemoteIps(Arrays.stream(remoteIps).filter(remoteIp -> remoteIp != null)
-							.map(remoteIp -> remoteIp.getHostAddress()).toArray(String[]::new));
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
-
-			};
+			Runnable task = () -> dmsClient.addRemoteIps(Arrays.stream(remoteIps).filter(remoteIp -> remoteIp != null)
+					.map(remoteIp -> remoteIp.getHostAddress()).toArray(String[]::new));
 
 			if (model.isServerConnected())
 				task.run();
@@ -3122,19 +3078,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			Runnable task = () -> {
-
-				try {
-
-					dmsClient.removeRemoteIps();
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
-
-			};
+			Runnable task = () -> dmsClient.removeRemoteIps();
 
 			if (model.isServerConnected())
 				task.run();
@@ -3280,14 +3224,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws Exception {
+	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws IOException {
 
 		return sendMessageToContacts(messageHandle, contactIds, null);
 
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws Exception {
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws IOException {
 
 		return sendMessageToGroup(messageHandle, groupId, null);
 
@@ -3295,7 +3239,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	@Override
 	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules)
-			throws Exception {
+			throws IOException {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3317,7 +3261,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	@Override
 	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules)
-			throws Exception {
+			throws IOException {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3342,7 +3286,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules)
-			throws Exception {
+			throws IOException {
 
 		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
 

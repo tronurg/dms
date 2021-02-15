@@ -1,4 +1,4 @@
-package com.ogya.dms.commons.structures;
+package com.ogya.dms.commons;
 
 import java.net.InetAddress;
 import java.util.List;
@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ogya.dms.commons.structures.Beacon;
 
 public class DmsPackingFactory {
 
@@ -70,7 +71,7 @@ public class DmsPackingFactory {
 
 	}
 
-	private abstract class BeaconRemoteMixin {
+	private static abstract class BeaconRemoteMixin {
 
 		@JsonIgnore
 		public List<InetAddress> remoteInterfaces;

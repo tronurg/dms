@@ -11,7 +11,6 @@
 	<classpathentry kind="lib" path="lib/db/hibernate-commons-annotations-5.1.0.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate-core-5.4.3.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/istack-commons-runtime-3.0.7.jar"/>
-	<classpathentry kind="lib" path="lib/db/jackson-annotations-2.10.2.jar"/>
 	<classpathentry kind="lib" path="lib/db/jandex-2.0.5.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/javassist-3.24.0-GA.jar"/>
 	<classpathentry kind="lib" path="lib/db/javax.activation-api-1.2.0.jar"/>
@@ -25,6 +24,7 @@
 	<classpathentry kind="lib" path="lib/jeromq-0.5.2.jar"/>
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
 	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.21.jar"/>
+	<classpathentry kind="lib" path="lib/db/jackson-annotations-2.12.1.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dms-commons"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

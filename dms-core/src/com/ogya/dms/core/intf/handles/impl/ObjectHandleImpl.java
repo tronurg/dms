@@ -1,7 +1,7 @@
 package com.ogya.dms.core.intf.handles.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ogya.dms.commons.structures.DmsPackingFactory;
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
 
 public class ObjectHandleImpl implements ObjectHandle {

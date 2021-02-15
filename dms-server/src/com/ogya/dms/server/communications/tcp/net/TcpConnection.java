@@ -102,11 +102,7 @@ final class TcpConnection {
 
 			}
 
-			boolean result = sendCheck.get();
-
-			messageOutputStream.flush();
-
-			return result;
+			return true;
 
 		} catch (Exception e) {
 

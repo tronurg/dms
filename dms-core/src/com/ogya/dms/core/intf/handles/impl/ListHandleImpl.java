@@ -3,7 +3,7 @@ package com.ogya.dms.core.intf.handles.impl;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ogya.dms.commons.structures.DmsPackingFactory;
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.core.intf.handles.ListHandle;
 
 public class ListHandleImpl implements ListHandle {
