@@ -5,10 +5,8 @@ import java.util.List;
 
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ogya.dms.commons.structures.Beacon;
@@ -17,7 +15,7 @@ public class DmsPackingFactory {
 
 	private static ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory())
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
+			.setSerializationInclusion(Include.NON_NULL);
 
 	private static ObjectMapper objectMapperRemote = objectMapper.copy().addMixIn(Beacon.class,
 			BeaconRemoteMixin.class);
