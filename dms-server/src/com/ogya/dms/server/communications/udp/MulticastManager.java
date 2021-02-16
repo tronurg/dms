@@ -64,7 +64,7 @@ public class MulticastManager {
 				DatagramPacket sendPacket = new DatagramPacket(encryptedDataWithSuffix, encryptedDataWithSuffix.length,
 						multicastAddress);
 
-				getMulticastSocket().send(sendPacket);
+				send(sendPacket);
 
 				if (unicastIps.isEmpty())
 					return;
@@ -76,17 +76,31 @@ public class MulticastManager {
 					DatagramPacket unicastSendPacket = new DatagramPacket(encryptedDataWithSuffix,
 							encryptedDataWithSuffix.length, new InetSocketAddress(unicastIp, multicastPort));
 
-					getMulticastSocket().send(unicastSendPacket);
+					send(unicastSendPacket);
 
 				}
 
 			} catch (Exception e) {
 
-				closeMulticastSocket();
-
 			}
 
 		});
+
+	}
+
+	private void send(DatagramPacket packet) throws IOException {
+
+		try {
+
+			getMulticastSocket().send(packet);
+
+		} catch (IOException e) {
+
+			closeMulticastSocket();
+
+			throw e;
+
+		}
 
 	}
 

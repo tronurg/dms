@@ -99,7 +99,7 @@ public class CommonMethods {
 
 				try (BufferedReader reader = Files.newBufferedReader(path)) {
 
-					Integer reportId = Integer.parseInt(reader.readLine());
+					Integer reportId = Integer.parseInt(reader.readLine().replace("\uFEFF", ""));
 
 					StringBuilder stringBuilder = new StringBuilder();
 

@@ -203,7 +203,7 @@ public final class TcpServer implements Runnable {
 
 			disconnectedToListeners(id);
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 
 		}
 

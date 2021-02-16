@@ -22,12 +22,13 @@ final class TcpConnection {
 
 	private final DataOutputStream messageOutputStream;
 
-	TcpConnection(Socket socket, MessageListener messageListener) throws IOException {
+	TcpConnection(Socket socket, MessageListener messageListener) throws Exception {
 
 		this.socket = socket;
 		this.messageListener = messageListener;
 
-		messageOutputStream = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+		messageOutputStream = new DataOutputStream(
+				new BufferedOutputStream(Encryption.newCompressingAndEncryptingOutputStream(socket.getOutputStream())));
 
 	}
 
@@ -39,8 +40,8 @@ final class TcpConnection {
 
 	void listen() {
 
-		try (DataInputStream messageInputStream = new DataInputStream(
-				new BufferedInputStream(socket.getInputStream()))) {
+		try (DataInputStream messageInputStream = new DataInputStream(new BufferedInputStream(
+				Encryption.newDecryptingAndDecompressingInputStream(socket.getInputStream())))) {
 
 			while (!socket.isClosed()) {
 
@@ -49,10 +50,10 @@ final class TcpConnection {
 
 				switch (messageType) {
 				case HEADER_BYTE:
-					byte[] messageBytes = new byte[messageLength];
-					messageInputStream.read(messageBytes);
+					byte[] message = new byte[messageLength];
+					messageInputStream.read(message);
 					try {
-						messageListener.messageReceived(Encryption.decryptAndDecompress(messageBytes));
+						messageListener.messageReceived(message);
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -66,7 +67,7 @@ final class TcpConnection {
 
 			}
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 
 		}
 
@@ -76,9 +77,7 @@ final class TcpConnection {
 
 		try {
 
-			byte[] messageBytes = Encryption.compressAndEncrypt(message);
-
-			int messageLength = messageBytes.length;
+			int messageLength = message.length;
 
 			if (chunkSize <= 0)
 				chunkSize = messageLength;
@@ -93,7 +92,7 @@ final class TcpConnection {
 
 				int len = Math.min(chunkSize, messageLength - i);
 
-				messageOutputStream.write(messageBytes, i, len);
+				messageOutputStream.write(message, i, len);
 
 				messageOutputStream.flush();
 

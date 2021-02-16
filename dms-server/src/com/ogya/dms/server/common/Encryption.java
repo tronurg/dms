@@ -1,58 +1,68 @@
 package com.ogya.dms.server.common;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-import com.github.luben.zstd.Zstd;
-import com.google.crypto.tink.Aead;
+import com.github.luben.zstd.ZstdInputStream;
+import com.github.luben.zstd.ZstdOutputStream;
 import com.google.crypto.tink.CleartextKeysetHandle;
 import com.google.crypto.tink.JsonKeysetReader;
 import com.google.crypto.tink.KeysetHandle;
 import com.google.crypto.tink.StreamingAead;
-import com.google.crypto.tink.config.TinkConfig;
+import com.google.crypto.tink.streamingaead.StreamingAeadConfig;
 
 public class Encryption {
 
-	private static KeysetHandle keysetHandle;
-	private static Aead aead;
 	private static StreamingAead streamingAead;
 
-	public static byte[] compressAndEncrypt(byte[] data) throws Exception {
+	public static OutputStream newCompressingAndEncryptingOutputStream(OutputStream outputStream) throws Exception {
 
-		return encrypt(Zstd.compress(data));
+		return new ZstdOutputStream(getStreamingAead().newEncryptingStream(outputStream, new byte[0]));
+
+	}
+
+	public static InputStream newDecryptingAndDecompressingInputStream(InputStream inputStream) throws Exception {
+
+		return new ZstdInputStream(getStreamingAead().newDecryptingStream(inputStream, new byte[0]));
 
 	}
 
 	public static byte[] encrypt(byte[] data) throws Exception {
 
-		return getAead().encrypt(data, null);
+		try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+				OutputStream outputStream = getStreamingAead().newEncryptingStream(out, new byte[0])) {
 
-	}
+			outputStream.write(data);
 
-	public static byte[] decryptAndDecompress(byte[] encryptedData) throws Exception {
+			outputStream.flush();
 
-		byte[] compressedData = decrypt(encryptedData);
+			return out.toByteArray();
 
-		return Zstd.decompress(compressedData, (int) Zstd.decompressedSize(compressedData));
+		}
 
 	}
 
 	public static byte[] decrypt(byte[] encryptedData) throws Exception {
 
-		return getAead().decrypt(encryptedData, null);
+		try (InputStream inputStream = getStreamingAead().newDecryptingStream(new ByteArrayInputStream(encryptedData),
+				new byte[0]); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
-	}
+			int b;
 
-	private static Aead getAead() throws Exception {
+			while ((b = inputStream.read()) != -1) {
 
-		if (aead == null) {
+				out.write(b);
 
-			TinkConfig.register();
+			}
 
-			aead = getKeysetHandle().getPrimitive(Aead.class);
+			out.flush();
+
+			return out.toByteArray();
 
 		}
-
-		return aead;
 
 	}
 
@@ -60,25 +70,16 @@ public class Encryption {
 
 		if (streamingAead == null) {
 
-			TinkConfig.register();
+			StreamingAeadConfig.register();
 
-			streamingAead = getKeysetHandle().getPrimitive(StreamingAead.class);
+			KeysetHandle keysetHandle = CleartextKeysetHandle
+					.read(JsonKeysetReader.withFile(new File("./sec/dms.key")));
+
+			streamingAead = keysetHandle.getPrimitive(StreamingAead.class);
 
 		}
 
 		return streamingAead;
-
-	}
-
-	private static KeysetHandle getKeysetHandle() throws Exception {
-
-		if (keysetHandle == null) {
-
-			keysetHandle = CleartextKeysetHandle.read(JsonKeysetReader.withFile(new File("./sec/dms.key")));
-
-		}
-
-		return keysetHandle;
 
 	}
 

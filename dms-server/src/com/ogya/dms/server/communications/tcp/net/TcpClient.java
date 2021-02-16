@@ -1,6 +1,5 @@
 package com.ogya.dms.server.communications.tcp.net;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.file.Path;
@@ -193,7 +192,7 @@ public final class TcpClient implements MessageListener, Runnable {
 
 			disconnectedToListeners();
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 
 			couldNotConnectToListeners();
 

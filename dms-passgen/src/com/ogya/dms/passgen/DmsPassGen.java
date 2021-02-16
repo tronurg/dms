@@ -7,8 +7,8 @@ import java.security.GeneralSecurityException;
 import com.google.crypto.tink.CleartextKeysetHandle;
 import com.google.crypto.tink.JsonKeysetWriter;
 import com.google.crypto.tink.KeysetHandle;
-import com.google.crypto.tink.aead.AeadKeyTemplates;
-import com.google.crypto.tink.config.TinkConfig;
+import com.google.crypto.tink.streamingaead.AesCtrHmacStreamingKeyManager;
+import com.google.crypto.tink.streamingaead.StreamingAeadConfig;
 
 public class DmsPassGen {
 
@@ -16,9 +16,10 @@ public class DmsPassGen {
 
 		try {
 
-			TinkConfig.register();
+			StreamingAeadConfig.register();
 
-			KeysetHandle keysetHandle = KeysetHandle.generateNew(AeadKeyTemplates.AES128_GCM);
+			KeysetHandle keysetHandle = KeysetHandle
+					.generateNew(AesCtrHmacStreamingKeyManager.aes128CtrHmacSha2564KBTemplate());
 
 			CleartextKeysetHandle.write(keysetHandle, JsonKeysetWriter.withFile(new File("dms.key")));
 
