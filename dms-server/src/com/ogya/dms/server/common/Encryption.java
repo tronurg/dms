@@ -39,6 +39,8 @@ public class Encryption {
 
 			outputStream.flush();
 
+			outputStream.close();
+
 			return out.toByteArray();
 
 		}
