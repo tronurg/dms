@@ -17,8 +17,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -3311,76 +3314,109 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public Future<Long> sendGuiMessageToContact(String message, Long contactId) {
 
-		return taskQueue.submit(() -> {
+		return newUncancellableFuture(taskQueue.submit(() -> {
 
 			return sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, null, 1);
 
-		});
+		}));
 
 	}
 
 	@Override
 	public Future<Long> sendGuiMessageToGroup(String message, Long groupId) {
 
-		return taskQueue.submit(() -> {
+		return newUncancellableFuture(taskQueue.submit(() -> {
 
 			return sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, null, 1);
 
-		});
+		}));
 
 	}
 
 	@Override
 	public Future<Long> sendGuiFileToContact(Path path, Long contactId) {
 
-		return taskQueue.submit(() -> {
+		return newUncancellableFuture(taskQueue.submit(() -> {
 
 			Path dstFile = copyFileToSendFolder(path);
 
 			return sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE, null, null, 1);
 
-		});
+		}));
 
 	}
 
 	@Override
 	public Future<Long> sendGuiFileToGroup(Path path, Long groupId) {
 
-		return taskQueue.submit(() -> {
+		return newUncancellableFuture(taskQueue.submit(() -> {
 
 			Path dstFile = copyFileToSendFolder(path);
 
 			return sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, null, 1);
 
-		});
+		}));
 
 	}
 
 	@Override
 	public Future<Long> sendGuiReportToContact(Integer reportId, Path path, Long contactId) {
 
-		return taskQueue.submit(() -> {
+		return newUncancellableFuture(taskQueue.submit(() -> {
 
 			Path dstFile = copyFileToSendFolder(path);
 
 			return sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE,
 					MessageSubType.FILE_REPORT, reportId, 1);
 
-		});
+		}));
 
 	}
 
 	@Override
 	public Future<Long> sendGuiReportToGroup(Integer reportId, Path path, Long groupId) {
 
-		return taskQueue.submit(() -> {
+		return newUncancellableFuture(taskQueue.submit(() -> {
 
 			Path dstFile = copyFileToSendFolder(path);
 
 			return sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE,
 					MessageSubType.FILE_REPORT, reportId, 1);
 
-		});
+		}));
+
+	}
+
+	private <T> Future<T> newUncancellableFuture(Future<T> future) {
+
+		return new Future<T>() {
+
+			@Override
+			public boolean cancel(boolean arg0) {
+				return false;
+			}
+
+			@Override
+			public T get() throws InterruptedException, ExecutionException {
+				return future.get();
+			}
+
+			@Override
+			public T get(long arg0, TimeUnit arg1) throws InterruptedException, ExecutionException, TimeoutException {
+				return future.get(arg0, arg1);
+			}
+
+			@Override
+			public boolean isCancelled() {
+				return future.isCancelled();
+			}
+
+			@Override
+			public boolean isDone() {
+				return future.isDone();
+			}
+
+		};
 
 	}
 

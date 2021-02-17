@@ -5,9 +5,12 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +25,9 @@ public class MulticastManager {
 
 	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
+	private static final byte HEADER_MULTICAST = 0;
+	private static final byte HEADER_UNICAST = 1;
+
 	private static final int PACKET_SIZE = 128;
 	private static final int SNDBUF_SIZE = (int) Math.pow(2, 13);
 	private static final int RCVBUF_SIZE = (int) Math.pow(2, 21);
@@ -30,7 +36,8 @@ public class MulticastManager {
 	private final int multicastPort;
 	private final InetSocketAddress multicastAddress;
 
-	private final MulticastManagerListener listener;
+	private final List<MulticastManagerListener> listeners = Collections
+			.synchronizedList(new ArrayList<MulticastManagerListener>());
 
 	private MulticastSocket multicastSocket;
 
@@ -44,7 +51,7 @@ public class MulticastManager {
 		this.multicastPort = multicastPort;
 		this.multicastAddress = new InetSocketAddress(multicastGroup, multicastPort);
 
-		this.listener = listener;
+		listeners.add(listener);
 
 		new Thread(this::receive).start();
 
@@ -58,10 +65,13 @@ public class MulticastManager {
 
 			try {
 
-				byte[] encryptedData = Encryption.encrypt(dataStr.getBytes(CHARSET));
-				byte[] encryptedDataWithSuffix = Arrays.copyOf(encryptedData, encryptedData.length + 1);
+				byte[] dataBytes = dataStr.getBytes(CHARSET);
 
-				DatagramPacket sendPacket = new DatagramPacket(encryptedDataWithSuffix, encryptedDataWithSuffix.length,
+				ByteBuffer multicastDataBuffer = ByteBuffer.allocate(dataBytes.length + 1).put(HEADER_MULTICAST)
+						.put(dataBytes);
+				byte[] encryptedMulticastData = Encryption.encrypt(multicastDataBuffer.array());
+
+				DatagramPacket sendPacket = new DatagramPacket(encryptedMulticastData, encryptedMulticastData.length,
 						multicastAddress);
 
 				send(sendPacket);
@@ -69,12 +79,14 @@ public class MulticastManager {
 				if (unicastIps.isEmpty())
 					return;
 
-				encryptedDataWithSuffix[encryptedDataWithSuffix.length - 1] = 1;
+				ByteBuffer unicastDataBuffer = ByteBuffer.allocate(dataBytes.length + 1).put(HEADER_UNICAST)
+						.put(dataBytes);
+				byte[] encryptedUnicastData = Encryption.encrypt(unicastDataBuffer.array());
 
 				for (String unicastIp : unicastIps) {
 
-					DatagramPacket unicastSendPacket = new DatagramPacket(encryptedDataWithSuffix,
-							encryptedDataWithSuffix.length, new InetSocketAddress(unicastIp, multicastPort));
+					DatagramPacket unicastSendPacket = new DatagramPacket(encryptedUnicastData,
+							encryptedUnicastData.length, new InetSocketAddress(unicastIp, multicastPort));
 
 					send(unicastSendPacket);
 
@@ -172,15 +184,17 @@ public class MulticastManager {
 
 				DatagramPacket receivePacket = receiveQueue.take();
 
-				byte[] encryptedDataWithSuffix = Arrays.copyOf(receivePacket.getData(), receivePacket.getLength());
-				boolean isUnicast = encryptedDataWithSuffix[encryptedDataWithSuffix.length - 1] == 1;
+				ByteBuffer dataBuffer = ByteBuffer
+						.wrap(Encryption.decrypt(receivePacket.getData(), receivePacket.getLength()));
 
-				byte[] encryptedData = Arrays.copyOf(encryptedDataWithSuffix, encryptedDataWithSuffix.length - 1);
+				boolean isUnicast = dataBuffer.get() == HEADER_UNICAST;
+				byte[] dataBytes = new byte[dataBuffer.remaining()];
+				dataBuffer.get(dataBytes);
+				String dataStr = new String(dataBytes, CHARSET);
 
 				InetAddress remoteAddress = receivePacket.getAddress();
-				String data = new String(Encryption.decrypt(encryptedData), CHARSET);
 
-				listener.udpMessageReceived(remoteAddress, data, isUnicast);
+				listeners.forEach(listener -> listener.udpMessageReceived(remoteAddress, dataStr, isUnicast));
 
 			} catch (Exception e) {
 

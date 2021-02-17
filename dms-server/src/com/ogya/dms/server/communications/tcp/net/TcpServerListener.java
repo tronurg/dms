@@ -4,6 +4,10 @@ import java.nio.file.Path;
 
 public interface TcpServerListener {
 
+	void serverStarted();
+
+	void serverFailed();
+
 	void connected(int id);
 
 	void disconnected(int id);

@@ -140,6 +140,8 @@ public final class TcpClient implements MessageListener, Runnable {
 
 		tcpConnection.close();
 
+		tcpConnectionRef.set(null);
+
 	}
 
 	private void connectedToListeners() {

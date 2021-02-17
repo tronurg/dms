@@ -15,10 +15,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class TcpServer implements Runnable {
 
-	private final ServerSocket serverSocket;
+	private final int port;
+
+	private final AtomicReference<ServerSocket> serverSocketRef = new AtomicReference<ServerSocket>(null);
 
 	private final AtomicInteger idRef = new AtomicInteger(0);
 
@@ -42,9 +45,9 @@ public final class TcpServer implements Runnable {
 
 	});
 
-	public TcpServer(int port) throws IOException {
+	public TcpServer(int port) {
 
-		serverSocket = new ServerSocket(port);
+		this.port = port;
 
 	}
 
@@ -54,10 +57,34 @@ public final class TcpServer implements Runnable {
 
 	}
 
-	public void acceptConnection() {
+	public void start() {
 
-		if (serverSocket.isClosed())
+		if (isAlive())
 			return;
+
+		try {
+
+			serverSocketRef.set(new ServerSocket(port));
+
+			serverStartedToListeners();
+
+		} catch (IOException e) {
+
+			serverFailedToListeners();
+
+		}
+
+	}
+
+	public boolean isAlive() {
+
+		ServerSocket serverSocket = serverSocketRef.get();
+
+		return serverSocket != null && !serverSocket.isClosed();
+
+	}
+
+	public void acceptConnection() {
 
 		new Thread(this).start();
 
@@ -139,6 +166,11 @@ public final class TcpServer implements Runnable {
 
 	public void close() {
 
+		ServerSocket serverSocket = serverSocketRef.get();
+
+		if (serverSocket == null)
+			return;
+
 		try {
 
 			serverSocket.close();
@@ -146,6 +178,20 @@ public final class TcpServer implements Runnable {
 		} catch (IOException e) {
 
 		}
+
+		serverSocketRef.set(null);
+
+	}
+
+	private void serverStartedToListeners() {
+
+		taskQueue.execute(() -> listeners.forEach(listener -> listener.serverStarted()));
+
+	}
+
+	private void serverFailedToListeners() {
+
+		taskQueue.execute(() -> listeners.forEach(listener -> listener.serverFailed()));
 
 	}
 
@@ -186,7 +232,7 @@ public final class TcpServer implements Runnable {
 	@Override
 	public void run() {
 
-		try (Socket socket = serverSocket.accept()) {
+		try (Socket socket = serverSocketRef.get().accept()) {
 
 			socket.setKeepAlive(false);
 
@@ -204,6 +250,8 @@ public final class TcpServer implements Runnable {
 			disconnectedToListeners(id);
 
 		} catch (Exception e) {
+
+			serverFailedToListeners();
 
 		}
 

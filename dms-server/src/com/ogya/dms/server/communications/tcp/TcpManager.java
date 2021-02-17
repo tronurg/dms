@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -51,7 +52,7 @@ public class TcpManager implements TcpServerListener {
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo) throws IOException {
+	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, TcpManagerListener listener) {
 
 		this.serverPort = serverPort;
 		this.clientPortFrom = clientPortFrom;
@@ -59,17 +60,13 @@ public class TcpManager implements TcpServerListener {
 
 		nextPort.set(clientPortFrom);
 
+		listeners.add(listener);
+
 		tcpServer = new TcpServer(serverPort);
 
 		tcpServer.addListener(this);
 
-		tcpServer.acceptConnection();
-
-	}
-
-	public void addListener(TcpManagerListener listener) {
-
-		listeners.add(listener);
+		tcpServer.start();
 
 	}
 
@@ -360,6 +357,35 @@ public class TcpManager implements TcpServerListener {
 	private void messageReceivedToListeners(byte[] message, String dmsUuid) {
 
 		listeners.forEach(e -> e.messageReceivedFromRemoteServer(message, dmsUuid));
+
+	}
+
+	@Override
+	public void serverStarted() {
+
+		tcpServer.acceptConnection();
+
+	}
+
+	@Override
+	public void serverFailed() {
+
+		new Thread(() -> {
+
+			try {
+
+				Thread.sleep(CommonConstants.CONN_TIMEOUT_MS);
+
+			} catch (InterruptedException e) {
+
+			}
+
+			if (tcpServer.isAlive())
+				tcpServer.acceptConnection();
+			else
+				tcpServer.start();
+
+		}).start();
 
 	}
 

@@ -1,6 +1,5 @@
 package com.ogya.dms.server.control;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
@@ -44,7 +43,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final MulticastManager multicastManager = new MulticastManager(multicastGroup, multicastPort,
 			this::receiveUdpMessage);
 
-	private TcpManager tcpManager;
+	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 
 	private final ZContext context = new ZContext();
 
@@ -55,13 +54,6 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final Object publishSyncObj = new Object();
 
 	private Control() {
-
-		// Try to initialize TcpManager
-		try {
-			getTcpManager();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
 
 	}
 
@@ -109,35 +101,13 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
-	private synchronized TcpManager getTcpManager() throws IOException {
-
-		if (tcpManager == null) {
-
-			tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo);
-
-			tcpManager.addListener(this);
-
-		}
-
-		return tcpManager;
-
-	}
-
 	private void receiveUdpMessage(InetAddress senderAddress, String message, boolean isUnicast) {
 
 		if (Objects.equals(message, DMS_UUID))
 			return;
 
-		try {
-
-			getTcpManager().addConnection(message, senderAddress,
-					message.compareTo(DMS_UUID) < 0 ? TcpConnectionType.SERVER : TcpConnectionType.CLIENT);
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
+		tcpManager.addConnection(message, senderAddress,
+				message.compareTo(DMS_UUID) < 0 ? TcpConnectionType.SERVER : TcpConnectionType.CLIENT);
 
 		if (isUnicast)
 			taskQueue.execute(() -> model.addRemoteIps(senderAddress.getHostAddress()));
@@ -280,30 +250,14 @@ public class Control implements TcpManagerListener, ModelListener {
 	public void sendToRemoteServer(String dmsUuid, byte[] message, AtomicBoolean sendStatus,
 			Consumer<Integer> progressMethod, long timeout, InetAddress useLocalAddress) {
 
-		try {
-
-			getTcpManager().sendMessageToServer(dmsUuid, message, sendStatus, progressMethod, timeout, useLocalAddress);
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
+		tcpManager.sendMessageToServer(dmsUuid, message, sendStatus, progressMethod, timeout, useLocalAddress);
 
 	}
 
 	@Override
 	public void sendToAllRemoteServers(byte[] message) {
 
-		try {
-
-			getTcpManager().sendMessageToAllServers(message);
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
+		tcpManager.sendMessageToAllServers(message);
 
 	}
 

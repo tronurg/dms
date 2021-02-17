@@ -45,10 +45,11 @@ public class Encryption {
 
 	}
 
-	public static byte[] decrypt(byte[] encryptedData) throws Exception {
+	public static byte[] decrypt(byte[] encryptedData, int length) throws Exception {
 
-		try (InputStream inputStream = getStreamingAead().newDecryptingStream(new ByteArrayInputStream(encryptedData),
-				new byte[0]); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+		try (InputStream inputStream = getStreamingAead()
+				.newDecryptingStream(new ByteArrayInputStream(encryptedData, 0, length), new byte[0]);
+				ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
 			int b;
 
