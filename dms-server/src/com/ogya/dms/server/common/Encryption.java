@@ -69,7 +69,7 @@ public class Encryption {
 
 	}
 
-	private static StreamingAead getStreamingAead() throws Exception {
+	private synchronized static StreamingAead getStreamingAead() throws Exception {
 
 		if (streamingAead == null) {
 
