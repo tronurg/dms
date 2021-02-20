@@ -1,29 +1,51 @@
 package com.ogya.dms.passgen;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 
-import com.google.crypto.tink.CleartextKeysetHandle;
-import com.google.crypto.tink.JsonKeysetWriter;
-import com.google.crypto.tink.KeysetHandle;
-import com.google.crypto.tink.streamingaead.AesCtrHmacStreamingKeyManager;
-import com.google.crypto.tink.streamingaead.StreamingAeadConfig;
+import javax.crypto.KeyGenerator;
+
+import sun.security.tools.keytool.CertAndKeyGen;
+import sun.security.x509.X500Name;
 
 public class DmsPassGen {
 
+	private static final char[] PASSWORD = "dms".toCharArray();
+
 	public static void main(String[] args) {
 
-		try {
+		try (OutputStream outputStream = Files.newOutputStream(Paths.get("./dms.p12"))) {
 
-			StreamingAeadConfig.register();
+			KeyStore keyStore = KeyStore.getInstance("PKCS12");
+			keyStore.load(null, null);
 
-			KeysetHandle keysetHandle = KeysetHandle
-					.generateNew(AesCtrHmacStreamingKeyManager.aes128CtrHmacSha2564KBTemplate());
+			// Secret key
+			KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+			keyGen.init(128);
+			Key secretKey = keyGen.generateKey();
+			keyStore.setKeyEntry("secret", secretKey, PASSWORD, null);
+			//
 
-			CleartextKeysetHandle.write(keysetHandle, JsonKeysetWriter.withFile(new File("dms.key")));
+			// Private key and certificate
+			CertAndKeyGen certAndKeyGen = new CertAndKeyGen("RSA", "SHA256WithRSA");
+			certAndKeyGen.generate(1024);
+			Key key = certAndKeyGen.getPrivateKey();
+			X509Certificate cert = certAndKeyGen.getSelfCertificate(new X500Name("CN=ROOT"),
+					Long.MAX_VALUE /* unlimited certificate */);
+			X509Certificate[] chain = new X509Certificate[1];
+			chain[0] = cert;
+			keyStore.setKeyEntry("private", key, PASSWORD, chain);
+			//
 
-		} catch (GeneralSecurityException | IOException e) {
+			keyStore.store(outputStream, PASSWORD);
+
+			outputStream.flush();
+
+		} catch (Exception e) {
 
 		}
 

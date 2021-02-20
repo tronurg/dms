@@ -17,7 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.Encryption;
+import com.ogya.dms.server.common.DmsSecurity;
 import com.ogya.dms.server.communications.intf.MulticastManagerListener;
 import com.ogya.dms.server.factory.DmsFactory;
 
@@ -69,7 +69,7 @@ public class MulticastManager {
 
 				ByteBuffer multicastDataBuffer = ByteBuffer.allocate(dataBytes.length + 1).put(HEADER_MULTICAST)
 						.put(dataBytes);
-				byte[] encryptedMulticastData = Encryption.encrypt(multicastDataBuffer.array());
+				byte[] encryptedMulticastData = DmsSecurity.encrypt(multicastDataBuffer.array());
 
 				DatagramPacket sendPacket = new DatagramPacket(encryptedMulticastData, encryptedMulticastData.length,
 						multicastAddress);
@@ -81,7 +81,7 @@ public class MulticastManager {
 
 				ByteBuffer unicastDataBuffer = ByteBuffer.allocate(dataBytes.length + 1).put(HEADER_UNICAST)
 						.put(dataBytes);
-				byte[] encryptedUnicastData = Encryption.encrypt(unicastDataBuffer.array());
+				byte[] encryptedUnicastData = DmsSecurity.encrypt(unicastDataBuffer.array());
 
 				for (String unicastIp : unicastIps) {
 
@@ -185,7 +185,7 @@ public class MulticastManager {
 				DatagramPacket receivePacket = receiveQueue.take();
 
 				ByteBuffer dataBuffer = ByteBuffer
-						.wrap(Encryption.decrypt(receivePacket.getData(), receivePacket.getLength()));
+						.wrap(DmsSecurity.decrypt(receivePacket.getData(), receivePacket.getLength()));
 
 				boolean isUnicast = dataBuffer.get() == HEADER_UNICAST;
 				byte[] dataBytes = new byte[dataBuffer.remaining()];

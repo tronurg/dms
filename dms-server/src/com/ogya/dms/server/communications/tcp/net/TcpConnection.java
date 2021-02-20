@@ -10,7 +10,8 @@ import java.net.Socket;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.ogya.dms.server.common.Encryption;
+import com.github.luben.zstd.ZstdInputStream;
+import com.github.luben.zstd.ZstdOutputStream;
 
 final class TcpConnection {
 
@@ -28,7 +29,7 @@ final class TcpConnection {
 		this.messageListener = messageListener;
 
 		messageOutputStream = new DataOutputStream(
-				new BufferedOutputStream(Encryption.newCompressingAndEncryptingOutputStream(socket.getOutputStream())));
+				new BufferedOutputStream(new ZstdOutputStream(socket.getOutputStream())));
 
 	}
 
@@ -40,8 +41,8 @@ final class TcpConnection {
 
 	void listen() {
 
-		try (DataInputStream messageInputStream = new DataInputStream(new BufferedInputStream(
-				Encryption.newDecryptingAndDecompressingInputStream(socket.getInputStream())))) {
+		try (DataInputStream messageInputStream = new DataInputStream(
+				new BufferedInputStream(new ZstdInputStream(socket.getInputStream())))) {
 
 			while (!socket.isClosed()) {
 

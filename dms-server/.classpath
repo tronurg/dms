@@ -4,9 +4,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="lib/jeromq-0.5.2.jar" sourcepath="C:/Users/onurg/AppData/Local/Temp/.org.sf.feeling.decompiler1584645144692/source/jeromq-0.5.2-sources.jar"/>
 	<classpathentry kind="lib" path="lib/zstd-jni-1.4.8-4.jar"/>
-	<classpathentry kind="lib" path="lib/sec/json-20201115.jar"/>
-	<classpathentry kind="lib" path="lib/sec/protobuf-java-3.14.0.jar"/>
-	<classpathentry kind="lib" path="lib/sec/tink-1.5.0.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dms-commons"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -12,6 +12,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.ogya.dms.server.common.DmsSecurity;
+
 public final class TcpClient implements MessageListener, Runnable {
 
 	private final InetAddress serverIp;
@@ -179,7 +181,7 @@ public final class TcpClient implements MessageListener, Runnable {
 	@Override
 	public void run() {
 
-		try (Socket socket = new Socket(serverIp, serverPort, localIp, localPort)) {
+		try (Socket socket = DmsSecurity.newSecureSocket(serverIp, serverPort, localIp, localPort)) {
 
 			socket.setKeepAlive(false);
 

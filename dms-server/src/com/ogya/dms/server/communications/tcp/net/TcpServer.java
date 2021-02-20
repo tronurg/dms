@@ -17,6 +17,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.ogya.dms.server.common.DmsSecurity;
+
 public final class TcpServer implements Runnable {
 
 	private final int port;
@@ -64,11 +66,11 @@ public final class TcpServer implements Runnable {
 
 		try {
 
-			serverSocketRef.set(new ServerSocket(port));
+			serverSocketRef.set(DmsSecurity.newSecureServerSocket(port));
 
 			serverStartedToListeners();
 
-		} catch (IOException e) {
+		} catch (Exception e) {
 
 			serverFailedToListeners();
 
