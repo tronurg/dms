@@ -1,7 +1,9 @@
 package com.ogya.dms.commons.structures;
 
 import java.net.InetAddress;
+import java.nio.file.Path;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MessagePojo {
@@ -22,6 +24,9 @@ public class MessagePojo {
 	public Long useTimeout;
 	@JsonProperty("h")
 	public InetAddress useLocalAddress;
+
+	@JsonIgnore
+	public Path attachment;
 
 	public MessagePojo() {
 		super();

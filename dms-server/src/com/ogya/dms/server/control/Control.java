@@ -15,6 +15,8 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
+import com.ogya.dms.commons.DmsMessageFactory;
+import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
@@ -135,10 +137,10 @@ public class Control implements TcpManagerListener, ModelListener {
 
 				if (poller.pollin(pollRouter)) {
 
-					routerSocket.recvStr(ZMQ.DONTWAIT);
-					byte[] messagePojoBytes = routerSocket.recv(ZMQ.DONTWAIT);
+					String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
+					byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
 
-					taskQueue.execute(() -> model.localMessageReceived(messagePojoBytes));
+					taskQueue.execute(() -> model.localMessageReceived(data, userUuid));
 
 				} else if (poller.pollin(pollInproc)) {
 
@@ -240,9 +242,13 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToLocalUser(String receiverUuid, byte[] message) {
+	public void sendToLocalUsers(MessagePojo messagePojo, String... receiverUuids) {
 
-		routerQueue.offer(new SimpleEntry<String, byte[]>(receiverUuid, message));
+		DmsMessageFactory.outFeed(messagePojo, 8192, data -> {
+			for (String receiverUuid : receiverUuids) {
+				routerQueue.offer(new SimpleEntry<String, byte[]>(receiverUuid, data));
+			}
+		});
 
 	}
 

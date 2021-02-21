@@ -10,6 +10,7 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
+import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
@@ -37,6 +38,8 @@ public class DmsClient {
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
+	private final DmsMessageFactory messageFactory;
+
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
 		this.uuid = uuid;
@@ -45,6 +48,8 @@ public class DmsClient {
 		this.dealerPort = commPort;
 
 		this.listener = listener;
+
+		this.messageFactory = new DmsMessageFactory(this::processIncomingMessage);
 
 		start();
 
@@ -173,7 +178,7 @@ public class DmsClient {
 				if (poller.pollin(pollDealer)) {
 
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
-					processIncomingMessage(receivedMessage);
+					messageFactory.inFeed(receivedMessage);
 
 				} else if (poller.pollin(pollInproc)) {
 
@@ -198,7 +203,7 @@ public class DmsClient {
 
 				try {
 
-					inprocSocket.send(DmsPackingFactory.pack(dealerQueue.take()));
+					DmsMessageFactory.outFeed(dealerQueue.take(), 8192, data -> inprocSocket.send(data));
 
 				} catch (InterruptedException e) {
 
@@ -241,11 +246,9 @@ public class DmsClient {
 
 	}
 
-	private void processIncomingMessage(byte[] message) {
+	private void processIncomingMessage(MessagePojo messagePojo) {
 
 		try {
-
-			MessagePojo messagePojo = DmsPackingFactory.unpack(message, MessagePojo.class);
 
 			if (Objects.equals(uuid, messagePojo.senderUuid))
 				return;
@@ -339,8 +342,6 @@ public class DmsClient {
 			}
 
 		} catch (Exception e) {
-
-			e.printStackTrace();
 
 		}
 
