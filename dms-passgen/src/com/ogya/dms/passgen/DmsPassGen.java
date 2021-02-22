@@ -33,12 +33,11 @@ public class DmsPassGen {
 			// Private key and certificate
 			CertAndKeyGen certAndKeyGen = new CertAndKeyGen("RSA", "SHA256WithRSA");
 			certAndKeyGen.generate(1024);
-			Key key = certAndKeyGen.getPrivateKey();
+			Key privateKey = certAndKeyGen.getPrivateKey();
 			X509Certificate cert = certAndKeyGen.getSelfCertificate(new X500Name("CN=ROOT"),
 					Long.MAX_VALUE /* unlimited certificate */);
-			X509Certificate[] chain = new X509Certificate[1];
-			chain[0] = cert;
-			keyStore.setKeyEntry("private", key, PASSWORD, chain);
+			X509Certificate[] chain = new X509Certificate[] { cert };
+			keyStore.setKeyEntry("private", privateKey, PASSWORD, chain);
 			//
 
 			keyStore.store(outputStream, PASSWORD);

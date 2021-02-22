@@ -67,9 +67,13 @@ public class Message {
 	@JsonProperty("e")
 	private MessageSubType messageSubType;
 
-	@Column(name = "content", nullable = false, updatable = false, length = Integer.MAX_VALUE)
+	@Column(name = "content", updatable = false, length = Integer.MAX_VALUE)
 	@JsonProperty("f")
 	private String content;
+
+	@Column(name = "attachment", updatable = false, length = Integer.MAX_VALUE)
+	@JsonProperty("g")
+	private String attachment;
 
 	@Column(name = "message_status", nullable = false)
 	@Convert(converter = MessageStatusConverter.class)
@@ -106,19 +110,19 @@ public class Message {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "ref_message_id", updatable = false)
-	@JsonProperty("g")
+	@JsonProperty("h")
 	private Message refMessage;
 
 	@Transient
-	@JsonProperty("h")
+	@JsonProperty("i")
 	private Long groupRefId;
 
 	@Transient
-	@JsonProperty("i")
+	@JsonProperty("j")
 	private Long contactRefId;
 
 	@Column(name = "message_code", updatable = false)
-	@JsonProperty("j")
+	@JsonProperty("k")
 	private Integer messageCode;
 
 	@Column(name = "api_flag", updatable = false)
@@ -147,6 +151,7 @@ public class Message {
 		this.messageType = message.messageType;
 		this.messageSubType = message.messageSubType;
 		this.content = message.content;
+		this.attachment = message.attachment;
 		this.messageStatus = message.messageStatus;
 		this.waitStatus = message.waitStatus;
 		this.date = message.date;
@@ -215,6 +220,14 @@ public class Message {
 
 	public void setContent(String content) {
 		this.content = content;
+	}
+
+	public String getAttachment() {
+		return attachment;
+	}
+
+	public void setAttachment(String attachment) {
+		this.attachment = attachment;
 	}
 
 	public MessageStatus getMessageStatus() {

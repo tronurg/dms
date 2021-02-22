@@ -1,6 +1,7 @@
 package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
+import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -98,10 +99,14 @@ public class DmsClient {
 
 	}
 
-	public void sendMessage(Message message, String receiverUuid, Long trackingId) {
+	public void sendMessage(Message message, Path attachment, String receiverUuid, Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid, ContentType.MESSAGE,
-				null, trackingId, null, null));
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
+				ContentType.MESSAGE, null, trackingId, null, null);
+
+		messagePojo.attachment = attachment;
+
+		dealerQueue.offer(messagePojo);
 
 	}
 
@@ -149,8 +154,14 @@ public class DmsClient {
 	public void sendTransientMessage(MessageHandleImpl message, Iterable<String> receiverUuids, Long useTrackingId,
 			Long useTimeout, InetAddress useLocalInterface) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(message), uuid, String.join(";", receiverUuids),
-				ContentType.TRANSIENT, null, useTrackingId, useTimeout, useLocalInterface));
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
+				String.join(";", receiverUuids), ContentType.TRANSIENT, null, useTrackingId, useTimeout,
+				useLocalInterface);
+
+		if (message.getFileHandle() != null)
+			messagePojo.attachment = message.getFileHandle().getPath();
+
+		dealerQueue.offer(messagePojo);
 
 	}
 
@@ -285,7 +296,8 @@ public class DmsClient {
 
 			case MESSAGE:
 
-				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class), messagePojo.senderUuid);
+				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class), messagePojo.attachment,
+						messagePojo.senderUuid);
 
 				break;
 
@@ -331,7 +343,7 @@ public class DmsClient {
 			case TRANSIENT:
 
 				transientMessageReceivedToListener(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
-						messagePojo.senderUuid);
+						messagePojo.attachment, messagePojo.senderUuid);
 
 				break;
 
@@ -387,11 +399,11 @@ public class DmsClient {
 
 	}
 
-	private void messageReceivedToListener(final Message message, final String remoteUuid) {
+	private void messageReceivedToListener(final Message message, final Path attachment, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageReceived(message, remoteUuid);
+			listener.messageReceived(message, attachment, remoteUuid);
 
 		});
 
@@ -469,11 +481,12 @@ public class DmsClient {
 
 	}
 
-	private void transientMessageReceivedToListener(final MessageHandleImpl message, final String remoteUuid) {
+	private void transientMessageReceivedToListener(final MessageHandleImpl message, final Path attachment,
+			final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.transientMessageReceived(message, remoteUuid);
+			listener.transientMessageReceived(message, attachment, remoteUuid);
 
 		});
 

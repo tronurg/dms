@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -13,7 +12,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -100,14 +98,14 @@ public final class TcpServer implements Runnable {
 
 	}
 
-	public boolean sendMessage(int id, byte[] message, int chunkSize, AtomicBoolean sendCheck, Runnable success) {
+	public boolean sendMessage(int id, byte[] message) {
 
 		TcpConnection tcpConnection = tcpConnections.get(id);
 
 		if (tcpConnection == null)
 			return false;
 
-		return tcpConnection.sendMessage(message, chunkSize, sendCheck, success);
+		return tcpConnection.sendMessage(message);
 
 	}
 
@@ -209,25 +207,9 @@ public final class TcpServer implements Runnable {
 
 	}
 
-	private MessageListener newMessageListener(final int id) {
+	private void messageReceivedToListeners(final int id, final byte[] message) {
 
-		return new MessageListener() {
-
-			@Override
-			public void messageReceived(final byte[] message) {
-
-				taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(id, message)));
-
-			}
-
-			@Override
-			public void fileReceived(final Path path) {
-
-				taskQueue.execute(() -> listeners.forEach(listener -> listener.fileReceived(id, path)));
-
-			}
-
-		};
+		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(id, message)));
 
 	}
 
@@ -240,7 +222,7 @@ public final class TcpServer implements Runnable {
 
 			int id = idRef.getAndIncrement();
 
-			TcpConnection tcpConnection = new TcpConnection(socket, newMessageListener(id));
+			TcpConnection tcpConnection = new TcpConnection(socket, message -> messageReceivedToListeners(id, message));
 			tcpConnections.put(id, tcpConnection);
 
 			connectedToListeners(id);

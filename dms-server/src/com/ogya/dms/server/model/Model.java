@@ -255,11 +255,11 @@ public class Model {
 					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
 					List<String> receiverMapIdList = new ArrayList<String>();
 					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
-					byte[] remoteMessagePojoBytes = DmsPackingFactory
-							.pack(new MessagePojo(payload, senderMapId, String.join(";", receiverMapIdList),
-									messagePojo.contentType, messagePojo.messageId, null, null, null));
+					MessagePojo remoteMessagePojo = new MessagePojo(payload, senderMapId,
+							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.messageId, null,
+							null, null);
 
-					listener.sendToRemoteServer(dmsUuid, remoteMessagePojoBytes, sendStatus, progress -> {
+					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus, progress -> {
 
 						if (trackedMessage) {
 
@@ -454,10 +454,10 @@ public class Model {
 
 		listener.sendToLocalUsers(messagePojo, localUsers.keySet().toArray(new String[0]));
 
-		byte[] remoteMessagePojoBytes = DmsPackingFactory
-				.pack(new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null, null, null, null));
+		MessagePojo remoteMessagePojo = new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null,
+				null, null, null);
 
-		listener.sendToAllRemoteServers(remoteMessagePojoBytes);
+		listener.sendToAllRemoteServers(remoteMessagePojo);
 
 	}
 
@@ -534,7 +534,7 @@ public class Model {
 
 	private void sendMessageToRemoteServers(MessagePojo messagePojo) {
 
-		listener.sendToAllRemoteServers(DmsPackingFactory.pack(messagePojo));
+		listener.sendToAllRemoteServers(messagePojo);
 
 	}
 
@@ -547,10 +547,10 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			byte[] beaconBytes = DmsPackingFactory.pack(new MessagePojo(DmsPackingFactory.packRemote(user.beacon),
-					user.mapId, null, ContentType.BCON, null, null, null, null));
+			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packRemote(user.beacon), user.mapId, null,
+					ContentType.BCON, null, null, null, null);
 
-			listener.sendToRemoteServer(dmsUuid, beaconBytes, null, null, Long.MAX_VALUE, null);
+			listener.sendToRemoteServer(dmsUuid, beaconPojo, null, null, Long.MAX_VALUE, null);
 
 		});
 

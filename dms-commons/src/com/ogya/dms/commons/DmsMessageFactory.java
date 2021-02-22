@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.ogya.dms.commons.structures.MessagePojo;
@@ -30,6 +32,15 @@ public class DmsMessageFactory {
 	}
 
 	public void inFeed(byte[] data) {
+
+		if (data.length == 0) {
+
+			deleteResources();
+			reset();
+
+			return;
+
+		}
 
 		try {
 
@@ -94,15 +105,6 @@ public class DmsMessageFactory {
 
 	private void bodyReceived(byte[] data) throws IOException {
 
-		if (data.length == 0) {
-
-			deleteResources();
-			reset();
-
-			return;
-
-		}
-
 		if (remaining > 0) {
 
 			remaining -= data.length;
@@ -139,33 +141,53 @@ public class DmsMessageFactory {
 
 	public static void outFeed(MessagePojo messagePojo, int chunkSize, Consumer<byte[]> dataConsumer) {
 
+		outFeed(messagePojo, chunkSize, new AtomicBoolean(true), (data, progress) -> dataConsumer.accept(data));
+
+	}
+
+	public static void outFeed(MessagePojo messagePojo, int chunkSize, AtomicBoolean health,
+			BiConsumer<byte[], Integer> dataConsumer) {
+
 		Path path = messagePojo.attachment;
+
+		byte[] messageBytes = DmsPackingFactory.pack(messagePojo);
 
 		if (path == null) {
 
-			dataConsumer.accept(ByteBuffer.allocate(8).putLong(0L).array());
+			dataConsumer.accept(ByteBuffer.allocate(8).putLong(0L).array(), 0);
 
-			dataConsumer.accept(DmsPackingFactory.pack(messagePojo));
+			dataConsumer.accept(messageBytes, 100);
 
 		} else {
 
 			try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
 
-				dataConsumer.accept(ByteBuffer.allocate(8).putLong(Files.size(path)).array());
+				long fileSize = Files.size(path);
+				double totalBytes = fileSize + messageBytes.length;
+
+				dataConsumer.accept(ByteBuffer.allocate(8).putLong(fileSize).array(), 0);
 
 				byte[] buffer = new byte[chunkSize];
 
-				while (inputStream.read(buffer) > 0) {
+				int bytesRead;
+				int totalBytesRead = 0;
 
-					dataConsumer.accept(Arrays.copyOf(buffer, chunkSize));
+				while ((bytesRead = inputStream.read(buffer)) > 0) {
+
+					if (!health.get())
+						throw new IOException();
+
+					totalBytesRead += bytesRead;
+
+					dataConsumer.accept(Arrays.copyOf(buffer, chunkSize), (int) (100 * (totalBytesRead / totalBytes)));
 
 				}
 
-				dataConsumer.accept(DmsPackingFactory.pack(messagePojo));
+				dataConsumer.accept(messageBytes, 100);
 
 			} catch (IOException e) {
 
-				dataConsumer.accept(new byte[0]);
+				dataConsumer.accept(new byte[0], -1);
 
 			}
 

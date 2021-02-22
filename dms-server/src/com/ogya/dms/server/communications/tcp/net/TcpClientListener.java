@@ -1,7 +1,5 @@
 package com.ogya.dms.server.communications.tcp.net;
 
-import java.nio.file.Path;
-
 public interface TcpClientListener {
 
 	void connected();
@@ -11,7 +9,5 @@ public interface TcpClientListener {
 	void disconnected();
 
 	void messageReceived(byte[] message);
-
-	void fileReceived(Path path);
 
 }

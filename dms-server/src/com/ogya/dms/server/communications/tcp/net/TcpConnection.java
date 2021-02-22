@@ -7,26 +7,22 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 
 final class TcpConnection {
 
-	private static final int HEADER_BYTE = 0;
-	private static final int HEADER_FILE = 1;
-
 	private final Socket socket;
-	private final MessageListener messageListener;
+	private final Consumer<byte[]> messageConsumer;
 
 	private final DataOutputStream messageOutputStream;
 
-	TcpConnection(Socket socket, MessageListener messageListener) throws Exception {
+	TcpConnection(Socket socket, Consumer<byte[]> messageConsumer) throws Exception {
 
 		this.socket = socket;
-		this.messageListener = messageListener;
+		this.messageConsumer = messageConsumer;
 
 		messageOutputStream = new DataOutputStream(
 				new BufferedOutputStream(new ZstdOutputStream(socket.getOutputStream())));
@@ -46,25 +42,13 @@ final class TcpConnection {
 
 			while (!socket.isClosed()) {
 
-				int messageType = messageInputStream.read();
 				int messageLength = messageInputStream.readInt();
 
-				switch (messageType) {
-				case HEADER_BYTE:
-					byte[] message = new byte[messageLength];
-					messageInputStream.read(message);
-					try {
-						messageListener.messageReceived(message);
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-					break;
-				case HEADER_FILE:
+				byte[] message = new byte[messageLength];
 
-					break;
-				default:
-					break;
-				}
+				messageInputStream.read(message);
+
+				messageConsumer.accept(message);
 
 			}
 
@@ -74,33 +58,15 @@ final class TcpConnection {
 
 	}
 
-	synchronized boolean sendMessage(byte[] message, int chunkSize, AtomicBoolean sendCheck, Runnable success) {
+	synchronized boolean sendMessage(byte[] message) {
 
 		try {
 
-			int messageLength = message.length;
+			messageOutputStream.writeInt(message.length);
 
-			if (chunkSize <= 0)
-				chunkSize = messageLength;
+			messageOutputStream.write(message);
 
-			if (sendCheck == null)
-				sendCheck = new AtomicBoolean(true);
-
-			messageOutputStream.write(HEADER_BYTE);
-			messageOutputStream.writeInt(messageLength);
-
-			for (int i = 0; sendCheck.get() && i < messageLength; i += chunkSize) {
-
-				int len = Math.min(chunkSize, messageLength - i);
-
-				messageOutputStream.write(message, i, len);
-
-				messageOutputStream.flush();
-
-				if (sendCheck.get() && success != null)
-					success.run();
-
-			}
+			messageOutputStream.flush();
 
 			return true;
 
@@ -147,13 +113,5 @@ final class TcpConnection {
 		}
 
 	}
-
-}
-
-interface MessageListener {
-
-	void messageReceived(byte[] message);
-
-	void fileReceived(Path path);
 
 }

@@ -2,19 +2,17 @@ package com.ogya.dms.server.communications.tcp.net;
 
 import java.net.InetAddress;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.server.common.DmsSecurity;
 
-public final class TcpClient implements MessageListener, Runnable {
+public final class TcpClient implements Runnable {
 
 	private final InetAddress serverIp;
 	private final int serverPort;
@@ -78,14 +76,14 @@ public final class TcpClient implements MessageListener, Runnable {
 
 	}
 
-	public boolean sendMessage(byte[] message, int chunkSize, AtomicBoolean sendCheck, Runnable success) {
+	public boolean sendMessage(byte[] message) {
 
 		TcpConnection tcpConnection = tcpConnectionRef.get();
 
 		if (tcpConnection == null)
 			return false;
 
-		return tcpConnection.sendMessage(message, chunkSize, sendCheck, success);
+		return tcpConnection.sendMessage(message);
 
 	}
 
@@ -164,17 +162,9 @@ public final class TcpClient implements MessageListener, Runnable {
 
 	}
 
-	@Override
-	public void messageReceived(final byte[] message) {
+	public void messageReceivedToListeners(final byte[] message) {
 
 		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(message)));
-
-	}
-
-	@Override
-	public void fileReceived(final Path path) {
-
-		taskQueue.execute(() -> listeners.forEach(listener -> listener.fileReceived(path)));
 
 	}
 
@@ -185,7 +175,7 @@ public final class TcpClient implements MessageListener, Runnable {
 
 			socket.setKeepAlive(false);
 
-			TcpConnection tcpConnection = new TcpConnection(socket, this);
+			TcpConnection tcpConnection = new TcpConnection(socket, this::messageReceivedToListeners);
 			tcpConnectionRef.set(tcpConnection);
 
 			connectedToListeners();

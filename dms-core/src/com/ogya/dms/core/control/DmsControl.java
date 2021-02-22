@@ -70,7 +70,6 @@ import com.ogya.dms.core.intf.tools.impl.MessageRulesImpl;
 import com.ogya.dms.core.model.Model;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ContactMap;
-import com.ogya.dms.core.structures.FilePojo;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.GroupUpdate;
 import com.ogya.dms.core.structures.MessageDirection;
@@ -640,33 +639,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				&& Objects.equals(copyMessage.getReceiverType(), ReceiverType.GROUP_MEMBER))
 			copyMessage.setContactRefId(copyMessage.getContact().getId());
 
-		switch (copyMessage.getMessageType()) {
-
-		case FILE:
-		case AUDIO:
-
-			try {
-
-				copyMessage.setContent(Base64.getEncoder()
-						.encodeToString(DmsPackingFactory.pack(decomposeFile(Paths.get(copyMessage.getContent())))));
-
-			} catch (Exception e) {
-
-				copyMessage.setContent("");
-
-				e.printStackTrace();
-
-			}
-
-			break;
-
-		default:
-
-			break;
-
+		Path path = null;
+		if (copyMessage.getAttachment() != null) {
+			path = Paths.get(copyMessage.getAttachment());
+			copyMessage.setAttachment(path.getFileName().toString());
 		}
 
-		dmsClient.sendMessage(copyMessage, receiverUuid, message.getId());
+		dmsClient.sendMessage(copyMessage, path, receiverUuid, message.getId());
 
 	}
 
@@ -1160,29 +1139,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Path composeFile(FilePojo filePojo) throws IOException {
+	private Path moveFile(Path path, String fileName) throws IOException {
 
 		synchronized (FILE_SYNC) {
 
 			Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
 
-			Path dstFile = getDstFile(dstFolder, filePojo.fileName);
+			Path dstFile = getDstFile(dstFolder, fileName);
 
-			Files.write(dstFile, filePojo.payload);
+			Files.move(path, dstFile);
 
 			return dstFile;
-
-		}
-
-	}
-
-	private FilePojo decomposeFile(Path path) throws IOException {
-
-		synchronized (FILE_SYNC) {
-
-			byte[] fileBytes = Files.readAllBytes(path);
-
-			return new FilePojo(path.getFileName().toString(), fileBytes);
 
 		}
 
@@ -1483,7 +1450,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messageReceived(final Message message, final String remoteUuid) {
+	public void messageReceived(final Message message, final Path attachment, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1554,31 +1521,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				switch (message.getMessageType()) {
-
-				case FILE:
-				case AUDIO:
-
-					try {
-
-						message.setContent(composeFile(DmsPackingFactory
-								.unpack(Base64.getDecoder().decode(message.getContent()), FilePojo.class)).toString());
-
-					} catch (Exception e) {
-
-						message.setContent("");
-
-						e.printStackTrace();
-
-					}
-
-					break;
-
-				default:
-
-					break;
-
-				}
+				if (!(attachment == null || message.getAttachment() == null))
+					message.setAttachment(moveFile(attachment, message.getAttachment()).toString());
 
 				message.setMessageStatus(computeMessageStatus(message));
 
@@ -1891,7 +1835,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void transientMessageReceived(final MessageHandleImpl message, String remoteUuid) {
+	public void transientMessageReceived(final MessageHandleImpl message, final Path attachment, String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1909,20 +1853,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				FileHandleImpl fileHandle = (FileHandleImpl) message.getFileHandle();
 
-				if (fileHandle != null) {
-
-					try {
-
-						message.setFileHandle(
-								new FileHandleImpl(fileHandle.getFileCode(), composeFile(fileHandle.getFilePojo())));
-
-					} catch (IOException e) {
-
-						message.setFileHandle(null);
-
-					}
-
-				}
+				if (!(attachment == null || fileHandle == null))
+					message.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(),
+							moveFile(attachment, fileHandle.getFileName())));
 
 				listenerTaskQueue
 						.execute(() -> dmsListeners.forEach(listener -> listener.messageReceived(message, contactId)));
@@ -3296,15 +3229,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				: (MessageRulesImpl) messageRules;
 
 		outgoingMessage.setTrackingId(messageRulesImpl.getTrackingId());
-
-		FileHandle fileHandle = outgoingMessage.getFileHandle();
-
-		if (fileHandle != null) {
-
-			outgoingMessage
-					.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(), decomposeFile(fileHandle.getPath())));
-
-		}
 
 		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, messageRulesImpl.getTrackingId(),
 				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());

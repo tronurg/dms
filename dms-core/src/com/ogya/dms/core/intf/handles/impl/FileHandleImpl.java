@@ -4,7 +4,6 @@ import java.nio.file.Path;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.intf.handles.FileHandle;
-import com.ogya.dms.core.structures.FilePojo;
 
 public class FileHandleImpl implements FileHandle {
 
@@ -12,7 +11,7 @@ public class FileHandleImpl implements FileHandle {
 	private Integer fileCode;
 	private transient Path path;
 	@JsonProperty("b")
-	private FilePojo filePojo;
+	private String fileName;
 
 	public FileHandleImpl() {
 		super();
@@ -22,21 +21,13 @@ public class FileHandleImpl implements FileHandle {
 
 		this.fileCode = fileCode;
 		this.path = path;
-		this.filePojo = null;
+		this.fileName = path.getFileName().toString();
 
 	}
 
-	public FileHandleImpl(Integer fileCode, FilePojo filePojo) {
+	public String getFileName() {
 
-		this.fileCode = fileCode;
-		this.path = null;
-		this.filePojo = filePojo;
-
-	}
-
-	public FilePojo getFilePojo() {
-
-		return filePojo;
+		return fileName;
 
 	}
 

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,8 +18,12 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+import com.ogya.dms.commons.DmsMessageFactory;
+import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
@@ -80,7 +83,7 @@ public class TcpManager implements TcpServerListener {
 
 			if (!connections.containsKey(address)) {
 
-				Connection connection = new Connection(address);
+				Connection connection = new Connection(address, this::messageReceivedFromConnection);
 				connection.dmsServer = dmsServer;
 
 				connections.put(address, connection);
@@ -96,20 +99,13 @@ public class TcpManager implements TcpServerListener {
 						tcpClient.addListener(new TcpClientListener() {
 
 							@Override
-							public void messageReceived(byte[] arg0) {
+							public void messageReceived(byte[] message) {
 
 								taskQueue.execute(() -> {
 
-									messageReceivedToListeners(arg0, dmsUuid);
+									connection.messageFactory.inFeed(message);
 
 								});
-
-							}
-
-							@Override
-							public void fileReceived(Path path) {
-
-								// TODO Auto-generated method stub
 
 							}
 
@@ -190,7 +186,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToServer(final String dmsUuid, final byte[] message, final AtomicBoolean sendStatus,
+	public void sendMessageToServer(final String dmsUuid, final MessagePojo messagePojo, final AtomicBoolean sendStatus,
 			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalAddress) {
 
 		taskQueue.execute(() -> {
@@ -202,7 +198,7 @@ public class TcpManager implements TcpServerListener {
 
 			try {
 
-				sendMessageToServer(dmsServer, message, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
+				sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
 						progressMethod, timeout, useLocalAddress);
 
 			} catch (Exception e) {
@@ -218,15 +214,15 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToAllServers(final byte[] message) {
+	public void sendMessageToAllServers(final MessagePojo messagePojo) {
 
 		taskQueue.execute(() -> {
 
 			if (dmsServers.isEmpty())
 				return;
 
-			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, message, new AtomicBoolean(true),
-					null, Long.MAX_VALUE, null));
+			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo,
+					new AtomicBoolean(true), null, Long.MAX_VALUE, null));
 
 		});
 
@@ -264,22 +260,22 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void sendMessageToServer(final DmsServer dmsServer, final byte[] message, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalInterface) {
+	private void sendMessageToServer(final DmsServer dmsServer, final MessagePojo messagePojo,
+			final AtomicBoolean sendStatus, final Consumer<Integer> progressMethod, final long timeout,
+			final InetAddress useLocalInterface) {
 
 		dmsServer.taskQueue.execute(() -> {
 
-			// Send a progress of zero before starting
-			if (progressMethod != null)
-				progressMethod.accept(0);
+			final AtomicBoolean sent = new AtomicBoolean(false);
 
-			final int messageLength = message.length;
-
-			boolean sent = false;
+			final long startTime = System.currentTimeMillis();
 
 			synchronized (dmsServer.connections) {
 
 				for (Connection connection : dmsServer.connections) {
+
+					if (!sendStatus.get())
+						break;
 
 					if (!(useLocalInterface == null || useLocalInterface.equals(connection.localAddress)))
 						continue;
@@ -287,33 +283,39 @@ public class TcpManager implements TcpServerListener {
 					if (connection.sendFunction == null)
 						continue;
 
-					final AtomicInteger progress = new AtomicInteger(0);
-					final AtomicInteger progressPercent = new AtomicInteger(0);
+					sent.set(true); // Hypothesis
 
-					final long startTime = System.currentTimeMillis();
+					final AtomicBoolean health = new AtomicBoolean(true);
 
-					sent = connection.sendFunction.send(message, CHUNK_SIZE, sendStatus, () -> {
+					final AtomicInteger progressPercent = new AtomicInteger(-1);
 
-						if (System.currentTimeMillis() - startTime > timeout)
-							sendStatus.set(false);
+					DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, health, (data, progress) -> {
+
+						if (!sent.get())
+							return;
+
+						sent.set(connection.sendFunction.apply(data));
+
+						sendStatus.set(sendStatus.get() && System.currentTimeMillis() - startTime < timeout);
+						health.set(sendStatus.get() && sent.get());
+
+						if (!sent.get())
+							return;
 
 						if (progressMethod == null)
 							return;
 
-						int bytesSent = progress.addAndGet(CHUNK_SIZE);
-						int bytesSentPercent = 100 * bytesSent / messageLength;
-
-						if (bytesSentPercent > progressPercent.get() && bytesSentPercent < 100) {
-
-							progressPercent.set(bytesSentPercent);
-
-							progressMethod.accept(bytesSentPercent);
-
+						if (progress > progressPercent.get()) {
+							progressPercent.set(progress);
+							progressMethod.accept(progress);
 						}
 
 					});
 
-					if (sent)
+					if (progressPercent.get() < 100)
+						sent.set(false);
+
+					if (sent.get())
 						break;
 
 				}
@@ -323,9 +325,7 @@ public class TcpManager implements TcpServerListener {
 			if (progressMethod == null)
 				return;
 
-			if (sent)
-				progressMethod.accept(100);
-			else
+			if (!sent.get())
 				progressMethod.accept(-1);
 
 		});
@@ -354,9 +354,25 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void messageReceivedToListeners(byte[] message, String dmsUuid) {
+	private void messageReceivedFromConnection(MessagePojo messagePojo, Connection connection) {
 
-		listeners.forEach(e -> e.messageReceivedFromRemoteServer(message, dmsUuid));
+		DmsServer dmsServer = connection.dmsServer;
+
+		if (dmsServer == null) {
+
+			connection.waitingMessages.offer(messagePojo);
+
+		} else {
+
+			messageReceivedToListeners(messagePojo, dmsServer.dmsUuid);
+
+		}
+
+	}
+
+	private void messageReceivedToListeners(MessagePojo messagePojo, String dmsUuid) {
+
+		listeners.forEach(e -> e.messageReceivedFromRemoteServer(messagePojo, dmsUuid));
 
 	}
 
@@ -390,7 +406,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	@Override
-	public void disconnected(int id) {
+	public void disconnected(final int id) {
 
 		taskQueue.execute(() -> {
 
@@ -432,15 +448,14 @@ public class TcpManager implements TcpServerListener {
 
 			serverIdAddress.put(id, address);
 
-			connections.putIfAbsent(address, new Connection(address));
+			connections.putIfAbsent(address, new Connection(address, this::messageReceivedFromConnection));
 
 			Connection connection = connections.get(address);
 			connection.localAddress = tcpServer.getLocalAddress(id);
 
 			connection.id = id;
 
-			connection.sendFunction = (message, chunkSize, sendCheck, success) -> tcpServer.sendMessage(id, message,
-					chunkSize, sendCheck, success);
+			connection.sendFunction = message -> tcpServer.sendMessage(id, message);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -461,11 +476,11 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	@Override
-	public void messageReceived(int arg0, byte[] arg1) {
+	public void messageReceived(final int id, final byte[] message) {
 
 		taskQueue.execute(() -> {
 
-			InetAddress address = serverIdAddress.get(arg0);
+			InetAddress address = serverIdAddress.get(id);
 
 			if (address == null)
 				return;
@@ -475,32 +490,17 @@ public class TcpManager implements TcpServerListener {
 			if (connection == null)
 				return;
 
-			DmsServer dmsServer = connection.dmsServer;
-
-			if (dmsServer == null) {
-
-				connection.waitingMessages.offer(arg1);
-
-			} else {
-
-				messageReceivedToListeners(arg1, dmsServer.dmsUuid);
-
-			}
+			connection.messageFactory.inFeed(message);
 
 		});
-
-	}
-
-	@Override
-	public void fileReceived(int id, Path path) {
-
-		// TODO Auto-generated method stub
 
 	}
 
 	private static class Connection {
 
 		private static final AtomicInteger ORDER = new AtomicInteger(0);
+
+		private final DmsMessageFactory messageFactory;
 
 		private final int order;
 
@@ -509,13 +509,14 @@ public class TcpManager implements TcpServerListener {
 
 		private int id = -1;
 
-		private final Queue<byte[]> waitingMessages = new ArrayDeque<byte[]>();
+		private final Queue<MessagePojo> waitingMessages = new ArrayDeque<MessagePojo>();
 
 		private DmsServer dmsServer;
 
-		private SendFunction sendFunction;
+		private Function<byte[], Boolean> sendFunction;
 
-		private Connection(InetAddress remoteAddress) {
+		private Connection(InetAddress remoteAddress, BiConsumer<MessagePojo, Connection> messageConsumer) {
+			this.messageFactory = new DmsMessageFactory(messagePojo -> messageConsumer.accept(messagePojo, this));
 			order = ORDER.getAndIncrement();
 			this.remoteAddress = remoteAddress;
 		}
@@ -575,12 +576,6 @@ public class TcpManager implements TcpServerListener {
 			taskQueue.shutdown();
 
 		}
-
-	}
-
-	private interface SendFunction {
-
-		boolean send(byte[] message, int chunkSize, AtomicBoolean sendCheck, Runnable successMethod);
 
 	}
 

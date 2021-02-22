@@ -235,14 +235,14 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void messageReceivedFromRemoteServer(final byte[] message, final String dmsUuid) {
+	public void messageReceivedFromRemoteServer(final MessagePojo messagePojo, final String dmsUuid) {
 
-		taskQueue.execute(() -> model.remoteMessageReceived(message, dmsUuid));
+		taskQueue.execute(() -> model.remoteMessageReceived(messagePojo, dmsUuid));
 
 	}
 
 	@Override
-	public void sendToLocalUsers(MessagePojo messagePojo, String... receiverUuids) {
+	public void sendToLocalUsers(MessagePojo messagePojo, final String... receiverUuids) {
 
 		DmsMessageFactory.outFeed(messagePojo, 8192, data -> {
 			for (String receiverUuid : receiverUuids) {
@@ -253,17 +253,17 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteServer(String dmsUuid, byte[] message, AtomicBoolean sendStatus,
+	public void sendToRemoteServer(String dmsUuid, MessagePojo messagePojo, AtomicBoolean sendStatus,
 			Consumer<Integer> progressMethod, long timeout, InetAddress useLocalAddress) {
 
-		tcpManager.sendMessageToServer(dmsUuid, message, sendStatus, progressMethod, timeout, useLocalAddress);
+		tcpManager.sendMessageToServer(dmsUuid, messagePojo, sendStatus, progressMethod, timeout, useLocalAddress);
 
 	}
 
 	@Override
-	public void sendToAllRemoteServers(byte[] message) {
+	public void sendToAllRemoteServers(MessagePojo messagePojo) {
 
-		tcpManager.sendMessageToAllServers(message);
+		tcpManager.sendMessageToAllServers(messagePojo);
 
 	}
 

@@ -10,10 +10,10 @@ public interface ModelListener {
 
 	void sendToLocalUsers(MessagePojo messagePojo, String... receiverUuids);
 
-	void sendToRemoteServer(String dmsUuid, byte[] message, AtomicBoolean sendStatus, Consumer<Integer> progressMethod,
-			long timeout, InetAddress useLocalAddress);
+	void sendToRemoteServer(String dmsUuid, MessagePojo messagePojo, AtomicBoolean sendStatus,
+			Consumer<Integer> progressMethod, long timeout, InetAddress useLocalAddress);
 
-	void sendToAllRemoteServers(byte[] message);
+	void sendToAllRemoteServers(MessagePojo messagePojo);
 
 	void publishImmediately();
 
