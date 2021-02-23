@@ -4,9 +4,11 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyStore;
+import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -26,21 +28,29 @@ public class DmsSecurity {
 
 	public static byte[] encrypt(byte[] data) throws Exception {
 
-		Cipher encryptor = Cipher.getInstance(TRANSFORMATION);
-		encryptor.init(Cipher.ENCRYPT_MODE, getKeyStore().getKey("secret", PASSWORD),
-				new GCMParameterSpec(128, new byte[12]));
+		byte[] iv = new byte[12];
+		new SecureRandom().nextBytes(iv);
 
-		return encryptor.doFinal(data);
+		Cipher encryptor = Cipher.getInstance(TRANSFORMATION);
+		encryptor.init(Cipher.ENCRYPT_MODE, getKeyStore().getKey("secret", PASSWORD), new GCMParameterSpec(128, iv));
+
+		byte[] ciphertext = encryptor.doFinal(data);
+
+		return ByteBuffer.allocate(iv.length + ciphertext.length).put(iv).put(ciphertext).array();
 
 	}
 
 	public static byte[] decrypt(byte[] data, int length) throws Exception {
 
-		Cipher decryptor = Cipher.getInstance(TRANSFORMATION);
-		decryptor.init(Cipher.DECRYPT_MODE, getKeyStore().getKey("secret", PASSWORD),
-				new GCMParameterSpec(128, new byte[12]));
+		byte[] iv = new byte[12];
+		byte[] ciphertext = new byte[length - 12];
 
-		return decryptor.doFinal(data, 0, length);
+		ByteBuffer.wrap(data).get(iv).get(ciphertext);
+
+		Cipher decryptor = Cipher.getInstance(TRANSFORMATION);
+		decryptor.init(Cipher.DECRYPT_MODE, getKeyStore().getKey("secret", PASSWORD), new GCMParameterSpec(128, iv));
+
+		return decryptor.doFinal(ciphertext);
 
 	}
 
