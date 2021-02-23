@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -209,7 +210,6 @@ public class Model {
 					if (localUsers.containsKey(receiverUuid)) {
 
 						localReceiverUuids.add(receiverUuid);
-						listener.sendToLocalUsers(messagePojo, receiverUuid);
 
 					} else if (remoteUsers.containsKey(receiverUuid)) {
 
@@ -225,6 +225,8 @@ public class Model {
 					}
 
 				}
+
+				listener.sendToLocalUsers(messagePojo, localReceiverUuids.toArray(new String[0]));
 
 				if (trackedMessage && localReceiverUuids.size() > 0) {
 
@@ -374,14 +376,8 @@ public class Model {
 				if (messagePojo.receiverUuid == null)
 					break;
 
-				String[] receiverUuids = messagePojo.receiverUuid.split(";");
-
-				for (String receiverUuid : receiverUuids) {
-
-					if (localUsers.containsKey(receiverUuid))
-						listener.sendToLocalUsers(messagePojo, receiverUuid);
-
-				}
+				listener.sendToLocalUsers(messagePojo, Arrays.asList(messagePojo.receiverUuid.split(";")).stream()
+						.filter(receiverUuid -> localUsers.containsKey(receiverUuid)).toArray(String[]::new));
 
 				break;
 

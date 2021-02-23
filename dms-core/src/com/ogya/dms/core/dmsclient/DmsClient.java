@@ -26,6 +26,8 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsClient {
 
+	private static final int CHUNK_SIZE = 8192;
+
 	private final String uuid;
 
 	private final ZContext context = new ZContext();
@@ -214,7 +216,7 @@ public class DmsClient {
 
 				try {
 
-					DmsMessageFactory.outFeed(dealerQueue.take(), 8192, data -> inprocSocket.send(data));
+					DmsMessageFactory.outFeed(dealerQueue.take(), CHUNK_SIZE, data -> inprocSocket.send(data));
 
 				} catch (InterruptedException e) {
 

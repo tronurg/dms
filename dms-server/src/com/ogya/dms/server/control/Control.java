@@ -28,6 +28,9 @@ import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Control implements TcpManagerListener, ModelListener {
 
+	private static final int CHUNK_SIZE = 8192;
+	private static final int QUEUE_CAPACITY = 1024;
+
 	private static final String DMS_UUID = UUID.randomUUID().toString();
 
 	private static Control instance;
@@ -49,7 +52,8 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final ZContext context = new ZContext();
 
-	private final LinkedBlockingQueue<SimpleEntry<String, byte[]>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, byte[]>>();
+	private final LinkedBlockingQueue<SimpleEntry<String, byte[]>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, byte[]>>(
+			QUEUE_CAPACITY);
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
@@ -244,9 +248,13 @@ public class Control implements TcpManagerListener, ModelListener {
 	@Override
 	public void sendToLocalUsers(MessagePojo messagePojo, final String... receiverUuids) {
 
-		DmsMessageFactory.outFeed(messagePojo, 8192, data -> {
+		DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, data -> {
 			for (String receiverUuid : receiverUuids) {
-				routerQueue.offer(new SimpleEntry<String, byte[]>(receiverUuid, data));
+				try {
+					routerQueue.put(new SimpleEntry<String, byte[]>(receiverUuid, data));
+				} catch (InterruptedException e) {
+
+				}
 			}
 		});
 
