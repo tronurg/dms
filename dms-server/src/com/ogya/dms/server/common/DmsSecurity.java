@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.security.KeyStore;
 
 import javax.crypto.Cipher;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -21,20 +22,25 @@ public class DmsSecurity {
 
 	private static KeyStore keyStore;
 
-	private static Cipher encryptor;
-	private static Cipher decryptor;
-
 	private static SSLContext sslContext;
 
 	public static byte[] encrypt(byte[] data) throws Exception {
 
-		return getEncryptor().doFinal(data);
+		Cipher encryptor = Cipher.getInstance(TRANSFORMATION);
+		encryptor.init(Cipher.ENCRYPT_MODE, getKeyStore().getKey("secret", PASSWORD),
+				new GCMParameterSpec(128, new byte[12]));
+
+		return encryptor.doFinal(data);
 
 	}
 
 	public static byte[] decrypt(byte[] data, int length) throws Exception {
 
-		return getDecryptor().doFinal(data, 0, length);
+		Cipher decryptor = Cipher.getInstance(TRANSFORMATION);
+		decryptor.init(Cipher.DECRYPT_MODE, getKeyStore().getKey("secret", PASSWORD),
+				new GCMParameterSpec(128, new byte[12]));
+
+		return decryptor.doFinal(data, 0, length);
 
 	}
 
@@ -52,52 +58,6 @@ public class DmsSecurity {
 		sslSocket.startHandshake();
 
 		return sslSocket;
-
-	}
-
-	private synchronized static Cipher getEncryptor() throws Exception {
-
-		if (encryptor == null) {
-
-			try {
-
-				encryptor = Cipher.getInstance(TRANSFORMATION);
-				encryptor.init(Cipher.ENCRYPT_MODE, getKeyStore().getKey("secret", PASSWORD));
-
-			} catch (Exception e) {
-
-				encryptor = null;
-
-				throw e;
-
-			}
-
-		}
-
-		return encryptor;
-
-	}
-
-	private synchronized static Cipher getDecryptor() throws Exception {
-
-		if (decryptor == null) {
-
-			try {
-
-				decryptor = Cipher.getInstance(TRANSFORMATION);
-				decryptor.init(Cipher.DECRYPT_MODE, getKeyStore().getKey("secret", PASSWORD));
-
-			} catch (Exception e) {
-
-				decryptor = null;
-
-				throw e;
-
-			}
-
-		}
-
-		return decryptor;
 
 	}
 
