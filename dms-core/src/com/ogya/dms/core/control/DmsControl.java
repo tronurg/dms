@@ -385,11 +385,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Message createOutgoingMessage(String messageTxt, Contact contact, Dgroup group,
+	private Message createOutgoingMessage(String messageTxt, Path attachment, Contact contact, Dgroup group,
 			Set<StatusReport> statusReports, ReceiverType receiverType, MessageType messageType,
 			MessageSubType messageSubType, Message refMessage, Integer messageCode, Integer apiFlag) throws Exception {
 
 		Message outgoingMessage = new Message(contact, group, receiverType, messageType, messageTxt);
+
+		if (attachment != null)
+			outgoingMessage.setAttachment(attachment.toString());
 
 		outgoingMessage.setOwner(model.getIdentity());
 		outgoingMessage.setMessageDirection(MessageDirection.OUT);
@@ -685,17 +688,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (Objects.equals(message.getMessageSubType(), MessageSubType.FILE_REPORT)) {
 					dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(message.getMessageCode(),
-							Paths.get(message.getContent()), message.getContact().getId(), null));
+							Paths.get(message.getAttachment()), message.getContact().getId(), null));
 				} else {
-					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
-							message.getContact().getId(), null));
+					dmsGuiListeners.forEach(guiListener -> guiListener
+							.guiFileReceived(Paths.get(message.getAttachment()), message.getContact().getId(), null));
 				}
 
 				break;
 
 			case AUDIO:
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getAttachment()),
 						message.getContact().getId(), null));
 
 				break;
@@ -746,18 +749,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (Objects.equals(message.getMessageSubType(), MessageSubType.FILE_REPORT)) {
 					dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(message.getMessageCode(),
-							Paths.get(message.getContent()), message.getContact().getId(),
+							Paths.get(message.getAttachment()), message.getContact().getId(),
 							message.getDgroup().getId()));
 				} else {
-					dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getContent()),
-							message.getContact().getId(), message.getDgroup().getId()));
+					dmsGuiListeners
+							.forEach(guiListener -> guiListener.guiFileReceived(Paths.get(message.getAttachment()),
+									message.getContact().getId(), message.getDgroup().getId()));
 				}
 
 				break;
 
 			case AUDIO:
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getContent()),
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(Paths.get(message.getAttachment()),
 						message.getContact().getId(), message.getDgroup().getId()));
 
 				break;
@@ -1098,8 +1102,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (group == null || Objects.equals(ownerUuid, model.getLocalUuid()))
 			return newMessage;
 
-		sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), message.getContact(), null, null,
-				ReceiverType.CONTACT, MessageType.UPDATE, MessageSubType.UPDATE_CANCEL_MESSAGE, null, null, null));
+		sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), null, message.getContact(), null,
+				null, ReceiverType.CONTACT, MessageType.UPDATE, MessageSubType.UPDATE_CANCEL_MESSAGE, null, null,
+				null));
 
 		return newMessage;
 
@@ -1139,7 +1144,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Path moveFile(Path path, String fileName) throws IOException {
+	private Path moveFileToReceiveFolder(Path path, String fileName) throws IOException {
 
 		synchronized (FILE_SYNC) {
 
@@ -1522,7 +1527,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				}
 
 				if (!(attachment == null || message.getAttachment() == null))
-					message.setAttachment(moveFile(attachment, message.getAttachment()).toString());
+					message.setAttachment(moveFileToReceiveFolder(attachment, message.getAttachment()).toString());
 
 				message.setMessageStatus(computeMessageStatus(message));
 
@@ -1855,7 +1860,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (!(attachment == null || fileHandle == null))
 					message.setFileHandle(new FileHandleImpl(fileHandle.getFileCode(),
-							moveFile(attachment, fileHandle.getFileName())));
+							moveFileToReceiveFolder(attachment, fileHandle.getFileName())));
 
 				listenerTaskQueue
 						.execute(() -> dmsListeners.forEach(listener -> listener.messageReceived(message, contactId)));
@@ -2096,14 +2101,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (id > 0) {
 
-					sendPrivateMessageClaimed(id, messageTxt, refMessageId, MessageType.TEXT, null, null, null);
+					sendPrivateMessageClaimed(id, messageTxt, null, refMessageId, MessageType.TEXT, null, null, null);
 
 					listenerTaskQueue.execute(() -> dmsGuiListeners
 							.forEach(guiListener -> guiListener.guiMessageSent(messageTxt, id, null)));
 
 				} else {
 
-					sendGroupMessageClaimed(-id, messageTxt, refMessageId, MessageType.TEXT, null, null, null);
+					sendGroupMessageClaimed(-id, messageTxt, null, refMessageId, MessageType.TEXT, null, null, null);
 
 					listenerTaskQueue.execute(() -> dmsGuiListeners
 							.forEach(guiListener -> guiListener.guiMessageSent(messageTxt, null, -id)));
@@ -2120,16 +2125,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Long sendPrivateMessageClaimed(final Long contactId, final String messageTxt, final Long refMessageId,
-			MessageType messageType, MessageSubType messageSubType, Integer messageCode, Integer apiFlag)
-			throws Exception {
+	private Long sendPrivateMessageClaimed(final Long contactId, final String messageTxt, final Path attachment,
+			final Long refMessageId, MessageType messageType, MessageSubType messageSubType, Integer messageCode,
+			Integer apiFlag) throws Exception {
 
 		Contact contact = model.getContact(contactId);
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
-		Message newMessage = createOutgoingMessage(messageTxt, contact, null, null, ReceiverType.CONTACT, messageType,
-				messageSubType, refMessage, messageCode, apiFlag);
+		Message newMessage = createOutgoingMessage(messageTxt, attachment, contact, null, null, ReceiverType.CONTACT,
+				messageType, messageSubType, refMessage, messageCode, apiFlag);
 
 		addMessageToPane(newMessage);
 
@@ -2139,15 +2144,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Long sendGroupMessageClaimed(final Long groupId, final String messageTxt, final Long refMessageId,
-			MessageType messageType, MessageSubType messageSubType, Integer messageCode, Integer apiFlag)
-			throws Exception {
+	private Long sendGroupMessageClaimed(final Long groupId, final String messageTxt, final Path attachment,
+			final Long refMessageId, MessageType messageType, MessageSubType messageSubType, Integer messageCode,
+			Integer apiFlag) throws Exception {
 
 		Dgroup group = model.getGroup(groupId);
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
-		Message newMessage = createOutgoingMessage(messageTxt, group.getOwner(), group, createStatusReports(group),
+		Message newMessage = createOutgoingMessage(messageTxt, attachment, group.getOwner(), group,
+				createStatusReports(group),
 				Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) ? ReceiverType.GROUP_MEMBER
 						: ReceiverType.GROUP_OWNER,
 				messageType, messageSubType, refMessage, messageCode, apiFlag);
@@ -2384,7 +2390,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					String groupUpdate = getGroupUpdate(newGroup.getName(), true, newGroup.getMembers(), null);
 
-					sendGroupMessage(createOutgoingMessage(groupUpdate, newGroup.getOwner(), newGroup,
+					sendGroupMessage(createOutgoingMessage(groupUpdate, null, newGroup.getOwner(), newGroup,
 							createStatusReports(newGroup), ReceiverType.GROUP_MEMBER, MessageType.UPDATE,
 							MessageSubType.UPDATE_GROUP, null, null, null));
 
@@ -2422,7 +2428,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 								newGroup.getMembers(), null);
 
 						sendGroupMessage(
-								createOutgoingMessage(groupUpdateToAddedContacts, newGroup.getOwner(), newGroup,
+								createOutgoingMessage(groupUpdateToAddedContacts, null, newGroup.getOwner(), newGroup,
 										createStatusReports(contactsToBeAdded), ReceiverType.GROUP_MEMBER,
 										MessageType.UPDATE, MessageSubType.UPDATE_GROUP, null, null, null),
 								contactsToBeAdded);
@@ -2434,7 +2440,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						String groupUpdateToRemovedContacts = getGroupUpdate(null, false, null, null);
 
 						sendGroupMessage(
-								createOutgoingMessage(groupUpdateToRemovedContacts, newGroup.getOwner(), newGroup,
+								createOutgoingMessage(groupUpdateToRemovedContacts, null, newGroup.getOwner(), newGroup,
 										createStatusReports(contactsToBeRemoved), ReceiverType.GROUP_MEMBER,
 										MessageType.UPDATE, MessageSubType.UPDATE_GROUP, null, null, null),
 								contactsToBeRemoved);
@@ -2447,8 +2453,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 								contactsToBeRemoved);
 
 						sendGroupMessage(
-								createOutgoingMessage(groupUpdateToResidentContacts, newGroup.getOwner(), newGroup,
-										createStatusReports(residentContacts), ReceiverType.GROUP_MEMBER,
+								createOutgoingMessage(groupUpdateToResidentContacts, null, newGroup.getOwner(),
+										newGroup, createStatusReports(residentContacts), ReceiverType.GROUP_MEMBER,
 										MessageType.UPDATE, MessageSubType.UPDATE_GROUP, null, null, null),
 								residentContacts);
 
@@ -2494,7 +2500,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				String groupUpdate = getGroupUpdate(null, newGroup.getActive(), null, null);
 
-				sendGroupMessage(createOutgoingMessage(groupUpdate, newGroup.getOwner(), newGroup,
+				sendGroupMessage(createOutgoingMessage(groupUpdate, null, newGroup.getOwner(), newGroup,
 						createStatusReports(contacts), ReceiverType.GROUP_MEMBER, MessageType.UPDATE,
 						MessageSubType.UPDATE_GROUP, null, null, null), contacts);
 
@@ -2521,14 +2527,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (id > 0) {
 
-					sendPrivateMessageClaimed(id, dstFile.toString(), refMessageId, MessageType.FILE, null, null, null);
+					sendPrivateMessageClaimed(id, null, dstFile, refMessageId, MessageType.FILE, null, null, null);
 
 					listenerTaskQueue.execute(
 							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiFileSent(dstFile, id, null)));
 
 				} else {
 
-					sendGroupMessageClaimed(-id, dstFile.toString(), refMessageId, MessageType.FILE, null, null, null);
+					sendGroupMessageClaimed(-id, null, dstFile, refMessageId, MessageType.FILE, null, null, null);
 
 					listenerTaskQueue.execute(
 							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiFileSent(dstFile, null, -id)));
@@ -2557,7 +2563,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (!Objects.equals(message.getMessageType(), MessageType.FILE))
 					return;
 
-				Path file = Paths.get(message.getContent());
+				Path file = Paths.get(message.getAttachment());
 
 				if (CommonConstants.AUTO_OPEN_FILE) {
 
@@ -2776,7 +2782,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					if (!recordSuccessful)
 						return;
 
-					sendPrivateMessageClaimed(id, path.toString(), refId, MessageType.AUDIO, null, null, null);
+					sendPrivateMessageClaimed(id, null, path, refId, MessageType.AUDIO, null, null, null);
 
 					listenerTaskQueue.execute(
 							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioSent(path, id, null)));
@@ -2788,7 +2794,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					if (!recordSuccessful)
 						return;
 
-					sendGroupMessageClaimed(-id, path.toString(), refId, MessageType.AUDIO, null, null, null);
+					sendGroupMessageClaimed(-id, null, path, refId, MessageType.AUDIO, null, null, null);
 
 					listenerTaskQueue.execute(
 							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioSent(path, null, -id)));
@@ -2837,7 +2843,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (id > 0) {
 
-					sendPrivateMessageClaimed(id, dstFile.toString(), dmsPanel.getRefMessageId(id), MessageType.FILE,
+					sendPrivateMessageClaimed(id, null, dstFile, dmsPanel.getRefMessageId(id), MessageType.FILE,
 							MessageSubType.FILE_REPORT, reportId, null);
 
 					listenerTaskQueue.execute(() -> dmsGuiListeners
@@ -2845,7 +2851,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else {
 
-					sendGroupMessageClaimed(-id, dstFile.toString(), dmsPanel.getRefMessageId(id), MessageType.FILE,
+					sendGroupMessageClaimed(-id, null, dstFile, dmsPanel.getRefMessageId(id), MessageType.FILE,
 							MessageSubType.FILE_REPORT, reportId, null);
 
 					listenerTaskQueue.execute(() -> dmsGuiListeners
@@ -3240,7 +3246,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
-			return sendPrivateMessageClaimed(contactId, message, null, MessageType.TEXT, null, null, 1);
+			return sendPrivateMessageClaimed(contactId, message, null, null, MessageType.TEXT, null, null, 1);
 
 		}));
 
@@ -3251,7 +3257,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
-			return sendGroupMessageClaimed(groupId, message, null, MessageType.TEXT, null, null, 1);
+			return sendGroupMessageClaimed(groupId, message, null, null, MessageType.TEXT, null, null, 1);
 
 		}));
 
@@ -3264,7 +3270,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE, null, null, 1);
+			return sendPrivateMessageClaimed(contactId, null, dstFile, null, MessageType.FILE, null, null, 1);
 
 		}));
 
@@ -3277,7 +3283,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE, null, null, 1);
+			return sendGroupMessageClaimed(groupId, null, dstFile, null, MessageType.FILE, null, null, 1);
 
 		}));
 
@@ -3290,7 +3296,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendPrivateMessageClaimed(contactId, dstFile.toString(), null, MessageType.FILE,
+			return sendPrivateMessageClaimed(contactId, null, dstFile, null, MessageType.FILE,
 					MessageSubType.FILE_REPORT, reportId, 1);
 
 		}));
@@ -3304,8 +3310,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendGroupMessageClaimed(groupId, dstFile.toString(), null, MessageType.FILE,
-					MessageSubType.FILE_REPORT, reportId, 1);
+			return sendGroupMessageClaimed(groupId, null, dstFile, null, MessageType.FILE, MessageSubType.FILE_REPORT,
+					reportId, 1);
 
 		}));
 

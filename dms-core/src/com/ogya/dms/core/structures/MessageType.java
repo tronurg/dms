@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum MessageType {
 
-	TEXT(0), FILE(1), AUDIO(2), OBJECT(3), LIST(4), UPDATE(5);
+	TEXT(0), FILE(1), AUDIO(2), UPDATE(3);
 
 	private static final Map<Integer, MessageType> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, MessageType>());

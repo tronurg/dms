@@ -662,7 +662,8 @@ class MessagePane extends BorderPane {
 
 		final Long messageId = message.getId();
 
-		String content = message.getContent();
+		String content = Objects.equals(message.getMessageType(), MessageType.TEXT) ? message.getContent()
+				: message.getAttachment();
 		if (Objects.equals(message.getMessageType(), MessageType.FILE))
 			content = Paths.get(content).getFileName().toString();
 
