@@ -90,10 +90,14 @@ public class Model {
 		if (localUsers.isEmpty())
 			listener.publishImmediately();
 
-		localUsers.putIfAbsent(userUuid,
-				new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()), this::localMessageReceived));
+		LocalUser localUser = localUsers.get(userUuid);
+		if (localUser == null) {
+			localUser = new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()), this::localMessageReceived);
+			localUsers.put(userUuid, localUser);
+			mappedUsers.put(localUser.mapId, localUser);
+		}
 
-		localUsers.get(userUuid).messageFactory.inFeed(data);
+		localUser.messageFactory.inFeed(data);
 
 	}
 
@@ -118,8 +122,6 @@ public class Model {
 					break;
 
 				User localUser = localUsers.get(userUuid);
-
-				mappedUsers.putIfAbsent(localUser.mapId, localUser);
 
 				copyBeacon(beacon, localUser.beacon);
 
@@ -511,7 +513,7 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			if (Objects.equals(receiverUuid, uuid))
+			if (user.beacon.status == null || Objects.equals(receiverUuid, uuid))
 				return;
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, ContentType.BCON,
@@ -546,6 +548,9 @@ public class Model {
 	private void sendAllBeaconsToRemoteServer(String dmsUuid) {
 
 		localUsers.forEach((uuid, user) -> {
+
+			if (user.beacon.status == null)
+				return;
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packRemote(user.beacon), user.mapId, null,
 					ContentType.BCON, null, null, null, null);
