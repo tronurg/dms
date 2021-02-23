@@ -262,6 +262,7 @@ public class Model {
 					MessagePojo remoteMessagePojo = new MessagePojo(payload, senderMapId,
 							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.messageId, null,
 							null, null);
+					remoteMessagePojo.attachment = messagePojo.attachment;
 
 					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus, progress -> {
 
@@ -328,8 +329,10 @@ public class Model {
 				}
 				String receiverUuid = String.join(";", receiverUuids);
 
+				Path attachment = messagePojo.attachment;
 				messagePojo = new MessagePojo(payload, senderUuid, receiverUuid, messagePojo.contentType,
 						messagePojo.messageId, null, null, null);
+				messagePojo.attachment = attachment;
 
 			}
 
