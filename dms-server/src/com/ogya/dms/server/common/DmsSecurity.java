@@ -107,7 +107,7 @@ public class DmsSecurity {
 
 			try (InputStream inputStream = Files.newInputStream(Paths.get("./sec/dms.p12"))) {
 
-				KeyStore keyStore = KeyStore.getInstance("PKCS12");
+				keyStore = KeyStore.getInstance("PKCS12");
 				keyStore.load(inputStream, PASSWORD);
 
 			} catch (Exception e) {
@@ -138,7 +138,7 @@ public class DmsSecurity {
 				TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
 				trustManagerFactory.init(keyStore);
 
-				SSLContext sslContext = SSLContext.getInstance("TLS");
+				sslContext = SSLContext.getInstance("TLS");
 				sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
 			} catch (Exception e) {
