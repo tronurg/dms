@@ -280,7 +280,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		try {
 			localMessageQueue.put(new LocalMessage(messagePojo, receiverUuids, failConsumer));
-			signalQueue.offer(new byte[0]);
+			signalQueue.put(new byte[0]);
 		} catch (InterruptedException e) {
 
 		}
