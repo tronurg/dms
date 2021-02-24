@@ -216,9 +216,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				byte[] signal = signalQueue.take();
-
-				inprocSocket.send(signal);
+				inprocSocket.send(signalQueue.take());
 
 			}
 
