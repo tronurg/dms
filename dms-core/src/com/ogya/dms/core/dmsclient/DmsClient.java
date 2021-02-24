@@ -195,7 +195,9 @@ public class DmsClient {
 				if (poller.pollin(pollDealer)) {
 
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
-					messageFactory.inFeed(receivedMessage);
+					synchronized (messageFactory) {
+						messageFactory.inFeed(receivedMessage);
+					}
 
 				} else if (poller.pollin(pollInproc)) {
 
@@ -224,8 +226,8 @@ public class DmsClient {
 
 					DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, serverConnected, (data, progress) -> {
 						inprocSocket.send(data);
-						if (Objects.equals(messagePojo.contentType, ContentType.TRANSIENT) && progress < 0
-								&& messagePojo.useTrackingId != null)
+						if (progress < 0 && messagePojo.useTrackingId != null
+								&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT))
 							progressTransientReceivedToListener(messagePojo.useTrackingId,
 									messagePojo.receiverUuid.split(";"), progress);
 					});
@@ -261,8 +263,10 @@ public class DmsClient {
 
 				case ZMQ.EVENT_DISCONNECTED:
 					serverConnected.set(false);
-					messageFactory.deleteResources();
-					messageFactory.reset();
+					synchronized (messageFactory) {
+						messageFactory.deleteResources();
+						messageFactory.reset();
+					}
 					serverConnStatusUpdatedToListener();
 					break;
 
