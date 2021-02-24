@@ -224,7 +224,8 @@ public class DmsClient {
 
 					DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, serverConnected, (data, progress) -> {
 						inprocSocket.send(data);
-						if (progress < 0 && messagePojo.useTrackingId != null)
+						if (Objects.equals(messagePojo.contentType, ContentType.TRANSIENT) && progress < 0
+								&& messagePojo.useTrackingId != null)
 							progressTransientReceivedToListener(messagePojo.useTrackingId,
 									messagePojo.receiverUuid.split(";"), progress);
 					});
