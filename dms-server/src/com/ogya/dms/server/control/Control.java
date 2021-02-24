@@ -1,9 +1,10 @@
 package com.ogya.dms.server.control;
 
 import java.net.InetAddress;
-import java.util.AbstractMap.SimpleEntry;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,7 +30,6 @@ import com.ogya.dms.server.model.intf.ModelListener;
 public class Control implements TcpManagerListener, ModelListener {
 
 	private static final int CHUNK_SIZE = 8192;
-	private static final int QUEUE_CAPACITY = 1024;
 
 	private static final String DMS_UUID = UUID.randomUUID().toString();
 
@@ -52,8 +52,9 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final ZContext context = new ZContext();
 
-	private final LinkedBlockingQueue<SimpleEntry<String, byte[]>> routerQueue = new LinkedBlockingQueue<SimpleEntry<String, byte[]>>(
-			QUEUE_CAPACITY);
+	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
+
+	private final LinkedBlockingQueue<LocalMessage> localMessageQueue = new LinkedBlockingQueue<LocalMessage>();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
@@ -127,6 +128,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			routerSocket.monitor("inproc://monitor", ZMQ.EVENT_DISCONNECTED);
 
+			routerSocket.setSndHWM(0);
 			routerSocket.setRouterMandatory(true);
 			routerSocket.bind("tcp://*:" + routerPort);
 			inprocSocket.bind("inproc://router");
@@ -148,19 +150,49 @@ public class Control implements TcpManagerListener, ModelListener {
 
 				} else if (poller.pollin(pollInproc)) {
 
-					String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
-					byte[] message = inprocSocket.recv(ZMQ.DONTWAIT);
+					inprocSocket.recv(ZMQ.DONTWAIT);
+					LocalMessage localMessage = localMessageQueue.poll();
 
-					try {
+					if (localMessage == null)
+						continue;
 
-						routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-						routerSocket.send(message, ZMQ.DONTWAIT);
+					Set<String> failedUuids = new HashSet<String>();
 
-					} catch (ZMQException e) {
+					AtomicBoolean health = new AtomicBoolean(true);
 
-						taskQueue.execute(() -> model.localUuidDisconnected(uuid));
+					DmsMessageFactory.outFeed(localMessage.messagePojo, CHUNK_SIZE, health, (data, progress) -> {
 
-					}
+						for (String receiverUuid : localMessage.receiverUuids) {
+
+							if (failedUuids.contains(receiverUuid))
+								continue;
+
+							try {
+
+								routerSocket.send(receiverUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+								routerSocket.send(data, ZMQ.DONTWAIT);
+
+								if (progress < 0)
+									failedUuids.add(receiverUuid);
+
+							} catch (ZMQException e) {
+
+								failedUuids.add(receiverUuid);
+
+								taskQueue.execute(() -> model.localUuidDisconnected(receiverUuid));
+
+							}
+
+						}
+
+						health.set(failedUuids.size() < localMessage.receiverUuids.length);
+
+					});
+
+					if (localMessage.failConsumer == null)
+						continue;
+
+					localMessage.failConsumer.accept(failedUuids);
 
 				}
 			}
@@ -184,10 +216,9 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				SimpleEntry<String, byte[]> receiverMessage = routerQueue.take();
+				byte[] signal = signalQueue.take();
 
-				inprocSocket.sendMore(receiverMessage.getKey());
-				inprocSocket.send(receiverMessage.getValue());
+				inprocSocket.send(signal);
 
 			}
 
@@ -246,25 +277,23 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToLocalUsers(MessagePojo messagePojo, final String... receiverUuids) {
+	public void sendToLocalUsers(MessagePojo messagePojo, final Consumer<Set<String>> failConsumer,
+			final String... receiverUuids) {
 
-		DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, data -> {
-			for (String receiverUuid : receiverUuids) {
-				try {
-					routerQueue.put(new SimpleEntry<String, byte[]>(receiverUuid, data));
-				} catch (InterruptedException e) {
+		try {
+			localMessageQueue.put(new LocalMessage(messagePojo, receiverUuids, failConsumer));
+			signalQueue.offer(new byte[0]);
+		} catch (InterruptedException e) {
 
-				}
-			}
-		});
+		}
 
 	}
 
 	@Override
 	public void sendToRemoteServer(String dmsUuid, MessagePojo messagePojo, AtomicBoolean sendStatus,
-			Consumer<Integer> progressMethod, long timeout, InetAddress useLocalAddress) {
+			Consumer<Integer> progressConsumer, long timeout, InetAddress useLocalAddress) {
 
-		tcpManager.sendMessageToServer(dmsUuid, messagePojo, sendStatus, progressMethod, timeout, useLocalAddress);
+		tcpManager.sendMessageToServer(dmsUuid, messagePojo, sendStatus, progressConsumer, timeout, useLocalAddress);
 
 	}
 
@@ -282,6 +311,20 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			publishSyncObj.notify();
 
+		}
+
+	}
+
+	private final class LocalMessage {
+
+		private final MessagePojo messagePojo;
+		private final String[] receiverUuids;
+		private final Consumer<Set<String>> failConsumer;
+
+		private LocalMessage(MessagePojo messagePojo, String[] receiverUuids, Consumer<Set<String>> failConsumer) {
+			this.messagePojo = messagePojo;
+			this.receiverUuids = receiverUuids;
+			this.failConsumer = failConsumer;
 		}
 
 	}

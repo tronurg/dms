@@ -140,7 +140,7 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
-									connections.remove(address);
+									connections.remove(address).messageFactory.deleteResources();
 									dmsServer.connections.remove(connection);
 
 									serverConnectionsUpdated(dmsServer);
@@ -187,7 +187,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	public void sendMessageToServer(final String dmsUuid, final MessagePojo messagePojo, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressMethod, final long timeout, final InetAddress useLocalAddress) {
+			final Consumer<Integer> progressConsumer, final long timeout, final InetAddress useLocalAddress) {
 
 		taskQueue.execute(() -> {
 
@@ -196,19 +196,8 @@ public class TcpManager implements TcpServerListener {
 			if (dmsServer == null)
 				return;
 
-			try {
-
-				sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
-						progressMethod, timeout, useLocalAddress);
-
-			} catch (Exception e) {
-
-				if (progressMethod != null)
-					progressMethod.accept(-1);
-
-				e.printStackTrace();
-
-			}
+			sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
+					progressConsumer, timeout, useLocalAddress);
 
 		});
 
@@ -261,7 +250,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	private void sendMessageToServer(final DmsServer dmsServer, final MessagePojo messagePojo,
-			final AtomicBoolean sendStatus, final Consumer<Integer> progressMethod, final long timeout,
+			final AtomicBoolean sendStatus, final Consumer<Integer> progressConsumer, final long timeout,
 			final InetAddress useLocalInterface) {
 
 		dmsServer.taskQueue.execute(() -> {
@@ -302,12 +291,12 @@ public class TcpManager implements TcpServerListener {
 						if (!sent.get())
 							return;
 
-						if (progressMethod == null)
+						if (progressConsumer == null)
 							return;
 
 						if (progress > progressPercent.get()) {
 							progressPercent.set(progress);
-							progressMethod.accept(progress);
+							progressConsumer.accept(progress);
 						}
 
 					});
@@ -322,11 +311,11 @@ public class TcpManager implements TcpServerListener {
 
 			}
 
-			if (progressMethod == null)
+			if (progressConsumer == null)
 				return;
 
 			if (!sent.get())
-				progressMethod.accept(-1);
+				progressConsumer.accept(-1);
 
 		});
 
@@ -420,7 +409,7 @@ public class TcpManager implements TcpServerListener {
 			if (connection == null || connection.id != id)
 				return;
 
-			connections.remove(address);
+			connections.remove(address).messageFactory.deleteResources();
 
 			DmsServer dmsServer = connection.dmsServer;
 

@@ -1,6 +1,5 @@
 package com.ogya.dms.core.intf;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
@@ -75,14 +74,13 @@ public interface DmsHandle {
 
 	MessageRules createMessageRules();
 
-	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws IOException;
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds);
 
-	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws IOException;
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId);
 
-	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules)
-			throws IOException;
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules);
 
-	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules) throws IOException;
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules);
 
 	Future<Long> sendGuiMessageToContact(String message, Long contactId);
 

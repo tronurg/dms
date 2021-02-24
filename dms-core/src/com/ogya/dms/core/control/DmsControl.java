@@ -2773,14 +2773,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			boolean recordSuccessful = path != null && Files.exists(path);
 
+			Platform.runLater(() -> dmsPanel.recordingStopped(id));
+
+			if (!recordSuccessful)
+				return;
+
 			try {
 
 				if (id > 0) {
-
-					Platform.runLater(() -> dmsPanel.recordingStopped(id));
-
-					if (!recordSuccessful)
-						return;
 
 					sendPrivateMessageClaimed(id, null, path, refId, MessageType.AUDIO, null, null, null);
 
@@ -2788,11 +2788,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioSent(path, id, null)));
 
 				} else {
-
-					Platform.runLater(() -> dmsPanel.recordingStopped(id));
-
-					if (!recordSuccessful)
-						return;
 
 					sendGroupMessageClaimed(-id, null, path, refId, MessageType.AUDIO, null, null, null);
 
@@ -3165,22 +3160,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) throws IOException {
+	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) {
 
 		return sendMessageToContacts(messageHandle, contactIds, null);
 
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) throws IOException {
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) {
 
 		return sendMessageToGroup(messageHandle, groupId, null);
 
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules)
-			throws IOException {
+	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds,
+			MessageRules messageRules) {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3201,8 +3196,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules)
-			throws IOException {
+	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules) {
 
 		if (!model.isServerConnected())
 			return false;
@@ -3226,8 +3220,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules)
-			throws IOException {
+	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules) {
 
 		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
 

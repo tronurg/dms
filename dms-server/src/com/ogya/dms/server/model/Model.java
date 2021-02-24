@@ -226,17 +226,51 @@ public class Model {
 
 				}
 
-				listener.sendToLocalUsers(messagePojo, localReceiverUuids.toArray(new String[0]));
+				final AtomicInteger totalReceivers = new AtomicInteger(
+						localReceiverUuids.size() + remoteServerReceiverUuids.size());
 
-				if (trackedMessage && localReceiverUuids.size() > 0) {
+				if (totalReceivers.get() == 0 && messagePojo.attachment != null) {
+					try {
+						Files.deleteIfExists(messagePojo.attachment);
+					} catch (Exception e) {
 
-					MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(100),
-							String.join(";", localReceiverUuids), senderUuid, ContentType.PROGRESS_MESSAGE, null,
-							trackingId, null, null);
-
-					listener.sendToLocalUsers(progressMessagePojo, senderUuid);
-
+					}
 				}
+
+				listener.sendToLocalUsers(messagePojo, failedUuids -> {
+
+					String[] successfulUuids = localReceiverUuids.stream().filter(uuid -> !failedUuids.contains(uuid))
+							.toArray(String[]::new);
+
+					if (trackedMessage && successfulUuids.length > 0) {
+
+						MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(100),
+								String.join(";", successfulUuids), senderUuid, ContentType.PROGRESS_MESSAGE, null,
+								trackingId, null, null);
+
+						listener.sendToLocalUsers(progressMessagePojo, null, senderUuid);
+
+					}
+
+					if (trackedTransientMessage && failedUuids.size() > 0) {
+
+						MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(-1),
+								String.join(";", failedUuids), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
+								trackingId, null, null);
+
+						listener.sendToLocalUsers(progressMessagePojo, null, senderUuid);
+
+					}
+
+					if (totalReceivers.addAndGet(-localReceiverUuids.size()) == 0 && messagePojo.attachment != null) {
+						try {
+							Files.deleteIfExists(messagePojo.attachment);
+						} catch (Exception e) {
+
+						}
+					}
+
+				}, localReceiverUuids.toArray(new String[0]));
 
 				if (trackedTransientMessage && unreachableUuids.size() > 0) {
 
@@ -244,7 +278,7 @@ public class Model {
 							String.join(";", unreachableUuids), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
 							trackingId, null, null);
 
-					listener.sendToLocalUsers(progressMessagePojo, senderUuid);
+					listener.sendToLocalUsers(progressMessagePojo, null, senderUuid);
 
 				}
 
@@ -275,7 +309,7 @@ public class Model {
 									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_MESSAGE, null,
 									trackingId, null, null);
 
-							listener.sendToLocalUsers(progressMessagePojo, senderUuid);
+							listener.sendToLocalUsers(progressMessagePojo, null, senderUuid);
 
 						} else if (trackedTransientMessage && progress < 0) {
 
@@ -283,12 +317,20 @@ public class Model {
 									String.join(";", uuidList), senderUuid, ContentType.PROGRESS_TRANSIENT, null,
 									trackingId, null, null);
 
-							listener.sendToLocalUsers(progressMessagePojo, senderUuid);
+							listener.sendToLocalUsers(progressMessagePojo, null, senderUuid);
 
 						}
 
-						if (progress < 0 || progress == 100)
+						if (progress < 0 || progress == 100) {
 							statusReceiverMap.remove(sendStatus);
+							if (totalReceivers.addAndGet(-1) == 0 && messagePojo.attachment != null) {
+								try {
+									Files.deleteIfExists(messagePojo.attachment);
+								} catch (Exception e) {
+
+								}
+							}
+						}
 
 					}, timeout, messagePojo.useLocalAddress);
 
@@ -379,7 +421,19 @@ public class Model {
 				if (messagePojo.receiverUuid == null)
 					break;
 
-				listener.sendToLocalUsers(messagePojo, Arrays.asList(messagePojo.receiverUuid.split(";")).stream()
+				final Path attachment = messagePojo.attachment;
+
+				listener.sendToLocalUsers(messagePojo, failedUuids -> {
+
+					if (attachment != null) {
+						try {
+							Files.deleteIfExists(attachment);
+						} catch (Exception e) {
+
+						}
+					}
+
+				}, Arrays.asList(messagePojo.receiverUuid.split(";")).stream()
 						.filter(receiverUuid -> localUsers.containsKey(receiverUuid)).toArray(String[]::new));
 
 				break;
@@ -396,7 +450,7 @@ public class Model {
 
 	public void testAllLocalUsers() {
 
-		listener.sendToLocalUsers(TEST, localUsers.keySet().toArray(new String[0]));
+		listener.sendToLocalUsers(TEST, null, localUsers.keySet().toArray(new String[0]));
 
 	}
 
@@ -451,9 +505,9 @@ public class Model {
 		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null, null,
 				null);
 
-		localUsers.remove(userUuid);
+		localUsers.remove(userUuid).messageFactory.deleteResources();
 
-		listener.sendToLocalUsers(messagePojo, localUsers.keySet().toArray(new String[0]));
+		listener.sendToLocalUsers(messagePojo, null, localUsers.keySet().toArray(new String[0]));
 
 		MessagePojo remoteMessagePojo = new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null,
 				null, null, null);
@@ -488,7 +542,7 @@ public class Model {
 
 		remoteUsers.remove(userUuid);
 
-		listener.sendToLocalUsers(messagePojo, localUsers.keySet().toArray(new String[0]));
+		listener.sendToLocalUsers(messagePojo, null, localUsers.keySet().toArray(new String[0]));
 
 	}
 
@@ -503,7 +557,7 @@ public class Model {
 		MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null,
 				null, null, null);
 
-		listener.sendToLocalUsers(beaconPojo,
+		listener.sendToLocalUsers(beaconPojo, null,
 				localUsers.keySet().stream().filter(uuid -> !Objects.equals(beacon.uuid, uuid)).toArray(String[]::new));
 
 	}
@@ -518,7 +572,7 @@ public class Model {
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, ContentType.BCON,
 					null, null, null, null);
 
-			listener.sendToLocalUsers(beaconPojo, receiverUuid);
+			listener.sendToLocalUsers(beaconPojo, null, receiverUuid);
 
 		});
 
@@ -527,7 +581,7 @@ public class Model {
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, ContentType.BCON,
 					null, null, null, null);
 
-			listener.sendToLocalUsers(beaconPojo, receiverUuid);
+			listener.sendToLocalUsers(beaconPojo, null, receiverUuid);
 
 		});
 
@@ -642,7 +696,7 @@ public class Model {
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, ContentType.IPS, null,
 				null, null, null);
 
-		listener.sendToLocalUsers(messagePojo, receiverUuid);
+		listener.sendToLocalUsers(messagePojo, null, receiverUuid);
 
 	}
 
@@ -651,7 +705,7 @@ public class Model {
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, ContentType.IPS, null,
 				null, null, null);
 
-		listener.sendToLocalUsers(messagePojo, localUsers.keySet().toArray(new String[0]));
+		listener.sendToLocalUsers(messagePojo, null, localUsers.keySet().toArray(new String[0]));
 
 	}
 

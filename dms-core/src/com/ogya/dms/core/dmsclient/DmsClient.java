@@ -6,6 +6,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -34,6 +35,8 @@ public class DmsClient {
 
 	private final String serverIp;
 	private final int dealerPort;
+
+	private final AtomicBoolean serverConnected = new AtomicBoolean(false);
 
 	private final DmsClientListener listener;
 
@@ -177,6 +180,7 @@ public class DmsClient {
 			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_HANDSHAKE_PROTOCOL | ZMQ.EVENT_DISCONNECTED);
 
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
+			dealerSocket.setSndHWM(0);
 			dealerSocket.setImmediate(false);
 			dealerSocket.connect("tcp://" + serverIp + ":" + dealerPort);
 
@@ -216,7 +220,14 @@ public class DmsClient {
 
 				try {
 
-					DmsMessageFactory.outFeed(dealerQueue.take(), CHUNK_SIZE, data -> inprocSocket.send(data));
+					MessagePojo messagePojo = dealerQueue.take();
+
+					DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, serverConnected, (data, progress) -> {
+						inprocSocket.send(data);
+						if (progress < 0 && messagePojo.useTrackingId != null)
+							progressTransientReceivedToListener(messagePojo.useTrackingId,
+									messagePojo.receiverUuid.split(";"), progress);
+					});
 
 				} catch (InterruptedException e) {
 
@@ -243,12 +254,15 @@ public class DmsClient {
 				switch (event.getEvent()) {
 
 				case ZMQ.EVENT_HANDSHAKE_PROTOCOL:
-
-					serverConnStatusUpdatedToListener(true);
+					serverConnected.set(true);
+					serverConnStatusUpdatedToListener();
 					break;
 
 				case ZMQ.EVENT_DISCONNECTED:
-					serverConnStatusUpdatedToListener(false);
+					serverConnected.set(false);
+					messageFactory.deleteResources();
+					messageFactory.reset();
+					serverConnStatusUpdatedToListener();
 					break;
 
 				}
@@ -421,11 +435,11 @@ public class DmsClient {
 
 	}
 
-	private void serverConnStatusUpdatedToListener(final boolean connStatus) {
+	private void serverConnStatusUpdatedToListener() {
 
 		taskQueue.execute(() -> {
 
-			listener.serverConnStatusUpdated(connStatus);
+			listener.serverConnStatusUpdated(serverConnected.get());
 
 		});
 

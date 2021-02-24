@@ -31,7 +31,7 @@ public class DmsMessageFactory {
 
 	}
 
-	public void inFeed(byte[] data) {
+	public synchronized void inFeed(byte[] data) {
 
 		if (data.length == 0) {
 
@@ -58,7 +58,7 @@ public class DmsMessageFactory {
 
 	}
 
-	public void deleteResources() {
+	public synchronized void deleteResources() {
 
 		if (outputStream != null) {
 			try {
@@ -79,7 +79,7 @@ public class DmsMessageFactory {
 
 	}
 
-	private void reset() {
+	public synchronized void reset() {
 
 		inProgress = false;
 		error = false;
