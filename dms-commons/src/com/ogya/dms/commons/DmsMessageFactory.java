@@ -139,12 +139,6 @@ public class DmsMessageFactory {
 
 	}
 
-	public static void outFeed(MessagePojo messagePojo, int chunkSize, Consumer<byte[]> dataConsumer) {
-
-		outFeed(messagePojo, chunkSize, new AtomicBoolean(true), (data, progress) -> dataConsumer.accept(data));
-
-	}
-
 	public static void outFeed(MessagePojo messagePojo, int chunkSize, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
