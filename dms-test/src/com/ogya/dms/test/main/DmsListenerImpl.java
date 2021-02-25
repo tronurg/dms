@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.handles.ContactHandle;
@@ -109,7 +110,10 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 
 	@Override
 	public void messageFailed(Long trackingId, List<Long> contactIds) {
-		// TODO Auto-generated method stub
+
+		System.out.println(String.format("%s: Message #%d failed to %s\n", myName, trackingId,
+				contactIds.stream().map(contactId -> dmsHandle.getContactHandle(contactId).getName())
+						.collect(Collectors.toList()).toString()));
 
 	}
 

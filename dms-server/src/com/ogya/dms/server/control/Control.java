@@ -201,7 +201,8 @@ public class Control implements TcpManagerListener, ModelListener {
 
 						boolean progressUpdated = progress > progressPercent.get();
 
-						progressPercent.set(progress);
+						if (progressUpdated)
+							progressPercent.set(progress);
 
 						if (localMessage.progressConsumer == null)
 							return;

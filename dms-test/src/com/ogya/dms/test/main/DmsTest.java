@@ -190,6 +190,7 @@ public class DmsTest {
 
 			JComponent mcPanel = dmsHandle.getDmsPanel();
 //			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 //			JComponent mcPanel = csh.getContactSelectionPanel(contact -> Objects.equals(contact.getSecretId(), "sid"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
@@ -203,12 +204,13 @@ public class DmsTest {
 				testList.add(testPojo);
 
 				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-//				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
+//				messageHandle.setFileHandle(
+//						dmsHandle.createFileHandle(Paths.get("D:/Onur/JEgtK/Kýþla Geliþim/kgp_new.psb"), 2));
 				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
 				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
 				try {
 					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds,
-							dmsHandle.createMessageRules().useTrackingId(123L));
+							dmsHandle.createMessageRules().useTrackingId(123L).useTimeout(1000L));
 				} catch (Exception e1) {
 					e1.printStackTrace();
 				}

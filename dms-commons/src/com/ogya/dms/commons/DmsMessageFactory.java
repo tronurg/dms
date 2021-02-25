@@ -174,7 +174,7 @@ public class DmsMessageFactory {
 				byte[] buffer = new byte[chunkSize];
 
 				int bytesRead;
-				int totalBytesRead = 0;
+				long totalBytesRead = 0;
 
 				while ((bytesRead = inputStream.read(buffer)) > 0) {
 
