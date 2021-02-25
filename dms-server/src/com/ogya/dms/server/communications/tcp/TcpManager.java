@@ -187,7 +187,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	public void sendMessageToServer(final String dmsUuid, final MessagePojo messagePojo, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressConsumer, final long timeout, final InetAddress useLocalAddress) {
+			final Consumer<Integer> progressConsumer) {
 
 		taskQueue.execute(() -> {
 
@@ -197,7 +197,7 @@ public class TcpManager implements TcpServerListener {
 				return;
 
 			sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
-					progressConsumer, timeout, useLocalAddress);
+					progressConsumer);
 
 		});
 
@@ -210,8 +210,8 @@ public class TcpManager implements TcpServerListener {
 			if (dmsServers.isEmpty())
 				return;
 
-			dmsServers.forEach((dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo,
-					new AtomicBoolean(true), null, Long.MAX_VALUE, null));
+			dmsServers.forEach(
+					(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo, new AtomicBoolean(true), null));
 
 		});
 
@@ -250,10 +250,11 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	private void sendMessageToServer(final DmsServer dmsServer, final MessagePojo messagePojo,
-			final AtomicBoolean sendStatus, final Consumer<Integer> progressConsumer, final long timeout,
-			final InetAddress useLocalInterface) {
+			final AtomicBoolean sendStatus, final Consumer<Integer> progressConsumer) {
 
 		dmsServer.taskQueue.execute(() -> {
+
+			final AtomicBoolean health = new AtomicBoolean(true);
 
 			final AtomicBoolean sent = new AtomicBoolean(false);
 
@@ -263,10 +264,14 @@ public class TcpManager implements TcpServerListener {
 
 				for (Connection connection : dmsServer.connections) {
 
-					if (!sendStatus.get())
+					health.set(sendStatus.get() && (messagePojo.useTimeout == null
+							|| System.currentTimeMillis() - startTime < messagePojo.useTimeout));
+
+					if (!health.get())
 						break;
 
-					if (!(useLocalInterface == null || useLocalInterface.equals(connection.localAddress)))
+					if (!(messagePojo.useLocalAddress == null
+							|| messagePojo.useLocalAddress.equals(connection.localAddress)))
 						continue;
 
 					if (connection.sendFunction == null)
@@ -274,30 +279,33 @@ public class TcpManager implements TcpServerListener {
 
 					sent.set(true); // Hypothesis
 
-					final AtomicBoolean health = new AtomicBoolean(true);
-
 					final AtomicInteger progressPercent = new AtomicInteger(-1);
 
-					DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, health, (data, progress) -> {
+					DmsMessageFactory.outFeedRemote(messagePojo, CHUNK_SIZE, health, (data, progress) -> {
 
 						if (!sent.get())
 							return;
 
 						sent.set(connection.sendFunction.apply(data));
 
-						sendStatus.set(sendStatus.get() && System.currentTimeMillis() - startTime < timeout);
 						health.set(sendStatus.get() && sent.get());
+						health.set(sendStatus.get()
+								&& (messagePojo.useTimeout == null
+										|| System.currentTimeMillis() - startTime < messagePojo.useTimeout)
+								&& sent.get());
 
 						if (!sent.get())
 							return;
 
+						boolean progressUpdated = progress > progressPercent.get();
+
+						progressPercent.set(progress);
+
 						if (progressConsumer == null)
 							return;
 
-						if (progress > progressPercent.get()) {
-							progressPercent.set(progress);
+						if (progressUpdated)
 							progressConsumer.accept(progress);
-						}
 
 					});
 

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ogya.dms.commons.structures.Beacon;
+import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsPackingFactory {
 
@@ -20,8 +21,8 @@ public class DmsPackingFactory {
 			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.ALL, Visibility.NONE)
 			.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
-	private static ObjectMapper objectMapperRemote = objectMapper.copy().addMixIn(Beacon.class,
-			BeaconRemoteMixin.class);
+	private static ObjectMapper objectMapperRemote = objectMapper.copy().addMixIn(Beacon.class, BeaconRemoteMixin.class)
+			.addMixIn(MessagePojo.class, MessagePojoRemoteMixin.class);
 
 	public static byte[] pack(Object src) {
 
@@ -73,6 +74,17 @@ public class DmsPackingFactory {
 		public List<InetAddress> remoteInterfaces;
 		@JsonIgnore
 		public List<InetAddress> localInterfaces;
+
+	}
+
+	private static abstract class MessagePojoRemoteMixin {
+
+		@JsonIgnore
+		public Long useTrackingId;
+		@JsonIgnore
+		public Long useTimeout;
+		@JsonIgnore
+		public InetAddress useLocalAddress;
 
 	}
 

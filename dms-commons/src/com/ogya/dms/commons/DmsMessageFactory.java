@@ -142,22 +142,32 @@ public class DmsMessageFactory {
 	public static void outFeed(MessagePojo messagePojo, int chunkSize, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
-		Path path = messagePojo.attachment;
+		outFeed(DmsPackingFactory.pack(messagePojo), messagePojo.attachment, chunkSize, health, dataConsumer);
 
-		byte[] messageBytes = DmsPackingFactory.pack(messagePojo);
+	}
 
-		if (path == null) {
+	public static void outFeedRemote(MessagePojo messagePojo, int chunkSize, AtomicBoolean health,
+			BiConsumer<byte[], Integer> dataConsumer) {
+
+		outFeed(DmsPackingFactory.packRemote(messagePojo), messagePojo.attachment, chunkSize, health, dataConsumer);
+
+	}
+
+	public static void outFeed(byte[] data, Path attachment, int chunkSize, AtomicBoolean health,
+			BiConsumer<byte[], Integer> dataConsumer) {
+
+		if (attachment == null) {
 
 			dataConsumer.accept(ByteBuffer.allocate(8).putLong(0L).array(), 0);
 
-			dataConsumer.accept(messageBytes, 100);
+			dataConsumer.accept(data, 100);
 
 		} else {
 
-			try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(path))) {
+			try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(attachment))) {
 
-				long fileSize = Files.size(path);
-				double totalBytes = fileSize + messageBytes.length;
+				long fileSize = Files.size(attachment);
+				double totalBytes = fileSize + data.length;
 
 				dataConsumer.accept(ByteBuffer.allocate(8).putLong(fileSize).array(), 0);
 
@@ -173,11 +183,11 @@ public class DmsMessageFactory {
 
 					totalBytesRead += bytesRead;
 
-					dataConsumer.accept(Arrays.copyOf(buffer, chunkSize), (int) (100 * (totalBytesRead / totalBytes)));
+					dataConsumer.accept(Arrays.copyOf(buffer, bytesRead), (int) (100 * (totalBytesRead / totalBytes)));
 
 				}
 
-				dataConsumer.accept(messageBytes, 100);
+				dataConsumer.accept(data, 100);
 
 			} catch (IOException e) {
 

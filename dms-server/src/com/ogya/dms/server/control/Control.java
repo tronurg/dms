@@ -1,15 +1,18 @@
 package com.ogya.dms.server.control;
 
 import java.net.InetAddress;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -156,15 +159,19 @@ public class Control implements TcpManagerListener, ModelListener {
 					if (localMessage == null)
 						continue;
 
-					Set<String> failedUuids = new HashSet<String>();
+					List<String> successfulUuids = new ArrayList<String>(localMessage.receiverUuids);
 
-					AtomicBoolean health = new AtomicBoolean(true);
+					final AtomicBoolean health = new AtomicBoolean(true);
+
+					final AtomicInteger progressPercent = new AtomicInteger(-1);
+
+					final long startTime = System.currentTimeMillis();
 
 					DmsMessageFactory.outFeed(localMessage.messagePojo, CHUNK_SIZE, health, (data, progress) -> {
 
 						for (String receiverUuid : localMessage.receiverUuids) {
 
-							if (failedUuids.contains(receiverUuid))
+							if (!successfulUuids.contains(receiverUuid))
 								continue;
 
 							try {
@@ -173,11 +180,11 @@ public class Control implements TcpManagerListener, ModelListener {
 								routerSocket.send(data, ZMQ.DONTWAIT);
 
 								if (progress < 0)
-									failedUuids.add(receiverUuid);
+									successfulUuids.remove(receiverUuid);
 
 							} catch (ZMQException e) {
 
-								failedUuids.add(receiverUuid);
+								successfulUuids.remove(receiverUuid);
 
 								taskQueue.execute(() -> model.localUuidDisconnected(receiverUuid));
 
@@ -185,14 +192,30 @@ public class Control implements TcpManagerListener, ModelListener {
 
 						}
 
-						health.set(failedUuids.size() < localMessage.receiverUuids.length);
+						health.set(localMessage.sendStatus.get()
+								&& (localMessage.messagePojo.useTimeout == null
+										|| System.currentTimeMillis() - startTime < localMessage.messagePojo.useTimeout)
+								&& !successfulUuids.isEmpty());
+
+						boolean progressUpdated = progress > progressPercent.get();
+
+						progressPercent.set(progress);
+
+						if (localMessage.progressConsumer == null)
+							return;
+
+						if (progressUpdated && !successfulUuids.isEmpty())
+							localMessage.progressConsumer.accept(successfulUuids, progress);
 
 					});
 
-					if (localMessage.failConsumer == null)
+					if (localMessage.progressConsumer == null)
 						continue;
 
-					localMessage.failConsumer.accept(failedUuids);
+					if (successfulUuids.size() < localMessage.receiverUuids.size())
+						localMessage.progressConsumer.accept(localMessage.receiverUuids.stream()
+								.filter(receiverUuid -> !successfulUuids.contains(receiverUuid))
+								.collect(Collectors.toList()), -1);
 
 				}
 			}
@@ -275,11 +298,12 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToLocalUsers(MessagePojo messagePojo, final Consumer<Set<String>> failConsumer,
-			final String... receiverUuids) {
+	public void sendToLocalUsers(MessagePojo messagePojo, AtomicBoolean sendStatus,
+			BiConsumer<List<String>, Integer> progressConsumer, String... receiverUuids) {
 
 		try {
-			localMessageQueue.put(new LocalMessage(messagePojo, receiverUuids, failConsumer));
+			localMessageQueue.put(new LocalMessage(messagePojo, Arrays.asList(receiverUuids),
+					sendStatus == null ? new AtomicBoolean(true) : sendStatus, progressConsumer));
 			signalQueue.put(new byte[0]);
 		} catch (InterruptedException e) {
 
@@ -289,9 +313,9 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	@Override
 	public void sendToRemoteServer(String dmsUuid, MessagePojo messagePojo, AtomicBoolean sendStatus,
-			Consumer<Integer> progressConsumer, long timeout, InetAddress useLocalAddress) {
+			Consumer<Integer> progressConsumer) {
 
-		tcpManager.sendMessageToServer(dmsUuid, messagePojo, sendStatus, progressConsumer, timeout, useLocalAddress);
+		tcpManager.sendMessageToServer(dmsUuid, messagePojo, sendStatus, progressConsumer);
 
 	}
 
@@ -316,13 +340,16 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final class LocalMessage {
 
 		private final MessagePojo messagePojo;
-		private final String[] receiverUuids;
-		private final Consumer<Set<String>> failConsumer;
+		private final List<String> receiverUuids;
+		private final AtomicBoolean sendStatus;
+		private final BiConsumer<List<String>, Integer> progressConsumer;
 
-		private LocalMessage(MessagePojo messagePojo, String[] receiverUuids, Consumer<Set<String>> failConsumer) {
+		private LocalMessage(MessagePojo messagePojo, List<String> receiverUuids, AtomicBoolean sendStatus,
+				BiConsumer<List<String>, Integer> progressConsumer) {
 			this.messagePojo = messagePojo;
 			this.receiverUuids = receiverUuids;
-			this.failConsumer = failConsumer;
+			this.sendStatus = sendStatus;
+			this.progressConsumer = progressConsumer;
 		}
 
 	}
