@@ -298,7 +298,8 @@ public class TcpManager implements TcpServerListener {
 
 						boolean progressUpdated = progress > progressPercent.get();
 
-						progressPercent.set(progress);
+						if (progressUpdated)
+							progressPercent.set(progress);
 
 						if (progressConsumer == null)
 							return;
