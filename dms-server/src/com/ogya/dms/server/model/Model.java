@@ -216,7 +216,8 @@ public class Model {
 
 				}
 
-				if (!sendStatus.receiverUuids.isEmpty())
+				if (!sendStatus.receiverUuids.isEmpty() && (Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
+						|| Objects.equals(messagePojo.contentType, ContentType.TRANSIENT)))
 					sendStatuses.add(sendStatus);
 
 				if (sendStatus.receiverUuids.isEmpty() && messagePojo.attachment != null) {
