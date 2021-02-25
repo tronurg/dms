@@ -161,11 +161,13 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					List<String> successfulUuids = new ArrayList<String>(localMessage.receiverUuids);
 
-					final AtomicBoolean health = new AtomicBoolean(true);
+					final long startTime = System.currentTimeMillis();
+
+					final AtomicBoolean health = new AtomicBoolean(
+							localMessage.sendStatus.get() && (localMessage.messagePojo.useTimeout == null
+									|| System.currentTimeMillis() - startTime < localMessage.messagePojo.useTimeout));
 
 					final AtomicInteger progressPercent = new AtomicInteger(-1);
-
-					final long startTime = System.currentTimeMillis();
 
 					DmsMessageFactory.outFeed(localMessage.messagePojo, CHUNK_SIZE, health, (data, progress) -> {
 

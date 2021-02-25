@@ -254,11 +254,11 @@ public class TcpManager implements TcpServerListener {
 
 		dmsServer.taskQueue.execute(() -> {
 
+			final long startTime = System.currentTimeMillis();
+
 			final AtomicBoolean health = new AtomicBoolean(true);
 
 			final AtomicBoolean sent = new AtomicBoolean(false);
-
-			final long startTime = System.currentTimeMillis();
 
 			synchronized (dmsServer.connections) {
 
@@ -288,7 +288,6 @@ public class TcpManager implements TcpServerListener {
 
 						sent.set(connection.sendFunction.apply(data));
 
-						health.set(sendStatus.get() && sent.get());
 						health.set(sendStatus.get()
 								&& (messagePojo.useTimeout == null
 										|| System.currentTimeMillis() - startTime < messagePojo.useTimeout)
