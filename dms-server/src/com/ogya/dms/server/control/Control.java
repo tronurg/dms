@@ -97,7 +97,7 @@ public class Control implements TcpManagerListener, ModelListener {
 				if (model.isLive())
 					multicastManager.send(DMS_UUID, model.getUnconnectedRemoteIps());
 
-				tcpManager.testAllServers();
+				tcpManager.testAllConnections();
 
 				try {
 

@@ -214,7 +214,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void testAllServers() {
+	public void testAllConnections() {
 
 		taskQueue.execute(() -> {
 
