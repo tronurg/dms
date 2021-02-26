@@ -7,6 +7,7 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsPackingFactory;
@@ -86,9 +88,6 @@ public class Model {
 
 	public void localMessageReceived(byte[] data, String userUuid) {
 
-		if (localUsers.isEmpty())
-			listener.publishImmediately();
-
 		LocalUser localUser = localUsers.get(userUuid);
 		if (localUser == null) {
 			localUser = new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()), this::localMessageReceived);
@@ -114,6 +113,9 @@ public class Model {
 
 				if (userUuid == null)
 					break;
+
+				if (localUsers.values().stream().filter(user -> user.beacon.status != null).count() == 0)
+					listener.publishImmediately();
 
 				User localUser = localUsers.get(userUuid);
 
@@ -474,6 +476,8 @@ public class Model {
 
 			remoteServerDisconnected(dmsUuid);
 
+			listener.publishImmediately();
+
 			return;
 
 		}
@@ -555,9 +559,19 @@ public class Model {
 
 	}
 
-	public Set<String> getRemoteIps() {
+	public Set<String> getUnconnectedRemoteIps() {
 
-		return remoteIps;
+		Set<InetAddress> connectedRemoteIps = remoteServers.values().stream()
+				.flatMap(dmsServer -> dmsServer.remoteAddresses.stream()).collect(Collectors.toSet());
+
+		return remoteIps.stream().filter(remoteIp -> {
+			try {
+				return !connectedRemoteIps.contains(InetAddress.getByName(remoteIp));
+			} catch (UnknownHostException e) {
+
+			}
+			return false;
+		}).collect(Collectors.toSet());
 
 	}
 
