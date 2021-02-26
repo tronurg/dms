@@ -207,11 +207,35 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			if (dmsServers.isEmpty())
-				return;
-
 			dmsServers.forEach(
 					(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo, new AtomicBoolean(true), null));
+
+		});
+
+	}
+
+	public void testAllServers() {
+
+		taskQueue.execute(() -> {
+
+			dmsServers.forEach((dmsUuid, dmsServer) -> {
+
+				dmsServer.taskQueue.execute(() -> {
+
+					synchronized (dmsServer.connections) {
+
+						for (Connection connection : dmsServer.connections) {
+
+							if (connection.sendFunction != null)
+								connection.sendFunction.apply(new byte[0]);
+
+						}
+
+					}
+
+				});
+
+			});
 
 		});
 
