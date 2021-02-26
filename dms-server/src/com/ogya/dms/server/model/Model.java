@@ -230,7 +230,12 @@ public class Model {
 
 				if (!localReceiverUuids.isEmpty()) {
 
-					listener.sendToLocalUsers(messagePojo, sendStatus.status, (uuidList, progress) -> {
+					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
+							messagePojo.contentType, messagePojo.messageId, messagePojo.useTrackingId,
+							messagePojo.useTimeout, messagePojo.useLocalAddress);
+					localMessagePojo.attachment = messagePojo.attachment;
+
+					listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
 
 						clean: synchronized (sendStatus) {
 
@@ -426,7 +431,7 @@ public class Model {
 
 			default:
 
-				if (messagePojo.receiverUuid == null || receiverUuids.isEmpty())
+				if (receiverUuids.isEmpty())
 					break;
 
 				final Path attachment = messagePojo.attachment;

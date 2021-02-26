@@ -153,7 +153,7 @@ public class DmsMessageFactory {
 
 	}
 
-	public static void outFeed(byte[] data, Path attachment, int chunkSize, AtomicBoolean health,
+	private static void outFeed(byte[] data, Path attachment, int chunkSize, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
 		if (attachment == null) {
