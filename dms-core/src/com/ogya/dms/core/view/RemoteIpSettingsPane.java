@@ -101,12 +101,6 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	}
 
-	void setDisableInput(boolean inputDisabled) {
-
-		ipField.setDisable(inputDisabled);
-
-	}
-
 	void updateIps(final String[] ips) {
 
 		scrollableContent.getChildren().clear();
@@ -195,8 +189,6 @@ public class RemoteIpSettingsPane extends BorderPane {
 	}
 
 	private void initIpField() {
-
-		ipField.setDisable(true);
 
 		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0 * viewFactor));
 

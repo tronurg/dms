@@ -114,7 +114,7 @@ public class Model {
 				if (userUuid == null)
 					break;
 
-				if (localUsers.values().stream().filter(user -> user.beacon.status != null).count() == 0)
+				if (localUsers.values().stream().noneMatch(user -> user.beacon.status != null))
 					listener.publishImmediately();
 
 				User localUser = localUsers.get(userUuid);

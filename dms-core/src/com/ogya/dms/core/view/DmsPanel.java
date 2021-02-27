@@ -307,7 +307,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 		setDisable(!connStatus);
 
-		remoteIpSettingsPane.setDisableInput(!connStatus);
 		if (!connStatus)
 			remoteIpSettingsPane.clearAll();
 
