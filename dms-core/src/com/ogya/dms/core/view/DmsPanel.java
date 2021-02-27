@@ -63,6 +63,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	private void init() {
 
+		setDisable(true);
+
 		getChildren().addListener(new ListChangeListener<Node>() {
 
 			@Override
@@ -302,6 +304,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	public void serverConnStatusUpdated(boolean connStatus) {
+
+		setDisable(!connStatus);
 
 		remoteIpSettingsPane.setDisableInput(!connStatus);
 		if (!connStatus)
