@@ -54,6 +54,8 @@ public class DmsMessageFactory {
 
 			error = true;
 
+			deleteResources();
+
 		}
 
 	}
@@ -114,7 +116,7 @@ public class DmsMessageFactory {
 
 			outputStream.write(data);
 
-			if (remaining == 0) {
+			if (!(remaining > 0)) {
 				outputStream.flush();
 				outputStream.close();
 			}
@@ -130,6 +132,8 @@ public class DmsMessageFactory {
 					messageConsumer.accept(messagePojo);
 
 			} catch (Exception e) {
+
+				deleteResources();
 
 			}
 
