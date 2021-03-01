@@ -1,5 +1,6 @@
 package com.ogya.dms.core.dmsclient.intf;
 
+import java.net.InetAddress;
 import java.nio.file.Path;
 
 import com.ogya.dms.commons.structures.Beacon;
@@ -13,7 +14,7 @@ public interface DmsClientListener {
 
 	void beaconReceived(Beacon beacon);
 
-	void remoteIpsReceived(String[] remoteIps);
+	void remoteIpsReceived(InetAddress[] remoteIps);
 
 	void progressMessageReceived(Long messageId, String[] remoteUuids, int progress);
 

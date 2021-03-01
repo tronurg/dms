@@ -2,6 +2,7 @@ package com.ogya.dms.core.control;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -1333,9 +1334,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void remoteIpsReceived(String[] remoteIps) {
+	public void remoteIpsReceived(InetAddress[] remoteIps) {
 
-		Platform.runLater(() -> dmsPanel.updateRemoteIps(remoteIps));
+		Platform.runLater(() -> dmsPanel.updateRemoteIps(
+				Arrays.asList(remoteIps).stream().map(ip -> ip.getHostAddress()).toArray(String[]::new)));
 
 	}
 
@@ -2694,16 +2696,28 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void addIpClicked(String... ip) {
+	public void addIpClicked(String ip) {
 
-		dmsClient.addRemoteIps(ip);
+		try {
+
+			dmsClient.addRemoteIps(InetAddress.getByName(ip));
+
+		} catch (UnknownHostException e) {
+
+		}
 
 	}
 
 	@Override
-	public void removeIpClicked(String... ip) {
+	public void removeIpClicked(String ip) {
 
-		dmsClient.removeRemoteIps(ip);
+		try {
+
+			dmsClient.removeRemoteIps(InetAddress.getByName(ip));
+
+		} catch (UnknownHostException e) {
+
+		}
 
 	}
 
@@ -2998,8 +3012,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			Runnable task = () -> dmsClient.addRemoteIps(Arrays.stream(remoteIps).filter(remoteIp -> remoteIp != null)
-					.map(remoteIp -> remoteIp.getHostAddress()).toArray(String[]::new));
+			Runnable task = () -> dmsClient.addRemoteIps(remoteIps);
 
 			if (model.isServerConnected())
 				task.run();

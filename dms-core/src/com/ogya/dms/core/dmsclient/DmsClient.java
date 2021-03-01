@@ -90,14 +90,14 @@ public class DmsClient {
 
 	}
 
-	public void addRemoteIps(String... ips) {
+	public void addRemoteIps(InetAddress... ips) {
 
 		dealerQueue.offer(
 				new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null, null));
 
 	}
 
-	public void removeRemoteIps(String... ips) {
+	public void removeRemoteIps(InetAddress... ips) {
 
 		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null,
 				null, null));
@@ -297,7 +297,7 @@ public class DmsClient {
 
 			case IPS:
 
-				remoteIpsReceivedToListener(DmsPackingFactory.unpack(payload, String[].class));
+				remoteIpsReceivedToListener(DmsPackingFactory.unpack(payload, InetAddress[].class));
 
 				break;
 
@@ -390,7 +390,7 @@ public class DmsClient {
 
 	}
 
-	private void remoteIpsReceivedToListener(final String[] remoteIps) {
+	private void remoteIpsReceivedToListener(final InetAddress[] remoteIps) {
 
 		taskQueue.execute(() -> {
 

@@ -122,7 +122,7 @@ public class Control implements TcpManagerListener, ModelListener {
 				message.compareTo(DMS_UUID) < 0 ? TcpConnectionType.SERVER : TcpConnectionType.CLIENT);
 
 		if (isUnicast)
-			taskQueue.execute(() -> model.addRemoteIps(senderAddress.getHostAddress()));
+			taskQueue.execute(() -> model.addRemoteIps(senderAddress));
 
 	}
 

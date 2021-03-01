@@ -7,7 +7,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,7 +46,7 @@ public class Model {
 
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
 
-	private final Set<String> remoteIps = Collections.synchronizedSet(new HashSet<String>());
+	private final Set<InetAddress> remoteIps = Collections.synchronizedSet(new HashSet<InetAddress>());
 
 	public Model(ModelListener listener) {
 
@@ -66,13 +65,13 @@ public class Model {
 
 		try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(ipDatPath))) {
 
-			for (String ip : (String[]) ois.readObject()) {
+			for (InetAddress ip : (InetAddress[]) ois.readObject()) {
 
 				remoteIps.add(ip);
 
 			}
 
-		} catch (IOException | ClassNotFoundException e) {
+		} catch (Exception e) {
 
 			e.printStackTrace();
 
@@ -138,13 +137,13 @@ public class Model {
 
 			case ADD_IPS:
 
-				addRemoteIps(DmsPackingFactory.unpack(messagePojo.payload, String[].class));
+				addRemoteIps(DmsPackingFactory.unpack(messagePojo.payload, InetAddress[].class));
 
 				break;
 
 			case REMOVE_IPS:
 
-				String[] ips = DmsPackingFactory.unpack(messagePojo.payload, String[].class);
+				InetAddress[] ips = DmsPackingFactory.unpack(messagePojo.payload, InetAddress[].class);
 
 				if (ips.length == 0)
 					clearRemoteIps();
@@ -559,19 +558,13 @@ public class Model {
 
 	}
 
-	public Set<String> getUnconnectedRemoteIps() {
+	public Set<InetAddress> getUnconnectedRemoteIps() {
 
 		Set<InetAddress> connectedRemoteIps = remoteServers.values().stream()
 				.flatMap(dmsServer -> dmsServer.remoteAddresses.stream()).collect(Collectors.toSet());
 
-		return remoteIps.stream().filter(remoteIp -> {
-			try {
-				return !connectedRemoteIps.contains(InetAddress.getByName(remoteIp));
-			} catch (UnknownHostException e) {
-
-			}
-			return false;
-		}).collect(Collectors.toSet());
+		return remoteIps.stream().filter(remoteIp -> !connectedRemoteIps.contains(remoteIp))
+				.collect(Collectors.toSet());
 
 	}
 
@@ -637,11 +630,11 @@ public class Model {
 
 	}
 
-	public void addRemoteIps(String... ips) {
+	public void addRemoteIps(InetAddress... ips) {
 
 		boolean changed = false;
 
-		for (String ip : ips) {
+		for (InetAddress ip : ips) {
 
 			if (remoteIps.contains(ip))
 				continue;
@@ -661,11 +654,11 @@ public class Model {
 
 	}
 
-	private void removeRemoteIps(String... ips) {
+	private void removeRemoteIps(InetAddress... ips) {
 
 		boolean changed = false;
 
-		for (String ip : ips) {
+		for (InetAddress ip : ips) {
 
 			if (!remoteIps.contains(ip))
 				continue;
@@ -702,7 +695,7 @@ public class Model {
 
 		try (ObjectOutputStream ois = new ObjectOutputStream(Files.newOutputStream(Paths.get("./ip.dat")))) {
 
-			ois.writeObject(remoteIps.toArray(new String[remoteIps.size()]));
+			ois.writeObject(remoteIps.toArray(new InetAddress[0]));
 
 			ois.flush();
 

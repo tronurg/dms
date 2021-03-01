@@ -59,7 +59,7 @@ public class MulticastManager {
 
 	}
 
-	public void send(final String dataStr, final Set<String> unicastIps) {
+	public void send(final String dataStr, final Set<InetAddress> unicastIps) {
 
 		taskQueue.execute(() -> {
 
@@ -83,7 +83,7 @@ public class MulticastManager {
 						.put(dataBytes);
 				byte[] encryptedUnicastData = DmsSecurity.encrypt(unicastDataBuffer.array());
 
-				for (String unicastIp : unicastIps) {
+				for (InetAddress unicastIp : unicastIps) {
 
 					DatagramPacket unicastSendPacket = new DatagramPacket(encryptedUnicastData,
 							encryptedUnicastData.length, new InetSocketAddress(unicastIp, multicastPort));
