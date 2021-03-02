@@ -476,8 +476,6 @@ public class Model {
 
 			remoteServerDisconnected(dmsUuid);
 
-			listener.publishImmediately();
-
 			return;
 
 		}
@@ -652,6 +650,8 @@ public class Model {
 		persistRemoteIps();
 
 		sendRemoteIpsToAllLocalUsers();
+
+		listener.publishImmediately();
 
 	}
 
