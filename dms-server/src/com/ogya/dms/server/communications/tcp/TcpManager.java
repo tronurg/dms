@@ -472,8 +472,14 @@ public class TcpManager implements TcpServerListener {
 			connections.putIfAbsent(address, new Connection(address, this::messageReceivedFromConnection));
 
 			Connection connection = connections.get(address);
-			connection.localAddress = tcpServer.getLocalAddress(id);
 
+			if (!(connection.id < 0)) {
+				serverIdAddress.remove(connection.id);
+				connection.messageFactory.deleteResources();
+				connection.messageFactory.reset();
+			}
+
+			connection.localAddress = tcpServer.getLocalAddress(id);
 			connection.id = id;
 
 			connection.sendFunction = message -> tcpServer.sendMessage(id, message);
