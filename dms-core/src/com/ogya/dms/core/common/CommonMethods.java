@@ -99,7 +99,12 @@ public class CommonMethods {
 
 				try (BufferedReader reader = Files.newBufferedReader(path)) {
 
-					Integer reportId = Integer.parseInt(reader.readLine().replace("\uFEFF", ""));
+					String firstLine = reader.readLine().replace("\uFEFF", "");
+
+					if (!firstLine.startsWith("#"))
+						return;
+
+					Integer reportId = Integer.parseInt(firstLine.substring(1));
 
 					StringBuilder stringBuilder = new StringBuilder();
 

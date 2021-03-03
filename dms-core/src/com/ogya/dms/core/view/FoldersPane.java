@@ -179,6 +179,8 @@ public class FoldersPane extends BorderPane {
 
 		centerPane.getChildren().add(getSubFolderView(folder));
 
+		scrollPane.setVvalue(0.0);
+
 	}
 
 	private void fileSelected(Path file) {
@@ -187,6 +189,8 @@ public class FoldersPane extends BorderPane {
 
 		if (fileSelectedAction != null)
 			fileSelectedAction.accept(file);
+
+		scrollPane.setVvalue(0.0);
 
 	}
 
@@ -197,6 +201,8 @@ public class FoldersPane extends BorderPane {
 		centerPane.getChildren().remove(size - 1);
 
 		centerPane.getChildren().get(size - 2).setVisible(true);
+
+		scrollPane.setVvalue(0.0);
 
 	}
 
