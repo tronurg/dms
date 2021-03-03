@@ -474,7 +474,7 @@ public class TcpManager implements TcpServerListener {
 			Connection connection = connections.get(address);
 
 			if (!(connection.id < 0)) {
-				serverIdAddress.remove(connection.id);
+				tcpServer.disconnect(connection.id);
 				connection.messageFactory.deleteResources();
 				connection.messageFactory.reset();
 			}
