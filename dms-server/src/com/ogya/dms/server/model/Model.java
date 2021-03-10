@@ -559,8 +559,8 @@ public class Model {
 
 	public Set<InetAddress> getUnconnectedRemoteIps() {
 
-		Set<InetAddress> connectedRemoteIps = remoteServers.values().stream()
-				.flatMap(dmsServer -> dmsServer.remoteAddresses.stream()).collect(Collectors.toSet());
+		Set<InetAddress> connectedRemoteIps = remoteUsers.values().stream()
+				.flatMap(user -> user.dmsServer.remoteAddresses.stream()).collect(Collectors.toSet());
 
 		return remoteIps.stream().filter(remoteIp -> !connectedRemoteIps.contains(remoteIp))
 				.collect(Collectors.toSet());
