@@ -46,7 +46,10 @@ final class TcpConnection {
 
 				byte[] message = new byte[messageLength];
 
-				messageInputStream.read(message);
+				int receivedLength = messageInputStream.read(message);
+
+				if (receivedLength != messageLength)
+					break;
 
 				messageConsumer.accept(message);
 
