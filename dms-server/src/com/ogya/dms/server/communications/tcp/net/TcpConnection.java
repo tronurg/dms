@@ -63,6 +63,9 @@ final class TcpConnection {
 
 	synchronized boolean sendMessage(byte[] message) {
 
+		if (socket.isClosed())
+			return false;
+
 		try {
 
 			messageOutputStream.writeInt(message.length);
@@ -76,6 +79,8 @@ final class TcpConnection {
 		} catch (Exception e) {
 
 		}
+
+		close();
 
 		return false;
 
