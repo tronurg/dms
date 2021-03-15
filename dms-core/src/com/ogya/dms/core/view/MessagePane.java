@@ -28,6 +28,7 @@ import com.ogya.dms.core.view.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.tk.Toolkit;
 
+import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
@@ -56,6 +57,7 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -135,6 +137,28 @@ class MessagePane extends BorderPane {
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
 	private final AtomicLong futureReference = new AtomicLong(-1L);
+
+	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
+
+	private final AnimationTimer longPressTimer = new AnimationTimer() {
+
+		private long startTime;
+
+		@Override
+		public void handle(long arg0) {
+			if (arg0 - startTime < 500e6)
+				return;
+			stop();
+			selectionModeProperty.set(true);
+		}
+
+		@Override
+		public void start() {
+			startTime = System.nanoTime();
+			super.start();
+		};
+
+	};
 
 	MessagePane() {
 
@@ -675,8 +699,9 @@ class MessagePane extends BorderPane {
 
 			messageBalloon.messageArea.cursorProperty()
 					.bind(Bindings.createObjectBinding(
-							() -> messageBalloon.activeProperty.get() ? Cursor.HAND : Cursor.DEFAULT,
-							messageBalloon.activeProperty));
+							() -> messageBalloon.activeProperty.and(selectionModeProperty.not()).get() ? Cursor.HAND
+									: Cursor.DEFAULT,
+							messageBalloon.activeProperty, selectionModeProperty));
 
 			messageBalloon.messageArea.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
 				if (messageBalloon.activeProperty.get())
@@ -691,20 +716,22 @@ class MessagePane extends BorderPane {
 			final DropShadow dropShadow = new DropShadow();
 
 			messageBalloon.messagePane.effectProperty().bind(Bindings.createObjectBinding(
-					() -> messageBalloon.activeProperty.get() && messageBalloon.messageArea.isHover() ? dropShadow
-							: null,
-					messageBalloon.activeProperty, messageBalloon.messageArea.hoverProperty()));
+					() -> messageBalloon.activeProperty.and(messageBalloon.messageArea.hoverProperty())
+							.and(selectionModeProperty.not()).get() ? dropShadow : null,
+					messageBalloon.activeProperty, messageBalloon.messageArea.hoverProperty(), selectionModeProperty));
 
 		}
 
 		messageBalloon.setOnMousePressed(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
+			longPressTimer.start();
 			dragPosProperty.set(e.getSceneX());
 		});
 		messageBalloon.setOnMouseDragged(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
+			longPressTimer.stop();
 			if (replyGroup.getParent() != messageBalloon)
 				messageBalloon.addReplyGroup(replyGroup);
 			double diff = e.getSceneX() - dragPosProperty.get();
@@ -719,10 +746,19 @@ class MessagePane extends BorderPane {
 		messageBalloon.setOnMouseReleased(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
+			longPressTimer.stop();
 			messageBalloon.setTranslateX(0.0);
 			if (replyGroup.inner.getRadius() == replyGroup.radius)
 				referenceMessageProperty.set(messageId);
 			replyGroup.inner.setRadius(0.0);
+		});
+
+		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
+			if (!selectionModeProperty.get())
+				return;
+			e.consume();
+			if (e.getEventType().equals(MouseEvent.MOUSE_CLICKED))
+				messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
 		});
 
 		if (messageInfo.infoAvailable) {
@@ -757,9 +793,11 @@ class MessagePane extends BorderPane {
 		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
 		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button cancelBtn = ViewFactory.newCancelBtn();
+		private final Label selectionLbl = ViewFactory.newSelectionLbl();
 
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 		private final BooleanProperty cancellableProperty = new SimpleBooleanProperty(false);
+		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
 		private MessageBalloon(String message, MessageInfo messageInfo) {
 
@@ -779,17 +817,21 @@ class MessagePane extends BorderPane {
 			initMessageArea();
 			initMessagePane();
 			initTimeLbl();
+			initSelectionLbl();
 
+			ColumnConstraints colFirst = new ColumnConstraints();
 			ColumnConstraints colNarrow = new ColumnConstraints();
 			ColumnConstraints colWide = new ColumnConstraints();
 			colNarrow.setHgrow(Priority.ALWAYS);
 			colWide.setPercentWidth(80.0);
 
+			setHgap(gap);
+
 			if (messageInfo.isOutgoing) {
 
 				initOutgoingMessagePane();
 
-				getColumnConstraints().addAll(colNarrow, colWide);
+				getColumnConstraints().addAll(colFirst, colNarrow, colWide);
 
 				messagePane.setBackground(new Background(
 						new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
@@ -797,17 +839,18 @@ class MessagePane extends BorderPane {
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
 				GridPane.setHalignment(messageArea, HPos.RIGHT);
 
-				add(messagePane, 1, 0, 1, 1);
+				add(selectionLbl, 0, 0, 1, 1);
+				add(messagePane, 2, 0, 1, 1);
 				if (messageInfo.infoAvailable) {
 					infoBtn.setPadding(new Insets(0.0, 0.0, 0.0, gap));
-					add(infoBtn, 2, 0, 1, 1);
+					add(infoBtn, 3, 0, 1, 1);
 				}
 
 			} else {
 
 				initIncomingMessagePane();
 
-				getColumnConstraints().addAll(colWide, colNarrow);
+				getColumnConstraints().addAll(colFirst, colWide, colNarrow);
 
 				messagePane.setBackground(new Background(
 						new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
@@ -815,7 +858,8 @@ class MessagePane extends BorderPane {
 				GridPane.setHalignment(messagePane, HPos.LEFT);
 				GridPane.setHalignment(messageArea, HPos.LEFT);
 
-				add(messagePane, 0, 0, 1, 1);
+				add(selectionLbl, 0, 0, 1, 1);
+				add(messagePane, 1, 0, 1, 1);
 
 			}
 
@@ -1008,6 +1052,15 @@ class MessagePane extends BorderPane {
 
 			timeLbl.setFont(Font.font(11.25 * viewFactor));
 			timeLbl.setTextFill(Color.DIMGRAY);
+
+		}
+
+		private void initSelectionLbl() {
+
+			selectionLbl.visibleProperty().bind(selectionModeProperty.and(activeProperty));
+			selectionLbl.managedProperty().bind(selectionLbl.visibleProperty());
+			selectionLbl.opacityProperty()
+					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.3, selectedProperty));
 
 		}
 
