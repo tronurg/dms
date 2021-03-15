@@ -681,7 +681,7 @@ class MessagePane extends BorderPane {
 			messageBalloon.messageArea.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
 				if (messageBalloon.activeProperty.get())
 					return e -> {
-						if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+						if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
 							return;
 						listeners.forEach(listener -> listener.messageClicked(messageId));
 					};

@@ -492,7 +492,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		Collections.sort(contactNames, model.getCaseInsensitiveStringSorter());
 		if (!Objects.equals(owner.getUuid(), model.getLocalUuid()))
 			contactNames.add(0, owner.getName());
-		group.setComment(String.join(",", contactNames));
+		group.setComment(String.join(", ", contactNames));
 
 		Dgroup newGroup = dbManager.addUpdateGroup(group);
 
