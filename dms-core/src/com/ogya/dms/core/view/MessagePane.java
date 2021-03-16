@@ -818,41 +818,40 @@ class MessagePane extends BorderPane {
 
 			setHgap(gap);
 
-			ColumnConstraints colNarrow = new ColumnConstraints();
-			ColumnConstraints colWide = new ColumnConstraints();
-			ColumnConstraints colThird = new ColumnConstraints();
-			colNarrow.setHgrow(Priority.ALWAYS);
-			colWide.setPercentWidth(80.0);
+			ColumnConstraints col0 = new ColumnConstraints();
+			ColumnConstraints col1 = new ColumnConstraints();
+			ColumnConstraints col2 = new ColumnConstraints();
+			ColumnConstraints col3 = new ColumnConstraints();
+			getColumnConstraints().addAll(col0, col1, col2, col3);
+			col0.setPercentWidth(0.0);
+			col2.setPercentWidth(80.0);
 
 			initSelectionBtn();
 			initMessagePane();
 
 			GridPane.setFillWidth(messagePane, false);
 
+			add(selectionBtn, 1, 0, 1, 1);
+			add(messagePane, 2, 0, 1, 1);
+
+			if (messageInfo.infoAvailable)
+				add(infoBtn, 3, 0, 1, 1);
+
 			if (messageInfo.isOutgoing) {
 
-				getColumnConstraints().addAll(colNarrow, colWide, colThird);
+				col1.setHgrow(Priority.ALWAYS);
 
 				initOutgoingMessagePane();
 
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
 
-				add(selectionBtn, 0, 0, 1, 1);
-				add(messagePane, 1, 0, 1, 1);
-
-				if (messageInfo.infoAvailable)
-					add(infoBtn, 2, 0, 1, 1);
-
 			} else {
 
-				getColumnConstraints().addAll(colThird, colWide, colNarrow);
+				col3.setHgrow(Priority.ALWAYS);
 
 				initIncomingMessagePane();
 
 				GridPane.setHalignment(messagePane, HPos.LEFT);
-
-				add(selectionBtn, 0, 0, 1, 1);
-				add(messagePane, 1, 0, 1, 1);
 
 			}
 
