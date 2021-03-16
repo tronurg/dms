@@ -26,7 +26,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.control.Label;
+import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
@@ -175,7 +175,7 @@ public class OnlineContactsPanel extends BorderPane {
 	private final class ContactBundle extends GridPane {
 
 		private final ContactPane contactPane = new ContactPane();
-		private final Label selectionLbl = ViewFactory.newSelectionLbl();
+		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
@@ -192,7 +192,8 @@ public class OnlineContactsPanel extends BorderPane {
 
 			setHgrow(contactPane, Priority.ALWAYS);
 
-			selectionLbl.visibleProperty().bind(selectedProperty);
+			selectionBtn.opacityProperty()
+					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
 
 			activeProperty.addListener((e0, e1, e2) -> {
 
@@ -220,7 +221,7 @@ public class OnlineContactsPanel extends BorderPane {
 			}, contactProperty, filterProperty));
 
 			add(contactPane, 0, 0, 1, 2);
-			add(selectionLbl, 1, 0, 1, 1);
+			add(selectionBtn, 1, 0, 1, 1);
 
 		}
 

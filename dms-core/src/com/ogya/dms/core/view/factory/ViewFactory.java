@@ -11,10 +11,8 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
-import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -115,7 +113,6 @@ public class ViewFactory {
 		triangle.setFill(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -137,7 +134,6 @@ public class ViewFactory {
 		triangle.setFill(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -162,7 +158,6 @@ public class ViewFactory {
 		line2.setStrokeWidth(3.0 * viewFactor);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -191,7 +186,6 @@ public class ViewFactory {
 		line.setStrokeWidth(3.0 * viewFactor);
 		Group group = new Group(circle, line);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -229,7 +223,6 @@ public class ViewFactory {
 		line3.setStroke(Color.RED);
 		Group group = new Group(rectangle, line1, line2, line3);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -258,7 +251,6 @@ public class ViewFactory {
 		line.setStrokeWidth(2.0 * viewFactor);
 		Group group = new Group(circle, rectangle, line);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -289,7 +281,6 @@ public class ViewFactory {
 		line3.setStrokeWidth(2.0 * viewFactor);
 		Group group = new Group(circle, rectangle, line1, line2, line3);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -311,7 +302,6 @@ public class ViewFactory {
 		circle.fillProperty().bind(Bindings
 				.createObjectBinding(() -> btn.isHover() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY, btn.hoverProperty()));
 		btn.setGraphic(circle);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -336,7 +326,6 @@ public class ViewFactory {
 		line2.setStroke(Color.WHITE);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -363,7 +352,6 @@ public class ViewFactory {
 		point2.fillProperty().bind(colorProperty);
 		Group group = new Group(circle, point0, point1, point2);
 		btn.setGraphic(group);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		final Effect dropShadow = new DropShadow(2.0 * viewFactor, Color.DODGERBLUE);
@@ -376,11 +364,11 @@ public class ViewFactory {
 
 	}
 
-	public static Label newSelectionLbl() {
+	public static Button newSelectionBtn() {
 
 		double viewFactor = getViewFactor();
 
-		Label lbl = new Label();
+		Button btn = new Button();
 
 		Circle circle = new Circle(12.0 * viewFactor);
 		circle.setStrokeWidth(3.0 * viewFactor);
@@ -394,11 +382,11 @@ public class ViewFactory {
 		line2.setStrokeWidth(3.0 * viewFactor);
 		line2.setStroke(Color.WHITE);
 		Group group = new Group(circle, line1, line2);
-		lbl.setGraphic(group);
-		lbl.setPadding(Insets.EMPTY);
-		lbl.setPickOnBounds(false);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
 
-		return lbl;
+		return btn;
 
 	}
 

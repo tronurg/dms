@@ -26,6 +26,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
@@ -224,7 +225,7 @@ public class ActiveGroupsPanel extends BorderPane {
 
 		private final GridPane topPane = new GridPane();
 		private final GroupPane groupPane = new GroupPane();
-		private final Label selectionLbl = ViewFactory.newSelectionLbl();
+		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 		private final VBox contactCards = new VBox();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
@@ -245,7 +246,8 @@ public class ActiveGroupsPanel extends BorderPane {
 			initTopPane();
 			initContactCards();
 
-			selectionLbl.visibleProperty().bind(selectedProperty);
+			selectionBtn.opacityProperty()
+					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
 
 			activeProperty.addListener((e0, e1, e2) -> {
 
@@ -288,7 +290,7 @@ public class ActiveGroupsPanel extends BorderPane {
 			GridPane.setHgrow(groupPane, Priority.ALWAYS);
 
 			topPane.add(groupPane, 0, 0, 1, 2);
-			topPane.add(selectionLbl, 1, 0, 1, 1);
+			topPane.add(selectionBtn, 1, 0, 1, 1);
 			topPane.add(contactCards, 0, 2, 2, 1);
 
 		}

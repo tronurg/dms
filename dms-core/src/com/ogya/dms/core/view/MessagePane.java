@@ -697,13 +697,13 @@ class MessagePane extends BorderPane {
 
 		if (Objects.equals(messageInfo.messageType, MessageType.FILE)) {
 
-			messageBalloon.messageArea.cursorProperty()
+			messageBalloon.contentArea.cursorProperty()
 					.bind(Bindings.createObjectBinding(
 							() -> messageBalloon.activeProperty.and(selectionModeProperty.not()).get() ? Cursor.HAND
 									: Cursor.DEFAULT,
 							messageBalloon.activeProperty, selectionModeProperty));
 
-			messageBalloon.messageArea.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
+			messageBalloon.contentArea.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
 				if (messageBalloon.activeProperty.get())
 					return e -> {
 						if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
@@ -716,9 +716,9 @@ class MessagePane extends BorderPane {
 			final DropShadow dropShadow = new DropShadow();
 
 			messageBalloon.messagePane.effectProperty().bind(Bindings.createObjectBinding(
-					() -> messageBalloon.activeProperty.and(messageBalloon.messageArea.hoverProperty())
+					() -> messageBalloon.activeProperty.and(messageBalloon.contentArea.hoverProperty())
 							.and(selectionModeProperty.not()).get() ? dropShadow : null,
-					messageBalloon.activeProperty, messageBalloon.messageArea.hoverProperty(), selectionModeProperty));
+					messageBalloon.activeProperty, messageBalloon.contentArea.hoverProperty(), selectionModeProperty));
 
 		}
 
@@ -757,6 +757,8 @@ class MessagePane extends BorderPane {
 			if (!selectionModeProperty.get())
 				return;
 			e.consume();
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
 			if (e.getEventType().equals(MouseEvent.MOUSE_CLICKED))
 				messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
 		});
@@ -785,7 +787,7 @@ class MessagePane extends BorderPane {
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final GridPane messageArea = new GridPane();
+		private final GridPane contentArea = new GridPane();
 		private final Label progressLbl = new Label();
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
@@ -793,7 +795,7 @@ class MessagePane extends BorderPane {
 		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
 		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button cancelBtn = ViewFactory.newCancelBtn();
-		private final Label selectionLbl = ViewFactory.newSelectionLbl();
+		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 		private final BooleanProperty cancellableProperty = new SimpleBooleanProperty(false);
@@ -814,51 +816,42 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			initMessageArea();
-			initMessagePane();
-			initTimeLbl();
-			initSelectionLbl();
+			setHgap(gap);
 
-			ColumnConstraints colFirst = new ColumnConstraints();
 			ColumnConstraints colNarrow = new ColumnConstraints();
 			ColumnConstraints colWide = new ColumnConstraints();
+			ColumnConstraints colThird = new ColumnConstraints();
 			colNarrow.setHgrow(Priority.ALWAYS);
 			colWide.setPercentWidth(80.0);
 
-			setHgap(gap);
+			initSelectionBtn();
+			initMessagePane();
+
+			GridPane.setFillWidth(messagePane, false);
 
 			if (messageInfo.isOutgoing) {
 
+				getColumnConstraints().addAll(colNarrow, colWide, colThird);
+
 				initOutgoingMessagePane();
 
-				getColumnConstraints().addAll(colFirst, colNarrow, colWide);
-
-				messagePane.setBackground(new Background(
-						new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
-
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
-				GridPane.setHalignment(messageArea, HPos.RIGHT);
 
-				add(selectionLbl, 0, 0, 1, 1);
-				add(messagePane, 2, 0, 1, 1);
-				if (messageInfo.infoAvailable) {
-					infoBtn.setPadding(new Insets(0.0, 0.0, 0.0, gap));
-					add(infoBtn, 3, 0, 1, 1);
-				}
+				add(selectionBtn, 0, 0, 1, 1);
+				add(messagePane, 1, 0, 1, 1);
+
+				if (messageInfo.infoAvailable)
+					add(infoBtn, 2, 0, 1, 1);
 
 			} else {
 
+				getColumnConstraints().addAll(colThird, colWide, colNarrow);
+
 				initIncomingMessagePane();
 
-				getColumnConstraints().addAll(colFirst, colWide, colNarrow);
-
-				messagePane.setBackground(new Background(
-						new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
-
 				GridPane.setHalignment(messagePane, HPos.LEFT);
-				GridPane.setHalignment(messageArea, HPos.LEFT);
 
-				add(selectionLbl, 0, 0, 1, 1);
+				add(selectionBtn, 0, 0, 1, 1);
 				add(messagePane, 1, 0, 1, 1);
 
 			}
@@ -955,9 +948,67 @@ class MessagePane extends BorderPane {
 
 			messagePane.add(referenceBalloon, 0, 0, 2, 1);
 
+			referenceBalloon.toBack();
+
 		}
 
-		private void initMessageArea() {
+		private void initSelectionBtn() {
+
+			selectionBtn.visibleProperty().bind(selectionModeProperty);
+			selectionBtn.managedProperty().bind(selectionBtn.visibleProperty());
+			selectionBtn.opacityProperty()
+					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
+
+		}
+
+		private void initMessagePane() {
+
+			messagePane.setStyle("-fx-min-width: 6em;");
+
+			messagePane.setBorder(new Border(new BorderStroke(
+					Objects.equals(messageInfo.messageType, MessageType.FILE) ? Color.BLUE : Color.DARKGRAY,
+					BorderStrokeStyle.SOLID, new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
+
+			messagePane.setPadding(new Insets(gap));
+			messagePane.setHgap(gap);
+
+		}
+
+		private void initOutgoingMessagePane() {
+
+			messagePane.setBackground(new Background(
+					new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
+
+			initContentArea();
+			initInfoGrp();
+			initProgressLbl();
+			initTimeLbl();
+			initCancelBtn();
+
+			messagePane.add(contentArea, 0, 1, 2, 1);
+			messagePane.add(infoGrp, 0, 2, 1, 1);
+			messagePane.add(progressLbl, 0, 2, 1, 1);
+			messagePane.add(timeLbl, 1, 2, 1, 1);
+			messagePane.add(cancelBtn, 0, 0, 2, 2);
+
+		}
+
+		private void initIncomingMessagePane() {
+
+			messagePane.setBackground(new Background(
+					new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
+
+			initContentArea();
+			initTimeLbl();
+
+			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
+
+			messagePane.add(contentArea, 0, 1, 2, 1);
+			messagePane.add(timeLbl, 0, 2, 1, 1);
+
+		}
+
+		private void initContentArea() {
 
 			switch (messageInfo.messageType) {
 
@@ -965,7 +1016,7 @@ class MessagePane extends BorderPane {
 
 				try {
 
-					messageArea.add(new DmsMediaPlayer(Paths.get(message)), 0, 0, 1, 1);
+					contentArea.add(new DmsMediaPlayer(Paths.get(message)), 0, 0, 1, 1);
 
 					break;
 
@@ -980,7 +1031,7 @@ class MessagePane extends BorderPane {
 				messageLbl.getStyleClass().add("black-label");
 				messageLbl.setWrapText(true);
 
-				messageArea.add(messageLbl, 0, 0, 1, 1);
+				contentArea.add(messageLbl, 0, 0, 1, 1);
 
 				break;
 
@@ -988,41 +1039,13 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private void initIncomingMessagePane() {
+		private void initInfoGrp() {
 
-			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
+			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
+			GridPane.setHalignment(infoGrp, HPos.RIGHT);
 
-			messagePane.add(messageArea, 0, 1, 2, 1);
-			messagePane.add(timeLbl, 0, 2, 1, 1);
-
-		}
-
-		private void initOutgoingMessagePane() {
-
-			initProgressLbl();
-			initInfoGrp();
-			initCancelBtn();
-
-			messagePane.add(messageArea, 0, 1, 2, 1);
-			messagePane.add(infoGrp, 0, 2, 1, 1);
-			messagePane.add(progressLbl, 0, 2, 1, 1);
-			messagePane.add(timeLbl, 1, 2, 1, 1);
-			messagePane.add(cancelBtn, 0, 0, 2, 2);
-
-		}
-
-		private void initMessagePane() {
-
-			messagePane.setStyle("-fx-min-width: 6em;");
-
-			GridPane.setFillWidth(messagePane, false);
-
-			messagePane.setBorder(new Border(new BorderStroke(
-					Objects.equals(messageInfo.messageType, MessageType.FILE) ? Color.BLUE : Color.DARKGRAY,
-					BorderStrokeStyle.SOLID, new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
-
-			messagePane.setPadding(new Insets(gap));
-			messagePane.setHgap(gap);
+			transmittedCircle.setLayoutX(2.0 * radius);
+			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 		}
 
@@ -1038,29 +1061,10 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private void initInfoGrp() {
-
-			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
-			GridPane.setHalignment(infoGrp, HPos.RIGHT);
-
-			transmittedCircle.setLayoutX(2.0 * radius);
-			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
-
-		}
-
 		private void initTimeLbl() {
 
 			timeLbl.setFont(Font.font(11.25 * viewFactor));
 			timeLbl.setTextFill(Color.DIMGRAY);
-
-		}
-
-		private void initSelectionLbl() {
-
-			selectionLbl.visibleProperty().bind(selectionModeProperty.and(activeProperty));
-			selectionLbl.managedProperty().bind(selectionLbl.visibleProperty());
-			selectionLbl.opacityProperty()
-					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.3, selectedProperty));
 
 		}
 
