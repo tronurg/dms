@@ -299,8 +299,10 @@ public class ViewFactory {
 
 		Circle circle = new Circle(12.0 * viewFactor);
 		btn.setGraphic(circle);
-		circle.fillProperty().bind(Bindings
-				.createObjectBinding(() -> btn.isHover() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY, btn.hoverProperty()));
+		circle.fillProperty()
+				.bind(Bindings.createObjectBinding(
+						() -> btn.isHover() && !btn.isDisabled() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY,
+						btn.hoverProperty(), btn.disabledProperty()));
 		btn.setGraphic(circle);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);

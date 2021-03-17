@@ -843,8 +843,10 @@ class MessagePane extends BorderPane {
 
 			messagePaneContainer.getChildren().add(messagePane);
 
-			if (messageInfo.infoAvailable)
+			if (messageInfo.infoAvailable) {
+				infoBtn.disableProperty().bind(selectionModeProperty);
 				messagePaneContainer.getChildren().add(infoBtn);
+			}
 
 			GridPane.setFillWidth(messagePaneContainer, false);
 
