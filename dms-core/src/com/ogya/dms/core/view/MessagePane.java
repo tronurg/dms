@@ -1087,7 +1087,8 @@ class MessagePane extends BorderPane {
 
 			cancelBtn.opacityProperty().bind(
 					Bindings.createDoubleBinding(() -> cancelBtn.isHover() ? 1.0 : 0.5, cancelBtn.hoverProperty()));
-			cancelBtn.visibleProperty().bind(messagePane.hoverProperty().and(cancellableProperty));
+			cancelBtn.visibleProperty()
+					.bind(messagePane.hoverProperty().and(cancellableProperty).and(selectionModeProperty.not()));
 			cancelBtn.managedProperty().bind(cancelBtn.visibleProperty());
 
 		}
