@@ -749,7 +749,6 @@ class MessagePane extends BorderPane {
 				double translate = 4.0 * radius;
 				messageBalloon.setTranslateX(translate);
 				replyGroup.inner.setRadius(radius);
-				e.consume();
 
 			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_RELEASED)) {
 
@@ -762,9 +761,10 @@ class MessagePane extends BorderPane {
 				if (!e.isStillSincePress())
 					e.consume();
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED) && !e.isStillSincePress()) {
+			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED)) {
 
-				e.consume();
+				if (!e.isStillSincePress())
+					e.consume();
 
 			}
 
