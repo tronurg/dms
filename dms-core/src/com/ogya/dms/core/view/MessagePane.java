@@ -580,15 +580,14 @@ class MessagePane extends BorderPane {
 
 		Node referenceBalloon = messageBalloon.newReferenceBalloon();
 
-		referenceBalloon.setOnMouseClicked(e -> {
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				return;
+		referenceBalloon.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 			if (messageBalloons.containsKey(messageId)) {
 				scrollPaneToMessage(messageId);
 			} else {
 				futureReference.set(messageId);
 				listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
 			}
+			e.consume();
 		});
 
 		return referenceBalloon;
@@ -705,11 +704,7 @@ class MessagePane extends BorderPane {
 
 			messageBalloon.contentArea.onMouseClickedProperty().bind(Bindings.createObjectBinding(() -> {
 				if (messageBalloon.activeProperty.get())
-					return e -> {
-						if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
-							return;
-						listeners.forEach(listener -> listener.messageClicked(messageId));
-					};
+					return e -> listeners.forEach(listener -> listener.messageClicked(messageId));
 				return null;
 			}, messageBalloon.activeProperty));
 
@@ -722,45 +717,57 @@ class MessagePane extends BorderPane {
 
 		}
 
-		messageBalloon.setOnMousePressed(e -> {
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				return;
-			longPressTimer.start();
-			dragPosProperty.set(e.getSceneX());
-		});
-		messageBalloon.setOnMouseDragged(e -> {
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				return;
-			longPressTimer.stop();
-			if (replyGroup.getParent() != messageBalloon)
-				messageBalloon.addReplyGroup(replyGroup);
-			double diff = e.getSceneX() - dragPosProperty.get();
-			dragPosProperty.set(e.getSceneX());
-			if (!activeProperty.get())
-				return;
-			double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
-			double translate = 4.0 * radius;
-			messageBalloon.setTranslateX(translate);
-			replyGroup.inner.setRadius(radius);
-		});
-		messageBalloon.setOnMouseReleased(e -> {
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				return;
-			longPressTimer.stop();
-			messageBalloon.setTranslateX(0.0);
-			if (replyGroup.inner.getRadius() == replyGroup.radius)
-				referenceMessageProperty.set(messageId);
-			replyGroup.inner.setRadius(0.0);
-		});
-
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
-			if (!selectionModeProperty.get())
-				return;
-			e.consume();
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				return;
-			if (e.getEventType().equals(MouseEvent.MOUSE_CLICKED))
-				messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
+
+			if (!(Objects.equals(e.getButton(), MouseButton.NONE)
+					|| Objects.equals(e.getButton(), MouseButton.PRIMARY))) {
+
+				e.consume();
+
+			} else if (selectionModeProperty.get()) {
+
+				if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED))
+					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
+
+				e.consume();
+
+			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED)) {
+
+				longPressTimer.start();
+				dragPosProperty.set(e.getSceneX());
+
+			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_DRAGGED)) {
+
+				longPressTimer.stop();
+				if (replyGroup.getParent() != messageBalloon)
+					messageBalloon.addReplyGroup(replyGroup);
+				double diff = e.getSceneX() - dragPosProperty.get();
+				dragPosProperty.set(e.getSceneX());
+				if (!activeProperty.get())
+					return;
+				double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
+				double translate = 4.0 * radius;
+				messageBalloon.setTranslateX(translate);
+				replyGroup.inner.setRadius(radius);
+				e.consume();
+
+			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_RELEASED)) {
+
+				longPressTimer.stop();
+				messageBalloon.setTranslateX(0.0);
+				if (replyGroup.inner.getRadius() == replyGroup.radius)
+					referenceMessageProperty.set(messageId);
+				replyGroup.inner.setRadius(0.0);
+
+				if (!e.isStillSincePress())
+					e.consume();
+
+			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED) && !e.isStillSincePress()) {
+
+				e.consume();
+
+			}
+
 		});
 
 		if (messageInfo.infoAvailable) {
@@ -816,8 +823,6 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			setHgap(gap);
-
 			ColumnConstraints col0 = new ColumnConstraints();
 			ColumnConstraints col1 = new ColumnConstraints();
 			ColumnConstraints col2 = new ColumnConstraints();
@@ -829,13 +834,19 @@ class MessagePane extends BorderPane {
 			initSelectionBtn();
 			initMessagePane();
 
-			GridPane.setFillWidth(messagePane, false);
+			HBox messagePaneContainer = new HBox(gap);
+			messagePaneContainer.setAlignment(Pos.CENTER_LEFT);
+			HBox.setHgrow(messagePane, Priority.ALWAYS);
 
 			add(selectionBtn, 1, 0, 1, 1);
-			add(messagePane, 2, 0, 1, 1);
+			add(messagePaneContainer, 2, 0, 1, 1);
+
+			messagePaneContainer.getChildren().add(messagePane);
 
 			if (messageInfo.infoAvailable)
-				add(infoBtn, 3, 0, 1, 1);
+				messagePaneContainer.getChildren().add(infoBtn);
+
+			GridPane.setFillWidth(messagePaneContainer, false);
 
 			if (messageInfo.isOutgoing) {
 
@@ -843,7 +854,7 @@ class MessagePane extends BorderPane {
 
 				initOutgoingMessagePane();
 
-				GridPane.setHalignment(messagePane, HPos.RIGHT);
+				GridPane.setHalignment(messagePaneContainer, HPos.RIGHT);
 
 			} else {
 
@@ -851,7 +862,7 @@ class MessagePane extends BorderPane {
 
 				initIncomingMessagePane();
 
-				GridPane.setHalignment(messagePane, HPos.LEFT);
+				GridPane.setHalignment(messagePaneContainer, HPos.LEFT);
 
 			}
 
@@ -952,6 +963,8 @@ class MessagePane extends BorderPane {
 		}
 
 		private void initSelectionBtn() {
+
+			GridPane.setMargin(selectionBtn, new Insets(0, gap, 0, 0));
 
 			selectionBtn.visibleProperty().bind(selectionModeProperty);
 			selectionBtn.managedProperty().bind(selectionBtn.visibleProperty());
