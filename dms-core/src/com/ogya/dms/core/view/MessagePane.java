@@ -38,6 +38,9 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
+import javafx.collections.ObservableSet;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -114,6 +117,7 @@ class MessagePane extends BorderPane {
 	private final Button starBtn = ViewFactory.newStarBtn();
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 	private final BooleanProperty deleteModeProperty = new SimpleBooleanProperty(false);
+	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
@@ -127,8 +131,7 @@ class MessagePane extends BorderPane {
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
-	private final Map<Long, MessageBalloon> messageBalloons = Collections
-			.synchronizedMap(new HashMap<Long, MessageBalloon>());
+	private final ObservableMap<Long, MessageBalloon> messageBalloons = FXCollections.observableHashMap();
 	private final Map<Long, MessageBalloon> transientBalloons = Collections
 			.synchronizedMap(new HashMap<Long, MessageBalloon>());
 
@@ -255,11 +258,22 @@ class MessagePane extends BorderPane {
 
 		selectAllBtn.visibleProperty().bind(selectionModeProperty);
 		selectAllBtn.managedProperty().bind(selectAllBtn.visibleProperty());
+		selectAllBtn.opacityProperty().bind(Bindings.createDoubleBinding(
+				() -> selectedBalloons.size() < messageBalloons.size() ? 0.5 : 1.0, selectedBalloons, messageBalloons));
+		selectAllBtn.setOnAction(e -> {
+			boolean willSelect = selectedBalloons.size() < messageBalloons.size();
+			messageBalloons.values().forEach(messageBalloon -> messageBalloon.selectedProperty.set(willSelect));
+		});
+
 		starBtn.visibleProperty().bind(selectionModeProperty);
 		starBtn.managedProperty().bind(starBtn.visibleProperty());
+		starBtn.setOnAction(e -> {
+			backBtn.fire();
+			// TODO
+		});
+
 		deleteBtn.visibleProperty().bind(selectionModeProperty);
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
-
 		deleteBtn.setOnAction(e -> deleteModeProperty.set(!deleteModeProperty.get()));
 		DropShadow shadow = new DropShadow();
 		deleteBtn.effectProperty()
@@ -274,6 +288,7 @@ class MessagePane extends BorderPane {
 		deleteSelectedBtn.managedProperty().bind(deleteSelectedBtn.visibleProperty());
 		deleteSelectedBtn.setOnAction(e -> {
 			backBtn.fire();
+			// TODO
 		});
 
 		//
@@ -859,6 +874,14 @@ class MessagePane extends BorderPane {
 			this.messageInfo = messageInfo;
 
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
+
+			selectedProperty.addListener((e0, e1, e2) -> {
+				deleteModeProperty.set(false);
+				if (e2)
+					selectedBalloons.add(this);
+				else
+					selectedBalloons.remove(this);
+			});
 
 			init();
 
