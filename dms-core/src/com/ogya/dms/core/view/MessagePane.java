@@ -89,7 +89,7 @@ class MessagePane extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(gap);
+	private final HBox topPane = new HBox(2 * gap);
 	private final VBox centerPane = new VBox(2 * gap);
 	private final GridPane bottomPane = new GridPane();
 
@@ -108,6 +108,14 @@ class MessagePane extends BorderPane {
 	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
 	private final Button reportBtn = ViewFactory.newReportBtn();
 	private final StackPane btnPane = new StackPane();
+
+	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
+	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
+	private final Button starBtn = ViewFactory.newStarBtn();
+	private final Button deleteBtn = ViewFactory.newDeleteBtn();
+	private final BooleanProperty deleteModeProperty = new SimpleBooleanProperty(false);
+
+	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
 	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * viewFactor);
 
@@ -140,25 +148,7 @@ class MessagePane extends BorderPane {
 
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
 
-	private final AnimationTimer longPressTimer = new AnimationTimer() {
-
-		private long startTime;
-
-		@Override
-		public void handle(long arg0) {
-			if (arg0 - startTime < 500e6)
-				return;
-			stop();
-			selectionModeProperty.set(true);
-		}
-
-		@Override
-		public void start() {
-			startTime = System.nanoTime();
-			super.start();
-		};
-
-	};
+	private final LongPressTimer longPressTimer = new LongPressTimer();
 
 	MessagePane() {
 
@@ -215,11 +205,26 @@ class MessagePane extends BorderPane {
 
 		});
 
-		HBox.setMargin(statusCircle, new Insets(gap, gap, gap, 3 * gap));
 		nameLabel.getStyleClass().add("black-label");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		nameLabel.setMaxWidth(Double.MAX_VALUE);
+		HBox.setHgrow(nameLabel, Priority.ALWAYS);
 
-		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel);
+		backBtn.setOnAction(e -> {
+			if (selectionModeProperty.get()) {
+				messageBalloons.values().forEach(messageBalloon -> messageBalloon.selectedProperty.set(false));
+				selectionModeProperty.set(false);
+				deleteModeProperty.set(false);
+			} else {
+				Runnable backAction = backActionRef.get();
+				if (backAction == null)
+					return;
+				backAction.run();
+				backBtn.setEffect(null);
+			}
+		});
+
+		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, selectAllBtn, starBtn, deleteBtn);
 
 		initBtnPane();
 
@@ -246,9 +251,38 @@ class MessagePane extends BorderPane {
 		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
 		bottomPane.visibleProperty().bind(activeProperty);
 
+		// Settings
+
+		selectAllBtn.visibleProperty().bind(selectionModeProperty);
+		selectAllBtn.managedProperty().bind(selectAllBtn.visibleProperty());
+		starBtn.visibleProperty().bind(selectionModeProperty);
+		starBtn.managedProperty().bind(starBtn.visibleProperty());
+		deleteBtn.visibleProperty().bind(selectionModeProperty);
+		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
+
+		deleteBtn.setOnAction(e -> deleteModeProperty.set(!deleteModeProperty.get()));
+		DropShadow shadow = new DropShadow();
+		deleteBtn.effectProperty()
+				.bind(Bindings.createObjectBinding(() -> deleteModeProperty.get() ? shadow : null, deleteModeProperty));
+
+		deleteSelectedBtn.setStyle("-fx-background-color: red;");
+		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
+		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		deleteSelectedBtn.setMnemonicParsing(false);
+		deleteSelectedBtn.setMaxWidth(Double.MAX_VALUE);
+		deleteSelectedBtn.visibleProperty().bind(deleteModeProperty);
+		deleteSelectedBtn.managedProperty().bind(deleteSelectedBtn.visibleProperty());
+		deleteSelectedBtn.setOnAction(e -> {
+			backBtn.fire();
+		});
+
+		//
+
 		setTop(topPane);
 		setCenter(scrollPane);
-		setBottom(bottomPane);
+
+		bottomProperty().bind(Bindings.createObjectBinding(
+				() -> selectionModeProperty.get() ? deleteSelectedBtn : bottomPane, selectionModeProperty));
 
 		centerPane.heightProperty().addListener((e0, e1, e2) -> {
 
@@ -273,10 +307,7 @@ class MessagePane extends BorderPane {
 
 	void setOnBackAction(final Runnable runnable) {
 
-		backBtn.setOnAction(e -> {
-			runnable.run();
-			backBtn.setEffect(null);
-		});
+		backActionRef.set(runnable);
 
 	}
 
@@ -342,7 +373,8 @@ class MessagePane extends BorderPane {
 
 		if (maxMessageId.get() == messageId) {
 
-			referenceMessageProperty.set(null);
+			if (isOutgoing)
+				referenceMessageProperty.set(null);
 
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
 
@@ -396,11 +428,12 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		if (Objects.equals(referenceMessageProperty.get(), messageId))
+		boolean isCanceled = Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED);
+
+		if (Objects.equals(referenceMessageProperty.get(), messageId) && isCanceled)
 			referenceMessageProperty.set(null);
 
-		messageBalloon.updateMessageStatus(message.getMessageStatus(),
-				Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED));
+		messageBalloon.updateMessageStatus(message.getMessageStatus(), isCanceled);
 
 	}
 
@@ -726,37 +759,47 @@ class MessagePane extends BorderPane {
 
 			} else if (selectionModeProperty.get()) {
 
-				if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED))
+				if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED))
 					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
 
 				e.consume();
 
 			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED)) {
 
-				longPressTimer.start();
-				dragPosProperty.set(e.getSceneX());
+				longPressTimer.start(messageBalloon);
+
+				if (messageBalloon.activeProperty.get()) {
+					dragPosProperty.set(e.getSceneX());
+				}
 
 			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_DRAGGED)) {
 
 				longPressTimer.stop();
-				if (replyGroup.getParent() != messageBalloon)
-					messageBalloon.addReplyGroup(replyGroup);
-				double diff = e.getSceneX() - dragPosProperty.get();
-				dragPosProperty.set(e.getSceneX());
-				if (!activeProperty.get())
-					return;
-				double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
-				double translate = 4.0 * radius;
-				messageBalloon.setTranslateX(translate);
-				replyGroup.inner.setRadius(radius);
+
+				if (messageBalloon.activeProperty.get()) {
+					if (replyGroup.getParent() != messageBalloon)
+						messageBalloon.addReplyGroup(replyGroup);
+					double diff = e.getSceneX() - dragPosProperty.get();
+					dragPosProperty.set(e.getSceneX());
+					if (!activeProperty.get())
+						return;
+					double radius = Math.max(0.0,
+							Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
+					double translate = 4.0 * radius;
+					messageBalloon.setTranslateX(translate);
+					replyGroup.inner.setRadius(radius);
+				}
 
 			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_RELEASED)) {
 
 				longPressTimer.stop();
-				messageBalloon.setTranslateX(0.0);
-				if (replyGroup.inner.getRadius() == replyGroup.radius)
-					referenceMessageProperty.set(messageId);
-				replyGroup.inner.setRadius(0.0);
+
+				if (messageBalloon.activeProperty.get()) {
+					messageBalloon.setTranslateX(0.0);
+					if (replyGroup.inner.getRadius() == replyGroup.radius)
+						referenceMessageProperty.set(messageId);
+					replyGroup.inner.setRadius(0.0);
+				}
 
 				if (!e.isStillSincePress())
 					e.consume();
@@ -837,6 +880,7 @@ class MessagePane extends BorderPane {
 			HBox messagePaneContainer = new HBox(gap);
 			messagePaneContainer.setAlignment(Pos.CENTER_LEFT);
 			HBox.setHgrow(messagePane, Priority.ALWAYS);
+			messagePaneContainer.disableProperty().bind(activeProperty.not());
 
 			add(selectionBtn, 1, 0, 1, 1);
 			add(messagePaneContainer, 2, 0, 1, 1);
@@ -874,18 +918,15 @@ class MessagePane extends BorderPane {
 			add(replyGroup, 0, 0, 1, 1);
 		}
 
-		void updateMessageStatus(MessageStatus messageStatus, boolean canceled) {
+		void updateMessageStatus(MessageStatus messageStatus, boolean isCanceled) {
 
-			activeProperty.set(!canceled);
-			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !canceled);
+			activeProperty.set(!isCanceled);
+			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !isCanceled);
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				setProgress(-1);
 
 			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
-
-			if (canceled && messageInfo.isOutgoing)
-				setDisable(true);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());
@@ -1237,6 +1278,30 @@ class MessagePane extends BorderPane {
 			getChildren().addAll(outer, inner);
 			setTranslateX(-2.0 * (radius + gap));
 		}
+
+	}
+
+	private class LongPressTimer extends AnimationTimer {
+
+		private long startTime;
+		private final AtomicReference<MessageBalloon> messageBalloonRef = new AtomicReference<MessageBalloon>();
+
+		@Override
+		public void handle(long arg0) {
+			if (arg0 - startTime < 500e6)
+				return;
+			stop();
+			selectionModeProperty.set(true);
+			MessageBalloon messageBalloon = messageBalloonRef.getAndSet(null);
+			if (messageBalloon != null)
+				messageBalloon.selectedProperty.set(true);
+		}
+
+		public void start(MessageBalloon messageBalloon) {
+			messageBalloonRef.set(messageBalloon);
+			startTime = System.nanoTime();
+			start();
+		};
 
 	}
 

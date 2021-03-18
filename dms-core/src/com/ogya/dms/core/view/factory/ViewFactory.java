@@ -392,4 +392,26 @@ public class ViewFactory {
 
 	}
 
+	public static Button newStarBtn() {
+
+		double viewFactor = getViewFactor();
+
+		Button btn = new Button();
+
+		Polygon star = new Polygon();
+		star.setFill(Color.YELLOW);
+		Double[] points = new Double[10];
+		for (int i = 0; i < 5; ++i) {
+			points[2 * i] = 12.0 * viewFactor * Math.cos(2 * Math.PI * (0.25 + 2.0 * i / 5));
+			points[2 * i + 1] = -12.0 * viewFactor * Math.sin(2 * Math.PI * (0.25 + 2.0 * i / 5));
+		}
+		star.getPoints().addAll(points);
+		btn.setGraphic(star);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
 }
