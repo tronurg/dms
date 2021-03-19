@@ -215,7 +215,8 @@ class MessagePane extends BorderPane {
 
 		backBtn.setOnAction(e -> {
 			if (selectionModeProperty.get()) {
-				selectedBalloons.forEach(balloon -> balloon.selectedProperty.set(false));
+				messageBalloons.values().stream().filter(messageBalloon -> messageBalloon.selectedProperty.get())
+						.forEach(messageBalloon -> messageBalloon.selectedProperty.set(false));
 				deleteModeProperty.set(false);
 				selectionModeProperty.set(false);
 			} else {
