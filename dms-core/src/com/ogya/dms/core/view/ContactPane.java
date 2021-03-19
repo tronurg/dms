@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.MessageDirection;
@@ -96,7 +97,7 @@ class ContactPane extends HBox {
 		nameLabel.setText(contact.getName());
 		commentLabel.setText(contact.getComment());
 		coordinatesLabel.setText(contact.getLattitude() == null || contact.getLongitude() == null ? ""
-				: String.format("(%.2f : %.2f)", contact.getLattitude(), contact.getLongitude()));
+				: CommonMethods.convertDoubleToCoordinates(contact.getLattitude(), contact.getLongitude()));
 
 		messagePane.setStatusColor(contact.getStatus().getStatusColor());
 		messagePane.setName(contact.getName());
@@ -223,6 +224,7 @@ class ContactPane extends HBox {
 
 		initialLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
+		initialLabel.setStyle("-fx-text-fill: #404040;");
 		initialLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
 		initialLabel.translateXProperty().bind(Bindings

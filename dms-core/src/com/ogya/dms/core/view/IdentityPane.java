@@ -115,7 +115,7 @@ class IdentityPane extends GridPane {
 		if (!commentTextField.isEditable())
 			commentTextField.setText(identity.getComment());
 		coordinatesLabel.setText(identity.getLattitude() == null || identity.getLongitude() == null ? ""
-				: String.format("(%.2f : %.2f)", identity.getLattitude(), identity.getLongitude()));
+				: CommonMethods.convertDoubleToCoordinates(identity.getLattitude(), identity.getLongitude()));
 
 	}
 
@@ -252,6 +252,7 @@ class IdentityPane extends GridPane {
 
 		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
+		profileLabel.setStyle("-fx-text-fill: #404040;");
 		profileLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
 	}

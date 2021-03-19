@@ -267,6 +267,13 @@ public class CommonMethods {
 
 	}
 
+	public static String convertDoubleToCoordinates(double lattitude, double longitude) {
+
+		return String.format("%s%s, %s%s", convertDoubleToCoordinates(lattitude), lattitude < 0 ? "S" : "N",
+				convertDoubleToCoordinates(longitude), longitude < 0 ? "W" : "E");
+
+	}
+
 	static String getServerIp() {
 
 		String serverIp = "localhost";
@@ -534,6 +541,17 @@ public class CommonMethods {
 		}
 
 		return langFile;
+
+	}
+
+	private static String convertDoubleToCoordinates(double value) {
+
+		int deg = (int) value;
+		double minD = (value - deg) * 60;
+		int min = (int) minD;
+		int sec = (int) ((minD - min) * 60);
+
+		return String.format("%d\u00B0%d'%d\"", deg, min, sec);
 
 	}
 

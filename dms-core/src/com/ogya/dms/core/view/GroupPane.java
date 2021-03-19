@@ -220,6 +220,7 @@ class GroupPane extends HBox {
 
 		initialLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
+		initialLabel.setStyle("-fx-text-fill: #404040;");
 		initialLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
 		initialLabel.translateXProperty().bind(Bindings
