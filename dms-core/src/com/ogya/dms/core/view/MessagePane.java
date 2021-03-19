@@ -215,9 +215,9 @@ class MessagePane extends BorderPane {
 
 		backBtn.setOnAction(e -> {
 			if (selectionModeProperty.get()) {
-				messageBalloons.values().forEach(messageBalloon -> messageBalloon.selectedProperty.set(false));
-				selectionModeProperty.set(false);
+				selectedBalloons.forEach(balloon -> balloon.selectedProperty.set(false));
 				deleteModeProperty.set(false);
+				selectionModeProperty.set(false);
 			} else {
 				Runnable backAction = backActionRef.get();
 				if (backAction == null)
@@ -250,6 +250,7 @@ class MessagePane extends BorderPane {
 		bottomPane.add(closeBtn, 0, 0);
 		bottomPane.add(messageArea, 0, 1);
 		bottomPane.add(btnPane, 1, 1);
+		bottomPane.add(deleteSelectedBtn, 0, 1, 2, 1);
 
 		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
 		bottomPane.visibleProperty().bind(activeProperty);
@@ -284,6 +285,7 @@ class MessagePane extends BorderPane {
 		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		deleteSelectedBtn.setMnemonicParsing(false);
 		deleteSelectedBtn.setMaxWidth(Double.MAX_VALUE);
+		deleteSelectedBtn.setMaxHeight(Double.MAX_VALUE);
 		deleteSelectedBtn.visibleProperty().bind(deleteModeProperty);
 		deleteSelectedBtn.managedProperty().bind(deleteSelectedBtn.visibleProperty());
 		deleteSelectedBtn.setOnAction(e -> {
@@ -295,9 +297,7 @@ class MessagePane extends BorderPane {
 
 		setTop(topPane);
 		setCenter(scrollPane);
-
-		bottomProperty().bind(Bindings.createObjectBinding(
-				() -> selectionModeProperty.get() ? deleteSelectedBtn : bottomPane, selectionModeProperty));
+		setBottom(bottomPane);
 
 		centerPane.heightProperty().addListener((e0, e1, e2) -> {
 
@@ -777,7 +777,8 @@ class MessagePane extends BorderPane {
 				if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED))
 					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
 
-				e.consume();
+				if (!Objects.equals(e.getEventType(), MouseEvent.MOUSE_EXITED_TARGET))
+					e.consume();
 
 			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED)) {
 
