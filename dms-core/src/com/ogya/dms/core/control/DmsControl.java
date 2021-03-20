@@ -78,7 +78,7 @@ import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.MessageSubType;
 import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
-import com.ogya.dms.core.structures.WaitStatus;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.DmsPanel;
 import com.ogya.dms.core.view.ReportsDialog;
 import com.ogya.dms.core.view.ReportsPane.ReportsListener;
@@ -401,11 +401,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		outgoingMessage.setMessageSubType(messageSubType);
 
 		outgoingMessage.setMessageStatus(MessageStatus.FRESH);
+		outgoingMessage.setViewStatus(ViewStatus.DEFAULT);
 
 		if (statusReports != null)
 			statusReports.forEach(statusReport -> outgoingMessage.addStatusReport(statusReport));
-
-		outgoingMessage.setWaitStatus(WaitStatus.WAITING);
 
 		outgoingMessage.setRefMessage(refMessage);
 		outgoingMessage.setMessageCode(messageCode);
@@ -561,22 +560,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
-			if (onlineUuids.size() > 0) {
-
+			if (onlineUuids.size() > 0)
 				dmsSendMessage(message, String.join(";", onlineUuids));
-
-			}
 
 		} else {
 			// It's not my group, so I will send this message to the group owner only.
 
 			String receiverUuid = group.getOwner().getUuid();
 
-			if (model.isContactOnline(receiverUuid)) {
-
+			if (model.isContactOnline(receiverUuid))
 				dmsSendMessage(message, receiverUuid);
-
-			}
 
 		}
 
@@ -584,11 +577,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void sendGroupMessage(Message message, String receiverUuid) {
 
-		if (model.isContactOnline(receiverUuid)) {
-
+		if (model.isContactOnline(receiverUuid))
 			dmsSendMessage(message, receiverUuid);
-
-		}
 
 	}
 
@@ -605,11 +595,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		if (onlineUuids.size() > 0) {
-
+		if (onlineUuids.size() > 0)
 			dmsSendMessage(message, String.join(";", onlineUuids));
-
-		}
 
 	}
 
@@ -952,7 +939,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private void updateMessageStatus(Message message, List<Long> contactIds, MessageStatus messageStatus)
 			throws Exception {
 
-		if (Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
+		if (Objects.equals(message.getViewStatus(), ViewStatus.CANCELED)
+				|| Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
 			return;
 
 		String contactUuid = message.getContact().getUuid();
@@ -976,8 +964,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			message.setMessageStatus(messageStatus);
 
-			message.setWaitStatus(
-					Objects.equals(messageStatus, MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
+			message.setDone(Objects.equals(messageStatus, MessageStatus.READ));
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -1012,10 +999,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			for (Long contactId : contactIds) {
 
-				if (Objects.equals(contactId, message.getContact().getId()))
-					message.setWaitStatus(
-							Objects.equals(messageStatus, MessageStatus.READ) ? WaitStatus.DONE : WaitStatus.WAITING);
-
 				if (statusReportMap.containsKey(contactId)) {
 
 					statusReportMap.get(contactId).setMessageStatus(messageStatus);
@@ -1033,9 +1016,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			MessageStatus overallMessageStatus = message.getOverallStatus();
 
-			if (Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()))
-				message.setWaitStatus(Objects.equals(overallMessageStatus, MessageStatus.READ) ? WaitStatus.DONE
-						: WaitStatus.WAITING);
+			message.setDone(Objects.equals(overallMessageStatus, MessageStatus.READ));
 
 			// If I am the owner, update the message status too
 			if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT))
@@ -1083,10 +1064,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private Message cancelMessage(Message message) throws Exception {
 
-		if (Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
-			return message;
-
-		message.setWaitStatus(WaitStatus.CANCELED);
+		message.setDone(true);
+		message.setViewStatus(ViewStatus.CANCELED);
 
 		Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -1275,7 +1254,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						// CLAIM WAITING STATUS REPORTS
 						try {
 
-							for (Message waitingMessage : dbManager.getGroupMessagesNotReadToItsGroup(contactId)) {
+							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToItsGroup(contactId)) {
 
 								dmsClient.claimStatusReport(waitingMessage.getId(), userUuid);
 
@@ -1356,7 +1335,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Message message = dbManager.getMessageById(messageId);
 
-				if (message == null || Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED))
+				if (message == null)
 					return;
 
 				List<Long> remoteIds = new ArrayList<Long>();
@@ -1495,7 +1474,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					});
 
-					messageToBeRedirected = message.getStatusReports().size() > 0;
+					messageToBeRedirected = !message.getStatusReports().isEmpty();
 
 					break;
 
@@ -1533,7 +1512,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				message.setMessageStatus(computeMessageStatus(message));
 
-				message.setWaitStatus(messageToBeRedirected ? WaitStatus.WAITING : WaitStatus.DONE);
+				message.setDone(!messageToBeRedirected);
+				message.setViewStatus(ViewStatus.DEFAULT);
 
 				message.setMessageDirection(MessageDirection.IN);
 
@@ -1766,7 +1746,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Message dbMessage = dbManager.getMessageById(messageId);
 
-				if (dbMessage == null || Objects.equals(dbMessage.getWaitStatus(), WaitStatus.CANCELED))
+				if (dbMessage == null)
 					return;
 
 				Dgroup group = dbMessage.getDgroup();

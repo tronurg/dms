@@ -23,7 +23,7 @@ import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
-import com.ogya.dms.core.structures.WaitStatus;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.tk.Toolkit;
@@ -444,7 +444,7 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		boolean isCanceled = Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED);
+		boolean isCanceled = Objects.equals(message.getViewStatus(), ViewStatus.CANCELED);
 
 		if (Objects.equals(referenceMessageProperty.get(), messageId) && isCanceled)
 			referenceMessageProperty.set(null);
@@ -741,7 +741,7 @@ class MessagePane extends BorderPane {
 
 		MessageBalloon messageBalloon = new MessageBalloon(content, messageInfo);
 		messageBalloon.updateMessageStatus(message.getMessageStatus(),
-				Objects.equals(message.getWaitStatus(), WaitStatus.CANCELED));
+				Objects.equals(message.getViewStatus(), ViewStatus.CANCELED));
 
 		if (Objects.equals(messageInfo.messageType, MessageType.FILE)) {
 

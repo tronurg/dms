@@ -26,13 +26,13 @@ import com.ogya.dms.core.database.converters.MessageStatusConverter;
 import com.ogya.dms.core.database.converters.MessageSubTypeConverter;
 import com.ogya.dms.core.database.converters.MessageTypeConverter;
 import com.ogya.dms.core.database.converters.ReceiverTypeConverter;
-import com.ogya.dms.core.database.converters.WaitStatusConverter;
+import com.ogya.dms.core.database.converters.ViewStatusConverter;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.MessageSubType;
 import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
-import com.ogya.dms.core.structures.WaitStatus;
+import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
 @Table(name = "message")
@@ -80,10 +80,14 @@ public class Message {
 	@JsonIgnore
 	private MessageStatus messageStatus;
 
-	@Column(name = "wait_status", nullable = false)
-	@Convert(converter = WaitStatusConverter.class)
+	@Column(name = "done", nullable = false)
 	@JsonIgnore
-	private WaitStatus waitStatus;
+	private boolean done = false;
+
+	@Column(name = "view_status", nullable = false)
+	@Convert(converter = ViewStatusConverter.class)
+	@JsonIgnore
+	private ViewStatus viewStatus;
 
 	@Column(name = "date", nullable = false, updatable = false)
 	@JsonIgnore
@@ -153,7 +157,8 @@ public class Message {
 		this.content = message.content;
 		this.attachment = message.attachment;
 		this.messageStatus = message.messageStatus;
-		this.waitStatus = message.waitStatus;
+		this.done = message.done;
+		this.viewStatus = message.viewStatus;
 		this.date = message.date;
 		this.contact = message.contact;
 		this.owner = message.owner;
@@ -238,12 +243,20 @@ public class Message {
 		this.messageStatus = messageStatus;
 	}
 
-	public WaitStatus getWaitStatus() {
-		return waitStatus;
+	public boolean isDone() {
+		return done;
 	}
 
-	public void setWaitStatus(WaitStatus waitStatus) {
-		this.waitStatus = waitStatus;
+	public void setDone(boolean done) {
+		this.done = done;
+	}
+
+	public ViewStatus getViewStatus() {
+		return viewStatus;
+	}
+
+	public void setViewStatus(ViewStatus viewStatus) {
+		this.viewStatus = viewStatus;
 	}
 
 	public Date getDate() {
