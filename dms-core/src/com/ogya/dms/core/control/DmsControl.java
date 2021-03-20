@@ -1106,11 +1106,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private List<Message> deleteMessages(List<Message> messages) throws Exception {
 
 		List<Message> cancellableMessages = messages.stream()
-				.filter(message -> Objects.equals(message.getMessageStatus(), MessageStatus.FRESH)
-						&& !Objects.equals(message.getViewStatus(), ViewStatus.CANCELED))
+				.filter(message -> Objects.equals(message.getMessageStatus(), MessageStatus.FRESH) && !message.isDone())
 				.collect(Collectors.toList());
 
 		List<Message> newMessages = dbManager.addUpdateMessages(messages.stream().map(message -> {
+			message.setDone(true);
 			message.setViewStatus(ViewStatus.DELETED);
 			return message;
 		}).collect(Collectors.toList()));
