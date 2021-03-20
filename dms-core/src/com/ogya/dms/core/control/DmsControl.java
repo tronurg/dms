@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -776,8 +777,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Message dbMessage = dbManager.getMessageBySender(message.getContact().getUuid(), messageId);
 
-				if (dbMessage != null)
-					cancelMessage(dbMessage);
+				if (dbMessage == null)
+					break;
+
+				Message newMessage = cancelMessage(dbMessage);
+
+				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
 
 			}
 
@@ -939,10 +944,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private void updateMessageStatus(Message message, List<Long> contactIds, MessageStatus messageStatus)
 			throws Exception {
 
-		if (Objects.equals(message.getViewStatus(), ViewStatus.CANCELED)
-				|| Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
-			return;
-
 		String contactUuid = message.getContact().getUuid();
 
 		// Send this status to the original sender too.
@@ -964,7 +965,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			message.setMessageStatus(messageStatus);
 
-			message.setDone(Objects.equals(messageStatus, MessageStatus.READ));
+			if (!message.isDone())
+				message.setDone(Objects.equals(messageStatus, MessageStatus.READ));
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -1016,7 +1018,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			MessageStatus overallMessageStatus = message.getOverallStatus();
 
-			message.setDone(Objects.equals(overallMessageStatus, MessageStatus.READ));
+			if (!message.isDone())
+				message.setDone(Objects.equals(overallMessageStatus, MessageStatus.READ));
 
 			// If I am the owner, update the message status too
 			if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT))
@@ -1069,24 +1072,68 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Message newMessage = dbManager.addUpdateMessage(message);
 
+		dispatchCancellation(newMessage);
+
+		return newMessage;
+
+	}
+
+	private void dispatchCancellation(Message message) {
+
 		if (model.isServerConnected())
 			dmsClient.cancelMessage(message.getId());
 
 		if (Objects.equals(message.getReceiverType(), ReceiverType.CONTACT))
-			return newMessage;
+			return;
 
 		Dgroup group = message.getDgroup();
 
 		String ownerUuid = group.getOwner().getUuid();
 
 		if (group == null || Objects.equals(ownerUuid, model.getLocalUuid()))
-			return newMessage;
+			return;
 
-		sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), null, message.getContact(), null,
-				null, ReceiverType.CONTACT, MessageType.UPDATE, MessageSubType.UPDATE_CANCEL_MESSAGE, null, null,
-				null));
+		try {
+			sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), null, message.getContact(), null,
+					null, ReceiverType.CONTACT, MessageType.UPDATE, MessageSubType.UPDATE_CANCEL_MESSAGE, null, null,
+					null));
+		} catch (Exception e) {
 
-		return newMessage;
+		}
+
+	}
+
+	private List<Message> deleteMessages(List<Message> messages) throws Exception {
+
+		List<Message> cancellableMessages = messages.stream()
+				.filter(message -> Objects.equals(message.getMessageStatus(), MessageStatus.FRESH)
+						&& !Objects.equals(message.getViewStatus(), ViewStatus.CANCELED))
+				.collect(Collectors.toList());
+
+		List<Message> newMessages = dbManager.addUpdateMessages(messages.stream().map(message -> {
+			message.setViewStatus(ViewStatus.DELETED);
+			return message;
+		}).collect(Collectors.toList()));
+
+		cancellableMessages.forEach(message -> dispatchCancellation(message));
+
+		return newMessages;
+
+	}
+
+	private List<Message> archiveMessages(List<Message> messages) throws Exception {
+
+		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED)))
+			return dbManager.addUpdateMessages(messages.stream().map(message -> {
+				message.setViewStatus(ViewStatus.DEFAULT);
+				return message;
+			}).collect(Collectors.toList()));
+
+		return dbManager.addUpdateMessages(messages.stream()
+				.filter(message -> Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT)).map(message -> {
+					message.setViewStatus(ViewStatus.ARCHIVED);
+					return message;
+				}).collect(Collectors.toList()));
 
 	}
 
@@ -2653,6 +2700,54 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				Message newMessage = cancelMessage(message);
 
 				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void deleteRequested(Long... messageIds) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				List<Message> messages = dbManager.getMessagesById(messageIds);
+
+				List<Message> newMessages = deleteMessages(messages.stream()
+						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
+						.collect(Collectors.toList()));
+
+				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage)));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void archiveRequested(Long... messageIds) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				List<Message> messages = dbManager.getMessagesById(messageIds);
+
+				List<Message> newMessages = archiveMessages(messages);
+
+				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage)));
 
 			} catch (Exception e) {
 

@@ -269,8 +269,18 @@ public class CommonMethods {
 
 	public static String convertDoubleToCoordinates(double lattitude, double longitude) {
 
-		return String.format("%s%s, %s%s", convertDoubleToCoordinates(lattitude), lattitude < 0 ? "S" : "N",
-				convertDoubleToCoordinates(longitude), longitude < 0 ? "W" : "E");
+		String north = translate("NORTH");
+		String south = translate("SOUTH");
+		String east = translate("EAST");
+		String west = translate("WEST");
+		char northInitial = north.isEmpty() ? 'N' : north.charAt(0);
+		char southInitial = south.isEmpty() ? 'S' : south.charAt(0);
+		char eastInitial = east.isEmpty() ? 'E' : east.charAt(0);
+		char westInitial = west.isEmpty() ? 'W' : west.charAt(0);
+
+		return String.format("%s%c, %s%c", convertDoubleToCoordinates(lattitude),
+				lattitude < 0 ? southInitial : northInitial, convertDoubleToCoordinates(longitude),
+				longitude < 0 ? westInitial : eastInitial);
 
 	}
 

@@ -37,6 +37,10 @@ public interface AppListener {
 
 	void cancelClicked(Long messageId);
 
+	void deleteRequested(Long... messageIds);
+
+	void archiveRequested(Long... messageIds);
+
 	void statusInfoClosed();
 
 	void addIpClicked(String ip);

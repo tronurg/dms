@@ -464,6 +464,20 @@ class EntitiesPane extends BorderPane {
 			}
 
 			@Override
+			public void deleteRequested(Long... messageIds) {
+
+				entityListeners.forEach(listener -> listener.deleteRequested(messageIds));
+
+			}
+
+			@Override
+			public void archiveRequested(Long... messageIds) {
+
+				entityListeners.forEach(listener -> listener.archiveRequested(messageIds));
+
+			}
+
+			@Override
 			public void recordButtonPressed() {
 
 				entityListeners.forEach(listener -> listener.recordButtonPressed(id));
@@ -519,6 +533,10 @@ interface IEntitiesPane {
 	void infoClicked(Long messageId);
 
 	void cancelClicked(Long messageId);
+
+	void deleteRequested(Long... messageIds);
+
+	void archiveRequested(Long... messageIds);
 
 	void recordButtonPressed(Long id);
 

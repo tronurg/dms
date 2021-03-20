@@ -444,12 +444,12 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		boolean isCanceled = Objects.equals(message.getViewStatus(), ViewStatus.CANCELED);
+		boolean canceled = Objects.equals(message.getViewStatus(), ViewStatus.CANCELED);
 
-		if (Objects.equals(referenceMessageProperty.get(), messageId) && isCanceled)
+		if (Objects.equals(referenceMessageProperty.get(), messageId) && canceled)
 			referenceMessageProperty.set(null);
 
-		messageBalloon.updateMessageStatus(message.getMessageStatus(), isCanceled);
+		messageBalloon.updateMessageStatus(message.getMessageStatus(), canceled);
 
 	}
 
@@ -943,10 +943,10 @@ class MessagePane extends BorderPane {
 			add(replyGroup, 0, 0, 1, 1);
 		}
 
-		void updateMessageStatus(MessageStatus messageStatus, boolean isCanceled) {
+		void updateMessageStatus(MessageStatus messageStatus, boolean canceled) {
 
-			activeProperty.set(!isCanceled);
-			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !isCanceled);
+			activeProperty.set(!canceled);
+			cancellableProperty.set(Objects.equals(messageStatus, MessageStatus.FRESH) && !canceled);
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				setProgress(-1);
@@ -1378,6 +1378,10 @@ interface IMessagePane {
 	void infoClicked(Long messageId);
 
 	void cancelClicked(Long messageId);
+
+	void deleteRequested(Long... messageIds);
+
+	void archiveRequested(Long... messageIds);
 
 	void recordButtonPressed();
 

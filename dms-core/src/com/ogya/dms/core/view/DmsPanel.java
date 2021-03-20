@@ -530,6 +530,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
+	public void deleteRequested(Long... messageIds) {
+
+		listeners.forEach(listener -> listener.deleteRequested(messageIds));
+
+	}
+
+	@Override
+	public void archiveRequested(Long... messageIds) {
+
+		listeners.forEach(listener -> listener.archiveRequested(messageIds));
+
+	}
+
+	@Override
 	public void recordButtonPressed(final Long id) {
 
 		listeners.forEach(listener -> listener.recordButtonPressed(id));

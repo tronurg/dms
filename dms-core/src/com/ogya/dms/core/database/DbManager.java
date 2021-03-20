@@ -1,6 +1,7 @@
 package com.ogya.dms.core.database;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -324,6 +325,42 @@ public class DbManager {
 
 	}
 
+	public List<Message> addUpdateMessages(List<Message> messages) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = new ArrayList<Message>();
+
+		messages.forEach(message -> {
+
+			if (message.getId() == null) {
+
+				resolveReferenceOfMessage(message, session);
+
+				session.beginTransaction();
+
+				session.persist(message);
+
+				session.getTransaction().commit();
+
+			} else {
+
+				session.beginTransaction();
+
+				message = (Message) session.merge(message);
+
+				session.getTransaction().commit();
+
+			}
+
+		});
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
 	public Message getMessageBySender(String contactUuid, long messageRefId) throws HibernateException {
 
 		Session session = factory.openSession();
@@ -353,6 +390,34 @@ public class DbManager {
 		session.close();
 
 		return dbMessage;
+
+	}
+
+	public List<Message> getMessagesById(Long... ids) throws HibernateException {
+
+		if (ids == null)
+			return null;
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = new ArrayList<Message>();
+
+		for (Long id : ids) {
+
+			if (id == null)
+				continue;
+
+			Message dbMessage = session
+					.createQuery("from Message m left join fetch m.refMessage where m.id=:id", Message.class)
+					.setParameter("id", id).uniqueResult();
+
+			dbMessages.add(dbMessage);
+
+		}
+
+		session.close();
+
+		return dbMessages;
 
 	}
 
