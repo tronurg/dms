@@ -6,7 +6,7 @@ import java.util.Map;
 
 public enum ViewStatus {
 
-	DEFAULT(0), ARCHIVED(1), CANCELED(2), DELETED(3);
+	DEFAULT(0), ARCHIVED(1), DELETED(2);
 
 	private static final Map<Integer, ViewStatus> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, ViewStatus>());

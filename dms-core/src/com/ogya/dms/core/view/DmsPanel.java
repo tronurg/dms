@@ -178,20 +178,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public void updateMessageStatus(Message message) {
+	public void updateMessage(Message message) {
 
 		switch (message.getReceiverType()) {
 
 		case CONTACT:
 
-			entitiesPane.updatePrivateMessageStatus(message);
+			entitiesPane.updatePrivateMessage(message);
 
 			break;
 
 		case GROUP_OWNER:
 		case GROUP_MEMBER:
 
-			entitiesPane.updateGroupMessageStatus(message);
+			entitiesPane.updateGroupMessage(message);
 
 			break;
 
@@ -523,23 +523,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void cancelClicked(final Long messageId) {
+	public void deleteMessagesRequested(Long... messageIds) {
 
-		listeners.forEach(listener -> listener.cancelClicked(messageId));
-
-	}
-
-	@Override
-	public void deleteRequested(Long... messageIds) {
-
-		listeners.forEach(listener -> listener.deleteRequested(messageIds));
+		listeners.forEach(listener -> listener.deleteMessagesRequested(messageIds));
 
 	}
 
 	@Override
-	public void archiveRequested(Long... messageIds) {
+	public void archiveMessagesRequested(Long... messageIds) {
 
-		listeners.forEach(listener -> listener.archiveRequested(messageIds));
+		listeners.forEach(listener -> listener.archiveMessagesRequested(messageIds));
 
 	}
 

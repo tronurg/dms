@@ -199,19 +199,19 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void updatePrivateMessageStatus(Message message) {
+	void updatePrivateMessage(Message message) {
 
 		ContactPane contactPane = getContactPane(message.getContact().getId());
 
-		contactPane.updateMessageStatus(message);
+		contactPane.updateMessage(message);
 
 	}
 
-	void updateGroupMessageStatus(Message message) {
+	void updateGroupMessage(Message message) {
 
 		GroupPane groupPane = getGroupPane(message.getDgroup().getId());
 
-		groupPane.updateMessageStatus(message);
+		groupPane.updateMessage(message);
 
 	}
 
@@ -457,23 +457,16 @@ class EntitiesPane extends BorderPane {
 			}
 
 			@Override
-			public void cancelClicked(Long messageId) {
+			public void deleteMessagesRequested(Long... messageIds) {
 
-				entityListeners.forEach(listener -> listener.cancelClicked(messageId));
-
-			}
-
-			@Override
-			public void deleteRequested(Long... messageIds) {
-
-				entityListeners.forEach(listener -> listener.deleteRequested(messageIds));
+				entityListeners.forEach(listener -> listener.deleteMessagesRequested(messageIds));
 
 			}
 
 			@Override
-			public void archiveRequested(Long... messageIds) {
+			public void archiveMessagesRequested(Long... messageIds) {
 
-				entityListeners.forEach(listener -> listener.archiveRequested(messageIds));
+				entityListeners.forEach(listener -> listener.archiveMessagesRequested(messageIds));
 
 			}
 
@@ -532,11 +525,9 @@ interface IEntitiesPane {
 
 	void infoClicked(Long messageId);
 
-	void cancelClicked(Long messageId);
+	void deleteMessagesRequested(Long... messageIds);
 
-	void deleteRequested(Long... messageIds);
-
-	void archiveRequested(Long... messageIds);
+	void archiveMessagesRequested(Long... messageIds);
 
 	void recordButtonPressed(Long id);
 

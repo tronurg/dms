@@ -353,6 +353,8 @@ public class DbManager {
 
 			}
 
+			dbMessages.add(message);
+
 		});
 
 		session.close();

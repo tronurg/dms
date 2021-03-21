@@ -31,6 +31,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Effect;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -248,7 +249,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initDeleteBtn() {
 
-		DropShadow shadow = new DropShadow();
+		final Effect shadow = new DropShadow();
 
 		deleteBtn.effectProperty()
 				.bind(Bindings.createObjectBinding(() -> deleteMode.get() ? shadow : null, deleteMode));

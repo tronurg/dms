@@ -35,11 +35,9 @@ public interface AppListener {
 
 	void infoClicked(Long messageId);
 
-	void cancelClicked(Long messageId);
+	void deleteMessagesRequested(Long... messageIds);
 
-	void deleteRequested(Long... messageIds);
-
-	void archiveRequested(Long... messageIds);
+	void archiveMessagesRequested(Long... messageIds);
 
 	void statusInfoClosed();
 

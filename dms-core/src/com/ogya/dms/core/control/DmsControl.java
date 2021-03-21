@@ -777,12 +777,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Message dbMessage = dbManager.getMessageBySender(message.getContact().getUuid(), messageId);
 
-				if (dbMessage == null)
-					break;
-
-				Message newMessage = cancelMessage(dbMessage);
-
-				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+				if (dbMessage != null)
+					cancelMessage(dbMessage);
 
 			}
 
@@ -971,7 +967,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
 			if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
-				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+				Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				sendPrivateMessage(newMessage);
@@ -1028,7 +1024,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
 			if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
-				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+				Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH)) {
 				// If the message is not received remotely and;
@@ -1068,7 +1064,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private Message cancelMessage(Message message) throws Exception {
 
 		message.setDone(true);
-		message.setViewStatus(ViewStatus.CANCELED);
 
 		Message newMessage = dbManager.addUpdateMessage(message);
 
@@ -1849,7 +1844,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
 
 				if (!Objects.equals(newMessage.getMessageType(), MessageType.UPDATE))
-					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
 				if (Objects.equals(newMessage.getId(), model.getDetailedGroupMessageId())) {
 					newMessage.getStatusReports()
@@ -2034,7 +2029,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
 					dmsClient.feedMessageStatus(MessageStatus.READ, newMessage.getContact().getUuid(),
 							newMessage.getMessageRefId());
@@ -2072,7 +2067,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
 
-					Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
+					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
 					Dgroup group = model.getGroup(id);
 
@@ -2689,30 +2684,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void cancelClicked(Long messageId) {
-
-		taskQueue.execute(() -> {
-
-			try {
-
-				Message message = dbManager.getMessageById(messageId);
-
-				Message newMessage = cancelMessage(message);
-
-				Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void deleteRequested(Long... messageIds) {
+	public void deleteMessagesRequested(final Long... messageIds) {
 
 		taskQueue.execute(() -> {
 
@@ -2724,7 +2696,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
 						.collect(Collectors.toList()));
 
-				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage)));
+				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessage(newMessage)));
 
 			} catch (Exception e) {
 
@@ -2737,7 +2709,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void archiveRequested(Long... messageIds) {
+	public void archiveMessagesRequested(final Long... messageIds) {
 
 		taskQueue.execute(() -> {
 
@@ -2747,7 +2719,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				List<Message> newMessages = archiveMessages(messages);
 
-				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessageStatus(newMessage)));
+				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessage(newMessage)));
 
 			} catch (Exception e) {
 
