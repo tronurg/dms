@@ -94,11 +94,8 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			synchronized (publishSyncObj) {
 
-				taskQueue.execute(() -> {
-					if (model.isLive())
-						multicastManager.send(DMS_UUID, model.getUnconnectedRemoteIps());
-
-				});
+				if (model.isLive())
+					multicastManager.send(DMS_UUID, model.getUnconnectedRemoteIps());
 
 				tcpManager.testAllConnections();
 

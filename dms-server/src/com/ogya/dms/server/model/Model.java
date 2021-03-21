@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsPackingFactory;
@@ -559,11 +558,15 @@ public class Model {
 
 	public Set<InetAddress> getUnconnectedRemoteIps() {
 
-		Set<InetAddress> connectedRemoteIps = remoteUsers.values().stream()
-				.flatMap(user -> user.dmsServer.remoteAddresses.stream()).collect(Collectors.toSet());
+		Set<InetAddress> connectedRemoteIps = new HashSet<InetAddress>();
 
-		return remoteIps.stream().filter(remoteIp -> !connectedRemoteIps.contains(remoteIp))
-				.collect(Collectors.toSet());
+		remoteUsers.forEach((uuid, remoteUser) -> connectedRemoteIps.addAll(remoteUser.dmsServer.remoteAddresses));
+
+		Set<InetAddress> unconnectedRemoteIps = new HashSet<InetAddress>(remoteIps);
+
+		unconnectedRemoteIps.removeAll(connectedRemoteIps);
+
+		return unconnectedRemoteIps;
 
 	}
 
