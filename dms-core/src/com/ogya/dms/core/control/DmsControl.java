@@ -1107,6 +1107,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		List<Message> newMessages = dbManager.addUpdateMessages(messages.stream().map(message -> {
 			message.setDone(true);
 			message.setViewStatus(ViewStatus.DELETED);
+			message.setMessageStatus(MessageStatus.READ);
 			return message;
 		}).collect(Collectors.toList()));
 
