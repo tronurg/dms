@@ -55,7 +55,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.effect.BlurType;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
@@ -467,6 +466,8 @@ class MessagePane extends BorderPane {
 
 		scrollPane(messageBalloon, smallGap);
 
+		messageBalloon.blink();
+
 	}
 
 	void savePosition(Long messageId) {
@@ -528,7 +529,7 @@ class MessagePane extends BorderPane {
 
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
-			autoScroll.set(e2.doubleValue() == scrollPane.getVmax());
+			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
 
 			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
 				return;
@@ -620,25 +621,24 @@ class MessagePane extends BorderPane {
 		Node referenceBalloon = newReferenceBalloon(isOutgoing, senderName, nameColor, messageType, content);
 		referenceBalloon.getStyleClass().add("reference-balloon");
 
-		InnerShadow shadow = new InnerShadow(BlurType.GAUSSIAN, Color.DARKGRAY, 2 * gap, 0, 0, 0);
+		final InnerShadow shadow = new InnerShadow(2 * gap, Color.DARKGRAY);
 		referenceBalloon.setEffect(shadow);
-
-		final Transition errorAnimation = new Transition() {
-
-			{
-				setCycleDuration(Duration.millis(500.0));
-			}
-
-			@Override
-			protected void interpolate(double arg0) {
-				shadow.setColor(Color.RED.interpolate(Color.DARKGRAY, arg0));
-			}
-
-		};
 
 		referenceBalloon.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 			if (!referencedMessageIds.contains(messageId)) {
-				errorAnimation.play();
+				if (Objects.equals(shadow.getColor(), Color.DARKGRAY))
+					new Transition() {
+
+						{
+							setCycleDuration(Duration.millis(500.0));
+						}
+
+						@Override
+						protected void interpolate(double arg0) {
+							shadow.setColor(Color.RED.interpolate(Color.DARKGRAY, arg0));
+						}
+
+					}.play();
 				return;
 			}
 			if (messageBalloons.containsKey(messageId)) {
@@ -958,6 +958,8 @@ class MessagePane extends BorderPane {
 		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
+		private final InnerShadow shadow = new InnerShadow(3 * gap, Color.TRANSPARENT);
+
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
 		private DayBox dayBox;
@@ -1064,6 +1066,26 @@ class MessagePane extends BorderPane {
 
 		}
 
+		void blink() {
+
+			if (!Objects.equals(shadow.getColor(), Color.TRANSPARENT))
+				return;
+
+			new Transition() {
+
+				{
+					setCycleDuration(Duration.millis(1000.0));
+				}
+
+				@Override
+				protected void interpolate(double arg0) {
+					shadow.setColor(Color.MEDIUMBLUE.interpolate(Color.TRANSPARENT, arg0));
+				}
+
+			}.play();
+
+		}
+
 		private void initSelectionBtn() {
 
 			GridPane.setMargin(selectionBtn, new Insets(0, gap, 0, 0));
@@ -1085,6 +1107,8 @@ class MessagePane extends BorderPane {
 
 			messagePane.setPadding(new Insets(gap));
 			messagePane.setHgap(gap);
+
+			messagePane.setEffect(shadow);
 
 		}
 
