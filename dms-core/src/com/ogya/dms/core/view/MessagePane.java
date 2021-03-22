@@ -26,6 +26,7 @@ import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
+import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 import com.sun.javafx.tk.Toolkit;
 
 import javafx.animation.AnimationTimer;
@@ -41,6 +42,7 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
+import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -179,6 +181,12 @@ class MessagePane extends BorderPane {
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
+		scrollPane.setSkin(new ScrollPaneSkin(scrollPane) {
+			@Override
+			public void onTraverse(Node arg0, Bounds arg1) {
+
+			}
+		});
 
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
 
