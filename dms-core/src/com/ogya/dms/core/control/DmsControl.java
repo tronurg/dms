@@ -238,7 +238,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			firstMessages.addAll(dbMessages);
 
-			if (dbMessages.size() == 0) {
+			if (dbMessages.isEmpty()) {
 
 				firstMessages.addAll(dbManager.getLastPrivateMessages(id, MIN_MESSAGES_PER_PAGE));
 
@@ -259,7 +259,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			firstMessages.addAll(dbMessages);
 
-			if (dbMessages.size() == 0) {
+			if (dbMessages.isEmpty()) {
 
 				firstMessages.addAll(dbManager.getLastGroupMessages(id, MIN_MESSAGES_PER_PAGE));
 
@@ -561,7 +561,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
-			if (onlineUuids.size() > 0)
+			if (!onlineUuids.isEmpty())
 				dmsSendMessage(message, String.join(";", onlineUuids));
 
 		} else {
@@ -596,7 +596,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		if (onlineUuids.size() > 0)
+		if (!onlineUuids.isEmpty())
 			dmsSendMessage(message, String.join(";", onlineUuids));
 
 	}
@@ -2044,7 +2044,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id,
-					messagesWaitingFromContact.size() > 0 ? messagesWaitingFromContact.get(0).getId() : -1L));
+					messagesWaitingFromContact.isEmpty() ? -1L : messagesWaitingFromContact.get(0).getId()));
 
 		} catch (HibernateException e) {
 
@@ -2096,7 +2096,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id,
-					messagesWaitingFromGroup.size() > 0 ? messagesWaitingFromGroup.get(0).getId() : -1L));
+					messagesWaitingFromGroup.isEmpty() ? -1L : messagesWaitingFromGroup.get(0).getId()));
 
 		} catch (HibernateException e) {
 
@@ -2229,7 +2229,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(id, topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
-		if (lastMessagesBeforeId.size() == 0)
+		if (lastMessagesBeforeId.isEmpty())
 			return;
 
 		Platform.runLater(() -> dmsPanel.savePosition(id, topMessageId));
@@ -2248,7 +2248,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(-id, topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
-		if (lastMessagesBeforeId.size() == 0)
+		if (lastMessagesBeforeId.isEmpty())
 			return;
 
 		Platform.runLater(() -> dmsPanel.savePosition(id, topMessageId));
@@ -2301,7 +2301,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(id, topMessageId,
 					MIN_MESSAGES_PER_PAGE);
 
-			if (lastMessagesBeforeId.size() == 0)
+			if (lastMessagesBeforeId.isEmpty())
 				break;
 
 			lastMessagesBetweenIds.addAll(lastMessagesBeforeId);
@@ -2310,7 +2310,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		if (lastMessagesBetweenIds.size() == 0)
+		if (lastMessagesBetweenIds.isEmpty())
 			return;
 
 		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
@@ -2334,7 +2334,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(-id, topMessageId,
 					MIN_MESSAGES_PER_PAGE);
 
-			if (lastMessagesBeforeId.size() == 0)
+			if (lastMessagesBeforeId.isEmpty())
 				break;
 
 			lastMessagesBetweenIds.addAll(lastMessagesBeforeId);
@@ -2343,7 +2343,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		if (lastMessagesBetweenIds.size() == 0)
+		if (lastMessagesBetweenIds.isEmpty())
 			return;
 
 		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));

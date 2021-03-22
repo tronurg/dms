@@ -55,9 +55,11 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.effect.BlurType;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
+import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -314,19 +316,6 @@ class MessagePane extends BorderPane {
 		setCenter(scrollPane);
 		setBottom(bottomPane);
 
-		centerPane.heightProperty().addListener((e0, e1, e2) -> {
-
-			if (autoScroll.get())
-				scrollPaneToBottom();
-
-		});
-
-		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
-
-			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
-
-		});
-
 	}
 
 	void addListener(IMessagePane listener) {
@@ -539,10 +528,19 @@ class MessagePane extends BorderPane {
 
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 
+			autoScroll.set(e2.doubleValue() == scrollPane.getVmax());
+
 			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
 				return;
 
 			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
+
+		});
+
+		centerPane.heightProperty().addListener((e0, e1, e2) -> {
+
+			if (autoScroll.get())
+				scrollPaneToBottom();
 
 		});
 
@@ -620,15 +618,29 @@ class MessagePane extends BorderPane {
 			content = Paths.get(content).getFileName().toString();
 
 		Node referenceBalloon = newReferenceBalloon(isOutgoing, senderName, nameColor, messageType, content);
+		referenceBalloon.getStyleClass().add("reference-balloon");
 
-		if (Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
-			return referenceBalloon;
+		InnerShadow shadow = new InnerShadow(BlurType.GAUSSIAN, Color.DARKGRAY, 2 * gap, 0, 0, 0);
+		referenceBalloon.setEffect(shadow);
 
-		referencedMessageIds.add(messageId);
+		final Transition errorAnimation = new Transition() {
+
+			{
+				setCycleDuration(Duration.millis(500.0));
+			}
+
+			@Override
+			protected void interpolate(double arg0) {
+				shadow.setColor(Color.RED.interpolate(Color.DARKGRAY, arg0));
+			}
+
+		};
 
 		referenceBalloon.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-			if (!referencedMessageIds.contains(messageId))
+			if (!referencedMessageIds.contains(messageId)) {
+				errorAnimation.play();
 				return;
+			}
 			if (messageBalloons.containsKey(messageId)) {
 				scrollPaneToMessage(messageId);
 			} else {
@@ -637,6 +649,9 @@ class MessagePane extends BorderPane {
 			}
 			e.consume();
 		});
+
+		if (!Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
+			referencedMessageIds.add(messageId);
 
 		return referenceBalloon;
 
@@ -1042,7 +1057,6 @@ class MessagePane extends BorderPane {
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			referenceBalloon.getStyleClass().add("reference-balloon");
 			GridPane.setMargin(referenceBalloon, new Insets(0, 0, gap, 0));
 			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
 
