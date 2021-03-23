@@ -18,6 +18,7 @@ import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -201,6 +202,17 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
+	public void addAttachment(FileBuilder fileBuilder) {
+
+		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
+		if (idOnScreen == null)
+			return;
+		MessagePane messagePane = idOnScreen.getValue();
+		if (messagePane != null)
+			messagePane.addAttachment(fileBuilder);
+
+	}
+
 	public void updatePrivateMessageProgress(Long id, Long messageId, int progress) {
 
 		entitiesPane.updatePrivateMessageProgress(id, messageId, progress);
@@ -318,20 +330,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public Long getRefMessageId(Long id) {
-
-		if (id > 0)
-			return entitiesPane.getContactRefMessageId(id);
-
-		return entitiesPane.getGroupRefMessageId(-id);
-
-	}
-
 	private void fileSelected(final Path path) {
 
 		getChildren().remove(foldersPane);
 
-		listeners.forEach(listener -> listener.fileSelected(getIdOnScreen(), path, getRefMessageIdOnScreen()));
+		listeners.forEach(listener -> listener.fileSelected(path));
 
 	}
 
@@ -378,29 +381,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	private void removeIpClicked(final String ip) {
 
 		listeners.forEach(listener -> listener.removeIpClicked(ip));
-
-	}
-
-	private Long getIdOnScreen() {
-
-		if (idOnScreenRef.get() == null)
-			return null;
-
-		return idOnScreenRef.get().getKey();
-
-	}
-
-	private Long getRefMessageIdOnScreen() {
-
-		if (idOnScreenRef.get() == null)
-			return null;
-
-		MessagePane messagePaneOnScreen = idOnScreenRef.get().getValue();
-
-		if (messagePaneOnScreen == null)
-			return null;
-
-		return messagePaneOnScreen.getRefMessageId();
 
 	}
 
@@ -462,9 +442,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void sendMessageClicked(final Long id, final String messageTxt, final Long refMessageId) {
+	public void sendMessageClicked(final Long id, final String messageTxt, final FileBuilder fileBuilder,
+			final Long refMessageId) {
 
-		listeners.forEach(listener -> listener.sendMessageClicked(id, messageTxt, refMessageId));
+		listeners.forEach(listener -> listener.sendMessageClicked(id, messageTxt, fileBuilder, refMessageId));
 
 	}
 
@@ -558,9 +539,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void reportClicked(final Long id) {
+	public void reportClicked() {
 
-		listeners.forEach(listener -> listener.reportClicked(id));
+		listeners.forEach(listener -> listener.reportClicked());
 
 	}
 

@@ -19,9 +19,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Message;
+import com.ogya.dms.core.structures.AttachmentType;
+import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.RecordButton.RecordListener;
@@ -57,6 +58,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
+import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
@@ -99,26 +101,67 @@ class MessagePane extends BorderPane {
 	private final VBox centerPane = new VBox(2 * gap);
 	private final GridPane bottomPane = new GridPane();
 
+	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Circle statusCircle = new Circle(7.0 * viewFactor);
+	private final Label nameLabel = new Label();
+	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
+	private final Button starBtn = ViewFactory.newStarBtn(1.0);
+	private final Button deleteBtn = ViewFactory.newDeleteBtn();
+
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
 		public void requestFocus() {
 		}
 	};
-	private final Button backBtn = ViewFactory.newBackBtn();
-	private final Circle statusCircle = new Circle(7.0 * viewFactor);
-	private final Label nameLabel = new Label();
-	private final TextArea messageArea = new TextArea();
+
 	private final HBox referencePane = new HBox();
+	private final Button closeReferenceBtn = ViewFactory.newCancelBtn();
+	private final HBox attachmentArea = new HBox(gap);
+	private final TextArea messageArea = new TextArea();
+	private final StackPane btnPane = new StackPane();
+	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
+
+	private final Button attachmentIcon = ViewFactory.newSimpleAttachBtn(1.0);
+	private final Label attachmentLbl = new Label();
+	private final Button removeAttachmentBtn = ViewFactory.newRemoveBtn(0.65);
+
+	private final Button reportBtn = ViewFactory.newReportBtn();
+	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
 	private final Button sendBtn = ViewFactory.newSendBtn();
 	private final RecordButton recordBtn = new RecordButton();
-	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
-	private final Button reportBtn = ViewFactory.newReportBtn();
-	private final StackPane btnPane = new StackPane();
 
-	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
-	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
-	private final Button starBtn = ViewFactory.newStarBtn();
-	private final Button deleteBtn = ViewFactory.newDeleteBtn();
+	private final Transition btnAnimation = new Transition() {
+
+		private final Interpolator interpolator = Interpolator.EASE_BOTH;
+
+		{
+			setCycleDuration(Duration.millis(100.0));
+		}
+
+		private double showFoldersBtnStart;
+		private double showFoldersBtnEnd;
+		private double reportBtnStart;
+		private double reportBtnEnd;
+		private int position = 0;
+
+		@Override
+		protected void interpolate(double arg0) {
+			showFoldersBtn.setTranslateY(interpolator.interpolate(showFoldersBtnStart, showFoldersBtnEnd, arg0));
+			reportBtn.setTranslateY(interpolator.interpolate(reportBtnStart, reportBtnEnd, arg0));
+		}
+
+		@Override
+		public void play() {
+			showFoldersBtnStart = -position * (gap + showFoldersBtn.getHeight());
+			reportBtnStart = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
+			position = (position + 1) % 2;
+			showFoldersBtnEnd = -position * (gap + showFoldersBtn.getHeight());
+			reportBtnEnd = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
+			super.play();
+		}
+
+	};
+
 	private final BooleanProperty deleteModeProperty = new SimpleBooleanProperty(false);
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
@@ -131,6 +174,7 @@ class MessagePane extends BorderPane {
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
 	private final ObjectProperty<Long> referenceMessageProperty = new SimpleObjectProperty<Long>(null);
+	private final ObjectProperty<FileBuilder> attachmentProperty = new SimpleObjectProperty<FileBuilder>(null);
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
@@ -165,17 +209,33 @@ class MessagePane extends BorderPane {
 
 	private void init() {
 
-		registerListeners();
+		initTopPane();
+		initCenterPane();
+		initBottomPane();
+
+		setTop(topPane);
+		setCenter(scrollPane);
+		setBottom(bottomPane);
+
+	}
+
+	private void initTopPane() {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-
 		topPane.setPadding(new Insets(gap));
-		centerPane.setPadding(new Insets(gap));
-		bottomPane.setPadding(new Insets(gap));
-		bottomPane.setHgap(gap);
-		bottomPane.setVgap(gap);
-
 		topPane.setAlignment(Pos.CENTER_LEFT);
+
+		initBackBtn();
+		initNameLbl();
+		initSelectAllBtn();
+		initStarBtn();
+		initDeleteBtn();
+
+		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, selectAllBtn, starBtn, deleteBtn);
+
+	}
+
+	private void initCenterPane() {
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
@@ -187,39 +247,45 @@ class MessagePane extends BorderPane {
 
 			}
 		});
-
-		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
-
-		messageArea.setPrefRowCount(1);
-		messageArea.setWrapText(true);
-		messageArea.setTextFormatter(
-				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
-		messageArea.disableProperty().bind(recordBtn.pressedProperty());
-
-		messageArea.setOnKeyPressed(e -> {
-
-			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
-
-				if (e.isShiftDown()) {
-
-					messageArea.appendText(System.lineSeparator());
-
-				} else {
-
-					sendBtn.fire();
-
-					e.consume();
-
-				}
-
-			}
-
+		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
+			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
+			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
+				return;
+			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
+		});
+		centerPane.setPadding(new Insets(gap));
+		centerPane.heightProperty().addListener((e0, e1, e2) -> {
+			if (autoScroll.get())
+				scrollPaneToBottom();
 		});
 
-		nameLabel.getStyleClass().add("black-label");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
-		nameLabel.setMaxWidth(Double.MAX_VALUE);
-		HBox.setHgrow(nameLabel, Priority.ALWAYS);
+	}
+
+	private void initBottomPane() {
+
+		bottomPane.setPadding(new Insets(gap));
+		bottomPane.setHgap(gap);
+		bottomPane.setVgap(gap);
+		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
+		bottomPane.visibleProperty().bind(activeProperty);
+
+		initReferencePane();
+		initCloseReferenceBtn();
+		initAttachmentArea();
+		initMessageArea();
+		initBtnPane();
+		initDeleteSelectedBtn();
+
+		bottomPane.add(referencePane, 0, 0);
+		bottomPane.add(closeReferenceBtn, 0, 0);
+		bottomPane.add(attachmentArea, 0, 1);
+		bottomPane.add(messageArea, 0, 2);
+		bottomPane.add(btnPane, 1, 2);
+		bottomPane.add(deleteSelectedBtn, 0, 2, 2, 1);
+
+	}
+
+	private void initBackBtn() {
 
 		backBtn.setOnAction(e -> {
 			if (selectionModeProperty.get()) {
@@ -236,35 +302,25 @@ class MessagePane extends BorderPane {
 			}
 		});
 
-		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, selectAllBtn, starBtn, deleteBtn);
+	}
 
-		initBtnPane();
+	private void initNameLbl() {
 
-		referencePane.getStyleClass().add("reference-panel");
+		HBox.setHgrow(nameLabel, Priority.ALWAYS);
+		nameLabel.getStyleClass().add("black-label");
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
+		nameLabel.setMaxWidth(Double.MAX_VALUE);
+		nameLabel.setOnMouseClicked(e -> {
+			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				return;
+			if (editableProperty.get())
+				listeners.forEach(listener -> listener.editClicked());
+		});
 
-		// Close Button
+	}
 
-		Button closeBtn = ViewFactory.newCancelBtn();
-		GridPane.setMargin(closeBtn, new Insets(gap));
-		GridPane.setHalignment(closeBtn, HPos.RIGHT);
-		GridPane.setValignment(closeBtn, VPos.TOP);
-		closeBtn.setOnAction(e -> referenceMessageProperty.set(null));
-		closeBtn.visibleProperty().bind(referenceMessageProperty.isNotNull());
-		closeBtn.managedProperty().bind(closeBtn.visibleProperty());
-
-		//
-
-		GridPane.setHgrow(messageArea, Priority.ALWAYS);
-		bottomPane.add(referencePane, 0, 0);
-		bottomPane.add(closeBtn, 0, 0);
-		bottomPane.add(messageArea, 0, 1);
-		bottomPane.add(btnPane, 1, 1);
-		bottomPane.add(deleteSelectedBtn, 0, 1, 2, 1);
-
-		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
-		bottomPane.visibleProperty().bind(activeProperty);
-
-		// Settings
+	private void initSelectAllBtn() {
 
 		selectAllBtn.visibleProperty().bind(selectionModeProperty);
 		selectAllBtn.managedProperty().bind(selectAllBtn.visibleProperty());
@@ -274,6 +330,10 @@ class MessagePane extends BorderPane {
 			boolean willSelect = selectedBalloons.size() < messageBalloons.size();
 			messageBalloons.values().forEach(messageBalloon -> messageBalloon.selectedProperty.set(willSelect));
 		});
+
+	}
+
+	private void initStarBtn() {
 
 		starBtn.visibleProperty().bind(selectionModeProperty);
 		starBtn.managedProperty().bind(starBtn.visibleProperty());
@@ -291,6 +351,10 @@ class MessagePane extends BorderPane {
 						selectedBalloons));
 		starBtn.disableProperty().bind(Bindings.isEmpty(selectedBalloons));
 
+	}
+
+	private void initDeleteBtn() {
+
 		deleteBtn.visibleProperty().bind(selectionModeProperty);
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 		deleteBtn.setOnAction(e -> deleteModeProperty.set(!deleteModeProperty.get()));
@@ -301,6 +365,81 @@ class MessagePane extends BorderPane {
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
 						selectedBalloons));
+
+	}
+
+	private void initReferencePane() {
+
+		referencePane.getStyleClass().add("reference-panel");
+		referenceMessageProperty.addListener((e0, e1, e2) -> {
+			referencePane.getChildren().clear();
+			if (e2 == null)
+				return;
+			MessageInfo messageInfo = messageBalloons.get(e2).messageInfo;
+			referencePane.getChildren().add(newReferenceBalloon(messageInfo));
+		});
+
+	}
+
+	private void initCloseReferenceBtn() {
+
+		GridPane.setMargin(closeReferenceBtn, new Insets(gap));
+		GridPane.setHalignment(closeReferenceBtn, HPos.RIGHT);
+		GridPane.setValignment(closeReferenceBtn, VPos.TOP);
+		closeReferenceBtn.setOnAction(e -> referenceMessageProperty.set(null));
+		closeReferenceBtn.visibleProperty().bind(referenceMessageProperty.isNotNull());
+		closeReferenceBtn.managedProperty().bind(closeReferenceBtn.visibleProperty());
+
+	}
+
+	private void initAttachmentArea() {
+
+		attachmentArea.getStyleClass().add("attachment-area");
+		attachmentArea.setPadding(new Insets(gap));
+		attachmentArea.visibleProperty().bind(Bindings.isNotNull(attachmentProperty));
+		attachmentArea.managedProperty().bind(attachmentArea.visibleProperty());
+
+		initAttachmentIcon();
+		initAttachmentLbl();
+		initRemoveAttachmentBtn();
+
+		attachmentArea.getChildren().addAll(attachmentIcon, attachmentLbl, removeAttachmentBtn);
+
+	}
+
+	private void initMessageArea() {
+
+		GridPane.setHgrow(messageArea, Priority.ALWAYS);
+		messageArea.setPrefRowCount(1);
+		messageArea.setWrapText(true);
+		messageArea.setTextFormatter(
+				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
+		messageArea.disableProperty().bind(recordBtn.pressedProperty());
+		messageArea.setOnKeyPressed(e -> {
+			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
+				if (e.isShiftDown()) {
+					messageArea.appendText(System.lineSeparator());
+				} else {
+					sendBtn.fire();
+					e.consume();
+				}
+			}
+		});
+
+	}
+
+	private void initBtnPane() {
+
+		initReportBtn();
+		initShowFoldersBtn();
+		initSendBtn();
+		initRecordBtn();
+
+		btnPane.getChildren().addAll(reportBtn, showFoldersBtn, sendBtn, recordBtn);
+
+	}
+
+	private void initDeleteSelectedBtn() {
 
 		deleteSelectedBtn.setStyle("-fx-background-color: red;");
 		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
@@ -317,11 +456,99 @@ class MessagePane extends BorderPane {
 			listeners.forEach(listener -> listener.deleteMessagesRequested(selectedIds));
 		});
 
-		//
+	}
 
-		setTop(topPane);
-		setCenter(scrollPane);
-		setBottom(bottomPane);
+	private void initAttachmentIcon() {
+
+		attachmentIcon.setMaxHeight(Double.MAX_VALUE);
+
+	}
+
+	private void initAttachmentLbl() {
+
+		HBox.setHgrow(attachmentLbl, Priority.ALWAYS);
+		attachmentLbl.getStyleClass().add("dim-label");
+		attachmentLbl.setMaxWidth(Double.MAX_VALUE);
+		attachmentLbl.setMaxHeight(Double.MAX_VALUE);
+		attachmentLbl.textProperty()
+				.bind(Bindings.createStringBinding(
+						() -> attachmentProperty.get() == null ? null : attachmentProperty.get().getFileName(),
+						attachmentProperty));
+
+	}
+
+	private void initRemoveAttachmentBtn() {
+
+		removeAttachmentBtn.setMaxHeight(Double.MAX_VALUE);
+		removeAttachmentBtn.setOnAction(e -> attachmentProperty.set(null));
+
+	}
+
+	private void initReportBtn() {
+
+		reportBtn.setOnMouseClicked(e -> {
+			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				btnAnimation.play();
+		});
+		reportBtn.setOnAction(e -> listeners.forEach(listener -> listener.reportClicked()));
+
+	}
+
+	private void initShowFoldersBtn() {
+
+		showFoldersBtn.setOnMouseClicked(e -> {
+			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
+				btnAnimation.play();
+		});
+		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
+
+	}
+
+	private void initSendBtn() {
+
+		sendBtn.setOnMouseClicked(e -> {
+			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
+				btnAnimation.play();
+		});
+		sendBtn.setOnAction(e -> {
+			final String mesajTxt = messageArea.getText().trim();
+			messageArea.setText("");
+			if (mesajTxt.isEmpty())
+				return;
+			final FileBuilder fileBuilder = attachmentProperty.get();
+			attachmentProperty.set(null);
+			final Long referenceMessageId = referenceMessageProperty.get();
+			referenceMessageProperty.set(null);
+			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, fileBuilder, referenceMessageId));
+		});
+
+	}
+
+	private void initRecordBtn() {
+
+		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty());
+		recordBtn.setOnMouseClicked(e -> {
+			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
+				btnAnimation.play();
+		});
+		recordBtn.addRecordListener(new RecordListener() {
+
+			@Override
+			public void recordButtonPressed() {
+				listeners.forEach(listener -> listener.recordButtonPressed());
+			}
+
+			@Override
+			public void recordEventTriggered() {
+				listeners.forEach(listener -> listener.recordEventTriggered(referenceMessageProperty.get()));
+			}
+
+			@Override
+			public void recordButtonReleased() {
+				listeners.forEach(listener -> listener.recordButtonReleased());
+			}
+
+		});
 
 	}
 
@@ -449,6 +676,12 @@ class MessagePane extends BorderPane {
 
 	}
 
+	void addAttachment(FileBuilder fileBuilder) {
+
+		attachmentProperty.set(fileBuilder);
+
+	}
+
 	void updateMessageProgress(Long messageId, int progress) {
 
 		MessageBalloon messageBalloon = messageBalloons.get(messageId);
@@ -520,117 +753,17 @@ class MessagePane extends BorderPane {
 
 	}
 
-	Long getRefMessageId() {
-
-		return referenceMessageProperty.get();
-
-	}
-
-	private void registerListeners() {
-
-		nameLabel.setOnMouseClicked(e -> {
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				return;
-			if (editableProperty.get())
-				listeners.forEach(listener -> listener.editClicked());
-		});
-
-		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
-
-			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
-
-			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
-				return;
-
-			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
-
-		});
-
-		centerPane.heightProperty().addListener((e0, e1, e2) -> {
-
-			if (autoScroll.get())
-				scrollPaneToBottom();
-
-		});
-
-		referenceMessageProperty.addListener((e0, e1, e2) -> {
-
-			referencePane.getChildren().clear();
-
-			if (e2 == null)
-				return;
-
-			MessageInfo messageInfo = messageBalloons.get(e2).messageInfo;
-			referencePane.getChildren().add(newReferenceBalloon(messageInfo.isOutgoing, messageInfo.senderName,
-					messageInfo.nameColor, messageInfo.messageType, messageInfo.content));
-
-		});
-
-		sendBtn.setOnAction(e -> {
-
-			final String mesajTxt = messageArea.getText().trim();
-
-			messageArea.setText("");
-
-			if (mesajTxt.isEmpty())
-				return;
-
-			final Long referenceMessageId = referenceMessageProperty.get();
-			referenceMessageProperty.set(null);
-
-			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, referenceMessageId));
-
-		});
-
-		recordBtn.addRecordListener(new RecordListener() {
-
-			@Override
-			public void recordButtonPressed() {
-
-				listeners.forEach(listener -> listener.recordButtonPressed());
-
-			}
-
-			@Override
-			public void recordEventTriggered() {
-
-				listeners.forEach(listener -> listener.recordEventTriggered(referenceMessageProperty.get()));
-
-			}
-
-			@Override
-			public void recordButtonReleased() {
-
-				listeners.forEach(listener -> listener.recordButtonReleased());
-
-			}
-
-		});
-
-		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
-
-		reportBtn.setOnAction(e -> listeners.forEach(listener -> listener.reportClicked()));
-
-	}
-
 	private Node getReferenceBalloon(Message message) {
 
-		Long messageId = message.getId();
+		MessageInfo messageInfo = new MessageInfo(message);
 
-		boolean isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
-		String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
-		Color nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
-		MessageType messageType = message.getMessageType();
-		String content = Objects.equals(message.getMessageType(), MessageType.TEXT) ? message.getContent()
-				: message.getAttachment();
-		if (Objects.equals(message.getMessageType(), MessageType.FILE))
-			content = Paths.get(content).getFileName().toString();
-
-		Node referenceBalloon = newReferenceBalloon(isOutgoing, senderName, nameColor, messageType, content);
+		Node referenceBalloon = newReferenceBalloon(messageInfo);
 		referenceBalloon.getStyleClass().add("reference-balloon");
 
 		final InnerShadow shadow = new InnerShadow(2 * gap, Color.DARKGRAY);
 		referenceBalloon.setEffect(shadow);
+
+		final Long messageId = messageInfo.messageId;
 
 		referenceBalloon.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 			if (!referencedMessageIds.contains(messageId)) {
@@ -665,33 +798,59 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private Node newReferenceBalloon(boolean isOutgoing, String senderName, Color nameColor, MessageType messageType,
-			String content) {
+	private Node newReferenceBalloon(MessageInfo messageInfo) {
 
-		VBox referenceBalloon = new VBox(gap);
+		VBox referenceBalloon = new VBox(smallGap);
 		referenceBalloon.setPadding(new Insets(gap));
 
-		Label nameLabel = new Label(senderName);
+		Label nameLabel = new Label(messageInfo.senderName);
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
-		nameLabel.setTextFill(nameColor);
+		nameLabel.setTextFill(messageInfo.nameColor);
 
 		referenceBalloon.getChildren().add(nameLabel);
 
-		switch (messageType) {
+		if (messageInfo.attachment != null) {
 
-		case AUDIO:
+			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
 
-			DmsDummyPlayer dmsDummyPlayer = new DmsDummyPlayer();
+				DmsDummyPlayer dmsDummyPlayer = new DmsDummyPlayer();
 
-			VBox.setMargin(dmsDummyPlayer, new Insets(0.0, 0.0, 0.0, gap));
+				VBox.setMargin(dmsDummyPlayer, new Insets(0.0, 0.0, 0.0, gap));
 
-			referenceBalloon.getChildren().add(dmsDummyPlayer);
+				referenceBalloon.getChildren().add(dmsDummyPlayer);
 
-			break;
+			} else {
 
-		default:
+				HBox attachmentArea = new HBox(gap);
 
-			Label messageLbl = new Label(content) {
+				Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString()) {
+					@Override
+					public Orientation getContentBias() {
+						return Orientation.HORIZONTAL;
+					}
+
+					@Override
+					protected double computePrefHeight(double arg0) {
+						return Math.min(super.computePrefHeight(arg0), getFont().getSize() * 5.0);
+					}
+
+				};
+				attachmentLbl.getStyleClass().add("dim-label");
+				attachmentLbl.setFont(Font.font(attachmentLbl.getFont().getSize() * 0.8));
+
+				attachmentArea.getChildren().addAll(ViewFactory.newSimpleAttachBtn(0.8), attachmentLbl);
+
+				VBox.setMargin(attachmentArea, new Insets(0.0, 0.0, 0.0, gap));
+
+				referenceBalloon.getChildren().add(attachmentArea);
+
+			}
+
+		}
+
+		if (messageInfo.content != null) {
+
+			Label contentLbl = new Label(messageInfo.content) {
 				@Override
 				public Orientation getContentBias() {
 					return Orientation.HORIZONTAL;
@@ -703,16 +862,13 @@ class MessagePane extends BorderPane {
 				}
 
 			};
+			contentLbl.getStyleClass().add("black-label");
+			contentLbl.setFont(Font.font(contentLbl.getFont().getSize() * 0.8));
+			contentLbl.setWrapText(true);
 
-			messageLbl.getStyleClass().add("black-label");
+			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, gap));
 
-			messageLbl.setFont(Font.font(messageLbl.getFont().getSize() * 0.8));
-			messageLbl.setWrapText(true);
-			VBox.setMargin(messageLbl, new Insets(0.0, 0.0, 0.0, gap));
-
-			referenceBalloon.getChildren().add(messageLbl);
-
-			break;
+			referenceBalloon.getChildren().add(contentLbl);
 
 		}
 
@@ -745,87 +901,9 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initBtnPane() {
-
-		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty());
-
-		btnPane.getChildren().addAll(reportBtn, showFoldersBtn, sendBtn, recordBtn);
-
-		Interpolator interpolator = Interpolator.EASE_BOTH;
-
-		Transition transition = new Transition() {
-
-			{
-				setCycleDuration(Duration.millis(100.0));
-			}
-
-			private double showFoldersBtnStart;
-			private double showFoldersBtnEnd;
-			private double reportBtnStart;
-			private double reportBtnEnd;
-			private int position = 0;
-
-			@Override
-			protected void interpolate(double arg0) {
-
-				showFoldersBtn.setTranslateY(interpolator.interpolate(showFoldersBtnStart, showFoldersBtnEnd, arg0));
-				reportBtn.setTranslateY(interpolator.interpolate(reportBtnStart, reportBtnEnd, arg0));
-
-			}
-
-			@Override
-			public void play() {
-				showFoldersBtnStart = -position * (gap + showFoldersBtn.getHeight());
-				reportBtnStart = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
-				position = (position + 1) % 2;
-				showFoldersBtnEnd = -position * (gap + showFoldersBtn.getHeight());
-				reportBtnEnd = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
-				super.play();
-			}
-
-		};
-
-		sendBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
-				transition.play();
-		});
-
-		recordBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
-				transition.play();
-		});
-
-		showFoldersBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				transition.play();
-		});
-
-		reportBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				transition.play();
-		});
-
-	}
-
 	private MessageBalloon newMessageBalloon(Message message) {
 
-		final Long messageId = message.getId();
-
-		String content = Objects.equals(message.getMessageType(), MessageType.TEXT) ? message.getContent()
-				: message.getAttachment();
-		if (Objects.equals(message.getMessageType(), MessageType.FILE))
-			content = Paths.get(content).getFileName().toString();
-
-		boolean isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
-		Date messageDate = message.getDate();
-
-		String senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
-		Long ownerId = message.getOwner().getId();
-
-		boolean isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
-
-		MessageInfo messageInfo = new MessageInfo(messageId, content, ownerId, senderName, messageDate, isGroup,
-				isOutgoing, message.getMessageType(), ViewFactory.getColorForUuid(message.getOwner().getUuid()));
+		MessageInfo messageInfo = new MessageInfo(message);
 
 		MessageBalloon messageBalloon = new MessageBalloon(messageInfo);
 		messageBalloon.updateMessageStatus(message.getMessageStatus(),
@@ -834,24 +912,7 @@ class MessagePane extends BorderPane {
 		if (message.getRefMessage() != null)
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
 
-		if (Objects.equals(messageInfo.messageType, MessageType.FILE)) {
-
-			messageBalloon.contentArea.cursorProperty().bind(Bindings.createObjectBinding(
-					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
-
-			messageBalloon.contentArea
-					.setOnMouseClicked(e -> listeners.forEach(listener -> listener.messageClicked(messageId)));
-
-			final Effect dropShadow = new DropShadow();
-
-			messageBalloon.messagePane.effectProperty()
-					.bind(Bindings
-							.createObjectBinding(
-									() -> messageBalloon.contentArea.hoverProperty().and(selectionModeProperty.not())
-											.get() ? dropShadow : null,
-									messageBalloon.contentArea.hoverProperty(), selectionModeProperty));
-
-		}
+		final Long messageId = messageInfo.messageId;
 
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
 
@@ -956,13 +1017,12 @@ class MessagePane extends BorderPane {
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final GridPane contentArea = new GridPane();
 		private final Label progressLbl = new Label();
 		private final Label timeLbl;
 		private final Group infoGrp = new Group();
 		private final Circle waitingCircle = new Circle(radius, Color.TRANSPARENT);
 		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
-		private final Button smallStarBtn = ViewFactory.newSmallStarBtn();
+		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
 		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
@@ -1109,9 +1169,8 @@ class MessagePane extends BorderPane {
 
 			messagePane.setStyle("-fx-min-width: 6em;");
 
-			messagePane.setBorder(new Border(new BorderStroke(
-					Objects.equals(messageInfo.messageType, MessageType.FILE) ? Color.BLUE : Color.DARKGRAY,
-					BorderStrokeStyle.SOLID, new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
+			messagePane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+					new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
 
 			messagePane.setPadding(new Insets(gap));
 			messagePane.setHgap(gap);
@@ -1125,17 +1184,21 @@ class MessagePane extends BorderPane {
 			messagePane.setBackground(new Background(
 					new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
 
-			initContentArea();
+			if (messageInfo.attachment != null)
+				messagePane.add(getAttachmentArea(), 0, 1, 3, 1);
+
+			if (messageInfo.content != null)
+				messagePane.add(getContentArea(), 0, 2, 3, 1);
+
 			initSmallStarBtn();
 			initInfoGrp();
 			initProgressLbl();
 			initTimeLbl();
 
-			messagePane.add(contentArea, 0, 1, 3, 1);
-			messagePane.add(smallStarBtn, 0, 2, 1, 1);
-			messagePane.add(infoGrp, 1, 2, 1, 1);
-			messagePane.add(progressLbl, 1, 2, 1, 1);
-			messagePane.add(timeLbl, 2, 2, 1, 1);
+			messagePane.add(smallStarBtn, 0, 3, 1, 1);
+			messagePane.add(infoGrp, 1, 3, 1, 1);
+			messagePane.add(progressLbl, 1, 3, 1, 1);
+			messagePane.add(timeLbl, 2, 3, 1, 1);
 
 		}
 
@@ -1144,46 +1207,68 @@ class MessagePane extends BorderPane {
 			messagePane.setBackground(new Background(
 					new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
 
-			initContentArea();
+			if (messageInfo.attachment != null)
+				messagePane.add(getAttachmentArea(), 0, 1, 3, 1);
+
+			if (messageInfo.content != null)
+				messagePane.add(getContentArea(), 0, 2, 3, 1);
+
 			initTimeLbl();
 			initSmallStarBtn();
 
 			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
 
-			messagePane.add(contentArea, 0, 1, 3, 1);
-			messagePane.add(timeLbl, 0, 2, 1, 1);
-			messagePane.add(smallStarBtn, 2, 2, 1, 1);
+			messagePane.add(timeLbl, 0, 3, 1, 1);
+			messagePane.add(smallStarBtn, 2, 3, 1, 1);
 
 		}
 
-		private void initContentArea() {
+		private Node getContentArea() {
 
-			switch (messageInfo.messageType) {
+			Label contentLbl = new Label(messageInfo.content);
 
-			case AUDIO:
+			contentLbl.getStyleClass().add("black-label");
+			contentLbl.setWrapText(true);
+
+			return contentLbl;
+
+		}
+
+		private Node getAttachmentArea() {
+
+			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
 
 				try {
 
-					contentArea.add(new DmsMediaPlayer(Paths.get(messageInfo.content)), 0, 0, 1, 1);
-
-					break;
+					return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 				} catch (Exception e) {
 
 				}
 
-			default:
-
-				Label messageLbl = new Label(messageInfo.content);
-
-				messageLbl.getStyleClass().add("black-label");
-				messageLbl.setWrapText(true);
-
-				contentArea.add(messageLbl, 0, 0, 1, 1);
-
-				break;
-
 			}
+
+			HBox attachmentArea = new HBox(gap);
+
+			Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
+			attachmentLbl.getStyleClass().add("dim-label");
+			attachmentLbl.setTooltip(new Tooltip(attachmentLbl.getText()));
+
+			attachmentArea.getChildren().addAll(ViewFactory.newSimpleAttachBtn(1.0), attachmentLbl);
+
+			attachmentArea.cursorProperty().bind(Bindings.createObjectBinding(
+					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
+
+			attachmentArea.setOnMouseClicked(
+					e -> listeners.forEach(listener -> listener.messageClicked(messageInfo.messageId)));
+
+			final Effect colorAdjust = new ColorAdjust(-0.75, 1.0, 0.25, 0.0);
+
+			attachmentArea.effectProperty().bind(Bindings.createObjectBinding(
+					() -> attachmentArea.hoverProperty().and(selectionModeProperty.not()).get() ? colorAdjust : null,
+					attachmentArea.hoverProperty(), selectionModeProperty));
+
+			return attachmentArea;
 
 		}
 
@@ -1449,29 +1534,30 @@ class MessagePane extends BorderPane {
 
 		final Long messageId;
 		final String content;
+		final String attachment;
 		final Long ownerId;
+		final boolean isOutgoing;
 		final String senderName;
 		final Date date;
 		final boolean isGroup;
-		final boolean isOutgoing;
-		final MessageType messageType;
+		final AttachmentType attachmentType;
 		final boolean infoAvailable;
 		final Color nameColor;
 		final BooleanProperty archivedProperty = new SimpleBooleanProperty(false);
 
-		MessageInfo(Long messageId, String content, Long ownerId, String senderName, Date date, boolean isGroup,
-				boolean isOutgoing, MessageType messageType, Color nameColor) {
+		MessageInfo(Message message) {
 
-			this.messageId = messageId;
-			this.content = content;
-			this.ownerId = ownerId;
-			this.senderName = senderName;
-			this.date = date;
-			this.isGroup = isGroup;
-			this.isOutgoing = isOutgoing;
-			this.messageType = messageType;
+			this.messageId = message.getId();
+			this.content = message.getContent();
+			this.attachment = message.getAttachment();
+			this.ownerId = message.getOwner().getId();
+			this.isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
+			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
+			this.date = message.getDate();
+			this.isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
+			this.attachmentType = message.getAttachmentType();
 			this.infoAvailable = isGroup && isOutgoing;
-			this.nameColor = nameColor;
+			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
 
 		}
 
@@ -1487,7 +1573,7 @@ interface IMessagePane {
 
 	void messagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
 
-	void sendMessageClicked(String message, Long refMessageId);
+	void sendMessageClicked(String message, FileBuilder fileBuilder, Long refMessageId);
 
 	void showFoldersClicked();
 

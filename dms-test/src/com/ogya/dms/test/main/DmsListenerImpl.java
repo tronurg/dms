@@ -138,26 +138,26 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 	}
 
 	@Override
-	public void guiFileSent(Path path, Long contactId, Long groupId) {
+	public void guiFileSent(String message, Path path, Long contactId, Long groupId) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void guiFileReceived(Path path, Long contactId, Long groupId) {
+	public void guiFileReceived(String message, Path path, Long contactId, Long groupId) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void guiReportSent(Integer reportId, Path path, Long contactId, Long groupId) {
+	public void guiReportSent(String message, Integer reportId, Path path, Long contactId, Long groupId) {
 
 		System.out.println("Report #" + reportId + " sent.");
 
 	}
 
 	@Override
-	public void guiReportReceived(Integer reportId, Path path, Long contactId, Long groupId) {
+	public void guiReportReceived(String message, Integer reportId, Path path, Long contactId, Long groupId) {
 
 		System.out.println("Report #" + reportId + " received.");
 

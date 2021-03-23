@@ -8,13 +8,13 @@ public interface DmsGuiListener {
 
 	void guiMessageReceived(String message, Long contactId, Long groupId);
 
-	void guiFileSent(Path path, Long contactId, Long groupId);
+	void guiFileSent(String message, Path path, Long contactId, Long groupId);
 
-	void guiFileReceived(Path path, Long contactId, Long groupId);
+	void guiFileReceived(String message, Path path, Long contactId, Long groupId);
 
-	void guiReportSent(Integer reportId, Path path, Long contactId, Long groupId);
+	void guiReportSent(String message, Integer reportId, Path path, Long contactId, Long groupId);
 
-	void guiReportReceived(Integer reportId, Path path, Long contactId, Long groupId);
+	void guiReportReceived(String message, Integer reportId, Path path, Long contactId, Long groupId);
 
 	void guiAudioSent(Path path, Long contactId, Long groupId);
 

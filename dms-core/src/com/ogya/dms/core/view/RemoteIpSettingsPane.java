@@ -115,7 +115,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 			Label ipLabel = new Label(ip);
 			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 
-			Button removeIpButton = ViewFactory.newRemoveBtn();
+			Button removeIpButton = ViewFactory.newRemoveBtn(1.0);
 
 			removeIpButton.setOnAction(e -> {
 

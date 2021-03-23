@@ -86,12 +86,12 @@ public interface DmsHandle {
 
 	Future<Long> sendGuiMessageToGroup(String message, Long groupId);
 
-	Future<Long> sendGuiFileToContact(Path path, Long contactId);
+	Future<Long> sendGuiFileToContact(String message, Path path, Long contactId);
 
-	Future<Long> sendGuiFileToGroup(Path path, Long groupId);
+	Future<Long> sendGuiFileToGroup(String message, Path path, Long groupId);
 
-	Future<Long> sendGuiReportToContact(Integer reportId, Path path, Long contactId);
+	Future<Long> sendGuiReportToContact(String message, Integer reportId, Path path, Long contactId);
 
-	Future<Long> sendGuiReportToGroup(Integer reportId, Path path, Long groupId);
+	Future<Long> sendGuiReportToGroup(String message, Integer reportId, Path path, Long groupId);
 
 }

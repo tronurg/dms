@@ -449,7 +449,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		protected final void initButton() {
 
-			addRemoveBtn = ViewFactory.newRemoveBtn();
+			addRemoveBtn = ViewFactory.newRemoveBtn(1.0);
 
 			addRemoveBtn.setText(name);
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);

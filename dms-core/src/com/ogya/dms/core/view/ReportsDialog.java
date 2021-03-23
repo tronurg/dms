@@ -63,9 +63,7 @@ public class ReportsDialog extends JDialog {
 
 	}
 
-	public void display(Long id) {
-
-		reportsPane.setId(id);
+	public void display() {
 
 		Rectangle screenBounds = MouseInfo.getPointerInfo().getDevice().getDefaultConfiguration().getBounds();
 

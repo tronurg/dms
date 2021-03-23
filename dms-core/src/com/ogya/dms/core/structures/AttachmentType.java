@@ -6,29 +6,29 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum MessageSubType {
+public enum AttachmentType {
 
-	FILE_REPORT(0), UPDATE_GROUP(1), UPDATE_CANCEL_MESSAGE(2);
+	FILE(0), AUDIO(1), REPORT(2);
 
-	private static final Map<Integer, MessageSubType> INDEX_MAP = Collections
-			.synchronizedMap(new HashMap<Integer, MessageSubType>());
+	private static final Map<Integer, AttachmentType> INDEX_MAP = Collections
+			.synchronizedMap(new HashMap<Integer, AttachmentType>());
 
 	@JsonValue
 	private final int index;
 
 	static {
-		for (MessageSubType value : values()) {
+		for (AttachmentType value : values()) {
 			INDEX_MAP.put(value.index, value);
 		}
 	}
 
-	private MessageSubType(int index) {
+	private AttachmentType(int index) {
 
 		this.index = index;
 
 	}
 
-	public static MessageSubType of(Integer index) {
+	public static AttachmentType of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

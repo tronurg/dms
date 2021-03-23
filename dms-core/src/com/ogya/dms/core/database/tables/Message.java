@@ -21,17 +21,17 @@ import javax.persistence.Transient;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ogya.dms.core.database.converters.AttachmentTypeConverter;
 import com.ogya.dms.core.database.converters.MessageDirectionConverter;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
-import com.ogya.dms.core.database.converters.MessageSubTypeConverter;
-import com.ogya.dms.core.database.converters.MessageTypeConverter;
 import com.ogya.dms.core.database.converters.ReceiverTypeConverter;
+import com.ogya.dms.core.database.converters.UpdateTypeConverter;
 import com.ogya.dms.core.database.converters.ViewStatusConverter;
+import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.MessageSubType;
-import com.ogya.dms.core.structures.MessageType;
 import com.ogya.dms.core.structures.ReceiverType;
+import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
@@ -57,15 +57,15 @@ public class Message {
 	@JsonProperty("c")
 	private ReceiverType receiverType;
 
-	@Column(name = "message_type", nullable = false, updatable = false)
-	@Convert(converter = MessageTypeConverter.class)
+	@Column(name = "update_type", updatable = false)
+	@Convert(converter = UpdateTypeConverter.class)
 	@JsonProperty("d")
-	private MessageType messageType;
+	private UpdateType updateType;
 
-	@Column(name = "message_sub_type", updatable = false)
-	@Convert(converter = MessageSubTypeConverter.class)
+	@Column(name = "attachment_type", updatable = false)
+	@Convert(converter = AttachmentTypeConverter.class)
 	@JsonProperty("e")
-	private MessageSubType messageSubType;
+	private AttachmentType attachmentType;
 
 	@Column(name = "content", updatable = false, length = Integer.MAX_VALUE)
 	@JsonProperty("f")
@@ -137,12 +137,11 @@ public class Message {
 		super();
 	}
 
-	public Message(Contact contact, Dgroup dgroup, ReceiverType receiverType, MessageType messageType, String content) {
+	public Message(Contact contact, Dgroup dgroup, ReceiverType receiverType, String content) {
 		super();
 		this.contact = contact;
 		this.dgroup = dgroup;
 		this.receiverType = receiverType;
-		this.messageType = messageType;
 		this.content = content;
 	}
 
@@ -152,8 +151,8 @@ public class Message {
 		this.messageRefId = message.messageRefId;
 		this.messageDirection = message.messageDirection;
 		this.receiverType = message.receiverType;
-		this.messageType = message.messageType;
-		this.messageSubType = message.messageSubType;
+		this.updateType = message.updateType;
+		this.attachmentType = message.attachmentType;
 		this.content = message.content;
 		this.attachment = message.attachment;
 		this.messageStatus = message.messageStatus;
@@ -203,20 +202,20 @@ public class Message {
 		this.receiverType = receiverType;
 	}
 
-	public MessageType getMessageType() {
-		return messageType;
+	public UpdateType getUpdateType() {
+		return updateType;
 	}
 
-	public void setMessageType(MessageType messageType) {
-		this.messageType = messageType;
+	public void setUpdateType(UpdateType updateType) {
+		this.updateType = updateType;
 	}
 
-	public MessageSubType getMessageSubType() {
-		return messageSubType;
+	public AttachmentType getAttachmentType() {
+		return attachmentType;
 	}
 
-	public void setMessageSubType(MessageSubType messageSubType) {
-		this.messageSubType = messageSubType;
+	public void setAttachmentType(AttachmentType attachmentType) {
+		this.attachmentType = attachmentType;
 	}
 
 	public String getContent() {

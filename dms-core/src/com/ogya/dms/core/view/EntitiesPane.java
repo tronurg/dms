@@ -12,6 +12,7 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.Message;
+import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -110,7 +111,7 @@ class EntitiesPane extends BorderPane {
 
 	private void initCreateGroupBtn() {
 
-		createGroupBtn.getStyleClass().add("dim-button");
+		createGroupBtn.getStyleClass().add("dim-label");
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
 		createGroupBtn.setPadding(new Insets(2 * gap));
@@ -303,24 +304,6 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	Long getContactRefMessageId(Long id) {
-
-		if (idContactPane.containsKey(id))
-			return idContactPane.get(id).getMessagePane().getRefMessageId();
-
-		return null;
-
-	}
-
-	Long getGroupRefMessageId(Long id) {
-
-		if (idGroupPane.containsKey(id))
-			return idGroupPane.get(id).getMessagePane().getRefMessageId();
-
-		return null;
-
-	}
-
 	private ContactPane getContactPane(final Long id) {
 
 		if (!idContactPane.containsKey(id)) {
@@ -409,14 +392,16 @@ class EntitiesPane extends BorderPane {
 			@Override
 			public void reportClicked() {
 
-				entityListeners.forEach(listener -> listener.reportClicked(id));
+				entityListeners.forEach(listener -> listener.reportClicked());
 
 			}
 
 			@Override
-			public void sendMessageClicked(final String message, final Long refMessageId) {
+			public void sendMessageClicked(final String message, final FileBuilder fileBuilder,
+					final Long refMessageId) {
 
-				entityListeners.forEach(listener -> listener.sendMessageClicked(id, message, refMessageId));
+				entityListeners
+						.forEach(listener -> listener.sendMessageClicked(id, message, fileBuilder, refMessageId));
 
 			}
 
@@ -515,11 +500,11 @@ interface IEntitiesPane {
 
 	void messagesClaimed(Long id, Long lastMessageIdExcl, Long firstMessageIdIncl);
 
-	void sendMessageClicked(Long id, String messageTxt, Long refMessageId);
+	void sendMessageClicked(Long id, String messageTxt, FileBuilder fileBuilder, Long refMessageId);
 
 	void showFoldersClicked(Long id);
 
-	void reportClicked(Long id);
+	void reportClicked();
 
 	void messageClicked(Long messageId);
 

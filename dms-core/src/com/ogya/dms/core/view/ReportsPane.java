@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -45,8 +44,6 @@ public class ReportsPane extends GridPane {
 
 	private final List<ReportsListener> reportListeners = Collections
 			.synchronizedList(new ArrayList<ReportsListener>());
-
-	private final AtomicReference<Long> idRef = new AtomicReference<Long>();
 
 	ReportsPane(List<ReportTemplate> templates) {
 
@@ -100,17 +97,9 @@ public class ReportsPane extends GridPane {
 
 	void reset() {
 
-		idRef.set(null);
-
 		reportPanes.forEach(reportPane -> reportPane.reset());
 
 		reportsComboBox.getSelectionModel().selectFirst();
-
-	}
-
-	void setId(Long id) {
-
-		idRef.set(id);
 
 	}
 
@@ -157,7 +146,7 @@ public class ReportsPane extends GridPane {
 		sendBtn.setOnAction(e -> {
 			final ReportPane selectedReportPane = reportPanes
 					.get(reportsComboBox.getSelectionModel().getSelectedIndex());
-			reportListeners.forEach(listener -> listener.sendReportClicked(idRef.get(), selectedReportPane.reportId,
+			reportListeners.forEach(listener -> listener.sendReportClicked(selectedReportPane.reportId,
 					reportsComboBox.getValue(), selectedReportPane.getParagraphs()));
 		});
 
@@ -195,7 +184,7 @@ public class ReportsPane extends GridPane {
 
 	public static interface ReportsListener {
 
-		void sendReportClicked(Long id, Integer reportId, String reportHeading, List<String> reportParagraphs);
+		void sendReportClicked(Integer reportId, String reportHeading, List<String> reportParagraphs);
 
 	}
 

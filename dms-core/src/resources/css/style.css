@@ -7,7 +7,7 @@
 Button, RecordButton {
 	-fx-background-color: transparent;
 }
-.dim-button {
+.dim-label {
 	-fx-font-weight: bold;
 	-fx-text-fill: gray;
 }
@@ -46,6 +46,10 @@ Text {
 .reference-balloon {
 	-fx-background-color: CORNSILK;
 	-fx-background-radius: 0.4em;
+	-fx-border-color: GRAY;
+	-fx-border-radius: 0.4em;
+}
+.attachment-area {
 	-fx-border-color: GRAY;
 	-fx-border-radius: 0.4em;
 }

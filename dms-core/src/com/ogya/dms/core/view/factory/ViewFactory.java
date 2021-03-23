@@ -172,9 +172,9 @@ public class ViewFactory {
 
 	}
 
-	public static Button newRemoveBtn() {
+	public static Button newRemoveBtn(double scaleFactor) {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = scaleFactor * getViewFactor();
 
 		Button btn = new Button();
 
@@ -250,6 +250,31 @@ public class ViewFactory {
 		line.setStroke(Color.ANTIQUEWHITE);
 		line.setStrokeWidth(2.0 * viewFactor);
 		Group group = new Group(circle, rectangle, line);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
+	public static Button newSimpleAttachBtn(double scaleFactor) {
+
+		double viewFactor = scaleFactor * getViewFactor();
+
+		Button btn = new Button();
+
+		Rectangle rectangle = new Rectangle(-6.0 * viewFactor, -2.5 * viewFactor, 12.0 * viewFactor, 5.0 * viewFactor);
+		rectangle.setArcWidth(3.0 * viewFactor);
+		rectangle.setArcHeight(3.0 * viewFactor);
+		rectangle.setStrokeWidth(1.0 * viewFactor);
+		rectangle.setStroke(Color.GRAY);
+		rectangle.setRotate(-45.0);
+		rectangle.setFill(Color.TRANSPARENT);
+		Line line = new Line(-3.0 * viewFactor, 3.0 * viewFactor, 1.5 * viewFactor, -1.5 * viewFactor);
+		line.setStroke(Color.GRAY);
+		line.setStrokeWidth(1.0 * viewFactor);
+		Group group = new Group(rectangle, line);
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
@@ -392,9 +417,9 @@ public class ViewFactory {
 
 	}
 
-	public static Button newStarBtn() {
+	public static Button newStarBtn(double scaleFactor) {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = scaleFactor * getViewFactor();
 
 		Button btn = new Button();
 
@@ -404,28 +429,6 @@ public class ViewFactory {
 		for (int i = 0; i < 5; ++i) {
 			points[2 * i] = 12.0 * viewFactor * Math.cos(2 * Math.PI * (0.25 + 2.0 * i / 5));
 			points[2 * i + 1] = -12.0 * viewFactor * Math.sin(2 * Math.PI * (0.25 + 2.0 * i / 5));
-		}
-		star.getPoints().addAll(points);
-		btn.setGraphic(star);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
-
-		return btn;
-
-	}
-
-	public static Button newSmallStarBtn() {
-
-		double viewFactor = getViewFactor();
-
-		Button btn = new Button();
-
-		Polygon star = new Polygon();
-		star.setFill(Color.YELLOW);
-		Double[] points = new Double[10];
-		for (int i = 0; i < 5; ++i) {
-			points[2 * i] = 8.0 * viewFactor * Math.cos(2 * Math.PI * (0.25 + 2.0 * i / 5));
-			points[2 * i + 1] = -8.0 * viewFactor * Math.sin(2 * Math.PI * (0.25 + 2.0 * i / 5));
 		}
 		star.getPoints().addAll(points);
 		btn.setGraphic(star);

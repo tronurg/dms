@@ -4,6 +4,7 @@ import java.nio.file.Path;
 import java.util.Set;
 
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.FileBuilder;
 
 public interface AppListener {
 
@@ -15,9 +16,9 @@ public interface AppListener {
 
 	void messagePaneClosed(Long id);
 
-	void sendMessageClicked(Long id, String messageTxt, Long refMessageId);
+	void sendMessageClicked(Long id, String messageTxt, FileBuilder fileBuilder, Long refMessageId);
 
-	void reportClicked(Long id);
+	void reportClicked();
 
 	void paneScrolledToTop(Long id, Long topMessageId);
 
@@ -29,7 +30,7 @@ public interface AppListener {
 
 	void deleteGroupRequested();
 
-	void fileSelected(Long id, Path file, Long refMessageId);
+	void fileSelected(Path file);
 
 	void messageClicked(Long messageId);
 
