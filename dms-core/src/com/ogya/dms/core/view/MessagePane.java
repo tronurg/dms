@@ -511,12 +511,13 @@ class MessagePane extends BorderPane {
 				btnAnimation.play();
 		});
 		sendBtn.setOnAction(e -> {
-			final String mesajTxt = messageArea.getText().trim();
+			String messageAreaText = messageArea.getText().trim();
+			final String mesajTxt = messageAreaText.isEmpty() ? null : messageAreaText;
 			messageArea.setText("");
-			if (mesajTxt.isEmpty())
-				return;
 			final FileBuilder fileBuilder = attachmentProperty.get();
 			attachmentProperty.set(null);
+			if (mesajTxt == null && fileBuilder == null)
+				return;
 			final Long referenceMessageId = referenceMessageProperty.get();
 			referenceMessageProperty.set(null);
 			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, fileBuilder, referenceMessageId));
@@ -526,7 +527,7 @@ class MessagePane extends BorderPane {
 
 	private void initRecordBtn() {
 
-		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty());
+		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty().and(attachmentProperty.isNull()));
 		recordBtn.setOnMouseClicked(e -> {
 			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
 				btnAnimation.play();
@@ -823,18 +824,7 @@ class MessagePane extends BorderPane {
 
 				HBox attachmentArea = new HBox(gap);
 
-				Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString()) {
-					@Override
-					public Orientation getContentBias() {
-						return Orientation.HORIZONTAL;
-					}
-
-					@Override
-					protected double computePrefHeight(double arg0) {
-						return Math.min(super.computePrefHeight(arg0), getFont().getSize() * 5.0);
-					}
-
-				};
+				Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
 				attachmentLbl.getStyleClass().add("dim-label");
 				attachmentLbl.setFont(Font.font(attachmentLbl.getFont().getSize() * 0.8));
 

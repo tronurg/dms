@@ -174,18 +174,6 @@ class GroupPane extends HBox {
 
 	}
 
-	void recordingStarted() {
-
-		messagePane.recordingStarted();
-
-	}
-
-	void recordingStopped() {
-
-		messagePane.recordingStopped();
-
-	}
-
 	String getName() {
 
 		return nameLabel.getText();

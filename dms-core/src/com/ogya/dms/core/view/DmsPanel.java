@@ -273,31 +273,25 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 
 	}
 
-	public void recordingStarted(Long id) {
+	public void recordingStarted() {
 
-		if (id > 0) {
-
-			entitiesPane.privateRecordingStarted(id);
-
-		} else {
-
-			entitiesPane.groupRecordingStarted(-id);
-
-		}
+		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
+		if (idOnScreen == null)
+			return;
+		MessagePane messagePane = idOnScreen.getValue();
+		if (messagePane != null)
+			messagePane.recordingStarted();
 
 	}
 
-	public void recordingStopped(Long id) {
+	public void recordingStopped() {
 
-		if (id > 0) {
-
-			entitiesPane.privateRecordingStopped(id);
-
-		} else {
-
-			entitiesPane.groupRecordingStopped(-id);
-
-		}
+		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
+		if (idOnScreen == null)
+			return;
+		MessagePane messagePane = idOnScreen.getValue();
+		if (messagePane != null)
+			messagePane.recordingStopped();
 
 	}
 
@@ -518,23 +512,23 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void recordButtonPressed(final Long id) {
+	public void recordButtonPressed() {
 
-		listeners.forEach(listener -> listener.recordButtonPressed(id));
-
-	}
-
-	@Override
-	public void recordEventTriggered(Long id, final Long refMessageId) {
-
-		listeners.forEach(listener -> listener.recordEventTriggered(id, refMessageId));
+		listeners.forEach(listener -> listener.recordButtonPressed());
 
 	}
 
 	@Override
-	public void recordButtonReleased(final Long id) {
+	public void recordEventTriggered(final Long refMessageId) {
 
-		listeners.forEach(listener -> listener.recordButtonReleased(id));
+		listeners.forEach(listener -> listener.recordEventTriggered(idOnScreenRef.get().getKey(), refMessageId));
+
+	}
+
+	@Override
+	public void recordButtonReleased() {
+
+		listeners.forEach(listener -> listener.recordButtonReleased());
 
 	}
 

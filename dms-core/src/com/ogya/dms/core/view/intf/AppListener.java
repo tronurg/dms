@@ -46,10 +46,10 @@ public interface AppListener {
 
 	void removeIpClicked(String ip);
 
-	void recordButtonPressed(Long id);
+	void recordButtonPressed();
 
 	void recordEventTriggered(Long id, Long refMessageId);
 
-	void recordButtonReleased(Long id);
+	void recordButtonReleased();
 
 }

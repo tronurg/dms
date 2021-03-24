@@ -272,38 +272,6 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void privateRecordingStarted(Long id) {
-
-		ContactPane contactPane = getContactPane(id);
-
-		contactPane.recordingStarted();
-
-	}
-
-	void privateRecordingStopped(Long id) {
-
-		ContactPane contactPane = getContactPane(id);
-
-		contactPane.recordingStopped();
-
-	}
-
-	void groupRecordingStarted(Long id) {
-
-		GroupPane groupPane = getGroupPane(id);
-
-		groupPane.recordingStarted();
-
-	}
-
-	void groupRecordingStopped(Long id) {
-
-		GroupPane groupPane = getGroupPane(id);
-
-		groupPane.recordingStopped();
-
-	}
-
 	private ContactPane getContactPane(final Long id) {
 
 		if (!idContactPane.containsKey(id)) {
@@ -458,21 +426,21 @@ class EntitiesPane extends BorderPane {
 			@Override
 			public void recordButtonPressed() {
 
-				entityListeners.forEach(listener -> listener.recordButtonPressed(id));
+				entityListeners.forEach(listener -> listener.recordButtonPressed());
 
 			}
 
 			@Override
 			public void recordEventTriggered(final Long refMessageId) {
 
-				entityListeners.forEach(listener -> listener.recordEventTriggered(id, refMessageId));
+				entityListeners.forEach(listener -> listener.recordEventTriggered(refMessageId));
 
 			}
 
 			@Override
 			public void recordButtonReleased() {
 
-				entityListeners.forEach(listener -> listener.recordButtonReleased(id));
+				entityListeners.forEach(listener -> listener.recordButtonReleased());
 
 			}
 
@@ -514,10 +482,10 @@ interface IEntitiesPane {
 
 	void archiveMessagesRequested(Long... messageIds);
 
-	void recordButtonPressed(Long id);
+	void recordButtonPressed();
 
-	void recordEventTriggered(Long id, Long refMessageId);
+	void recordEventTriggered(Long refMessageId);
 
-	void recordButtonReleased(Long id);
+	void recordButtonReleased();
 
 }

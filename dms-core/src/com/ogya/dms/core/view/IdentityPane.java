@@ -324,6 +324,7 @@ class IdentityPane extends GridPane {
 
 	private void initCoordinatesLabel() {
 
+		coordinatesLabel.setOpacity(0.5);
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}

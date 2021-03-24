@@ -179,18 +179,6 @@ class ContactPane extends HBox {
 
 	}
 
-	void recordingStarted() {
-
-		messagePane.recordingStarted();
-
-	}
-
-	void recordingStopped() {
-
-		messagePane.recordingStopped();
-
-	}
-
 	String getName() {
 
 		return nameLabel.getText();
@@ -276,6 +264,7 @@ class ContactPane extends HBox {
 
 	private void initCoordinatesLabel() {
 
+		coordinatesLabel.setOpacity(0.5);
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
