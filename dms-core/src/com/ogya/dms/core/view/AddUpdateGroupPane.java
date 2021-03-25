@@ -234,7 +234,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initGroupNameTextField() {
 
-		groupNameTextField.getStyleClass().add("black-text-field");
+		groupNameTextField.getStyleClass().add("black-label");
 
 		HBox.setHgrow(groupNameTextField, Priority.ALWAYS);
 

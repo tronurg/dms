@@ -4,19 +4,16 @@
 	-fx-base: -panel-background;
 	-fx-background: -panel-background;
 }
-Button, RecordButton {
+.button {
 	-fx-background-color: transparent;
 }
 .dim-label {
 	-fx-font-weight: bold;
 	-fx-text-fill: gray;
 }
-TextField {
+.text-field {
 	-fx-background-color: transparent;
 	-fx-text-fill: -text-fill;
-}
-.black-text-field {
-	-fx-text-fill: black;
 }
 .black-label {
 	-fx-text-fill: black;
@@ -24,19 +21,28 @@ TextField {
 .link-label:hover {
 	-fx-text-fill: dodgerblue
 }
-ProgressBar .bar {
+.progress-bar .bar {
 	-fx-background-insets: 1 1 2 1;
 	-fx-padding: 0.3em;
 }
-ProgressBar .track {
+.progress-bar .track {
 	-fx-text-box-border: gray;
 	-fx-control-inner-background: white;
 }
+.scroll-bar .decrement-button {
+	-fx-background-color: transparent;
+}
+.scroll-bar .increment-button {
+	-fx-background-color: transparent;
+}
+.scroll-bar .thumb {
+	-fx-background-radius: 0.5em;
+}
+.scroll-bar {
+	-fx-background-color: transparent;
+}
 .dummy .bar  {
 	-fx-padding: 0.2em;
-}
-Text {
-	-fx-fill: -text-fill;
 }
 .reference-panel {
 	-fx-effect: dropshadow(gaussian, -text-fill, 0.5em, 0, 0, 0);
