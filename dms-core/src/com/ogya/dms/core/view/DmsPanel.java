@@ -49,6 +49,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane();
 	private final SettingsPane settingsPane = new SettingsPane();
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane();
+	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane();
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -98,6 +99,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
 		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
 		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
+		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
 
 		mainPane.getChildren().addAll(identityPane, entitiesPane);
 
@@ -177,6 +179,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 		if (!(idOnScreen == null || Objects.equals(entityId, idOnScreen.getKey())))
 			idOnScreen.getValue().highlightBackButton();
 
+		starredMessagesPane.addUpdateMessage(message);
+
 	}
 
 	public void updateMessage(Message message) {
@@ -199,6 +203,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 		default:
 
 		}
+
+		starredMessagesPane.addUpdateMessage(message);
 
 	}
 
@@ -353,6 +359,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	private void settingClicked(Settings setting) {
 
 		switch (setting) {
+
+		case STARRED_MESSAGES:
+
+			getChildren().add(starredMessagesPane);
+
+			break;
 
 		case EDIT_REMOTE_IPS:
 

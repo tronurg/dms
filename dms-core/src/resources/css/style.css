@@ -46,16 +46,16 @@
 }
 .reference-panel {
 	-fx-effect: dropshadow(gaussian, -text-fill, 0.5em, 0, 0, 0);
-	-fx-background-color: WHITESMOKE;
+	-fx-background-color: whitesmoke;
 	-fx-background-radius: 0.4em;
 }
 .reference-balloon {
-	-fx-background-color: CORNSILK;
+	-fx-background-color: cornsilk;
 	-fx-background-radius: 0.4em;
-	-fx-border-color: GRAY;
+	-fx-border-color: gray;
 	-fx-border-radius: 0.4em;
 }
 .attachment-area {
-	-fx-border-color: GRAY;
+	-fx-border-color: gray;
 	-fx-border-radius: 0.4em;
 }

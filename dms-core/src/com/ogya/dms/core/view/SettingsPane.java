@@ -32,7 +32,7 @@ public class SettingsPane extends BorderPane {
 	private final Button backBtn = ViewFactory.newBackBtn();
 	private final Label headingLabel = new Label(CommonMethods.translate("SETTINGS"));
 
-	private final VBox scrollableContent = new VBox();
+	private final VBox scrollableContent = new VBox(gap);
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
 		@Override
 		public void requestFocus() {
@@ -95,19 +95,33 @@ public class SettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
+		scrollableContent.setPadding(new Insets(3 * gap));
+
+		// STARRED_MESSAGES
+		Label starredMessagesLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
+		starredMessagesLbl.getStyleClass().add("link-label");
+		starredMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		starredMessagesLbl.setOnMouseClicked(e -> {
+			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
+
+			if (settingsClickedAction != null)
+				settingsClickedAction.accept(Settings.STARRED_MESSAGES);
+		});
+
+		scrollableContent.getChildren().add(starredMessagesLbl);
+
 		// EDIT_REMOTE_IPS
-		Label editRemoteIpsLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
-		editRemoteIpsLabel.getStyleClass().add("link-label");
-		VBox.setMargin(editRemoteIpsLabel, new Insets(3 * gap));
-		editRemoteIpsLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-		editRemoteIpsLabel.setOnMouseClicked(e -> {
+		Label editRemoteIpsLbl = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
+		editRemoteIpsLbl.getStyleClass().add("link-label");
+		editRemoteIpsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		editRemoteIpsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 
 			if (settingsClickedAction != null)
 				settingsClickedAction.accept(Settings.EDIT_REMOTE_IPS);
 		});
 
-		scrollableContent.getChildren().add(editRemoteIpsLabel);
+		scrollableContent.getChildren().add(editRemoteIpsLbl);
 
 	}
 
@@ -115,6 +129,6 @@ public class SettingsPane extends BorderPane {
 
 enum Settings {
 
-	EDIT_REMOTE_IPS
+	STARRED_MESSAGES, EDIT_REMOTE_IPS
 
 }

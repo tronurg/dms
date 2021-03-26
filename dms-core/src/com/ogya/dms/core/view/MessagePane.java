@@ -1,14 +1,13 @@
 package com.ogya.dms.core.view;
 
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -89,7 +88,7 @@ import javafx.util.Duration;
 
 class MessagePane extends BorderPane {
 
-	private static final SimpleDateFormat HOUR_MIN = new SimpleDateFormat("HH:mm");
+	private static final DateTimeFormatter HOUR_MIN = DateTimeFormatter.ofPattern("HH:mm");
 	private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
 	private final double gap = ViewFactory.getGap();
@@ -605,7 +604,7 @@ class MessagePane extends BorderPane {
 
 		MessageInfo messageInfo = messageBalloon.messageInfo;
 
-		LocalDate messageDay = messageInfo.date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+		LocalDate messageDay = messageInfo.localDateTime.toLocalDate();
 
 		minMessageId.set(Math.min(minMessageId.get(), messageId));
 		maxMessageId.set(Math.max(maxMessageId.get(), messageId));
@@ -1029,7 +1028,7 @@ class MessagePane extends BorderPane {
 
 			this.messageInfo = messageInfo;
 
-			timeLbl = new Label(HOUR_MIN.format(messageInfo.date));
+			timeLbl = new Label(HOUR_MIN.format(messageInfo.localDateTime));
 
 			selectedProperty.addListener((e0, e1, e2) -> {
 				deleteModeProperty.set(false);
@@ -1162,23 +1161,24 @@ class MessagePane extends BorderPane {
 			messagePane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 					new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
 
+			messagePane.setBackground(
+					new Background(new BackgroundFill(messageInfo.isOutgoing ? Color.PALEGREEN : Color.PALETURQUOISE,
+							new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
+
 			messagePane.setPadding(new Insets(gap));
 			messagePane.setHgap(gap);
 
 			messagePane.setEffect(shadow);
-
-		}
-
-		private void initOutgoingMessagePane() {
-
-			messagePane.setBackground(new Background(
-					new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
 
 			if (messageInfo.attachment != null)
 				messagePane.add(getAttachmentArea(), 0, 1, 3, 1);
 
 			if (messageInfo.content != null)
 				messagePane.add(getContentArea(), 0, 2, 3, 1);
+
+		}
+
+		private void initOutgoingMessagePane() {
 
 			initSmallStarBtn();
 			initInfoGrp();
@@ -1193,15 +1193,6 @@ class MessagePane extends BorderPane {
 		}
 
 		private void initIncomingMessagePane() {
-
-			messagePane.setBackground(new Background(
-					new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
-
-			if (messageInfo.attachment != null)
-				messagePane.add(getAttachmentArea(), 0, 1, 3, 1);
-
-			if (messageInfo.content != null)
-				messagePane.add(getContentArea(), 0, 2, 3, 1);
 
 			initTimeLbl();
 			initSmallStarBtn();
@@ -1324,14 +1315,14 @@ class MessagePane extends BorderPane {
 			// init nameLabel
 			if (messageInfo.isGroup && !messageInfo.isOutgoing) {
 
-				Label nameLabel = new Label(messageInfo.senderName);
-				nameLabel.setPadding(new Insets(0.0, gap, 0.0, gap));
-				nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize()));
-				nameLabel.setTextFill(messageInfo.nameColor);
-				BorderPane.setAlignment(nameLabel, messageInfo.isOutgoing ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-				BorderPane.setMargin(nameLabel, new Insets(0.0, 0.0, gap, 0.0));
+				Label nameLbl = new Label(messageInfo.senderName);
+				nameLbl.setPadding(new Insets(0.0, gap, 0.0, gap));
+				nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
+				nameLbl.setTextFill(messageInfo.nameColor);
+				BorderPane.setAlignment(nameLbl, messageInfo.isOutgoing ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+				BorderPane.setMargin(nameLbl, new Insets(0.0, 0.0, gap, 0.0));
 
-				setTop(nameLabel);
+				setTop(nameLbl);
 
 			}
 
@@ -1528,7 +1519,7 @@ class MessagePane extends BorderPane {
 		final Long ownerId;
 		final boolean isOutgoing;
 		final String senderName;
-		final Date date;
+		final LocalDateTime localDateTime;
 		final boolean isGroup;
 		final AttachmentType attachmentType;
 		final boolean infoAvailable;
@@ -1543,7 +1534,7 @@ class MessagePane extends BorderPane {
 			this.ownerId = message.getOwner().getId();
 			this.isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
 			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
-			this.date = message.getDate();
+			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
 			this.isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
 			this.attachmentType = message.getAttachmentType();
 			this.infoAvailable = isGroup && isOutgoing;

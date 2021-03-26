@@ -112,7 +112,7 @@ public class Message {
 	@JsonIgnore
 	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
-	@ManyToOne(fetch = FetchType.LAZY)
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "ref_message_id", updatable = false)
 	@JsonProperty("h")
 	private Message refMessage;
