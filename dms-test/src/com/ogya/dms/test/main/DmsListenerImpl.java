@@ -3,6 +3,7 @@ package com.ogya.dms.test.main;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,14 +51,14 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 	@Override
 	public void contactUpdated(ContactHandle contactHandle) {
 
-//		System.out.println(String.format("Kisi guncellendi: %s\n", contactHandle.getName()));
+		System.out.println(String.format("Kisi guncellendi: %s\n", contactHandle.getName()));
 
 	}
 
 	@Override
 	public void groupUpdated(GroupHandle groupHandle) {
 
-//		System.out.println(String.format("Grup guncellendi: %s\n", groupHandle.getName()));
+		System.out.println(String.format("Grup guncellendi: %s\n", groupHandle.getName()));
 
 	}
 
@@ -126,52 +127,105 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 	}
 
 	@Override
-	public void guiMessageSent(String message, Long contactId, Long groupId) {
-		// TODO Auto-generated method stub
+	public void guiMessageSent(Long messageId, String message, Long contactId, Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(String.format("Message #%d sent to %s/%s: %s\n", messageId,
+				contact == null ? null : contact.getName(), group == null ? null : group.getName(), message));
 
 	}
 
 	@Override
-	public void guiMessageReceived(String message, Long contactId, Long groupId) {
-		// TODO Auto-generated method stub
+	public void guiMessageReceived(Long messageId, String message, Long contactId, Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(String.format("Message #%d received from %s/%s: %s\n", messageId,
+				contact == null ? null : contact.getName(), group == null ? null : group.getName(), message));
 
 	}
 
 	@Override
-	public void guiFileSent(String message, Path path, Long contactId, Long groupId) {
-		// TODO Auto-generated method stub
+	public void guiFileSent(Long messageId, String message, Path path, Long contactId, Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(
+				String.format("File #%d sent to %s/%s: %s, %s\n", messageId, contact == null ? null : contact.getName(),
+						group == null ? null : group.getName(), path.getFileName().toString(), message));
 
 	}
 
 	@Override
-	public void guiFileReceived(String message, Path path, Long contactId, Long groupId) {
-		// TODO Auto-generated method stub
+	public void guiFileReceived(Long messageId, String message, Path path, Long contactId, Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(String.format("File #%d received from %s/%s: %s, %s\n", messageId,
+				contact == null ? null : contact.getName(), group == null ? null : group.getName(),
+				path.getFileName().toString(), message));
 
 	}
 
 	@Override
-	public void guiReportSent(String message, Integer reportId, Path path, Long contactId, Long groupId) {
+	public void guiReportSent(Long messageId, String message, Integer reportId, Path path, Long contactId,
+			Long groupId) {
 
-		System.out.println("Report #" + reportId + " sent.");
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
 
-	}
-
-	@Override
-	public void guiReportReceived(String message, Integer reportId, Path path, Long contactId, Long groupId) {
-
-		System.out.println("Report #" + reportId + " received.");
-
-	}
-
-	@Override
-	public void guiAudioSent(Path path, Long contactId, Long groupId) {
-		// TODO Auto-generated method stub
+		System.out.println(String.format("Report-%d #%d sent to %s/%s: %s, %s\n", reportId, messageId,
+				contact == null ? null : contact.getName(), group == null ? null : group.getName(),
+				path.getFileName().toString(), message));
 
 	}
 
 	@Override
-	public void guiAudioReceived(Path path, Long contactId, Long groupId) {
-		// TODO Auto-generated method stub
+	public void guiReportReceived(Long messageId, String message, Integer reportId, Path path, Long contactId,
+			Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(String.format("Report-%d #%d received from %s/%s: %s, %s\n", reportId, messageId,
+				contact == null ? null : contact.getName(), group == null ? null : group.getName(),
+				path.getFileName().toString(), message));
+
+	}
+
+	@Override
+	public void guiAudioSent(Long messageId, Path path, Long contactId, Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(
+				String.format("Audio #%d sent to %s/%s: %s\n", messageId, contact == null ? null : contact.getName(),
+						group == null ? null : group.getName(), path.getFileName().toString()));
+
+	}
+
+	@Override
+	public void guiAudioReceived(Long messageId, Path path, Long contactId, Long groupId) {
+
+		ContactHandle contact = dmsHandle.getContactHandle(contactId);
+		GroupHandle group = dmsHandle.getGroupHandle(groupId);
+
+		System.out.println(String.format("Audio #%d received from %s/%s: %s\n", messageId,
+				contact == null ? null : contact.getName(), group == null ? null : group.getName(),
+				path.getFileName().toString()));
+
+	}
+
+	@Override
+	public void guiMessagesDeleted(Long... messageIds) {
+
+		System.out.println(String.format("Messages deleted: %s\n", Arrays.toString(messageIds)));
 
 	}
 

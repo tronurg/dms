@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
-import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -59,7 +58,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -79,6 +77,7 @@ class StarredMessagesPane extends BorderPane {
 	private final VBox centerPane = new VBox(gap);
 
 	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Label titleLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 
@@ -118,7 +117,7 @@ class StarredMessagesPane extends BorderPane {
 			MessageBalloon group0 = (MessageBalloon) arg0;
 			MessageBalloon group1 = (MessageBalloon) arg1;
 
-			return group0.messageInfo.messageId.compareTo(group1.messageInfo.messageId);
+			return group1.messageInfo.messageId.compareTo(group0.messageInfo.messageId);
 
 		}
 
@@ -149,13 +148,11 @@ class StarredMessagesPane extends BorderPane {
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		initBackBtn();
+		initTitleLbl();
 		initSelectAllBtn();
 		initStarBtn();
 
-		Region space = new Region();
-		HBox.setHgrow(space, Priority.ALWAYS);
-
-		topPane.getChildren().addAll(backBtn, space, selectAllBtn, starBtn);
+		topPane.getChildren().addAll(backBtn, titleLbl, selectAllBtn, starBtn);
 
 	}
 
@@ -172,9 +169,9 @@ class StarredMessagesPane extends BorderPane {
 			}
 		});
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
-			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
+			if (e2.doubleValue() != scrollPane.getVmax() || e1.doubleValue() == scrollPane.getVmax())
 				return;
-			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
+			listeners.forEach(listener -> listener.paneScrolledToBottom(minMessageId.get()));
 		});
 		centerPane.setPadding(new Insets(gap));
 
@@ -195,6 +192,16 @@ class StarredMessagesPane extends BorderPane {
 				backBtn.setEffect(null);
 			}
 		});
+
+	}
+
+	private void initTitleLbl() {
+
+		HBox.setHgrow(titleLbl, Priority.ALWAYS);
+
+		titleLbl.getStyleClass().add("black-label");
+		titleLbl.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		titleLbl.setMaxWidth(Double.MAX_VALUE);
 
 	}
 
@@ -221,12 +228,7 @@ class StarredMessagesPane extends BorderPane {
 			backBtn.fire();
 			listeners.forEach(listener -> listener.archiveMessagesRequested(selectedIds));
 		});
-		final Effect starShadow = new DropShadow();
-		starBtn.effectProperty()
-				.bind(Bindings.createObjectBinding(
-						() -> !selectedBalloons.isEmpty() && selectedBalloons.stream()
-								.allMatch(balloon -> balloon.messageInfo.archivedProperty.get()) ? starShadow : null,
-						selectedBalloons));
+		starBtn.setEffect(new DropShadow());
 		starBtn.disableProperty().bind(Bindings.isEmpty(selectedBalloons));
 
 	}
@@ -589,7 +591,7 @@ class StarredMessagesPane extends BorderPane {
 					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
 
 			attachmentArea.setOnMouseClicked(
-					e -> listeners.forEach(listener -> listener.messageClicked(messageInfo.messageId)));
+					e -> listeners.forEach(listener -> listener.attachmentClicked(messageInfo.messageId)));
 
 			final Effect colorAdjust = new ColorAdjust(-0.75, 1.0, 0.25, 0.0);
 
@@ -675,7 +677,6 @@ class StarredMessagesPane extends BorderPane {
 		final LocalDateTime localDateTime;
 		final AttachmentType attachmentType;
 		final Color nameColor;
-		final BooleanProperty archivedProperty = new SimpleBooleanProperty(false);
 
 		MessageInfo(Message message) {
 
@@ -699,30 +700,10 @@ class StarredMessagesPane extends BorderPane {
 
 interface IStarredMessagesPane {
 
-	void editClicked();
+	void paneScrolledToBottom(Long bottomMessageId);
 
-	void paneScrolledToTop(Long topMessageId);
-
-	void messagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
-
-	void sendMessageClicked(String message, FileBuilder fileBuilder, Long refMessageId);
-
-	void showFoldersClicked();
-
-	void reportClicked();
-
-	void messageClicked(Long messageId);
-
-	void infoClicked(Long messageId);
-
-	void deleteMessagesRequested(Long... messageIds);
+	void attachmentClicked(Long messageId);
 
 	void archiveMessagesRequested(Long... messageIds);
-
-	void recordButtonPressed();
-
-	void recordEventTriggered(Long refMessageId);
-
-	void recordButtonReleased();
 
 }

@@ -32,7 +32,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane {
+public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane, IStarredMessagesPane {
 
 	private final double gap = ViewFactory.getGap();
 
@@ -100,6 +100,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
 		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
 		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
+		starredMessagesPane.addListener(this);
 
 		mainPane.getChildren().addAll(identityPane, entitiesPane);
 
@@ -496,9 +497,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	}
 
 	@Override
-	public void messageClicked(final Long messageId) {
+	public void attachmentClicked(final Long messageId) {
 
-		listeners.forEach(listener -> listener.messageClicked(messageId));
+		listeners.forEach(listener -> listener.attachmentClicked(messageId));
 
 	}
 
@@ -548,6 +549,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane 
 	public void reportClicked() {
 
 		listeners.forEach(listener -> listener.reportClicked());
+
+	}
+
+	@Override
+	public void paneScrolledToBottom(Long bottomMessageId) {
+
+		// TODO
+		System.out.println(bottomMessageId);
 
 	}
 

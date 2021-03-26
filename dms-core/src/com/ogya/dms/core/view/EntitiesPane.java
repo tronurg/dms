@@ -389,9 +389,9 @@ class EntitiesPane extends BorderPane {
 			}
 
 			@Override
-			public void messageClicked(Long messageId) {
+			public void attachmentClicked(Long messageId) {
 
-				entityListeners.forEach(listener -> listener.messageClicked(messageId));
+				entityListeners.forEach(listener -> listener.attachmentClicked(messageId));
 
 			}
 
@@ -474,7 +474,7 @@ interface IEntitiesPane {
 
 	void reportClicked();
 
-	void messageClicked(Long messageId);
+	void attachmentClicked(Long messageId);
 
 	void infoClicked(Long messageId);
 

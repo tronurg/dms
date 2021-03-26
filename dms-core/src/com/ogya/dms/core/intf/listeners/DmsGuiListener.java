@@ -2,22 +2,28 @@ package com.ogya.dms.core.intf.listeners;
 
 import java.nio.file.Path;
 
+import com.ogya.dms.core.structures.MessageStatus;
+
 public interface DmsGuiListener {
 
-	void guiMessageSent(String message, Long contactId, Long groupId);
+	void guiMessageSent(Long messageId, String message, Long contactId, Long groupId);
 
-	void guiMessageReceived(String message, Long contactId, Long groupId);
+	void guiMessageReceived(Long messageId, String message, Long contactId, Long groupId);
 
-	void guiFileSent(String message, Path path, Long contactId, Long groupId);
+	void guiFileSent(Long messageId, String message, Path path, Long contactId, Long groupId);
 
-	void guiFileReceived(String message, Path path, Long contactId, Long groupId);
+	void guiFileReceived(Long messageId, String message, Path path, Long contactId, Long groupId);
 
-	void guiReportSent(String message, Integer reportId, Path path, Long contactId, Long groupId);
+	void guiReportSent(Long messageId, String message, Integer reportId, Path path, Long contactId, Long groupId);
 
-	void guiReportReceived(String message, Integer reportId, Path path, Long contactId, Long groupId);
+	void guiReportReceived(Long messageId, String message, Integer reportId, Path path, Long contactId, Long groupId);
 
-	void guiAudioSent(Path path, Long contactId, Long groupId);
+	void guiAudioSent(Long messageId, Path path, Long contactId, Long groupId);
 
-	void guiAudioReceived(Path path, Long contactId, Long groupId);
+	void guiAudioReceived(Long messageId, Path path, Long contactId, Long groupId);
+
+	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId);
+
+	void guiMessagesDeleted(Long... messageIds);
 
 }

@@ -129,6 +129,10 @@ public class Message {
 	@JsonProperty("k")
 	private Integer messageCode;
 
+	@Column(name = "forward_count", updatable = false)
+	@JsonProperty("l")
+	private Integer forwardCount;
+
 	@Column(name = "api_flag", updatable = false)
 	@JsonIgnore
 	private Integer apiFlag;
@@ -167,6 +171,7 @@ public class Message {
 		this.groupRefId = message.groupRefId;
 		this.contactRefId = message.contactRefId;
 		this.messageCode = message.messageCode;
+		this.forwardCount = message.forwardCount;
 		this.apiFlag = message.apiFlag;
 	}
 
@@ -334,6 +339,14 @@ public class Message {
 
 	public void setMessageCode(Integer messageCode) {
 		this.messageCode = messageCode;
+	}
+
+	public Integer getForwardCount() {
+		return forwardCount;
+	}
+
+	public void setForwardCount(Integer forwardCount) {
+		this.forwardCount = forwardCount;
 	}
 
 	public Integer getApiFlag() {

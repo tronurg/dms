@@ -1241,7 +1241,7 @@ class MessagePane extends BorderPane {
 					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
 
 			attachmentArea.setOnMouseClicked(
-					e -> listeners.forEach(listener -> listener.messageClicked(messageInfo.messageId)));
+					e -> listeners.forEach(listener -> listener.attachmentClicked(messageInfo.messageId)));
 
 			final Effect colorAdjust = new ColorAdjust(-0.75, 1.0, 0.25, 0.0);
 
@@ -1560,7 +1560,7 @@ interface IMessagePane {
 
 	void reportClicked();
 
-	void messageClicked(Long messageId);
+	void attachmentClicked(Long messageId);
 
 	void infoClicked(Long messageId);
 

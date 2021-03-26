@@ -32,7 +32,7 @@ public interface AppListener {
 
 	void fileSelected(Path file);
 
-	void messageClicked(Long messageId);
+	void attachmentClicked(Long messageId);
 
 	void infoClicked(Long messageId);
 

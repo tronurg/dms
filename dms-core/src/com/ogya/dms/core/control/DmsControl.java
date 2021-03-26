@@ -928,14 +928,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		if (message.getApiFlag() != null) {
-
-			Long messageId = message.getId();
-
-			contactIds.forEach(contactId -> listenerTaskQueue.execute(() -> dmsListeners
-					.forEach(listener -> listener.guiMessageStatusUpdated(messageId, messageStatus, contactId))));
-
-		}
+		contactIds.forEach(contactId -> listenerTaskQueue.execute(() -> dmsGuiListeners
+				.forEach(listener -> listener.guiMessageStatusUpdated(message.getId(), messageStatus, contactId))));
 
 	}
 
@@ -989,6 +983,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		}).collect(Collectors.toList()));
 
 		cancellableMessages.forEach(message -> dispatchCancellation(message));
+
+		final Long[] newMessageIds = newMessages.stream().map(message -> message.getId()).toArray(Long[]::new);
+
+		listenerTaskQueue
+				.execute(() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(newMessageIds)));
 
 		return newMessages;
 
@@ -1453,30 +1452,29 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 						if (newMessage.getAttachmentType() == null) {
 
-							dmsGuiListeners
-									.forEach(guiListener -> guiListener.guiMessageReceived(newMessage.getContent(),
-											newMessage.getContact().getId(),
-											newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(newMessage.getId(),
+									newMessage.getContent(), newMessage.getContact().getId(),
+									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						} else if (Objects.equals(newMessage.getAttachmentType(), AttachmentType.FILE)) {
 
-							dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(newMessage.getContent(),
-									Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
+							dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(newMessage.getId(),
+									newMessage.getContent(), Paths.get(newMessage.getAttachment()),
+									newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						} else if (Objects.equals(newMessage.getAttachmentType(), AttachmentType.AUDIO)) {
 
-							dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(
+							dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(newMessage.getId(),
 									Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						} else if (Objects.equals(newMessage.getAttachmentType(), AttachmentType.REPORT)) {
 
-							dmsGuiListeners
-									.forEach(guiListener -> guiListener.guiReportReceived(newMessage.getContent(),
-											newMessage.getMessageCode(), Paths.get(newMessage.getAttachment()),
-											newMessage.getContact().getId(),
-											newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(newMessage.getId(),
+									newMessage.getContent(), newMessage.getMessageCode(),
+									Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
+									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						}
 
@@ -2016,8 +2014,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			final Path attachment = fileBuilder == null ? null : fileBuilder.buildAndGet();
 			final AttachmentType attachmentType = fileBuilder == null ? null : fileBuilder.getAttachmentType();
 			final Integer messageCode = fileBuilder == null ? null : fileBuilder.getFileCode();
-			final Long contactId = id > 0 ? id : null;
-			final Long groupId = id > 0 ? null : -id;
 
 			try {
 
@@ -2027,27 +2023,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				else
 					sendGroupMessageClaimed(-id, messageTxt, attachment, refMessageId, attachmentType, messageCode,
 							null);
-
-				listenerTaskQueue.execute(() -> {
-
-					if (attachmentType == null) {
-
-						dmsGuiListeners
-								.forEach(guiListener -> guiListener.guiMessageSent(messageTxt, contactId, groupId));
-
-					} else if (Objects.equals(attachmentType, AttachmentType.FILE)) {
-
-						dmsGuiListeners.forEach(
-								guiListener -> guiListener.guiFileSent(messageTxt, attachment, contactId, groupId));
-
-					} else if (Objects.equals(attachmentType, AttachmentType.REPORT)) {
-
-						dmsGuiListeners.forEach(guiListener -> guiListener.guiReportSent(messageTxt, messageCode,
-								attachment, contactId, groupId));
-
-					}
-
-				});
 
 			} catch (Exception e) {
 
@@ -2074,7 +2049,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		sendPrivateMessage(newMessage);
 
-		return newMessage.getId();
+		Long messageId = newMessage.getId();
+
+		messageSentToListeners(messageId, messageTxt, attachment, attachmentType, messageCode, contactId, null);
+
+		return messageId;
 
 	}
 
@@ -2096,7 +2075,42 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		sendGroupMessage(newMessage);
 
-		return newMessage.getId();
+		Long messageId = newMessage.getId();
+
+		messageSentToListeners(messageId, messageTxt, attachment, attachmentType, messageCode, null, groupId);
+
+		return messageId;
+
+	}
+
+	private void messageSentToListeners(final Long messageId, final String messageTxt, final Path attachment,
+			final AttachmentType attachmentType, final Integer messageCode, final Long contactId, final Long groupId) {
+
+		listenerTaskQueue.execute(() -> {
+
+			if (attachmentType == null) {
+
+				dmsGuiListeners
+						.forEach(guiListener -> guiListener.guiMessageSent(messageId, messageTxt, contactId, groupId));
+
+			} else if (Objects.equals(attachmentType, AttachmentType.FILE)) {
+
+				dmsGuiListeners.forEach(
+						guiListener -> guiListener.guiFileSent(messageId, messageTxt, attachment, contactId, groupId));
+
+			} else if (Objects.equals(attachmentType, AttachmentType.AUDIO)) {
+
+				dmsGuiListeners
+						.forEach(guiListener -> guiListener.guiAudioSent(messageId, attachment, contactId, groupId));
+
+			} else if (Objects.equals(attachmentType, AttachmentType.REPORT)) {
+
+				dmsGuiListeners.forEach(guiListener -> guiListener.guiReportSent(messageId, messageTxt, messageCode,
+						attachment, contactId, groupId));
+
+			}
+
+		});
 
 	}
 
@@ -2464,7 +2478,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messageClicked(Long messageId) {
+	public void attachmentClicked(Long messageId) {
 
 		taskQueue.execute(() -> {
 
@@ -2731,21 +2745,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				if (id > 0) {
-
+				if (id > 0)
 					sendPrivateMessageClaimed(id, null, path, refId, AttachmentType.AUDIO, null, null);
-
-					listenerTaskQueue.execute(
-							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioSent(path, id, null)));
-
-				} else {
-
+				else
 					sendGroupMessageClaimed(-id, null, path, refId, AttachmentType.AUDIO, null, null);
-
-					listenerTaskQueue.execute(
-							() -> dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioSent(path, null, -id)));
-
-				}
 
 			} catch (Exception e) {
 
@@ -2989,19 +2992,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public ContactHandle getContactHandle(Long contactId) {
 
-		try {
+		Contact contact = model.getContact(contactId);
 
-			Contact contact = model.getContact(contactId);
+		if (contact == null)
+			return null;
 
-			return new ContactHandleImpl(contact);
+		return new ContactHandleImpl(contact);
 
-		} catch (Exception e) {
+	}
 
-			e.printStackTrace();
+	@Override
+	public GroupHandle getGroupHandle(Long groupId) {
 
-		}
+		Dgroup group = model.getGroup(groupId);
 
-		return null;
+		if (group == null)
+			return null;
+
+		return new GroupHandleImpl(group);
 
 	}
 
@@ -3024,18 +3032,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		model.getGroups().forEach((id, group) -> allGroupHandles.add(new GroupHandleImpl(group)));
 
 		return allGroupHandles;
-
-	}
-
-	@Override
-	public GroupHandle getGroupHandle(Long groupId) {
-
-		Dgroup group = model.getGroup(groupId);
-
-		if (group == null)
-			return null;
-
-		return new GroupHandleImpl(group);
 
 	}
 
