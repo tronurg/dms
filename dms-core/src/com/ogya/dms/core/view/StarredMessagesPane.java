@@ -254,17 +254,14 @@ class StarredMessagesPane extends BorderPane {
 
 	void addUpdateMessage(Message message) {
 
-		if (!Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED)) {
-
-			deleteMessage(message);
-
-			return;
-
-		}
-
 		Long messageId = message.getId();
 
-		if (messageBalloons.containsKey(messageId))
+		if (messageBalloons.containsKey(messageId)) {
+			updateMessage(message);
+			return;
+		}
+
+		if (!Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
 			return;
 
 		MessageBalloon messageBalloon = newMessageBalloon(message);
@@ -276,6 +273,24 @@ class StarredMessagesPane extends BorderPane {
 
 		centerPane.getChildren().add(messageBalloon);
 		FXCollections.sort(centerPane.getChildren(), messagesSorter);
+
+	}
+
+	private void updateMessage(Message message) {
+
+		if (!Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
+			deleteMessage(message);
+
+	}
+
+	private void deleteMessage(Message message) {
+
+		Long messageId = message.getId();
+
+		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
+
+		if (messageBalloon != null)
+			centerPane.getChildren().remove(messageBalloon);
 
 	}
 
@@ -452,17 +467,6 @@ class StarredMessagesPane extends BorderPane {
 		});
 
 		return messageBalloon;
-
-	}
-
-	private void deleteMessage(Message message) {
-
-		Long messageId = message.getId();
-
-		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
-
-		if (messageBalloon != null)
-			centerPane.getChildren().remove(messageBalloon);
 
 	}
 

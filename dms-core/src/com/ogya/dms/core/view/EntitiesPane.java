@@ -149,7 +149,7 @@ class EntitiesPane extends BorderPane {
 
 			ContactPane contactPane = getContactPane(message.getContact().getId());
 
-			contactPane.addMessage(message);
+			contactPane.addUpdateMessage(message);
 
 			Long messageId = message.getId();
 
@@ -173,7 +173,7 @@ class EntitiesPane extends BorderPane {
 
 			GroupPane groupPane = getGroupPane(message.getDgroup().getId());
 
-			groupPane.addMessage(message);
+			groupPane.addUpdateMessage(message);
 
 			Long messageId = message.getId();
 
@@ -204,7 +204,7 @@ class EntitiesPane extends BorderPane {
 
 		ContactPane contactPane = getContactPane(message.getContact().getId());
 
-		contactPane.updateMessage(message);
+		contactPane.addUpdateMessage(message);
 
 	}
 
@@ -212,7 +212,7 @@ class EntitiesPane extends BorderPane {
 
 		GroupPane groupPane = getGroupPane(message.getDgroup().getId());
 
-		groupPane.updateMessage(message);
+		groupPane.addUpdateMessage(message);
 
 	}
 

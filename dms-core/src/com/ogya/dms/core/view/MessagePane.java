@@ -41,6 +41,8 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Bounds;
@@ -600,14 +602,16 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void addMessage(Message message) {
-
-		if (Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
-			return;
+	void addUpdateMessage(Message message) {
 
 		Long messageId = message.getId();
 
-		if (messageBalloons.containsKey(messageId))
+		if (messageBalloons.containsKey(messageId)) {
+			updateMessage(message);
+			return;
+		}
+
+		if (Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
 			return;
 
 		MessageBalloon messageBalloon = newMessageBalloon(message);
@@ -666,14 +670,11 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void updateMessage(Message message) {
+	private void updateMessage(Message message) {
 
 		if (Objects.equals(message.getViewStatus(), ViewStatus.DELETED)) {
-
 			deleteMessage(message);
-
 			return;
-
 		}
 
 		Long messageId = message.getId();
@@ -685,6 +686,35 @@ class MessagePane extends BorderPane {
 
 		messageBalloon.messageInfo.statusProperty.set(message.getMessageStatus());
 		messageBalloon.messageInfo.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
+
+	}
+
+	private void deleteMessage(Message message) {
+
+		Long messageId = message.getId();
+
+		if (Objects.equals(referenceMessageProperty.get(), messageId))
+			referenceMessageProperty.set(null);
+
+		referencedMessageIds.remove(messageId);
+
+		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
+
+		if (messageBalloon == null)
+			return;
+
+		DayBox dayBox = messageBalloon.dayBox;
+
+		if (dayBox == null)
+			return;
+
+		dayBox.removeMessageBalloon(messageBalloon);
+
+		if (!dayBox.isEmpty())
+			return;
+
+		dayBoxes.remove(dayBox);
+		centerPane.getChildren().remove(dayBox);
 
 	}
 
@@ -974,35 +1004,6 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void deleteMessage(Message message) {
-
-		Long messageId = message.getId();
-
-		if (Objects.equals(referenceMessageProperty.get(), messageId))
-			referenceMessageProperty.set(null);
-
-		referencedMessageIds.remove(messageId);
-
-		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
-
-		if (messageBalloon == null)
-			return;
-
-		DayBox dayBox = messageBalloon.dayBox;
-
-		if (dayBox == null)
-			return;
-
-		dayBox.removeMessageBalloon(messageBalloon);
-
-		if (!dayBox.isEmpty())
-			return;
-
-		dayBoxes.remove(dayBox);
-		centerPane.getChildren().remove(dayBox);
-
-	}
-
 	private class MessageBalloon extends GridPane {
 
 		private final double radius = 3.0 * viewFactor;
@@ -1078,6 +1079,14 @@ class MessagePane extends BorderPane {
 
 		}
 
+		void addNameLbl(Label nameLbl) {
+			messagePane.add(nameLbl, 0, 0, 3, 1);
+		}
+
+		void removeNameLbl(Label nameLbl) {
+			messagePane.getChildren().remove(nameLbl);
+		}
+
 		void addReplyGroup(ReplyGroup replyGroup) {
 			add(replyGroup, 0, 0, 1, 1);
 		}
@@ -1087,7 +1096,7 @@ class MessagePane extends BorderPane {
 			GridPane.setMargin(referenceBalloon, new Insets(0, 0, gap, 0));
 			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
 
-			messagePane.add(referenceBalloon, 0, 0, 3, 1);
+			messagePane.add(referenceBalloon, 0, 1, 3, 1);
 
 		}
 
@@ -1135,22 +1144,22 @@ class MessagePane extends BorderPane {
 			messagePane.setEffect(shadow);
 
 			if (messageInfo.attachment != null)
-				messagePane.add(getAttachmentArea(), 0, 1, 3, 1);
+				messagePane.add(getAttachmentArea(), 0, 2, 3, 1);
 
 			if (messageInfo.content != null)
-				messagePane.add(getContentArea(), 0, 2, 3, 1);
+				messagePane.add(getContentArea(), 0, 3, 3, 1);
 
 			initSmallStarBtn();
 			initTimeLbl();
 
 			if (messageInfo.isOutgoing) {
-				messagePane.add(smallStarBtn, 0, 3, 1, 1);
-				messagePane.add(getInfoGrp(), 1, 3, 1, 1);
-				messagePane.add(getProgressLbl(), 1, 3, 1, 1);
-				messagePane.add(timeLbl, 2, 3, 1, 1);
+				messagePane.add(smallStarBtn, 0, 4, 1, 1);
+				messagePane.add(getInfoGrp(), 1, 4, 1, 1);
+				messagePane.add(getProgressLbl(), 1, 4, 1, 1);
+				messagePane.add(timeLbl, 2, 4, 1, 1);
 			} else {
-				messagePane.add(timeLbl, 0, 3, 1, 1);
-				messagePane.add(smallStarBtn, 2, 3, 1, 1);
+				messagePane.add(timeLbl, 0, 4, 1, 1);
+				messagePane.add(smallStarBtn, 2, 4, 1, 1);
 			}
 
 		}
@@ -1268,47 +1277,60 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private class MessageGroup extends BorderPane {
+	private class MessageGroup extends VBox {
 
-		private final MessageInfo messageInfo;
+		private final Long ownerId;
 
-		private final VBox messageBox = new VBox(smallGap);
+		private final Label nameLbl;
+
+		private final AtomicReference<MessageBalloon> namedBalloonRef = new AtomicReference<MessageBalloon>();
 
 		private DayBox dayBox;
 
 		private MessageGroup(MessageInfo messageInfo) {
 
-			super();
+			super(smallGap);
 
-			this.messageInfo = messageInfo;
+			this.ownerId = messageInfo.ownerId;
 
-			init();
+			if (messageInfo.isGroup && !messageInfo.isOutgoing) {
+				nameLbl = new Label(messageInfo.senderName);
+				initNameLbl(messageInfo.nameColor);
+			} else {
+				nameLbl = null;
+			}
 
 		}
 
-		private void init() {
+		private void initNameLbl(Color nameColor) {
 
-			// init nameLabel
-			if (messageInfo.isGroup && !messageInfo.isOutgoing) {
+			nameLbl.setPadding(new Insets(0.0, 0.0, gap, 0.0));
+			nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
+			nameLbl.setTextFill(nameColor);
 
-				Label nameLbl = new Label(messageInfo.senderName);
-				nameLbl.setPadding(new Insets(0.0, gap, 0.0, gap));
-				nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
-				nameLbl.setTextFill(messageInfo.nameColor);
-				BorderPane.setAlignment(nameLbl, messageInfo.isOutgoing ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
-				BorderPane.setMargin(nameLbl, new Insets(0.0, 0.0, gap, 0.0));
-
-				setTop(nameLbl);
-
-			}
-
-			setCenter(messageBox);
+			getChildren().addListener(new ListChangeListener<Node>() {
+				@Override
+				public void onChanged(Change<? extends Node> arg0) {
+					ObservableList<? extends Node> children = arg0.getList();
+					MessageBalloon namedBalloon = namedBalloonRef.get();
+					if (children.isEmpty() || Objects.equals(children.get(0), namedBalloon))
+						return;
+					if (namedBalloon != null)
+						namedBalloon.removeNameLbl(nameLbl);
+					Node firstChild = children.get(0);
+					if (!(firstChild instanceof MessageBalloon))
+						return;
+					MessageBalloon firstBalloon = (MessageBalloon) firstChild;
+					firstBalloon.addNameLbl(nameLbl);
+					namedBalloonRef.set(firstBalloon);
+				}
+			});
 
 		}
 
 		private void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
-			messageBox.getChildren().add(0, messageBalloon);
+			getChildren().add(0, messageBalloon);
 
 			messageBalloon.messageGroup = this;
 
@@ -1316,7 +1338,7 @@ class MessagePane extends BorderPane {
 
 		private void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
-			messageBox.getChildren().add(messageBalloon);
+			getChildren().add(messageBalloon);
 
 			messageBalloon.messageGroup = this;
 
@@ -1327,7 +1349,7 @@ class MessagePane extends BorderPane {
 			if (messageBalloon.messageGroup != this)
 				return;
 
-			messageBox.getChildren().remove(messageBalloon);
+			getChildren().remove(messageBalloon);
 
 			messageBalloon.messageGroup = null;
 
@@ -1335,7 +1357,7 @@ class MessagePane extends BorderPane {
 
 		private boolean isEmpty() {
 
-			return messageBox.getChildren().isEmpty();
+			return getChildren().isEmpty();
 
 		}
 
@@ -1381,7 +1403,7 @@ class MessagePane extends BorderPane {
 		private void addMessageBalloonToTop(MessageBalloon messageBalloon) {
 
 			if (messageGroups.isEmpty()
-					|| !Objects.equals(messageGroups.get(0).messageInfo.ownerId, messageBalloon.messageInfo.ownerId)) {
+					|| !Objects.equals(messageGroups.get(0).ownerId, messageBalloon.messageInfo.ownerId)) {
 				MessageGroup messageGroup = new MessageGroup(messageBalloon.messageInfo);
 				messageGroup.addMessageBalloonToTop(messageBalloon);
 				messageGroups.add(0, messageGroup);
@@ -1397,9 +1419,8 @@ class MessagePane extends BorderPane {
 
 		private void addMessageBalloonToBottom(MessageBalloon messageBalloon) {
 
-			if (messageGroups.isEmpty()
-					|| !Objects.equals(messageGroups.get(messageGroups.size() - 1).messageInfo.ownerId,
-							messageBalloon.messageInfo.ownerId)) {
+			if (messageGroups.isEmpty() || !Objects.equals(messageGroups.get(messageGroups.size() - 1).ownerId,
+					messageBalloon.messageInfo.ownerId)) {
 				MessageGroup messageGroup = new MessageGroup(messageBalloon.messageInfo);
 				messageGroup.addMessageBalloonToBottom(messageBalloon);
 				messageGroups.add(messageGroup);

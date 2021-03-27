@@ -136,22 +136,17 @@ class ContactPane extends HBox {
 
 	}
 
-	void addMessage(Message message) {
+	void addUpdateMessage(Message message) {
 
-		if (!(Objects.equals(message.getMessageDirection(), MessageDirection.OUT)
-				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ)))
-			unreadMessages.add(message.getId());
+		messagePane.addUpdateMessage(message);
 
-		messagePane.addMessage(message);
-
-	}
-
-	void updateMessage(Message message) {
+		if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT))
+			return;
 
 		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			unreadMessages.remove(message.getId());
-
-		messagePane.updateMessage(message);
+		else
+			unreadMessages.add(message.getId());
 
 	}
 
