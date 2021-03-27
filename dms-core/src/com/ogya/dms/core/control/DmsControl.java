@@ -974,11 +974,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				.filter(message -> Objects.equals(message.getMessageStatus(), MessageStatus.FRESH) && !message.isDone())
 				.collect(Collectors.toList());
 
-		List<Message> newMessages = dbManager.addUpdateMessages(messages.stream().map(message -> {
+		List<Message> newMessages = dbManager.addUpdateMessages(messages.stream().peek(message -> {
 			message.setDone(true);
 			message.setViewStatus(ViewStatus.DELETED);
 			message.setMessageStatus(MessageStatus.READ);
-			return message;
 		}).collect(Collectors.toList()));
 
 		cancellableMessages.forEach(message -> dispatchCancellation(message));
@@ -995,16 +994,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private List<Message> archiveMessages(List<Message> messages) throws Exception {
 
 		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED)))
-			return dbManager.addUpdateMessages(messages.stream().map(message -> {
-				message.setViewStatus(ViewStatus.DEFAULT);
-				return message;
-			}).collect(Collectors.toList()));
+			return dbManager.addUpdateMessages(messages.stream()
+					.peek(message -> message.setViewStatus(ViewStatus.DEFAULT)).collect(Collectors.toList()));
 
-		return dbManager.addUpdateMessages(messages.stream()
-				.filter(message -> Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT)).map(message -> {
-					message.setViewStatus(ViewStatus.ARCHIVED);
-					return message;
-				}).collect(Collectors.toList()));
+		return dbManager.addUpdateMessages(
+				messages.stream().filter(message -> Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT))
+						.peek(message -> message.setViewStatus(ViewStatus.ARCHIVED)).collect(Collectors.toList()));
 
 	}
 
@@ -1581,6 +1576,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
+			Contact contact = getContact(remoteUuid);
+
+			if (contact == null)
+				return;
+
 			try {
 
 				Message dbMessage = dbManager.getMessageById(messageId);
@@ -1588,10 +1588,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (dbMessage == null)
 					return;
 
-				Contact contact = getContact(remoteUuid);
-
-				if (contact != null)
-					updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus);
+				updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus);
 
 			} catch (Exception e) {
 
@@ -1908,6 +1905,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(id);
 
+			if (messagesWaitingFromContact.isEmpty())
+				return;
+
 			for (Message incomingMessage : messagesWaitingFromContact) {
 
 				try {
@@ -1929,8 +1929,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id,
-					messagesWaitingFromContact.isEmpty() ? -1L : messagesWaitingFromContact.get(0).getId()));
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id, messagesWaitingFromContact.get(0).getId()));
 
 		} catch (HibernateException e) {
 
@@ -1945,6 +1944,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		try {
 
 			List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(id);
+
+			if (messagesWaitingFromGroup.isEmpty())
+				return;
 
 			for (Message incomingMessage : messagesWaitingFromGroup) {
 
@@ -1981,8 +1983,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id,
-					messagesWaitingFromGroup.isEmpty() ? -1L : messagesWaitingFromGroup.get(0).getId()));
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id, messagesWaitingFromGroup.get(0).getId()));
 
 		} catch (HibernateException e) {
 
