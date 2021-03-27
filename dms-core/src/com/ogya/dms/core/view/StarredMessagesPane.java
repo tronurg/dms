@@ -196,7 +196,6 @@ class StarredMessagesPane extends BorderPane {
 				if (backAction == null)
 					return;
 				backAction.run();
-				backBtn.setEffect(null);
 			}
 		});
 
