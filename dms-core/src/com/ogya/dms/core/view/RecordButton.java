@@ -15,7 +15,6 @@ import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
@@ -48,7 +47,6 @@ public class RecordButton extends Button {
 
 		double viewFactor = ViewFactory.getViewFactor();
 
-		setBackground(Background.EMPTY);
 		setPadding(Insets.EMPTY);
 		setPickOnBounds(false);
 

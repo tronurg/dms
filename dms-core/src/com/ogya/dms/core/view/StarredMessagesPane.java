@@ -73,6 +73,13 @@ class StarredMessagesPane extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
+	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+			new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT));
+	private final Background incomingBackground = new Background(
+			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
+	private final Background outgoingBackground = new Background(
+			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
+
 	private final HBox topPane = new HBox(2 * gap);
 	private final VBox centerPane = new VBox(gap);
 
@@ -526,12 +533,8 @@ class StarredMessagesPane extends BorderPane {
 
 			messagePane.setStyle("-fx-min-width: 6em;");
 
-			messagePane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
-
-			messagePane.setBackground(
-					new Background(new BackgroundFill(messageInfo.isOutgoing ? Color.PALEGREEN : Color.PALETURQUOISE,
-							new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
+			messagePane.setBorder(messagePaneBorder);
+			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
 
 			messagePane.setPadding(new Insets(gap));
 			messagePane.setHgap(3 * gap);

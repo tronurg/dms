@@ -97,6 +97,17 @@ class MessagePane extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
+	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+			new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT));
+	private final Border dateBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+			new CornerRadii(gap), BorderWidths.DEFAULT, Insets.EMPTY));
+	private final Background incomingBackground = new Background(
+			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
+	private final Background outgoingBackground = new Background(
+			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
+	private final Background dateBackground = new Background(
+			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(gap), Insets.EMPTY));
+
 	private final HBox topPane = new HBox(2 * gap);
 	private final VBox centerPane = new VBox(2 * gap);
 	private final GridPane bottomPane = new GridPane();
@@ -1115,12 +1126,8 @@ class MessagePane extends BorderPane {
 
 			messagePane.setStyle("-fx-min-width: 6em;");
 
-			messagePane.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT)));
-
-			messagePane.setBackground(
-					new Background(new BackgroundFill(messageInfo.isOutgoing ? Color.PALEGREEN : Color.PALETURQUOISE,
-							new CornerRadii(10.0 * viewFactor), Insets.EMPTY)));
+			messagePane.setBorder(messagePaneBorder);
+			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
 
 			messagePane.setPadding(new Insets(gap));
 			messagePane.setHgap(gap);
@@ -1361,10 +1368,8 @@ class MessagePane extends BorderPane {
 			dateLabel.setPadding(new Insets(0.0, gap, 0.0, gap));
 			dateLabel.setFont(Font.font(null, FontWeight.BOLD, dateLabel.getFont().getSize()));
 			dateLabel.setTextFill(Color.GRAY);
-			dateLabel.setBackground(
-					new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(gap), Insets.EMPTY)));
-			dateLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-					new CornerRadii(gap), BorderWidths.DEFAULT, Insets.EMPTY)));
+			dateLabel.setBorder(dateBorder);
+			dateLabel.setBackground(dateBackground);
 			BorderPane.setAlignment(dateLabel, Pos.CENTER);
 			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, gap, 0.0));
 
