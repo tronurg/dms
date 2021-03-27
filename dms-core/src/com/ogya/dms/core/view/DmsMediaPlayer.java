@@ -171,7 +171,7 @@ public class DmsMediaPlayer extends GridPane {
 		GridPane.setHgrow(progressBar, Priority.ALWAYS);
 
 		if (mediaPlayer == null) {
-			progressBar.getStyleClass().add("dummy");
+			progressBar.getStyleClass().add("dummy-player");
 			return;
 		}
 

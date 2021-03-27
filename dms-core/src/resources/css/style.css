@@ -41,7 +41,7 @@
 .scroll-bar {
 	-fx-background-color: transparent;
 }
-.dummy .bar  {
+.dummy-player .bar  {
 	-fx-padding: 0.2em;
 }
 .reference-panel {
