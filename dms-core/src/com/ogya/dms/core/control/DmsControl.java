@@ -2128,7 +2128,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else {
 
-					groupPaneScrolledToTop(id, topMessageId);
+					groupPaneScrolledToTop(-id, topMessageId);
 
 				}
 
@@ -2166,17 +2166,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (topMessageId < 0)
 			return;
 
-		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(-id, topMessageId,
+		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(id, topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
 		if (lastMessagesBeforeId.isEmpty())
 			return;
 
-		Platform.runLater(() -> dmsPanel.savePosition(id, topMessageId));
+		Platform.runLater(() -> dmsPanel.savePosition(-id, topMessageId));
 
 		lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
-		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(id));
+		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(-id));
 
 	}
 
@@ -2196,7 +2196,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else {
 
-					groupMessagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl);
+					groupMessagesClaimed(-id, lastMessageIdExcl, firstMessageIdIncl);
 
 				}
 
@@ -2252,7 +2252,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		while (firstMessageIdIncl < topMessageId) {
 
-			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(-id, topMessageId,
+			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(id, topMessageId,
 					MIN_MESSAGES_PER_PAGE);
 
 			if (lastMessagesBeforeId.isEmpty())
@@ -2270,8 +2270,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
 
 		Platform.runLater(() -> {
-			dmsPanel.savePosition(id, firstMessageIdIncl);
-			dmsPanel.scrollToSavedPosition(id);
+			dmsPanel.savePosition(-id, firstMessageIdIncl);
+			dmsPanel.scrollToSavedPosition(-id);
 		});
 
 	}
