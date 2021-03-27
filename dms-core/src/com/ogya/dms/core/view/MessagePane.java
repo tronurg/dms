@@ -27,7 +27,6 @@ import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
-import com.sun.javafx.tk.Toolkit;
 
 import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
@@ -35,9 +34,11 @@ import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -671,8 +672,8 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		messageBalloon.updateMessageStatus(message.getMessageStatus(),
-				Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
+		messageBalloon.messageInfo.statusProperty.set(message.getMessageStatus());
+		messageBalloon.messageInfo.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
 
 	}
 
@@ -689,7 +690,7 @@ class MessagePane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		messageBalloon.setProgress(progress);
+		messageBalloon.messageInfo.progressProperty.set(progress);
 
 	}
 
@@ -895,8 +896,6 @@ class MessagePane extends BorderPane {
 		MessageInfo messageInfo = new MessageInfo(message);
 
 		MessageBalloon messageBalloon = new MessageBalloon(messageInfo);
-		messageBalloon.updateMessageStatus(message.getMessageStatus(),
-				Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
 
 		if (message.getRefMessage() != null)
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
@@ -960,12 +959,6 @@ class MessagePane extends BorderPane {
 
 		});
 
-		if (messageInfo.infoAvailable) {
-
-			messageBalloon.infoBtn.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(messageId)));
-
-		}
-
 		return messageBalloon;
 
 	}
@@ -1006,13 +999,8 @@ class MessagePane extends BorderPane {
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final Label progressLbl = new Label();
 		private final Label timeLbl;
-		private final Group infoGrp = new Group();
-		private final Circle waitingCircle = new Circle(radius, Color.TRANSPARENT);
-		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
 		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
-		private final Button infoBtn = ViewFactory.newInfoBtn();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final InnerShadow shadow = new InnerShadow(3 * gap, Color.TRANSPARENT);
@@ -1064,54 +1052,23 @@ class MessagePane extends BorderPane {
 
 			messagePaneContainer.getChildren().add(messagePane);
 
-			if (messageInfo.infoAvailable) {
-				infoBtn.disableProperty().bind(selectionModeProperty);
-				messagePaneContainer.getChildren().add(infoBtn);
-			}
+			if (messageInfo.infoAvailable)
+				messagePaneContainer.getChildren().add(getInfoBtn());
 
 			GridPane.setFillWidth(messagePaneContainer, false);
 
 			if (messageInfo.isOutgoing) {
-
 				col1.setHgrow(Priority.ALWAYS);
-
-				initOutgoingMessagePane();
-
 				GridPane.setHalignment(messagePaneContainer, HPos.RIGHT);
-
 			} else {
-
 				col3.setHgrow(Priority.ALWAYS);
-
-				initIncomingMessagePane();
-
 				GridPane.setHalignment(messagePaneContainer, HPos.LEFT);
-
 			}
 
 		}
 
 		void addReplyGroup(ReplyGroup replyGroup) {
 			add(replyGroup, 0, 0, 1, 1);
-		}
-
-		void updateMessageStatus(MessageStatus messageStatus, boolean archived) {
-
-			if (Objects.equals(messageStatus, MessageStatus.FRESH))
-				setProgress(-1);
-
-			messageInfo.archivedProperty.set(archived);
-			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
-
-			waitingCircle.setFill(messageStatus.getWaitingColor());
-			transmittedCircle.setFill(messageStatus.getTransmittedColor());
-
-		}
-
-		void setProgress(int progress) {
-
-			progressLbl.setText(progress < 0 ? "" : String.format("%d%%", progress));
-
 		}
 
 		void addReferenceBalloon(Node referenceBalloon) {
@@ -1176,31 +1133,29 @@ class MessagePane extends BorderPane {
 			if (messageInfo.content != null)
 				messagePane.add(getContentArea(), 0, 2, 3, 1);
 
-		}
-
-		private void initOutgoingMessagePane() {
-
 			initSmallStarBtn();
-			initInfoGrp();
-			initProgressLbl();
 			initTimeLbl();
 
-			messagePane.add(smallStarBtn, 0, 3, 1, 1);
-			messagePane.add(infoGrp, 1, 3, 1, 1);
-			messagePane.add(progressLbl, 1, 3, 1, 1);
-			messagePane.add(timeLbl, 2, 3, 1, 1);
+			if (messageInfo.isOutgoing) {
+				messagePane.add(smallStarBtn, 0, 3, 1, 1);
+				messagePane.add(getInfoGrp(), 1, 3, 1, 1);
+				messagePane.add(getProgressLbl(), 1, 3, 1, 1);
+				messagePane.add(timeLbl, 2, 3, 1, 1);
+			} else {
+				messagePane.add(timeLbl, 0, 3, 1, 1);
+				messagePane.add(smallStarBtn, 2, 3, 1, 1);
+			}
 
 		}
 
-		private void initIncomingMessagePane() {
+		private Node getInfoBtn() {
 
-			initTimeLbl();
-			initSmallStarBtn();
+			Button infoBtn = ViewFactory.newInfoBtn();
 
-			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
+			infoBtn.disableProperty().bind(selectionModeProperty);
+			infoBtn.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(messageInfo.messageId)));
 
-			messagePane.add(timeLbl, 0, 3, 1, 1);
-			messagePane.add(smallStarBtn, 2, 3, 1, 1);
+			return infoBtn;
 
 		}
 
@@ -1252,32 +1207,55 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private void initInfoGrp() {
+		private void initTimeLbl() {
+
+			if (!messageInfo.isOutgoing)
+				GridPane.setHgrow(timeLbl, Priority.ALWAYS);
+
+			timeLbl.setFont(Font.font(11.25 * viewFactor));
+			timeLbl.setTextFill(Color.DIMGRAY);
+
+		}
+
+		private Node getProgressLbl() {
+
+			Label progressLbl = new Label();
+
+			GridPane.setHalignment(progressLbl, HPos.RIGHT);
+
+			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
+			progressLbl.setFont(Font.font(11.25 * viewFactor));
+			progressLbl.setTextFill(Color.DIMGRAY);
+
+			progressLbl.visibleProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.FRESH));
+			progressLbl.textProperty().bind(Bindings.createStringBinding(() -> {
+				int progress = messageInfo.progressProperty.get();
+				return progress < 0 ? "" : String.format("%d%%", progress);
+			}, messageInfo.progressProperty));
+
+			return progressLbl;
+
+		}
+
+		private Node getInfoGrp() {
+
+			Group infoGrp = new Group();
+			Circle waitingCircle = new Circle(radius, messageInfo.statusProperty.get().getWaitingColor());
+			Circle transmittedCircle = new Circle(radius, messageInfo.statusProperty.get().getTransmittedColor());
 
 			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
 			GridPane.setHalignment(infoGrp, HPos.RIGHT);
 
-			transmittedCircle.setLayoutX(2.0 * radius);
+			transmittedCircle.setLayoutX(-2.0 * radius);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
-		}
+			infoGrp.visibleProperty().bind(messageInfo.statusProperty.isNotEqualTo(MessageStatus.FRESH));
+			waitingCircle.fillProperty().bind(Bindings.createObjectBinding(
+					() -> messageInfo.statusProperty.get().getWaitingColor(), messageInfo.statusProperty));
+			transmittedCircle.fillProperty().bind(Bindings.createObjectBinding(
+					() -> messageInfo.statusProperty.get().getTransmittedColor(), messageInfo.statusProperty));
 
-		private void initProgressLbl() {
-
-			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
-
-			progressLbl.setFont(Font.font(11.25 * viewFactor));
-			progressLbl.setTextFill(Color.DIMGRAY);
-
-			progressLbl.setMinWidth(
-					Toolkit.getToolkit().getFontLoader().computeStringWidth("100%", progressLbl.getFont()));
-
-		}
-
-		private void initTimeLbl() {
-
-			timeLbl.setFont(Font.font(11.25 * viewFactor));
-			timeLbl.setTextFill(Color.DIMGRAY);
+			return infoGrp;
 
 		}
 
@@ -1515,7 +1493,9 @@ class MessagePane extends BorderPane {
 		final AttachmentType attachmentType;
 		final boolean infoAvailable;
 		final Color nameColor;
-		final BooleanProperty archivedProperty = new SimpleBooleanProperty(false);
+		final ObjectProperty<MessageStatus> statusProperty = new SimpleObjectProperty<MessageStatus>();
+		final IntegerProperty progressProperty = new SimpleIntegerProperty(-1);
+		final BooleanProperty archivedProperty = new SimpleBooleanProperty();
 
 		MessageInfo(Message message) {
 
@@ -1530,6 +1510,13 @@ class MessagePane extends BorderPane {
 			this.attachmentType = message.getAttachmentType();
 			this.infoAvailable = isGroup && isOutgoing;
 			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
+			this.statusProperty.set(message.getMessageStatus());
+			this.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
+
+			this.statusProperty.addListener((e0, e1, e2) -> {
+				if (Objects.equals(e2, MessageStatus.FRESH))
+					this.progressProperty.set(-1);
+			});
 
 		}
 

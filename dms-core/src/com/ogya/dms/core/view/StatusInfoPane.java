@@ -9,8 +9,8 @@ import java.util.Objects;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
-import com.sun.javafx.tk.Toolkit;
 
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -57,7 +57,7 @@ public class StatusInfoPane extends BorderPane {
 	private void init() {
 
 		topPane.setPadding(new Insets(gap));
-		centerPane.setPadding(new Insets(2 * gap));
+		centerPane.setPadding(new Insets(2 * gap, 4 * gap, 2 * gap, 2 * gap));
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -158,16 +158,14 @@ public class StatusInfoPane extends BorderPane {
 
 			setHgap(gap);
 
-			GridPane.setHgrow(nameLabel, Priority.ALWAYS);
-
 			initNameLabel();
 			initProgressLbl();
 			initInfoGrp();
 
 			add(statusCircle, 0, 0, 1, 1);
 			add(nameLabel, 1, 0, 1, 1);
-			add(progressLbl, 2, 0, 1, 1);
 			add(infoGrp, 2, 0, 1, 1);
+			add(progressLbl, 2, 0, 1, 1);
 
 		}
 
@@ -203,25 +201,29 @@ public class StatusInfoPane extends BorderPane {
 
 		private void initNameLabel() {
 
+			GridPane.setHgrow(nameLabel, Priority.ALWAYS);
+
 			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 
 		}
 
 		private void initProgressLbl() {
 
-			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
+			GridPane.setHalignment(progressLbl, HPos.RIGHT);
 
+			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
 			progressLbl.setFont(Font.font(11.25 * viewFactor));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
-			progressLbl.setMinWidth(
-					Toolkit.getToolkit().getFontLoader().computeStringWidth("100%", progressLbl.getFont()));
+			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
 
 		}
 
 		private void initInfoGrp() {
 
-			transmittedCircle.setLayoutX(2 * radius);
+			GridPane.setHalignment(infoGrp, HPos.RIGHT);
+
+			transmittedCircle.setLayoutX(-2.0 * radius);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 		}
