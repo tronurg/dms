@@ -156,7 +156,6 @@ public class DmsMediaPlayer extends GridPane {
 				mediaPlayer.statusProperty()));
 
 		btn.setOnAction(e -> {
-
 			if (Objects.equals(mediaPlayer.getStatus(), MediaPlayer.Status.PLAYING)) {
 				resetMediaPlayer();
 			} else {
