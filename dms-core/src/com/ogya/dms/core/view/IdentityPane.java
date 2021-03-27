@@ -30,7 +30,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -335,7 +334,6 @@ class IdentityPane extends GridPane {
 		final Circle circle = new Circle(unitSize * 0.2);
 		circle.setFill(color);
 		btn.setGraphic(circle);
-		btn.setBackground(Background.EMPTY);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.setVisible(false);
