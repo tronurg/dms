@@ -503,9 +503,8 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"select m from Message m join m.statusReports s where m.done=false and s.contactId=:contactId and s.messageStatus not like :read and (m.receiverType=:groupMember or m.dgroup.owner.id=:contactId)",
-				Message.class).setParameter("contactId", contactId).setParameter("read", MessageStatus.READ)
-				.setParameter("groupMember", ReceiverType.GROUP_MEMBER).list();
+				"select m from Message m join m.statusReports s where m.done=false and s.contactId=:contactId and s.messageStatus not like :read and (m.dgroup.owner.id=1 or m.dgroup.owner.id=:contactId)",
+				Message.class).setParameter("contactId", contactId).setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 
