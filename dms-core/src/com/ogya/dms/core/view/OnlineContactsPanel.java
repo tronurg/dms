@@ -174,7 +174,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 	private final class ContactBundle extends GridPane {
 
-		private final ContactPane contactPane = new ContactPane();
+		private final ContactPaneBase contactPane = new ContactPaneBase();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);

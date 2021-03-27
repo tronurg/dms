@@ -35,7 +35,7 @@ public class Model {
 			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
 	private final Map<Long, Dgroup> idGroups = Collections.synchronizedMap(new HashMap<Long, Dgroup>());
 
-	private final List<Long> openUuids = Collections.synchronizedList(new ArrayList<Long>());
+	private final AtomicReference<Long> openMessagePaneId = new AtomicReference<Long>();
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
@@ -237,19 +237,19 @@ public class Model {
 
 	public void messagePaneOpened(Long id) {
 
-		openUuids.add(id);
+		openMessagePaneId.set(id);
 
 	}
 
-	public void messagePaneClosed(Long id) {
+	public void messagePaneClosed() {
 
-		openUuids.remove(id);
+		openMessagePaneId.set(null);
 
 	}
 
 	public boolean isMessagePaneOpen(Long id) {
 
-		return openUuids.contains(id);
+		return Objects.equals(openMessagePaneId.get(), id);
 
 	}
 

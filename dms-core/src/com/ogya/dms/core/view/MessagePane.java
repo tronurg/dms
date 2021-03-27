@@ -99,6 +99,8 @@ class MessagePane extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
+	private final Long messagePaneId;
+
 	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 			new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT));
 	private final Border dateBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
@@ -212,9 +214,11 @@ class MessagePane extends BorderPane {
 
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
-	MessagePane() {
+	MessagePane(Long messagePaneId) {
 
 		super();
+
+		this.messagePaneId = messagePaneId;
 
 		init();
 
@@ -599,6 +603,12 @@ class MessagePane extends BorderPane {
 	void setEditable(boolean editable) {
 
 		editableProperty.set(editable);
+
+	}
+
+	Long getMessagePaneId() {
+
+		return messagePaneId;
 
 	}
 

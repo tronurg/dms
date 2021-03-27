@@ -224,7 +224,7 @@ public class ActiveGroupsPanel extends BorderPane {
 	private final class GroupBundle extends BorderPane {
 
 		private final GridPane topPane = new GridPane();
-		private final GroupPane groupPane = new GroupPane();
+		private final GroupPaneBase groupPane = new GroupPaneBase();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 		private final VBox contactCards = new VBox();
 

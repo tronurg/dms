@@ -14,7 +14,7 @@ public interface AppListener {
 
 	void messagePaneOpened(Long id);
 
-	void messagePaneClosed(Long id);
+	void messagePaneClosed();
 
 	void sendMessageClicked(Long id, String messageTxt, FileBuilder fileBuilder, Long refMessageId);
 

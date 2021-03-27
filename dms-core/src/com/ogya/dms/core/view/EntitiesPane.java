@@ -276,7 +276,7 @@ class EntitiesPane extends BorderPane {
 
 		if (!idContactPane.containsKey(id)) {
 
-			final ContactPane contactPane = new ContactPane();
+			final ContactPane contactPane = new ContactPane(id);
 
 			contactPane.managedProperty().bind(contactPane.visibleProperty());
 
@@ -287,13 +287,13 @@ class EntitiesPane extends BorderPane {
 
 			contactPane.setOnShowMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.showMessagePane(id, messagePane));
+				entityListeners.forEach(listener -> listener.showMessagePane(messagePane));
 
 			});
 
 			contactPane.setOnHideMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.hideMessagePane(id, messagePane));
+				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane));
 
 			});
 
@@ -313,7 +313,7 @@ class EntitiesPane extends BorderPane {
 
 		if (!idGroupPane.containsKey(id)) {
 
-			final GroupPane groupPane = new GroupPane();
+			final GroupPane groupPane = new GroupPane(-id);
 
 			groupPane.managedProperty().bind(groupPane.visibleProperty());
 
@@ -324,13 +324,13 @@ class EntitiesPane extends BorderPane {
 
 			groupPane.setOnShowMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.showMessagePane(-id, messagePane));
+				entityListeners.forEach(listener -> listener.showMessagePane(messagePane));
 
 			});
 
 			groupPane.setOnHideMessagePane(messagePane -> {
 
-				entityListeners.forEach(listener -> listener.hideMessagePane(-id, messagePane));
+				entityListeners.forEach(listener -> listener.hideMessagePane(messagePane));
 
 			});
 
@@ -460,9 +460,9 @@ interface IEntitiesPane {
 
 	void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
-	void showMessagePane(Long id, MessagePane messagePane);
+	void showMessagePane(MessagePane messagePane);
 
-	void hideMessagePane(Long id, MessagePane messagePane);
+	void hideMessagePane(MessagePane messagePane);
 
 	void paneScrolledToTop(Long id, Long topMessageId);
 

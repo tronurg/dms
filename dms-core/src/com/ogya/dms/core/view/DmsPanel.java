@@ -2,14 +2,11 @@ package com.ogya.dms.core.view;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.UIManager;
 
@@ -24,6 +21,8 @@ import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
 
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -53,7 +52,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
-	private final AtomicReference<Entry<Long, MessagePane>> idOnScreenRef = new AtomicReference<Entry<Long, MessagePane>>();
+	private final ObjectProperty<MessagePane> messagePaneOnScreenRef = new SimpleObjectProperty<MessagePane>();
 
 	public DmsPanel() {
 
@@ -78,11 +77,30 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 					nodeList.get(i).setVisible(false);
 				}
 
-				if (nodeList.size() > 0)
-					nodeList.get(nodeList.size() - 1).setVisible(true);
+				Node topNode = null;
+
+				if (!nodeList.isEmpty())
+					topNode = nodeList.get(nodeList.size() - 1);
+
+				messagePaneOnScreenRef.set(null);
+
+				if (topNode == null)
+					return;
+
+				topNode.setVisible(true);
+
+				if (topNode instanceof MessagePane)
+					messagePaneOnScreenRef.set((MessagePane) topNode);
 
 			}
 
+		});
+
+		messagePaneOnScreenRef.addListener((e0, e1, e2) -> {
+			if (e1 == null && e2 != null)
+				listeners.forEach(listener -> listener.messagePaneOpened(e2.getMessagePaneId()));
+			else if (e1 != null && e2 == null)
+				listeners.forEach(listener -> listener.messagePaneClosed());
 		});
 
 		VBox.setMargin(identityPane, new Insets(2 * gap));
@@ -176,9 +194,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		Long entityId = Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) ? message.getContact().getId()
 				: -message.getDgroup().getId();
 
-		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
-		if (!(idOnScreen == null || Objects.equals(entityId, idOnScreen.getKey())))
-			idOnScreen.getValue().highlightBackButton();
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (!(messagePaneOnScreen == null || Objects.equals(entityId, messagePaneOnScreen.getMessagePaneId())))
+			messagePaneOnScreen.highlightBackButton();
 
 		starredMessagesPane.addUpdateMessage(message);
 
@@ -211,12 +229,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void addAttachment(FileBuilder fileBuilder) {
 
-		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
-		if (idOnScreen == null)
-			return;
-		MessagePane messagePane = idOnScreen.getValue();
-		if (messagePane != null)
-			messagePane.addAttachment(fileBuilder);
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			messagePaneOnScreen.addAttachment(fileBuilder);
 
 	}
 
@@ -282,23 +297,17 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void recordingStarted() {
 
-		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
-		if (idOnScreen == null)
-			return;
-		MessagePane messagePane = idOnScreen.getValue();
-		if (messagePane != null)
-			messagePane.recordingStarted();
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			messagePaneOnScreen.recordingStarted();
 
 	}
 
 	public void recordingStopped() {
 
-		Entry<Long, MessagePane> idOnScreen = idOnScreenRef.get();
-		if (idOnScreen == null)
-			return;
-		MessagePane messagePane = idOnScreen.getValue();
-		if (messagePane != null)
-			messagePane.recordingStopped();
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			messagePaneOnScreen.recordingStopped();
 
 	}
 
@@ -363,6 +372,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		case STARRED_MESSAGES:
 
+			starredMessagesPane.scrollToTop();
 			getChildren().add(starredMessagesPane);
 
 			break;
@@ -413,22 +423,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
-	public void showMessagePane(final Long id, MessagePane messagePane) {
+	public void showMessagePane(MessagePane messagePane) {
 
 		getChildren().add(messagePane);
-
-		idOnScreenRef.set(new AbstractMap.SimpleEntry<Long, MessagePane>(id, messagePane));
-
-		listeners.forEach(listener -> listener.messagePaneOpened(id));
 
 	}
 
 	@Override
-	public void hideMessagePane(final Long id, MessagePane messagePane) {
-
-		listeners.forEach(listener -> listener.messagePaneClosed(id));
-
-		idOnScreenRef.set(null);
+	public void hideMessagePane(MessagePane messagePane) {
 
 		getChildren().remove(messagePane);
 
@@ -534,7 +536,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	@Override
 	public void recordEventTriggered(final Long refMessageId) {
 
-		listeners.forEach(listener -> listener.recordEventTriggered(idOnScreenRef.get().getKey(), refMessageId));
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			listeners.forEach(
+					listener -> listener.recordEventTriggered(messagePaneOnScreen.getMessagePaneId(), refMessageId));
 
 	}
 

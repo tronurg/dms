@@ -103,7 +103,6 @@ public class SettingsPane extends BorderPane {
 		starredMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		starredMessagesLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
-
 			if (settingsClickedAction != null)
 				settingsClickedAction.accept(Settings.STARRED_MESSAGES);
 		});
@@ -116,7 +115,6 @@ public class SettingsPane extends BorderPane {
 		editRemoteIpsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		editRemoteIpsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
-
 			if (settingsClickedAction != null)
 				settingsClickedAction.accept(Settings.EDIT_REMOTE_IPS);
 		});

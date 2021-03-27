@@ -1993,11 +1993,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messagePaneClosed(final Long id) {
+	public void messagePaneClosed() {
 
 		taskQueue.execute(() -> {
 
-			model.messagePaneClosed(id);
+			model.messagePaneClosed();
 
 		});
 

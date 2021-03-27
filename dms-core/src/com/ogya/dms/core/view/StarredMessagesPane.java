@@ -251,6 +251,12 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
+	void scrollToTop() {
+
+		scrollPane.setVvalue(scrollPane.getVmin());
+
+	}
+
 	void addUpdateMessage(Message message) {
 
 		Long messageId = message.getId();
