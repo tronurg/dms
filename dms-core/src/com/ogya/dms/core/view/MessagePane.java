@@ -813,11 +813,11 @@ class MessagePane extends BorderPane {
 
 			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
 
-				DmsDummyPlayer dmsDummyPlayer = new DmsDummyPlayer();
+				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
 
-				VBox.setMargin(dmsDummyPlayer, new Insets(0.0, 0.0, 0.0, gap));
+				VBox.setMargin(dummyPlayer, new Insets(0.0, 0.0, 0.0, gap));
 
-				referenceBalloon.getChildren().add(dmsDummyPlayer);
+				referenceBalloon.getChildren().add(dummyPlayer);
 
 			} else {
 
@@ -1217,17 +1217,8 @@ class MessagePane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
-
-				try {
-
-					return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
-
-				} catch (Exception e) {
-
-				}
-
-			}
+			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO))
+				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			HBox attachmentArea = new HBox(gap);
 

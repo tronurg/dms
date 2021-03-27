@@ -87,7 +87,7 @@ public class Message {
 	@Column(name = "view_status", nullable = false)
 	@Convert(converter = ViewStatusConverter.class)
 	@JsonIgnore
-	private ViewStatus viewStatus;
+	private ViewStatus viewStatus = ViewStatus.DEFAULT;
 
 	@Column(name = "date", nullable = false, updatable = false)
 	@JsonIgnore

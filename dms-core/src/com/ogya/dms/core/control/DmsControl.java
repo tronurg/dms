@@ -404,7 +404,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		outgoingMessage.setAttachmentType(attachmentType);
 
 		outgoingMessage.setMessageStatus(MessageStatus.FRESH);
-		outgoingMessage.setViewStatus(ViewStatus.DEFAULT);
 
 		if (statusReports != null)
 			statusReports.forEach(statusReport -> outgoingMessage.addStatusReport(statusReport));
@@ -1432,7 +1431,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.setMessageStatus(computeMessageStatus(message));
 
 				message.setDone(!messageToBeRedirected);
-				message.setViewStatus(ViewStatus.DEFAULT);
 
 				message.setMessageDirection(MessageDirection.IN);
 
