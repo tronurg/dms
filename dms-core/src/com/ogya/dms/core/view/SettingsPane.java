@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -29,7 +30,7 @@ public class SettingsPane extends BorderPane {
 
 	private final HBox topPane = new HBox(gap);
 
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 	private final Label headingLabel = new Label(CommonMethods.translate("SETTINGS"));
 
 	private final VBox scrollableContent = new VBox(gap);
@@ -41,9 +42,11 @@ public class SettingsPane extends BorderPane {
 
 	private final AtomicReference<Consumer<Settings>> settingClickedActionRef = new AtomicReference<Consumer<Settings>>();
 
-	SettingsPane() {
+	SettingsPane(BooleanProperty unreadProperty) {
 
 		super();
+
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
 

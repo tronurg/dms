@@ -24,6 +24,7 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -56,7 +57,7 @@ public class FoldersPane extends BorderPane {
 		public void requestFocus() {
 		}
 	};
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 	private final Label nameLabel = new Label(CommonMethods.translate("FILE_EXPLORER"));
 
 	private final Map<Path, FolderView> folderViews = Collections.synchronizedMap(new HashMap<Path, FolderView>());
@@ -67,9 +68,11 @@ public class FoldersPane extends BorderPane {
 
 	private WatchService watchService;
 
-	FoldersPane(Path mainPath) {
+	FoldersPane(Path mainPath, BooleanProperty unreadProperty) {
 
 		super();
+
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		try {
 			watchService = FileSystems.getDefault().newWatchService();

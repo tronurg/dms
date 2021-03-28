@@ -5,12 +5,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.paint.Color;
@@ -99,7 +101,7 @@ public class ViewFactory {
 
 	}
 
-	public static Button newBackBtn() {
+	public static Button newBackBtn(BooleanProperty highlightProperty) {
 
 		double viewFactor = getViewFactor();
 
@@ -115,6 +117,12 @@ public class ViewFactory {
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
+
+		if (highlightProperty != null) {
+			final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
+			btn.effectProperty().bind(
+					Bindings.createObjectBinding(() -> highlightProperty.get() ? highlight : null, highlightProperty));
+		}
 
 		return btn;
 

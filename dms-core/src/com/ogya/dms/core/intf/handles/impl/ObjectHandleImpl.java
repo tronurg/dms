@@ -1,7 +1,7 @@
 package com.ogya.dms.core.intf.handles.impl;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
 
 public class ObjectHandleImpl implements ObjectHandle {
@@ -9,13 +9,13 @@ public class ObjectHandleImpl implements ObjectHandle {
 	@JsonProperty("a")
 	private Integer objectCode;
 	@JsonProperty("b")
-	private String payload;
+	private byte[] payload;
 
 	public ObjectHandleImpl() {
 		super();
 	}
 
-	public ObjectHandleImpl(Integer objectCode, String payload) {
+	public ObjectHandleImpl(Integer objectCode, byte[] payload) {
 
 		this.objectCode = objectCode;
 		this.payload = payload;
@@ -34,7 +34,7 @@ public class ObjectHandleImpl implements ObjectHandle {
 
 		try {
 
-			return CommonMethods.fromJson(payload, objectClass);
+			return DmsPackingFactory.unpack(payload, objectClass);
 
 		} catch (Exception e) {
 

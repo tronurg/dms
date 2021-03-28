@@ -11,6 +11,7 @@ import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
@@ -48,11 +49,11 @@ class GroupPane extends GroupPaneBase {
 
 	private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
 
-	GroupPane(Long entityId) {
+	GroupPane(Long entityId, BooleanProperty unreadProperty) {
 
 		super();
 
-		messagePane = new MessagePane(entityId);
+		messagePane = new MessagePane(entityId, unreadProperty);
 
 		init();
 

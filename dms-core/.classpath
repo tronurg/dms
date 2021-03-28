@@ -25,7 +25,6 @@
 	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
 	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.21.jar"/>
 	<classpathentry kind="lib" path="lib/db/jackson-annotations-2.12.1.jar"/>
-	<classpathentry kind="lib" path="lib/gson-2.8.6.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dms-commons"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

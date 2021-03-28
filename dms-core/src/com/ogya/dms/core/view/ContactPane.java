@@ -10,6 +10,7 @@ import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
@@ -47,11 +48,11 @@ class ContactPane extends ContactPaneBase {
 
 	private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
 
-	ContactPane(Long entityId) {
+	ContactPane(Long entityId, BooleanProperty unreadProperty) {
 
 		super();
 
-		this.messagePane = new MessagePane(entityId);
+		this.messagePane = new MessagePane(entityId, unreadProperty);
 
 		init();
 

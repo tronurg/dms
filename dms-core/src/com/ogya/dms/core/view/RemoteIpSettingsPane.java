@@ -6,6 +6,7 @@ import java.util.function.Consumer;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -32,7 +33,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private final HBox topPane = new HBox(gap);
 	private final VBox centerPane = new VBox(gap);
 
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 	private final Label headingLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 
 	private final HBox addIpPane = new HBox(gap);
@@ -49,9 +50,11 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private final AtomicReference<Consumer<String>> removeIpActionRef = new AtomicReference<Consumer<String>>();
 
-	RemoteIpSettingsPane() {
+	RemoteIpSettingsPane(BooleanProperty unreadProperty) {
 
 		super();
+
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
 

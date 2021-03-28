@@ -10,6 +10,7 @@ import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
+import javafx.beans.property.BooleanProperty;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -42,13 +43,15 @@ public class StatusInfoPane extends BorderPane {
 		public void requestFocus() {
 		}
 	};
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 
 	private final Map<Long, Card> cards = Collections.synchronizedMap(new HashMap<Long, Card>());
 
-	StatusInfoPane() {
+	StatusInfoPane(BooleanProperty unreadProperty) {
 
 		super();
+
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
 

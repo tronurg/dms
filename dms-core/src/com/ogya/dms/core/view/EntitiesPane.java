@@ -16,6 +16,7 @@ import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
@@ -26,6 +27,8 @@ import javafx.scene.layout.VBox;
 class EntitiesPane extends BorderPane {
 
 	private final double gap = ViewFactory.getGap();
+
+	private final BooleanProperty unreadProperty;
 
 	private final VBox topArea = new VBox();
 
@@ -39,7 +42,7 @@ class EntitiesPane extends BorderPane {
 		}
 	};
 
-	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane();
+	private final AddUpdateGroupPane addUpdateGroupPane;
 
 	private final Map<Long, ContactPane> idContactPane = Collections.synchronizedMap(new HashMap<Long, ContactPane>());
 
@@ -49,9 +52,12 @@ class EntitiesPane extends BorderPane {
 
 	private final AtomicLong currentId = new AtomicLong(0);
 
-	EntitiesPane() {
+	EntitiesPane(BooleanProperty unreadProperty) {
 
 		super();
+
+		this.unreadProperty = unreadProperty;
+		this.addUpdateGroupPane = new AddUpdateGroupPane(unreadProperty);
 
 		init();
 
@@ -276,7 +282,7 @@ class EntitiesPane extends BorderPane {
 
 		if (!idContactPane.containsKey(id)) {
 
-			final ContactPane contactPane = new ContactPane(id);
+			final ContactPane contactPane = new ContactPane(id, unreadProperty);
 
 			contactPane.managedProperty().bind(contactPane.visibleProperty());
 
@@ -313,7 +319,7 @@ class EntitiesPane extends BorderPane {
 
 		if (!idGroupPane.containsKey(id)) {
 
-			final GroupPane groupPane = new GroupPane(-id);
+			final GroupPane groupPane = new GroupPane(-id, unreadProperty);
 
 			groupPane.managedProperty().bind(groupPane.visibleProperty());
 

@@ -1952,29 +1952,23 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (messagesWaitingFromContact.isEmpty())
 				return;
 
+			List<Message> newMessages = dbManager.addUpdateMessages(messagesWaitingFromContact.stream()
+					.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
+
+			if (newMessages.isEmpty())
+				return;
+
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id, newMessages.get(0).getId()));
+
 			Map<Long, MessageStatus> messageIdStatusMap = new HashMap<Long, MessageStatus>();
 
-			for (Message incomingMessage : messagesWaitingFromContact) {
+			for (Message message : newMessages) {
 
-				try {
+				Platform.runLater(() -> dmsPanel.updateMessage(message));
 
-					incomingMessage.setMessageStatus(MessageStatus.READ);
-
-					final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
-
-					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
-
-					messageIdStatusMap.put(newMessage.getMessageRefId(), MessageStatus.READ);
-
-				} catch (HibernateException e) {
-
-					e.printStackTrace();
-
-				}
+				messageIdStatusMap.put(message.getMessageRefId(), message.getMessageStatus());
 
 			}
-
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id, messagesWaitingFromContact.get(0).getId()));
 
 			if (!messageIdStatusMap.isEmpty())
 				dmsClient.feedMessageStatus(messageIdStatusMap, contact.getUuid());
@@ -2001,40 +1995,34 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (messagesWaitingFromGroup.isEmpty())
 				return;
 
+			List<Message> newMessages = dbManager.addUpdateMessages(messagesWaitingFromGroup.stream()
+					.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
+
+			if (newMessages.isEmpty())
+				return;
+
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id, newMessages.get(0).getId()));
+
 			Map<String, Map<Long, MessageStatus>> contactUuidMessageIdStatusMap = new HashMap<String, Map<Long, MessageStatus>>();
 
-			for (Message incomingMessage : messagesWaitingFromGroup) {
+			for (Message message : newMessages) {
 
-				try {
+				Platform.runLater(() -> dmsPanel.updateMessage(message));
 
-					incomingMessage.setMessageStatus(MessageStatus.READ);
+				String contactUuid = null;
+				if (Objects.equals(message.getReceiverType(), ReceiverType.GROUP_OWNER))
+					contactUuid = message.getContact().getUuid();
+				else if (Objects.equals(message.getReceiverType(), ReceiverType.GROUP_MEMBER))
+					contactUuid = group.getOwner().getUuid();
 
-					final Message newMessage = dbManager.addUpdateMessage(incomingMessage);
+				if (contactUuid == null)
+					continue;
 
-					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
-
-					String contactUuid = null;
-					if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_OWNER))
-						contactUuid = newMessage.getContact().getUuid();
-					else if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_MEMBER))
-						contactUuid = group.getOwner().getUuid();
-
-					if (contactUuid == null)
-						continue;
-
-					contactUuidMessageIdStatusMap.putIfAbsent(contactUuid, new HashMap<Long, MessageStatus>());
-					contactUuidMessageIdStatusMap.get(contactUuid).put(newMessage.getMessageRefId(),
-							newMessage.getMessageStatus());
-
-				} catch (HibernateException e) {
-
-					e.printStackTrace();
-
-				}
+				contactUuidMessageIdStatusMap.putIfAbsent(contactUuid, new HashMap<Long, MessageStatus>());
+				contactUuidMessageIdStatusMap.get(contactUuid).put(message.getMessageRefId(),
+						message.getMessageStatus());
 
 			}
-
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id, messagesWaitingFromGroup.get(0).getId()));
 
 			contactUuidMessageIdStatusMap.forEach(
 					(contactUuid, messageIdStatusMap) -> dmsClient.feedMessageStatus(messageIdStatusMap, contactUuid));
@@ -3126,15 +3114,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public ObjectHandle createObjectHandle(Object object, Integer objectCode) {
 
-		return new ObjectHandleImpl(objectCode, CommonMethods.toJson(object));
+		return new ObjectHandleImpl(objectCode, DmsPackingFactory.pack(object));
 
 	}
 
 	@Override
 	public <T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode) {
 
-		return new ListHandleImpl(listCode,
-				CommonMethods.convertListJsonToCommon(CommonMethods.toJson(list), elementType.getSimpleName()));
+		return new ListHandleImpl(listCode, DmsPackingFactory.pack(list));
 
 	}
 

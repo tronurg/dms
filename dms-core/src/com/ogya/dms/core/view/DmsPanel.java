@@ -16,15 +16,21 @@ import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
+import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
 
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.layout.Priority;
@@ -35,20 +41,23 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	private final double gap = ViewFactory.getGap();
 
+	private final BooleanProperty unreadProperty = new SimpleBooleanProperty();
+	private final ObservableSet<Long> unreadMessagePaneIds = FXCollections.observableSet();
+
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
-	private final EntitiesPane entitiesPane = new EntitiesPane();
+	private final EntitiesPane entitiesPane = new EntitiesPane(unreadProperty);
 
 	private final ActiveGroupsPanel activeGroupsPanel = new ActiveGroupsPanel();
 	private final OnlineContactsPanel onlineContactsPanel = new OnlineContactsPanel();
 
 	private final FoldersPane foldersPane = new FoldersPane(
-			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath());
+			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath(), unreadProperty);
 
-	private final StatusInfoPane statusInfoPane = new StatusInfoPane();
-	private final SettingsPane settingsPane = new SettingsPane();
-	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane();
-	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane();
+	private final StatusInfoPane statusInfoPane = new StatusInfoPane(unreadProperty);
+	private final SettingsPane settingsPane = new SettingsPane(unreadProperty);
+	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
+	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -89,7 +98,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 				topNode.setVisible(true);
 
-				if (topNode instanceof MessagePane)
+				if (Objects.equals(topNode, mainPane))
+					unreadMessagePaneIds.clear();
+				else if (topNode instanceof MessagePane)
 					messagePaneOnScreenRef.set((MessagePane) topNode);
 
 			}
@@ -97,11 +108,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		});
 
 		messagePaneOnScreenRef.addListener((e0, e1, e2) -> {
-			if (e1 == null && e2 != null)
-				listeners.forEach(listener -> listener.messagePaneOpened(e2.getMessagePaneId()));
-			else if (e1 != null && e2 == null)
+			if (e2 == null) {
 				listeners.forEach(listener -> listener.messagePaneClosed());
+			} else {
+				Long messagePaneId = e2.getMessagePaneId();
+				unreadMessagePaneIds.remove(messagePaneId);
+				listeners.forEach(listener -> listener.messagePaneOpened(messagePaneId));
+			}
 		});
+
+		unreadProperty.bind(Bindings.isNotEmpty(unreadMessagePaneIds));
 
 		VBox.setMargin(identityPane, new Insets(2 * gap));
 
@@ -191,14 +207,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		entitiesPane.addMessage(message);
 
+		starredMessagesPane.addUpdateMessage(message);
+
+		if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT)
+				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
+			return;
+
 		Long entityId = Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) ? message.getContact().getId()
 				: -message.getDgroup().getId();
 
-		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (!(messagePaneOnScreen == null || Objects.equals(entityId, messagePaneOnScreen.getMessagePaneId())))
-			messagePaneOnScreen.highlightBackButton();
-
-		starredMessagesPane.addUpdateMessage(message);
+		unreadMessagePaneIds.add(entityId);
 
 	}
 

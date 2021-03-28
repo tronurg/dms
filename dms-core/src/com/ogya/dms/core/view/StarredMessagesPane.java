@@ -83,7 +83,7 @@ class StarredMessagesPane extends BorderPane {
 	private final HBox topPane = new HBox(2 * gap);
 	private final VBox centerPane = new VBox(gap);
 
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 	private final Label titleLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
@@ -130,9 +130,11 @@ class StarredMessagesPane extends BorderPane {
 
 	};
 
-	StarredMessagesPane() {
+	StarredMessagesPane(BooleanProperty unreadProperty) {
 
 		super();
+
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
 

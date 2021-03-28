@@ -116,7 +116,7 @@ class MessagePane extends BorderPane {
 	private final VBox centerPane = new VBox(2 * gap);
 	private final GridPane bottomPane = new GridPane();
 
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 	private final Circle statusCircle = new Circle(7.0 * viewFactor);
 	private final Label nameLabel = new Label();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
@@ -184,8 +184,6 @@ class MessagePane extends BorderPane {
 
 	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * viewFactor);
 
-	private final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
-
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
 	private final ObjectProperty<Long> referenceMessageProperty = new SimpleObjectProperty<Long>(null);
@@ -214,11 +212,12 @@ class MessagePane extends BorderPane {
 
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
-	MessagePane(Long messagePaneId) {
+	MessagePane(Long messagePaneId, BooleanProperty unreadProperty) {
 
 		super();
 
 		this.messagePaneId = messagePaneId;
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
 
@@ -315,7 +314,6 @@ class MessagePane extends BorderPane {
 				if (backAction == null)
 					return;
 				backAction.run();
-				backBtn.setEffect(null);
 			}
 		});
 
@@ -784,12 +782,6 @@ class MessagePane extends BorderPane {
 			return;
 
 		scrollPane(nodeY.getKey(), nodeY.getValue());
-
-	}
-
-	void highlightBackButton() {
-
-		backBtn.setEffect(highlight);
 
 	}
 

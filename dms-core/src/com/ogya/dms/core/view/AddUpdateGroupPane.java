@@ -55,7 +55,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final HBox topPane = new HBox(gap);
 
-	private final Button backBtn = ViewFactory.newBackBtn();
+	private final Button backBtn;
 	private final TextField groupNameTextField = new TextField();
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
@@ -98,9 +98,11 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	};
 
-	AddUpdateGroupPane() {
+	AddUpdateGroupPane(BooleanProperty unreadProperty) {
 
 		super();
+
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
 
