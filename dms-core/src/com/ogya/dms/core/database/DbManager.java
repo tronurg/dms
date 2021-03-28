@@ -615,6 +615,36 @@ public class DbManager {
 
 	}
 
+	public List<Message> getLastArchivedMessages(int messageCount) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session
+				.createQuery("from Message where viewStatus like :archived and updateType is null order by id desc",
+						Message.class)
+				.setParameter("archived", ViewStatus.ARCHIVED).setMaxResults(messageCount).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getLastArchivedMessagesBeforeId(long messageId, int messageCount) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where viewStatus like :archived and id<:messageId and updateType is null order by id desc",
+				Message.class).setParameter("archived", ViewStatus.ARCHIVED).setParameter("messageId", messageId)
+				.setMaxResults(messageCount).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
 	private void resolveReferenceOfMessage(Message message, Session session) throws HibernateException {
 
 		Message refMessage = message.getRefMessage();

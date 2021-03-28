@@ -40,6 +40,7 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -212,6 +213,11 @@ class MessagePane extends BorderPane {
 
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
+	private final ChangeListener<Number> scrollListener = (e0, e1, e2) -> {
+		if (e2.doubleValue() == 0.0 && e1.doubleValue() != 0.0)
+			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
+	};
+
 	MessagePane(Long messagePaneId, BooleanProperty unreadProperty) {
 
 		super();
@@ -253,6 +259,12 @@ class MessagePane extends BorderPane {
 
 	private void initCenterPane() {
 
+		centerPane.setPadding(new Insets(gap));
+		centerPane.heightProperty().addListener((e0, e1, e2) -> {
+			if (autoScroll.get())
+				scrollPaneToBottom();
+		});
+
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
@@ -263,17 +275,9 @@ class MessagePane extends BorderPane {
 
 			}
 		});
-		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
-			autoScroll.set(e1.doubleValue() == scrollPane.getVmax());
-			if (e2.doubleValue() != 0.0 || e1.doubleValue() == 0.0)
-				return;
-			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
-		});
-		centerPane.setPadding(new Insets(gap));
-		centerPane.heightProperty().addListener((e0, e1, e2) -> {
-			if (autoScroll.get())
-				scrollPaneToBottom();
-		});
+		scrollPane.vvalueProperty()
+				.addListener((e0, e1, e2) -> autoScroll.set(e1.doubleValue() == scrollPane.getVmax()));
+		scrollPane.vvalueProperty().addListener(scrollListener);
 
 	}
 
@@ -782,6 +786,12 @@ class MessagePane extends BorderPane {
 			return;
 
 		scrollPane(nodeY.getKey(), nodeY.getValue());
+
+	}
+
+	void allMessagesLoaded() {
+
+		scrollPane.vvalueProperty().removeListener(scrollListener);
 
 	}
 

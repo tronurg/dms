@@ -207,8 +207,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		entitiesPane.addMessage(message);
 
-		starredMessagesPane.addUpdateMessage(message);
-
 		if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT)
 				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			return;
@@ -240,6 +238,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		default:
 
 		}
+
+	}
+
+	public void addUpdateArchivedMessage(Message message) {
 
 		starredMessagesPane.addUpdateMessage(message);
 
@@ -310,6 +312,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 			entitiesPane.scrollToSavedGroupPosition(-id);
 
 		}
+
+	}
+
+	public void allMessagesLoaded() {
+
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			messagePaneOnScreen.allMessagesLoaded();
+
+	}
+
+	public void allArchivedMessagesLoaded() {
+
+		starredMessagesPane.allMessagesLoaded();
 
 	}
 
@@ -576,10 +592,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
-	public void paneScrolledToBottom(Long bottomMessageId) {
+	public void loadMoreRequested(final Long bottomMessageId) {
 
-		// TODO
-		System.out.println(bottomMessageId);
+		listeners.forEach(listener -> listener.moreArchivedMessagesRequested(bottomMessageId));
 
 	}
 

@@ -4,7 +4,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -81,6 +80,7 @@ class StarredMessagesPane extends BorderPane {
 			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * gap);
+	private final VBox centerPaneWithLoadBtn = new VBox(gap);
 	private final VBox centerPane = new VBox(gap);
 
 	private final Button backBtn;
@@ -88,7 +88,9 @@ class StarredMessagesPane extends BorderPane {
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 
-	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
+	private final Button loadBtn = new Button(CommonMethods.translate("SHOW_MORE"));
+
+	private final ScrollPane scrollPane = new ScrollPane(centerPaneWithLoadBtn) {
 		@Override
 		public void requestFocus() {
 		}
@@ -100,14 +102,10 @@ class StarredMessagesPane extends BorderPane {
 
 	private final ObservableMap<Long, MessageBalloon> messageBalloons = FXCollections.observableHashMap();
 
-	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
-			null);
-
 	private final List<IStarredMessagesPane> listeners = Collections
 			.synchronizedList(new ArrayList<IStarredMessagesPane>());
 
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
-	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
 
@@ -143,7 +141,7 @@ class StarredMessagesPane extends BorderPane {
 	private void init() {
 
 		initTopPane();
-		initCenterPane();
+		initCenterPaneWithLoadBtn();
 
 		setTop(topPane);
 		setCenter(scrollPane);
@@ -165,7 +163,10 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
-	private void initCenterPane() {
+	private void initCenterPaneWithLoadBtn() {
+
+		centerPaneWithLoadBtn.setPadding(new Insets(gap));
+		centerPaneWithLoadBtn.setAlignment(Pos.CENTER);
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
@@ -177,12 +178,10 @@ class StarredMessagesPane extends BorderPane {
 
 			}
 		});
-		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
-			if (e2.doubleValue() != scrollPane.getVmax() || e1.doubleValue() == scrollPane.getVmax())
-				return;
-			listeners.forEach(listener -> listener.paneScrolledToBottom(minMessageId.get()));
-		});
-		centerPane.setPadding(new Insets(gap));
+
+		initLoadBtn();
+
+		centerPaneWithLoadBtn.getChildren().addAll(centerPane, loadBtn);
 
 	}
 
@@ -241,6 +240,14 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
+	private void initLoadBtn() {
+
+		loadBtn.getStyleClass().addAll("dim-label", "link-label");
+		loadBtn.managedProperty().bind(loadBtn.visibleProperty());
+		loadBtn.setOnAction(e -> listeners.forEach(listener -> listener.loadMoreRequested(minMessageId.get())));
+
+	}
+
 	void addListener(IStarredMessagesPane listener) {
 
 		listeners.add(listener);
@@ -276,7 +283,6 @@ class StarredMessagesPane extends BorderPane {
 		messageBalloons.put(messageId, messageBalloon);
 
 		minMessageId.set(Math.min(minMessageId.get(), messageId));
-		maxMessageId.set(Math.max(maxMessageId.get(), messageId));
 
 		centerPane.getChildren().add(messageBalloon);
 		FXCollections.sort(centerPane.getChildren(), messagesSorter);
@@ -301,27 +307,9 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
-	void savePosition(Long messageId) {
+	void allMessagesLoaded() {
 
-		MessageBalloon messageBalloon = messageBalloons.get(messageId);
-
-		if (messageBalloon == null)
-			return;
-
-		Double yNode = scrollPane.sceneToLocal(messageBalloon.localToScene(0.0, 0.0)).getY();
-
-		savedNodeY.set(new SimpleEntry<Node, Double>(messageBalloon, yNode));
-
-	}
-
-	void scrollToSavedPosition() {
-
-		SimpleEntry<Node, Double> nodeY = savedNodeY.getAndSet(null);
-
-		if (nodeY == null)
-			return;
-
-		scrollPane(nodeY.getKey(), nodeY.getValue());
+		loadBtn.setVisible(false);
 
 	}
 
@@ -403,25 +391,6 @@ class StarredMessagesPane extends BorderPane {
 		}
 
 		return referenceBalloon;
-
-	}
-
-	private void scrollPane(Node nodeToScrollTo, double bias) {
-
-		scrollPane.applyCss();
-		scrollPane.layout();
-
-		Double centerPaneHeight = centerPane.getHeight();
-		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
-
-		if (centerPaneHeight < scrollPaneViewportHeight)
-			return;
-
-		Double scrollY = centerPane.sceneToLocal(nodeToScrollTo.localToScene(0.0, 0.0)).getY() - bias;
-
-		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
-
-		scrollPane.setVvalue(scrollPane.getVmax() * ratioY);
 
 	}
 
@@ -705,7 +674,7 @@ class StarredMessagesPane extends BorderPane {
 
 interface IStarredMessagesPane {
 
-	void paneScrolledToBottom(Long bottomMessageId);
+	void loadMoreRequested(Long bottomMessageId);
 
 	void attachmentClicked(Long messageId);
 

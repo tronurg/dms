@@ -41,6 +41,8 @@ public class Model {
 
 	private final AtomicLong detailedGroupMessageId = new AtomicLong(-1L);
 
+	private final AtomicLong minArchivedMessageId = new AtomicLong(-1L);
+
 	private final Map<Long, Map<Long, Integer>> groupMessageProgresses = Collections
 			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
 
@@ -274,6 +276,18 @@ public class Model {
 	public Long getDetailedGroupMessageId() {
 
 		return detailedGroupMessageId.get();
+
+	}
+
+	public void setMinArchivedMessageId(long messageId) {
+
+		minArchivedMessageId.set(messageId);
+
+	}
+
+	public Long getMinArchivedMessageId() {
+
+		return minArchivedMessageId.get();
 
 	}
 

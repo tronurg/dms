@@ -235,18 +235,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Platform.runLater(() -> dmsPanel.updateContact(contact));
 
-			List<Message> dbMessages = dbManager.getAllPrivateMessagesSinceFirstUnreadMessage(id);
+			try {
 
-			firstMessages.addAll(dbMessages);
+				List<Message> dbMessages = dbManager.getAllPrivateMessagesSinceFirstUnreadMessage(id);
 
-			if (dbMessages.isEmpty()) {
+				firstMessages.addAll(dbMessages);
 
-				firstMessages.addAll(dbManager.getLastPrivateMessages(id, MIN_MESSAGES_PER_PAGE));
+				if (dbMessages.isEmpty()) {
 
-			} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+					firstMessages.addAll(dbManager.getLastPrivateMessages(id, MIN_MESSAGES_PER_PAGE));
 
-				firstMessages.addAll(dbManager.getLastPrivateMessagesBeforeId(id, dbMessages.get(0).getId(),
-						MIN_MESSAGES_PER_PAGE - dbMessages.size()));
+				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+
+					firstMessages.addAll(dbManager.getLastPrivateMessagesBeforeId(id, dbMessages.get(0).getId(),
+							MIN_MESSAGES_PER_PAGE - dbMessages.size()));
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -256,18 +264,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Platform.runLater(() -> dmsPanel.updateGroup(group));
 
-			List<Message> dbMessages = dbManager.getAllGroupMessagesSinceFirstUnreadMessage(id);
+			try {
 
-			firstMessages.addAll(dbMessages);
+				List<Message> dbMessages = dbManager.getAllGroupMessagesSinceFirstUnreadMessage(id);
 
-			if (dbMessages.isEmpty()) {
+				firstMessages.addAll(dbMessages);
 
-				firstMessages.addAll(dbManager.getLastGroupMessages(id, MIN_MESSAGES_PER_PAGE));
+				if (dbMessages.isEmpty()) {
 
-			} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+					firstMessages.addAll(dbManager.getLastGroupMessages(id, MIN_MESSAGES_PER_PAGE));
 
-				firstMessages.addAll(dbManager.getLastGroupMessagesBeforeId(id, dbMessages.get(0).getId(),
-						MIN_MESSAGES_PER_PAGE - dbMessages.size()));
+				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+
+					firstMessages.addAll(dbManager.getLastGroupMessagesBeforeId(id, dbMessages.get(0).getId(),
+							MIN_MESSAGES_PER_PAGE - dbMessages.size()));
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -286,11 +302,35 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		firstMessages.forEach(message -> addMessageToPane(message));
 
+		// ARCHIVED MESSAGES
+
+		try {
+
+			List<Message> lastArchivedMessages = dbManager.getLastArchivedMessages(MIN_MESSAGES_PER_PAGE);
+
+			if (!lastArchivedMessages.isEmpty())
+				model.setMinArchivedMessageId(lastArchivedMessages.get(lastArchivedMessages.size() - 1).getId());
+
+			lastArchivedMessages
+					.forEach(message -> Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message)));
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
 	}
 
 	private void addMessageToPane(final Message message) {
 
 		Platform.runLater(() -> dmsPanel.addMessage(message));
+
+	}
+
+	private void updateMessageInPane(final Message message) {
+
+		Platform.runLater(() -> dmsPanel.updateMessage(message));
 
 	}
 
@@ -845,7 +885,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
 			if (newMessage.getUpdateType() == null)
-				Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
+				updateMessageInPane(newMessage);
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH))
 				sendPrivateMessage(newMessage);
@@ -902,7 +942,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			final Message newMessage = dbManager.addUpdateMessage(message);
 
 			if (newMessage.getUpdateType() == null)
-				Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
+				updateMessageInPane(newMessage);
 
 			if (Objects.equals(messageStatus, MessageStatus.FRESH)) {
 				// If the message is not received remotely and;
@@ -1766,7 +1806,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					final Message newMessage = dbManager.addUpdateMessage(dbMessage);
 
 					if (newMessage.getUpdateType() == null)
-						Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
+						updateMessageInPane(newMessage);
 
 					if (Objects.equals(newMessage.getId(), model.getDetailedGroupMessageId())) {
 						newMessage.getStatusReports().forEach(statusReport -> Platform
@@ -1964,7 +2004,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			for (Message message : newMessages) {
 
-				Platform.runLater(() -> dmsPanel.updateMessage(message));
+				updateMessageInPane(message);
 
 				messageIdStatusMap.put(message.getMessageRefId(), message.getMessageStatus());
 
@@ -2007,7 +2047,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			for (Message message : newMessages) {
 
-				Platform.runLater(() -> dmsPanel.updateMessage(message));
+				updateMessageInPane(message);
 
 				String contactUuid = null;
 				if (Objects.equals(message.getReceiverType(), ReceiverType.GROUP_OWNER))
@@ -2158,9 +2198,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void paneScrolledToTop(final Long id, final Long topMessageId) {
 
-		if (topMessageId == Long.MAX_VALUE)
-			return;
-
 		taskQueue.execute(() -> {
 
 			try {
@@ -2187,14 +2224,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void contactPaneScrolledToTop(final Long id, final Long topMessageId) throws HibernateException {
 
-		if (topMessageId < 0)
-			return;
-
 		List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(id, topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
-		if (lastMessagesBeforeId.isEmpty())
+		if (lastMessagesBeforeId.isEmpty()) {
+			dmsPanel.allMessagesLoaded();
 			return;
+		}
 
 		Platform.runLater(() -> dmsPanel.savePosition(id, topMessageId));
 
@@ -2206,14 +2242,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void groupPaneScrolledToTop(final Long id, final Long topMessageId) throws HibernateException {
 
-		if (topMessageId < 0)
-			return;
-
 		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(id, topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
-		if (lastMessagesBeforeId.isEmpty())
+		if (lastMessagesBeforeId.isEmpty()) {
+			dmsPanel.allMessagesLoaded();
 			return;
+		}
 
 		Platform.runLater(() -> dmsPanel.savePosition(-id, topMessageId));
 
@@ -2641,7 +2676,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
 						.collect(Collectors.toList()));
 
-				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessage(newMessage)));
+				newMessages.forEach(message -> updateMessageInPane(message));
 
 			} catch (Exception e) {
 
@@ -2664,7 +2699,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				List<Message> newMessages = archiveMessages(messages);
 
-				newMessages.forEach(newMessage -> Platform.runLater(() -> dmsPanel.updateMessage(newMessage)));
+				newMessages.forEach(message -> {
+					updateMessageInPane(message);
+					if (message.getId() < model.getMinArchivedMessageId())
+						return;
+					Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message));
+				});
 
 			} catch (Exception e) {
 
@@ -2841,6 +2881,38 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return null;
 
 			}));
+
+		});
+
+	}
+
+	@Override
+	public void moreArchivedMessagesRequested(Long minMessageId) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				List<Message> lastArchivedMessagesBeforeId = dbManager.getLastArchivedMessagesBeforeId(minMessageId,
+						MIN_MESSAGES_PER_PAGE);
+
+				if (lastArchivedMessagesBeforeId.isEmpty()) {
+					model.setMinArchivedMessageId(-1L);
+					dmsPanel.allArchivedMessagesLoaded();
+					return;
+				}
+
+				model.setMinArchivedMessageId(
+						lastArchivedMessagesBeforeId.get(lastArchivedMessagesBeforeId.size() - 1).getId());
+
+				lastArchivedMessagesBeforeId
+						.forEach(message -> Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message)));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 

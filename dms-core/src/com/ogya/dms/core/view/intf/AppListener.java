@@ -52,4 +52,6 @@ public interface AppListener {
 
 	void recordButtonReleased();
 
+	void moreArchivedMessagesRequested(Long minMessageId);
+
 }
