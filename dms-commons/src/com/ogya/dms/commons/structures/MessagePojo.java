@@ -17,12 +17,10 @@ public class MessagePojo {
 	@JsonProperty("d")
 	public ContentType contentType;
 	@JsonProperty("e")
-	public Long messageId;
-	@JsonProperty("f")
 	public Long useTrackingId;
-	@JsonProperty("g")
+	@JsonProperty("f")
 	public Long useTimeout;
-	@JsonProperty("h")
+	@JsonProperty("g")
 	public InetAddress useLocalAddress;
 
 	@JsonIgnore
@@ -32,14 +30,13 @@ public class MessagePojo {
 		super();
 	}
 
-	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType, Long messageId,
+	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType,
 			Long useTrackingId, Long useTimeout, InetAddress useLocalAddress) {
 
 		this.payload = payload;
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
 		this.contentType = contentType;
-		this.messageId = messageId;
 		this.useTrackingId = useTrackingId;
 		this.useTimeout = useTimeout;
 		this.useLocalAddress = useLocalAddress;

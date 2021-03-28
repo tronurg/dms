@@ -2,6 +2,7 @@ package com.ogya.dms.core.dmsclient.intf;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Map;
 
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.core.database.tables.Message;
@@ -26,15 +27,15 @@ public interface DmsClientListener {
 
 	void serverConnStatusUpdated(boolean connStatus);
 
-	void messageStatusClaimed(Long messageId, String remoteUuid);
+	void messageStatusClaimed(Long[] messageIds, String remoteUuid);
 
-	void messageStatusFed(Long messageId, MessageStatus messageStatus, String remoteUuid);
+	void messageStatusFed(Map<Long, MessageStatus> messageIdStatusMap, String remoteUuid);
 
-	void groupMessageStatusFed(Long messageId, GroupMessageStatus groupMessageStatus, String remoteUuid);
+	void groupMessageStatusFed(Map<Long, GroupMessageStatus> messageIdGroupStatusMap, String remoteUuid);
 
-	void statusReportClaimed(Long messageId, String remoteUuid);
+	void statusReportClaimed(Long[] messageIds, String remoteUuid);
 
-	void statusReportFed(Long messageId, StatusReport[] statusReports);
+	void statusReportFed(Map<Long, StatusReport[]> messageIdStatusReportsMap);
 
 	void transientMessageReceived(MessageHandleImpl message, Path attachment, String remoteUuid);
 

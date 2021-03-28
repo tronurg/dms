@@ -826,7 +826,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			GroupMessageStatus groupMessageStatus = new GroupMessageStatus(messageStatus, contactIds);
 
-			dmsClient.feedGroupMessageStatus(groupMessageStatus, contactUuid, message.getMessageRefId());
+			dmsClient.feedGroupMessageStatus(Collections.singletonMap(message.getMessageRefId(), groupMessageStatus),
+					contactUuid);
 
 		}
 
@@ -1090,6 +1091,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					// its groups' availability.
 					taskQueue.execute(() -> {
 
+						List<Long> messageIds = new ArrayList<Long>();
+
 						// START WITH PRIVATE MESSAGES
 						try {
 
@@ -1106,7 +1109,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 								case SENT:
 								case RECEIVED:
 
-									dmsClient.claimMessageStatus(waitingMessage.getId(), userUuid);
+									messageIds.add(waitingMessage.getId());
 
 									break;
 
@@ -1144,7 +1147,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 											case SENT:
 											case RECEIVED:
 
-												dmsClient.claimMessageStatus(waitingMessage.getId(), userUuid);
+												messageIds.add(waitingMessage.getId());
 
 												break;
 
@@ -1164,14 +1167,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 						}
 
+						if (!messageIds.isEmpty())
+							dmsClient.claimMessageStatus(messageIds.toArray(new Long[0]), userUuid);
+
 						// CLAIM WAITING STATUS REPORTS
 						try {
 
+							messageIds.clear();
+
 							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToItsGroup(contactId)) {
 
-								dmsClient.claimStatusReport(waitingMessage.getId(), userUuid);
+								messageIds.add(waitingMessage.getId());
 
 							}
+
+							if (!messageIds.isEmpty())
+								dmsClient.claimStatusReport(messageIds.toArray(new Long[0]), userUuid);
 
 						} catch (HibernateException e) {
 
@@ -1475,7 +1486,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				dmsClient.feedMessageStatus(newMessage.getMessageStatus(), remoteUuid, newMessage.getMessageRefId());
+				dmsClient.feedMessageStatus(
+						Collections.singletonMap(newMessage.getMessageRefId(), newMessage.getMessageStatus()),
+						remoteUuid);
 
 				if (messageToBeRedirected)
 					sendGroupMessage(newMessage);
@@ -1542,37 +1555,46 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messageStatusClaimed(final Long messageId, final String remoteUuid) {
+	public void messageStatusClaimed(final Long[] messageIds, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			try {
+			Map<Long, MessageStatus> messageIdStatusMap = new HashMap<Long, MessageStatus>();
 
-				Message incomingMessage = dbManager.getMessageBySender(remoteUuid, messageId);
+			for (Long messageId : messageIds) {
 
-				if (incomingMessage == null) {
+				try {
 
-					// Not received
-					dmsClient.feedMessageStatus(MessageStatus.FRESH, remoteUuid, messageId);
+					Message incomingMessage = dbManager.getMessageBySender(remoteUuid, messageId);
 
-				} else {
+					if (incomingMessage == null) {
 
-					dmsClient.feedMessageStatus(incomingMessage.getMessageStatus(), remoteUuid, messageId);
+						// Not received
+						messageIdStatusMap.put(messageId, MessageStatus.FRESH);
+
+					} else {
+
+						messageIdStatusMap.put(messageId, incomingMessage.getMessageStatus());
+
+					}
+
+				} catch (HibernateException e) {
+
+					e.printStackTrace();
 
 				}
 
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
 			}
+
+			if (!messageIdStatusMap.isEmpty())
+				dmsClient.feedMessageStatus(messageIdStatusMap, remoteUuid);
 
 		});
 
 	}
 
 	@Override
-	public void messageStatusFed(final Long messageId, final MessageStatus messageStatus, String remoteUuid) {
+	public void messageStatusFed(final Map<Long, MessageStatus> messageIdStatusMap, String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1581,167 +1603,184 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (contact == null)
 				return;
 
-			try {
+			messageIdStatusMap.forEach((messageId, messageStatus) -> {
 
-				Message dbMessage = dbManager.getMessageById(messageId);
+				try {
 
-				if (dbMessage == null)
-					return;
+					Message dbMessage = dbManager.getMessageById(messageId);
 
-				updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void groupMessageStatusFed(final Long messageId, final GroupMessageStatus groupMessageStatus,
-			String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			try {
-
-				Message dbMessage = dbManager.getMessageById(messageId);
-
-				if (dbMessage == null)
-					return;
-
-				List<Long> ids = new ArrayList<Long>();
-
-				groupMessageStatus.refIds.forEach(refId -> {
-
-					Member member = dbManager.getMember(remoteUuid, refId);
-
-					if (member != null)
-						ids.add(member.getContact().getId());
-
-				});
-
-				updateMessageStatus(dbMessage, ids, groupMessageStatus.messageStatus);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void statusReportClaimed(final Long messageId, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			try {
-
-				Message dbMessage = dbManager.getMessageBySender(remoteUuid, messageId);
-
-				if (dbMessage == null)
-					return;
-
-				dmsClient.feedStatusReport(dbMessage.getStatusReports(), remoteUuid, messageId);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
-
-		});
-
-	}
-
-	@Override
-	public void statusReportFed(final Long messageId, final StatusReport[] statusReports) {
-
-		taskQueue.execute(() -> {
-
-			try {
-
-				// A status report can only be claimed by a group message owner. So at this
-				// point, I must be a group message owner. Let's find that message.
-
-				Message dbMessage = dbManager.getMessageById(messageId);
-
-				if (dbMessage == null)
-					return;
-
-				Dgroup group = dbMessage.getDgroup();
-
-				if (group == null)
-					return;
-
-				Map<Long, StatusReport> statusReportMap = new HashMap<Long, StatusReport>();
-
-				dbMessage.getStatusReports()
-						.forEach(statusReport -> statusReportMap.put(statusReport.getContactId(), statusReport));
-
-				// Clean status reports to refill it (so to discard the unnecessary ones)
-				statusReportMap.forEach((contactId, statusReport) -> {
-
-					if (Objects.equals(dbMessage.getContact().getId(), contactId))
+					if (dbMessage == null)
 						return;
 
-					dbMessage.removeStatusReport(statusReport);
+					updateMessageStatus(dbMessage, Arrays.asList(contact.getId()), messageStatus);
 
-				});
+				} catch (Exception e) {
 
-				for (StatusReport statusReport : statusReports) {
+					e.printStackTrace();
 
-					Member member = dbManager.getMember(group.getOwner().getUuid(), statusReport.getContactId());
+				}
 
-					if (member == null)
-						continue;
+			});
 
-					Long contactId = member.getContact().getId();
+		});
 
-					StatusReport oldStatusReport = statusReportMap.get(contactId);
+	}
 
-					if (oldStatusReport != null) {
+	@Override
+	public void groupMessageStatusFed(final Map<Long, GroupMessageStatus> messageIdGroupStatusMap, String remoteUuid) {
 
-						oldStatusReport.setMessageStatus(statusReport.getMessageStatus());
+		taskQueue.execute(() -> {
 
-						dbMessage.addStatusReport(oldStatusReport);
+			messageIdGroupStatusMap.forEach((messageId, groupMessageStatus) -> {
 
-					} else {
+				try {
 
-						dbMessage.addStatusReport(new StatusReport(contactId, statusReport.getMessageStatus()));
+					Message dbMessage = dbManager.getMessageById(messageId);
+
+					if (dbMessage == null)
+						return;
+
+					List<Long> ids = new ArrayList<Long>();
+
+					groupMessageStatus.refIds.forEach(refId -> {
+
+						Member member = dbManager.getMember(remoteUuid, refId);
+
+						if (member != null)
+							ids.add(member.getContact().getId());
+
+					});
+
+					updateMessageStatus(dbMessage, ids, groupMessageStatus.messageStatus);
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			});
+
+		});
+
+	}
+
+	@Override
+	public void statusReportClaimed(final Long[] messageIds, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			Map<Long, Set<StatusReport>> messageIdStatusReportsMap = new HashMap<Long, Set<StatusReport>>();
+
+			for (Long messageId : messageIds) {
+
+				try {
+
+					Message dbMessage = dbManager.getMessageBySender(remoteUuid, messageId);
+
+					if (dbMessage != null)
+						messageIdStatusReportsMap.put(messageId, dbMessage.getStatusReports());
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			}
+
+			if (!messageIdStatusReportsMap.isEmpty())
+				dmsClient.feedStatusReport(messageIdStatusReportsMap, remoteUuid);
+
+		});
+
+	}
+
+	@Override
+	public void statusReportFed(final Map<Long, StatusReport[]> messageIdStatusReportsMap) {
+
+		taskQueue.execute(() -> {
+
+			messageIdStatusReportsMap.forEach((messageId, statusReports) -> {
+
+				try {
+
+					// A status report can only be claimed by a group message owner. So at this
+					// point, I must be a group message owner. Let's find that message.
+
+					Message dbMessage = dbManager.getMessageById(messageId);
+
+					if (dbMessage == null)
+						return;
+
+					Dgroup group = dbMessage.getDgroup();
+
+					if (group == null)
+						return;
+
+					Map<Long, StatusReport> statusReportMap = new HashMap<Long, StatusReport>();
+
+					dbMessage.getStatusReports()
+							.forEach(statusReport -> statusReportMap.put(statusReport.getContactId(), statusReport));
+
+					// Clean status reports to refill it (so to discard the unnecessary ones)
+					statusReportMap.forEach((contactId, statusReport) -> {
+
+						if (Objects.equals(dbMessage.getContact().getId(), contactId))
+							return;
+
+						dbMessage.removeStatusReport(statusReport);
+
+					});
+
+					for (StatusReport statusReport : statusReports) {
+
+						Member member = dbManager.getMember(group.getOwner().getUuid(), statusReport.getContactId());
+
+						if (member == null)
+							continue;
+
+						Long contactId = member.getContact().getId();
+
+						StatusReport oldStatusReport = statusReportMap.get(contactId);
+
+						if (oldStatusReport != null) {
+
+							oldStatusReport.setMessageStatus(statusReport.getMessageStatus());
+
+							dbMessage.addStatusReport(oldStatusReport);
+
+						} else {
+
+							dbMessage.addStatusReport(new StatusReport(contactId, statusReport.getMessageStatus()));
+
+						}
 
 					}
 
+					// I just update my db and view. I don't do anything else like re-sending the
+					// message etc.
+
+					dbMessage.setMessageStatus(dbMessage.getOverallStatus());
+
+					final Message newMessage = dbManager.addUpdateMessage(dbMessage);
+
+					if (newMessage.getUpdateType() == null)
+						Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
+
+					if (Objects.equals(newMessage.getId(), model.getDetailedGroupMessageId())) {
+						newMessage.getStatusReports().forEach(statusReport -> Platform
+								.runLater(() -> dmsPanel.updateDetailedMessageStatus(statusReport.getContactId(),
+										statusReport.getMessageStatus())));
+					}
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
 				}
 
-				// I just update my db and view. I don't do anything else like re-sending the
-				// message etc.
-
-				dbMessage.setMessageStatus(dbMessage.getOverallStatus());
-
-				final Message newMessage = dbManager.addUpdateMessage(dbMessage);
-
-				if (newMessage.getUpdateType() == null)
-					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
-
-				if (Objects.equals(newMessage.getId(), model.getDetailedGroupMessageId())) {
-					newMessage.getStatusReports()
-							.forEach(statusReport -> Platform
-									.runLater(() -> dmsPanel.updateDetailedMessageStatus(statusReport.getContactId(),
-											statusReport.getMessageStatus())));
-				}
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			});
 
 		});
 
@@ -1901,12 +1940,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void contactMessagePaneOpened(final Long id) {
 
+		Contact contact = model.getContact(id);
+
+		if (contact == null)
+			return;
+
 		try {
 
 			List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(id);
 
 			if (messagesWaitingFromContact.isEmpty())
 				return;
+
+			Map<Long, MessageStatus> messageIdStatusMap = new HashMap<Long, MessageStatus>();
 
 			for (Message incomingMessage : messagesWaitingFromContact) {
 
@@ -1918,8 +1964,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
-					dmsClient.feedMessageStatus(MessageStatus.READ, newMessage.getContact().getUuid(),
-							newMessage.getMessageRefId());
+					messageIdStatusMap.put(newMessage.getMessageRefId(), MessageStatus.READ);
 
 				} catch (HibernateException e) {
 
@@ -1931,6 +1976,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id, messagesWaitingFromContact.get(0).getId()));
 
+			if (!messageIdStatusMap.isEmpty())
+				dmsClient.feedMessageStatus(messageIdStatusMap, contact.getUuid());
+
 		} catch (HibernateException e) {
 
 			e.printStackTrace();
@@ -1941,12 +1989,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void groupMessagePaneOpened(Long id) {
 
+		Dgroup group = model.getGroup(id);
+
+		if (group == null)
+			return;
+
 		try {
 
 			List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(id);
 
 			if (messagesWaitingFromGroup.isEmpty())
 				return;
+
+			Map<String, Map<Long, MessageStatus>> contactUuidMessageIdStatusMap = new HashMap<String, Map<Long, MessageStatus>>();
 
 			for (Message incomingMessage : messagesWaitingFromGroup) {
 
@@ -1958,22 +2013,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					Platform.runLater(() -> dmsPanel.updateMessage(newMessage));
 
-					Dgroup group = model.getGroup(id);
+					String contactUuid = null;
+					if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_OWNER))
+						contactUuid = newMessage.getContact().getUuid();
+					else if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_MEMBER))
+						contactUuid = group.getOwner().getUuid();
 
-					if (group == null)
-						return;
+					if (contactUuid == null)
+						continue;
 
-					if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_OWNER)) {
-
-						dmsClient.feedMessageStatus(newMessage.getMessageStatus(), newMessage.getContact().getUuid(),
-								newMessage.getMessageRefId());
-
-					} else if (Objects.equals(newMessage.getReceiverType(), ReceiverType.GROUP_MEMBER)) {
-
-						dmsClient.feedMessageStatus(newMessage.getMessageStatus(), group.getOwner().getUuid(),
-								newMessage.getMessageRefId());
-
-					}
+					contactUuidMessageIdStatusMap.putIfAbsent(contactUuid, new HashMap<Long, MessageStatus>());
+					contactUuidMessageIdStatusMap.get(contactUuid).put(newMessage.getMessageRefId(),
+							newMessage.getMessageStatus());
 
 				} catch (HibernateException e) {
 
@@ -1984,6 +2035,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id, messagesWaitingFromGroup.get(0).getId()));
+
+			contactUuidMessageIdStatusMap.forEach(
+					(contactUuid, messageIdStatusMap) -> dmsClient.feedMessageStatus(messageIdStatusMap, contactUuid));
 
 		} catch (HibernateException e) {
 

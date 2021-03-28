@@ -2,6 +2,7 @@ package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -79,35 +80,35 @@ public class DmsClient {
 
 	public void sendBeacon(Beacon beacon) {
 
-		dealerQueue.offer(
-				new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null, null));
+		dealerQueue
+				.offer(new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null));
 
 	}
 
 	public void claimStartInfo() {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null, null));
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null));
 
 	}
 
 	public void addRemoteIps(InetAddress... ips) {
 
-		dealerQueue.offer(
-				new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null, null));
+		dealerQueue
+				.offer(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null));
 
 	}
 
 	public void removeRemoteIps(InetAddress... ips) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null,
-				null, null));
+		dealerQueue.offer(
+				new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null, null));
 
 	}
 
 	public void sendMessage(Message message, Path attachment, String receiverUuid, Long trackingId) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
-				ContentType.MESSAGE, null, trackingId, null, null);
+				ContentType.MESSAGE, trackingId, null, null);
 
 		messagePojo.attachment = attachment;
 
@@ -117,42 +118,42 @@ public class DmsClient {
 
 	public void cancelMessage(Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL, null, trackingId, null, null));
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL, trackingId, null, null));
 
 	}
 
-	public void claimMessageStatus(Long messageId, String receiverUuid) {
+	public void claimMessageStatus(Long[] messageIds, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_MESSAGE_STATUS, messageId, null,
-				null, null));
-
-	}
-
-	public void feedMessageStatus(MessageStatus messageStatus, String receiverUuid, Long messageId) {
-
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageStatus), uuid, receiverUuid,
-				ContentType.FEED_MESSAGE_STATUS, messageId, null, null, null));
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
+				ContentType.CLAIM_MESSAGE_STATUS, null, null, null));
 
 	}
 
-	public void feedGroupMessageStatus(GroupMessageStatus groupMessageStatus, String receiverUuid, Long messageId) {
+	public void feedMessageStatus(Map<Long, MessageStatus> messageIdStatusMap, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(groupMessageStatus), uuid, receiverUuid,
-				ContentType.FEED_GROUP_MESSAGE_STATUS, messageId, null, null, null));
-
-	}
-
-	public void claimStatusReport(Long messageId, String receiverUuid) {
-
-		dealerQueue.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.CLAIM_STATUS_REPORT, messageId, null,
-				null, null));
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIdStatusMap), uuid, receiverUuid,
+				ContentType.FEED_MESSAGE_STATUS, null, null, null));
 
 	}
 
-	public void feedStatusReport(Set<StatusReport> statusReports, String receiverUuid, Long messageId) {
+	public void feedGroupMessageStatus(Map<Long, GroupMessageStatus> messageIdGroupStatusMap, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(statusReports), null, receiverUuid,
-				ContentType.FEED_STATUS_REPORT, messageId, null, null, null));
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIdGroupStatusMap), uuid, receiverUuid,
+				ContentType.FEED_GROUP_MESSAGE_STATUS, null, null, null));
+
+	}
+
+	public void claimStatusReport(Long[] messageIds, String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
+				ContentType.CLAIM_STATUS_REPORT, null, null, null));
+
+	}
+
+	public void feedStatusReport(Map<Long, Set<StatusReport>> messageIdStatusReportsMap, String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIdStatusReportsMap), null, receiverUuid,
+				ContentType.FEED_STATUS_REPORT, null, null, null));
 
 	}
 
@@ -160,8 +161,7 @@ public class DmsClient {
 			Long useTimeout, InetAddress useLocalInterface) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
-				String.join(";", receiverUuids), ContentType.TRANSIENT, null, useTrackingId, useTimeout,
-				useLocalInterface);
+				String.join(";", receiverUuids), ContentType.TRANSIENT, useTrackingId, useTimeout, useLocalInterface);
 
 		if (message.getFileHandle() != null)
 			messagePojo.attachment = message.getFileHandle().getPath();
@@ -330,34 +330,34 @@ public class DmsClient {
 
 			case CLAIM_MESSAGE_STATUS:
 
-				messageStatusClaimedToListener(messagePojo.messageId, messagePojo.senderUuid);
+				messageStatusClaimedToListener(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
 
 				break;
 
 			case FEED_MESSAGE_STATUS:
 
-				messageStatusFedToListener(messagePojo.messageId,
-						DmsPackingFactory.unpack(payload, MessageStatus.class), messagePojo.senderUuid);
+				messageStatusFedToListener(DmsPackingFactory.unpackMap(payload, Long.class, MessageStatus.class),
+						messagePojo.senderUuid);
 
 				break;
 
 			case FEED_GROUP_MESSAGE_STATUS:
 
-				groupMessageStatusFedToListener(messagePojo.messageId,
-						DmsPackingFactory.unpack(payload, GroupMessageStatus.class), messagePojo.senderUuid);
+				groupMessageStatusFedToListener(
+						DmsPackingFactory.unpackMap(payload, Long.class, GroupMessageStatus.class),
+						messagePojo.senderUuid);
 
 				break;
 
 			case CLAIM_STATUS_REPORT:
 
-				statusReportClaimedToListener(messagePojo.messageId, messagePojo.senderUuid);
+				statusReportClaimedToListener(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
 
 				break;
 
 			case FEED_STATUS_REPORT:
 
-				statusReportFedToListener(messagePojo.messageId,
-						DmsPackingFactory.unpack(payload, StatusReport[].class));
+				statusReportFedToListener(DmsPackingFactory.unpackMap(payload, Long.class, StatusReport[].class));
 
 				break;
 
@@ -450,53 +450,52 @@ public class DmsClient {
 
 	}
 
-	private void messageStatusClaimedToListener(final Long messageId, final String remoteUuid) {
+	private void messageStatusClaimedToListener(final Long[] messageIds, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusClaimed(messageId, remoteUuid);
+			listener.messageStatusClaimed(messageIds, remoteUuid);
 
 		});
 
 	}
 
-	private void messageStatusFedToListener(final Long messageId, final MessageStatus messageStatus,
+	private void messageStatusFedToListener(final Map<Long, MessageStatus> messageIdStatusMap, String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.messageStatusFed(messageIdStatusMap, remoteUuid);
+
+		});
+
+	}
+
+	private void groupMessageStatusFedToListener(final Map<Long, GroupMessageStatus> messageIdGroupStatusMap,
 			String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.messageStatusFed(messageId, messageStatus, remoteUuid);
+			listener.groupMessageStatusFed(messageIdGroupStatusMap, remoteUuid);
 
 		});
 
 	}
 
-	private void groupMessageStatusFedToListener(final Long messageId, final GroupMessageStatus groupMessageStatus,
-			String remoteUuid) {
+	private void statusReportClaimedToListener(final Long[] messageIds, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.groupMessageStatusFed(messageId, groupMessageStatus, remoteUuid);
+			listener.statusReportClaimed(messageIds, remoteUuid);
 
 		});
 
 	}
 
-	private void statusReportClaimedToListener(final Long messageId, final String remoteUuid) {
+	private void statusReportFedToListener(final Map<Long, StatusReport[]> messageIdStatusReportsMap) {
 
 		taskQueue.execute(() -> {
 
-			listener.statusReportClaimed(messageId, remoteUuid);
-
-		});
-
-	}
-
-	private void statusReportFedToListener(final Long messageId, final StatusReport[] statusReports) {
-
-		taskQueue.execute(() -> {
-
-			listener.statusReportFed(messageId, statusReports);
+			listener.statusReportFed(messageIdStatusReportsMap);
 
 		});
 

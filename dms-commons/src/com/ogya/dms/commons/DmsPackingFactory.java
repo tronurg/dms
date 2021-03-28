@@ -2,6 +2,7 @@ package com.ogya.dms.commons;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.Map;
 
 import org.msgpack.jackson.dataformat.MessagePackFactory;
 
@@ -65,6 +66,13 @@ public class DmsPackingFactory {
 	public static <T> List<T> unpackList(byte[] bytes, Class<T> classOfT) throws Exception {
 
 		return objectMapper.readValue(bytes, objectMapper.getTypeFactory().constructArrayType(classOfT));
+
+	}
+
+	public static <T, U> Map<T, U> unpackMap(byte[] bytes, Class<T> classOfT, Class<U> classOfU) throws Exception {
+
+		return objectMapper.readValue(bytes,
+				objectMapper.getTypeFactory().constructMapType(Map.class, classOfT, classOfU));
 
 	}
 
