@@ -84,10 +84,10 @@ public class Message {
 	@JsonIgnore
 	private boolean done = false;
 
-	@Column(name = "view_status", nullable = false)
+	@Column(name = "view_status")
 	@Convert(converter = ViewStatusConverter.class)
 	@JsonIgnore
-	private ViewStatus viewStatus = ViewStatus.DEFAULT;
+	private ViewStatus viewStatus;
 
 	@Column(name = "date", nullable = false, updatable = false)
 	@JsonIgnore
@@ -377,6 +377,8 @@ public class Message {
 	@PrePersist
 	protected void onCreate() {
 		this.date = new Date();
+		if (this.updateType == null && this.viewStatus == null)
+			this.viewStatus = ViewStatus.DEFAULT;
 		if (this.owner == null)
 			this.owner = this.contact;
 	}
