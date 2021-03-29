@@ -1,6 +1,7 @@
 package com.ogya.dms.core.view;
 
-import com.ogya.dms.core.database.tables.Dgroup;
+import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -19,7 +20,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-class GroupPaneBase extends HBox {
+class EntityPaneBase extends HBox {
 
 	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
 
@@ -32,8 +33,9 @@ class GroupPaneBase extends HBox {
 	private final VBox middlePane = new VBox();
 	private final Label nameLabel = new Label();
 	private final Label commentLabel = new Label();
+	private final Label coordinatesLabel = new Label();
 
-	GroupPaneBase() {
+	EntityPaneBase() {
 
 		super(ViewFactory.getGap());
 
@@ -50,16 +52,15 @@ class GroupPaneBase extends HBox {
 
 	}
 
-	void updateGroup(Dgroup group) {
+	void updateEntity(EntityBase entity) {
 
-		if (group == null)
-			return;
-
-		statusCircle.setStroke(group.getStatus().getStatusColor());
-		initialLabel.setText(group.getName().substring(0, 1).toUpperCase());
-
-		nameLabel.setText(group.getName());
-		commentLabel.setText(group.getComment());
+		statusCircle.setStroke(entity.getStatus().getStatusColor());
+		initialLabel.setText(entity.getName().substring(0, 1).toUpperCase());
+		nameLabel.setText(entity.getName());
+		commentLabel.setText(entity.getComment());
+		coordinatesLabel.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
+				: CommonMethods.convertDoubleToCoordinates(entity.getLattitude(), entity.getLongitude()));
+		groupSign.setVisible(entity.isGroup());
 
 	}
 
@@ -109,6 +110,7 @@ class GroupPaneBase extends HBox {
 
 	private void initGroupSign() {
 
+		groupSign.setVisible(false);
 		groupSign.setTextFill(Color.WHITE);
 		groupSign.setContentDisplay(ContentDisplay.CENTER);
 		groupSign.setFont(Font.font(null, FontWeight.EXTRA_BOLD, unitSize * 0.5));
@@ -127,10 +129,11 @@ class GroupPaneBase extends HBox {
 
 		initNameLabel();
 		initCommentLabel();
+		initCoordinatesLabel();
 
 		setHgrow(middlePane, Priority.ALWAYS);
 
-		middlePane.getChildren().addAll(nameLabel, commentLabel, new Label());
+		middlePane.getChildren().addAll(nameLabel, commentLabel, coordinatesLabel);
 
 	}
 
@@ -159,6 +162,13 @@ class GroupPaneBase extends HBox {
 				return null;
 			return new Tooltip(comment);
 		}, commentLabel.textProperty()));
+
+	}
+
+	private void initCoordinatesLabel() {
+
+		coordinatesLabel.setOpacity(0.5);
+		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 

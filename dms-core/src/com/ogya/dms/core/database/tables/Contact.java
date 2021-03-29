@@ -19,7 +19,7 @@ import com.ogya.dms.core.structures.Availability;
 
 @Entity
 @Table(name = "contact")
-public class Contact {
+public class Contact extends EntityBase {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -168,6 +168,11 @@ public class Contact {
 	@Override
 	public int hashCode() {
 		return uuid.hashCode();
+	}
+
+	@Override
+	public boolean isGroup() {
+		return false;
 	}
 
 }

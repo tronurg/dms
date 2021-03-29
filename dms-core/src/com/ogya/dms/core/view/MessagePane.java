@@ -22,7 +22,6 @@ import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -181,8 +180,6 @@ class MessagePane extends BorderPane {
 	private final BooleanProperty deleteModeProperty = new SimpleBooleanProperty(false);
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
-	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
-
 	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * viewFactor);
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
@@ -314,10 +311,7 @@ class MessagePane extends BorderPane {
 				deleteModeProperty.set(false);
 				selectionModeProperty.set(false);
 			} else {
-				Runnable backAction = backActionRef.get();
-				if (backAction == null)
-					return;
-				backAction.run();
+				listeners.forEach(listener -> listener.hideMessagePaneClicked());
 			}
 		});
 
@@ -334,7 +328,7 @@ class MessagePane extends BorderPane {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 			if (editableProperty.get())
-				listeners.forEach(listener -> listener.editClicked());
+				listeners.forEach(listener -> listener.showAddUpdateGroupClicked());
 		});
 
 	}
@@ -578,12 +572,6 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void setOnBackAction(final Runnable runnable) {
-
-		backActionRef.set(runnable);
-
-	}
-
 	void setStatusColor(Paint fill) {
 
 		statusCircle.setFill(fill);
@@ -611,6 +599,12 @@ class MessagePane extends BorderPane {
 	Long getMessagePaneId() {
 
 		return messagePaneId;
+
+	}
+
+	Long getMaxMessageId() {
+
+		return maxMessageId.get();
 
 	}
 
@@ -795,12 +789,6 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void recordingStarted() {
-
-		recordBtn.startAnimation();
-
-	}
-
 	void recordingStopped() {
 
 		recordBtn.stopAnimation();
@@ -876,6 +864,7 @@ class MessagePane extends BorderPane {
 			} else {
 
 				HBox attachmentArea = new HBox(gap);
+				attachmentArea.setAlignment(Pos.CENTER_LEFT);
 
 				Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
 				attachmentLbl.getStyleClass().add("dim-label");
@@ -1204,6 +1193,7 @@ class MessagePane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			HBox attachmentArea = new HBox(gap);
+			attachmentArea.setAlignment(Pos.CENTER_LEFT);
 
 			Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
 			attachmentLbl.getStyleClass().add("dim-label");
@@ -1544,7 +1534,7 @@ class MessagePane extends BorderPane {
 			this.isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
 			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
 			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
-			this.isGroup = !Objects.equals(message.getReceiverType(), ReceiverType.CONTACT);
+			this.isGroup = message.getDgroup() != null;
 			this.attachmentType = message.getAttachmentType();
 			this.infoAvailable = isGroup && isOutgoing;
 			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
@@ -1564,7 +1554,9 @@ class MessagePane extends BorderPane {
 
 interface IMessagePane {
 
-	void editClicked();
+	void hideMessagePaneClicked();
+
+	void showAddUpdateGroupClicked();
 
 	void paneScrolledToTop(Long topMessageId);
 

@@ -40,8 +40,7 @@ public class AudioCenter {
 
 	public void prepareRecording() throws Exception {
 
-		if (targetLineRef.get() != null)
-			throw new Exception("Another recording in progress...");
+		targetLineRef.set(null);
 
 		DataLine.Info info = new DataLine.Info(TargetDataLine.class, audioFormat);
 
@@ -55,12 +54,12 @@ public class AudioCenter {
 
 	}
 
-	public void startRecording(final Long id, final Path path, final Long refId) {
+	public void startRecording(final Long id, final Path path, final Long refId) throws Exception {
 
 		final TargetDataLine line = targetLineRef.get();
 
 		if (line == null)
-			return;
+			throw new Exception("Audio line not initialized!");
 
 		taskQueue.execute(() -> {
 
@@ -72,9 +71,9 @@ public class AudioCenter {
 
 			} catch (Exception e) {
 
-				e.printStackTrace();
-
 				stopRecording();
+
+				e.printStackTrace();
 
 			}
 

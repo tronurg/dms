@@ -16,15 +16,15 @@ public interface AppListener {
 
 	void messagePaneClosed();
 
-	void sendMessageClicked(Long id, String messageTxt, FileBuilder fileBuilder, Long refMessageId);
+	void sendMessageClicked(String messageTxt, FileBuilder fileBuilder, Long refMessageId);
 
 	void reportClicked();
 
-	void paneScrolledToTop(Long id, Long topMessageId);
+	void paneScrolledToTop(Long topMessageId);
 
-	void messagesClaimed(Long id, Long lastMessageIdExcl, Long firstMessageIdIncl);
+	void messagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
 
-	void showAddUpdateGroupClicked(Long id);
+	void showAddUpdateGroupClicked();
 
 	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);
 
@@ -48,7 +48,7 @@ public interface AppListener {
 
 	void recordButtonPressed();
 
-	void recordEventTriggered(Long id, Long refMessageId);
+	void recordEventTriggered(Long refMessageId);
 
 	void recordButtonReleased();
 

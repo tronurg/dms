@@ -22,7 +22,7 @@ import com.ogya.dms.core.structures.Availability;
 
 @Entity
 @Table(name = "dgroup")
-public class Dgroup {
+public class Dgroup extends EntityBase {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -131,6 +131,21 @@ public class Dgroup {
 	protected void onPersist() {
 		if (this.groupRefId == null)
 			this.groupRefId = this.id;
+	}
+
+	@Override
+	public Double getLattitude() {
+		return null;
+	}
+
+	@Override
+	public Double getLongitude() {
+		return null;
+	}
+
+	@Override
+	public boolean isGroup() {
+		return true;
 	}
 
 }

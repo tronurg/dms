@@ -6,29 +6,29 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum ReceiverType {
+public enum GroupReceiverType {
 
-	CONTACT(0), GROUP_OWNER(1), GROUP_MEMBER(2);
+	GROUP_OWNER(0), GROUP_MEMBER(1);
 
-	private static final Map<Integer, ReceiverType> INDEX_MAP = Collections
-			.synchronizedMap(new HashMap<Integer, ReceiverType>());
+	private static final Map<Integer, GroupReceiverType> INDEX_MAP = Collections
+			.synchronizedMap(new HashMap<Integer, GroupReceiverType>());
 
 	@JsonValue
 	private final int index;
 
 	static {
-		for (ReceiverType value : values()) {
+		for (GroupReceiverType value : values()) {
 			INDEX_MAP.put(value.index, value);
 		}
 	}
 
-	private ReceiverType(int index) {
+	private GroupReceiverType(int index) {
 
 		this.index = index;
 
 	}
 
-	public static ReceiverType of(Integer index) {
+	public static GroupReceiverType of(Integer index) {
 		return INDEX_MAP.get(index);
 	}
 

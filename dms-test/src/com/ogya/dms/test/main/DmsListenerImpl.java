@@ -89,7 +89,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 		ListHandle listHandle = messageHandle.getListHandle();
 		if (listHandle != null) {
 			System.out.println(String.format("%s: List received from: %s\nContent: %s\n", myName,
-					dmsHandle.getContactHandle(contactId).getName(), listHandle.getList(TestPojoConverted.class)));
+					dmsHandle.getContactHandle(contactId).getName(), listHandle.getList(TestPojo.class)));
 		}
 
 		try {

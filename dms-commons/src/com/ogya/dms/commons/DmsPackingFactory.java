@@ -65,7 +65,8 @@ public class DmsPackingFactory {
 
 	public static <T> List<T> unpackList(byte[] bytes, Class<T> classOfT) throws Exception {
 
-		return objectMapper.readValue(bytes, objectMapper.getTypeFactory().constructArrayType(classOfT));
+		return objectMapper.readValue(bytes,
+				objectMapper.getTypeFactory().constructCollectionType(List.class, classOfT));
 
 	}
 

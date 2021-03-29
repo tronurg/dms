@@ -31,7 +31,6 @@ public class ListHandleImpl implements ListHandle {
 
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T> List<T> getList(Class<T> elementType) {
 

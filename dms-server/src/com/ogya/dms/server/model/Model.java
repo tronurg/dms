@@ -780,9 +780,8 @@ public class Model {
 				List<InetAddress> inetAddresses = new ArrayList<InetAddress>();
 				for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
 					for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
-						if (!(ia instanceof Inet4Address) || ia.isLoopbackAddress())
-							continue;
-						inetAddresses.add(ia);
+						if (ia instanceof Inet4Address)
+							inetAddresses.add(ia);
 					}
 				}
 

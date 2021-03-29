@@ -56,11 +56,11 @@ public class OnlineContactsPanel extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof ContactPane && arg1 instanceof ContactPane))
+			if (!(arg0 instanceof EntityPaneBase && arg1 instanceof EntityPaneBase))
 				return 0;
 
-			ContactPane contact0 = (ContactPane) arg0;
-			ContactPane contact1 = (ContactPane) arg1;
+			EntityPaneBase contact0 = (EntityPaneBase) arg0;
+			EntityPaneBase contact1 = (EntityPaneBase) arg1;
 
 			return contact0.getName().toLowerCase().compareTo(contact1.getName().toLowerCase());
 
@@ -174,7 +174,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 	private final class ContactBundle extends GridPane {
 
-		private final ContactPaneBase contactPane = new ContactPaneBase();
+		private final EntityPaneBase contactPane = new EntityPaneBase();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
@@ -227,7 +227,7 @@ public class OnlineContactsPanel extends BorderPane {
 
 		private void setContact(Contact contact) {
 
-			contactPane.updateContact(contact);
+			contactPane.updateEntity(contact);
 
 			contactProperty.set(contact);
 

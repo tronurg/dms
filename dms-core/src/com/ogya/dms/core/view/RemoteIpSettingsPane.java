@@ -31,12 +31,12 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private final double viewFactor = ViewFactory.getViewFactor();
 
 	private final HBox topPane = new HBox(gap);
-	private final VBox centerPane = new VBox(gap);
+	private final VBox centerPane = new VBox();
 
 	private final Button backBtn;
 	private final Label headingLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 
-	private final HBox addIpPane = new HBox(gap);
+	private final HBox addIpPane = new HBox(2 * gap);
 
 	private final IpField ipField = new IpField();
 	private final Button addIpButton = ViewFactory.newAddBtn();
@@ -170,7 +170,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 		initIpField();
 		initAddIpButton();
 
-		addIpPane.setPadding(new Insets(gap));
+		addIpPane.setPadding(new Insets(2 * gap));
 
 		addIpPane.getChildren().addAll(ipField, addIpButton);
 
@@ -187,7 +187,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
-		scrollableContent.setPadding(new Insets(gap));
+		scrollableContent.setPadding(new Insets(2 * gap));
 
 	}
 

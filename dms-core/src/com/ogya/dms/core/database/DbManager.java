@@ -21,9 +21,9 @@ import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.intf.exceptions.DbException;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.GroupReceiverType;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.structures.ViewStatus;
 
 public class DbManager {
@@ -412,9 +412,8 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where done=false and contact.id=:contactId and messageDirection like :out and receiverType like :contact",
-				Message.class).setParameter("contactId", contactId).setParameter("out", MessageDirection.OUT)
-				.setParameter("contact", ReceiverType.CONTACT).list();
+				"from Message where done=false and contact.id=:contactId and messageDirection like :out and dgroup is null",
+				Message.class).setParameter("contactId", contactId).setParameter("out", MessageDirection.OUT).list();
 
 		session.close();
 
@@ -427,9 +426,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where contact.id=:contactId and messageDirection like :in and receiverType like :contact and messageStatus not like :read and updateType is null",
+				"from Message where contact.id=:contactId and messageDirection like :in and dgroup is null and messageStatus not like :read and updateType is null",
 				Message.class).setParameter("contactId", contactId).setParameter("in", MessageDirection.IN)
-				.setParameter("contact", ReceiverType.CONTACT).setParameter("read", MessageStatus.READ).list();
+				.setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 
@@ -442,10 +441,10 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbFirstUnreadMessage = session.createQuery(
-				"from Message where viewStatus not like :deleted and contact.id=:contactId and messageDirection like :in and receiverType like :contact and messageStatus not like :read and updateType is null",
+				"from Message where viewStatus not like :deleted and contact.id=:contactId and messageDirection like :in and dgroup is null and messageStatus not like :read and updateType is null",
 				Message.class).setParameter("deleted", ViewStatus.DELETED).setParameter("contactId", contactId)
-				.setParameter("in", MessageDirection.IN).setParameter("contact", ReceiverType.CONTACT)
-				.setParameter("read", MessageStatus.READ).setMaxResults(1).list();
+				.setParameter("in", MessageDirection.IN).setParameter("read", MessageStatus.READ).setMaxResults(1)
+				.list();
 
 		if (dbFirstUnreadMessage.size() == 0) {
 
@@ -456,9 +455,9 @@ public class DbManager {
 		Long firstId = dbFirstUnreadMessage.get(0).getId();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where viewStatus not like :deleted and id>=:firstId and contact.id=:contactId and receiverType like :contact and updateType is null",
+				"from Message where viewStatus not like :deleted and id>=:firstId and contact.id=:contactId and dgroup is null and updateType is null",
 				Message.class).setParameter("deleted", ViewStatus.DELETED).setParameter("firstId", firstId)
-				.setParameter("contactId", contactId).setParameter("contact", ReceiverType.CONTACT).list();
+				.setParameter("contactId", contactId).list();
 
 		session.close();
 
@@ -471,9 +470,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where viewStatus not like :deleted and contact.id=:contactId and receiverType like :contact and updateType is null order by id desc",
+				"from Message where viewStatus not like :deleted and contact.id=:contactId and dgroup is null and updateType is null order by id desc",
 				Message.class).setParameter("deleted", ViewStatus.DELETED).setParameter("contactId", contactId)
-				.setParameter("contact", ReceiverType.CONTACT).setMaxResults(messageCount).list();
+				.setMaxResults(messageCount).list();
 
 		session.close();
 
@@ -487,10 +486,9 @@ public class DbManager {
 		Session session = factory.openSession();
 
 		List<Message> dbMessages = session.createQuery(
-				"from Message where viewStatus not like :deleted and id<:messageId and contact.id=:contactId and receiverType like :contact and updateType is null order by id desc",
+				"from Message where viewStatus not like :deleted and id<:messageId and contact.id=:contactId and dgroup is null and updateType is null order by id desc",
 				Message.class).setParameter("deleted", ViewStatus.DELETED).setParameter("messageId", messageId)
-				.setParameter("contactId", contactId).setParameter("contact", ReceiverType.CONTACT)
-				.setMaxResults(messageCount).list();
+				.setParameter("contactId", contactId).setMaxResults(messageCount).list();
 
 		session.close();
 
@@ -664,35 +662,25 @@ public class DbManager {
 						.setParameter("messageRefId", refMessage.getId()).setParameter("contact", message.getContact())
 						.uniqueResult();
 
-			} else {
+			} else if (message.getGroupReceiverType() == null
+					|| Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_OWNER)) {
 
-				switch (message.getReceiverType()) {
+				dbMessage = session.createQuery("from Message where id=:id", Message.class)
+						.setParameter("id", refMessage.getMessageRefId()).uniqueResult();
 
-				case CONTACT:
-				case GROUP_OWNER:
+			} else if (Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_MEMBER)) {
 
-					dbMessage = session.createQuery("from Message where id=:id", Message.class)
-							.setParameter("id", refMessage.getMessageRefId()).uniqueResult();
+				dbMessage = session
+						.createQuery("from Message where messageRefId=:messageRefId and contact=:contact",
+								Message.class)
+						.setParameter("messageRefId", refMessage.getId()).setParameter("contact", message.getContact())
+						.uniqueResult();
 
-					break;
+				if (dbMessage == null) {
 
-				case GROUP_MEMBER:
-
-					dbMessage = session
-							.createQuery("from Message where messageRefId=:messageRefId and contact=:contact",
-									Message.class)
-							.setParameter("messageRefId", refMessage.getId())
+					dbMessage = session.createQuery("from Message where id=:id and contact=:contact", Message.class)
+							.setParameter("id", refMessage.getMessageRefId())
 							.setParameter("contact", message.getContact()).uniqueResult();
-
-					if (dbMessage == null) {
-
-						dbMessage = session.createQuery("from Message where id=:id and contact=:contact", Message.class)
-								.setParameter("id", refMessage.getMessageRefId())
-								.setParameter("contact", message.getContact()).uniqueResult();
-
-					}
-
-					break;
 
 				}
 

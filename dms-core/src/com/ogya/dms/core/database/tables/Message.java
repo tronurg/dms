@@ -22,15 +22,15 @@ import javax.persistence.Transient;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.database.converters.AttachmentTypeConverter;
+import com.ogya.dms.core.database.converters.GroupReceiverTypeConverter;
 import com.ogya.dms.core.database.converters.MessageDirectionConverter;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
-import com.ogya.dms.core.database.converters.ReceiverTypeConverter;
 import com.ogya.dms.core.database.converters.UpdateTypeConverter;
 import com.ogya.dms.core.database.converters.ViewStatusConverter;
 import com.ogya.dms.core.structures.AttachmentType;
+import com.ogya.dms.core.structures.GroupReceiverType;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
 
@@ -52,10 +52,10 @@ public class Message {
 	@JsonIgnore
 	private MessageDirection messageDirection;
 
-	@Column(name = "receiver_type", nullable = false, updatable = false)
-	@Convert(converter = ReceiverTypeConverter.class)
+	@Column(name = "group_receiver_type", updatable = false)
+	@Convert(converter = GroupReceiverTypeConverter.class)
 	@JsonProperty("c")
-	private ReceiverType receiverType;
+	private GroupReceiverType groupReceiverType;
 
 	@Column(name = "update_type", updatable = false)
 	@Convert(converter = UpdateTypeConverter.class)
@@ -141,12 +141,22 @@ public class Message {
 		super();
 	}
 
-	public Message(Contact contact, Dgroup dgroup, ReceiverType receiverType, String content) {
+	public Message(MessageDirection messageDirection, GroupReceiverType groupReceiverType, UpdateType updateType,
+			AttachmentType attachmentType, String content, MessageStatus messageStatus, Contact contact, Contact owner,
+			Dgroup dgroup, Message refMessage, Integer messageCode, Integer apiFlag) {
 		super();
-		this.contact = contact;
-		this.dgroup = dgroup;
-		this.receiverType = receiverType;
+		this.messageDirection = messageDirection;
+		this.groupReceiverType = groupReceiverType;
+		this.updateType = updateType;
+		this.attachmentType = attachmentType;
 		this.content = content;
+		this.messageStatus = messageStatus;
+		this.contact = contact;
+		this.owner = owner;
+		this.dgroup = dgroup;
+		this.refMessage = refMessage;
+		this.messageCode = messageCode;
+		this.apiFlag = apiFlag;
 	}
 
 	public Message(Message message) {
@@ -154,7 +164,7 @@ public class Message {
 		this.id = message.id;
 		this.messageRefId = message.messageRefId;
 		this.messageDirection = message.messageDirection;
-		this.receiverType = message.receiverType;
+		this.groupReceiverType = message.groupReceiverType;
 		this.updateType = message.updateType;
 		this.attachmentType = message.attachmentType;
 		this.content = message.content;
@@ -199,12 +209,12 @@ public class Message {
 		this.messageDirection = messageDirection;
 	}
 
-	public ReceiverType getReceiverType() {
-		return receiverType;
+	public GroupReceiverType getGroupReceiverType() {
+		return groupReceiverType;
 	}
 
-	public void setReceiverType(ReceiverType receiverType) {
-		this.receiverType = receiverType;
+	public void setGroupReceiverType(GroupReceiverType groupReceiverType) {
+		this.groupReceiverType = groupReceiverType;
 	}
 
 	public UpdateType getUpdateType() {

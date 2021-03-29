@@ -98,6 +98,7 @@ public class RecordButton extends Button {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
+			timeline.play();
 			listeners.forEach(listener -> listener.recordButtonPressed());
 
 		});
@@ -107,15 +108,10 @@ public class RecordButton extends Button {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 
+			timeline.stop();
 			listeners.forEach(listener -> listener.recordButtonReleased());
 
 		});
-
-	}
-
-	public void startAnimation() {
-
-		timeline.play();
 
 	}
 

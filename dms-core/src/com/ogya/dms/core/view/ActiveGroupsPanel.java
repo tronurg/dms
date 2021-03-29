@@ -63,11 +63,11 @@ public class ActiveGroupsPanel extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof GroupPane && arg1 instanceof GroupPane))
+			if (!(arg0 instanceof EntityPaneBase && arg1 instanceof EntityPaneBase))
 				return 0;
 
-			GroupPane group0 = (GroupPane) arg0;
-			GroupPane group1 = (GroupPane) arg1;
+			EntityPaneBase group0 = (EntityPaneBase) arg0;
+			EntityPaneBase group1 = (EntityPaneBase) arg1;
 
 			return group0.getName().toLowerCase().compareTo(group1.getName().toLowerCase());
 
@@ -224,7 +224,7 @@ public class ActiveGroupsPanel extends BorderPane {
 	private final class GroupBundle extends BorderPane {
 
 		private final GridPane topPane = new GridPane();
-		private final GroupPaneBase groupPane = new GroupPaneBase();
+		private final EntityPaneBase groupPane = new EntityPaneBase();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 		private final VBox contactCards = new VBox();
 
@@ -307,7 +307,7 @@ public class ActiveGroupsPanel extends BorderPane {
 
 		private void setGroup(Dgroup group) {
 
-			groupPane.updateGroup(group);
+			groupPane.updateEntity(group);
 
 			setContacts(group.getOwner(), group.getMembers());
 

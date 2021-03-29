@@ -351,6 +351,7 @@ class StarredMessagesPane extends BorderPane {
 			} else {
 
 				HBox attachmentArea = new HBox(gap);
+				attachmentArea.setAlignment(Pos.CENTER_LEFT);
 
 				Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
 				attachmentLbl.getStyleClass().add("dim-label");
@@ -554,6 +555,7 @@ class StarredMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			HBox attachmentArea = new HBox(gap);
+			attachmentArea.setAlignment(Pos.CENTER_LEFT);
 
 			Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
 			attachmentLbl.getStyleClass().add("dim-label");

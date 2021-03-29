@@ -18,7 +18,6 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
-import com.ogya.dms.core.structures.ReceiverType;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
 
@@ -124,7 +123,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
 
 		identityPane.addListener(this);
-		entitiesPane.addEntityListener(this);
+		entitiesPane.addListener(this);
 		foldersPane.setOnFileSelected(this::fileSelected);
 		foldersPane.setOnBackAction(this::backFromFoldersPane);
 		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
@@ -188,7 +187,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updateContact(Contact contact) {
 
-		entitiesPane.updateContact(contact);
+		entitiesPane.updateEntity(contact);
 		entitiesPane.addUpdateGroupPaneUpdateContact(contact);
 		statusInfoPane.updateContact(contact);
 		onlineContactsPanel.updateContact(contact);
@@ -198,7 +197,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updateGroup(Dgroup group) {
 
-		entitiesPane.updateGroup(group);
+		entitiesPane.updateEntity(group);
 		activeGroupsPanel.updateGroup(group);
 
 	}
@@ -211,8 +210,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			return;
 
-		Long entityId = Objects.equals(message.getReceiverType(), ReceiverType.CONTACT) ? message.getContact().getId()
-				: -message.getDgroup().getId();
+		Long entityId = message.getDgroup() == null ? message.getContact().getId() : -message.getDgroup().getId();
 
 		unreadMessagePaneIds.add(entityId);
 
@@ -220,24 +218,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updateMessage(Message message) {
 
-		switch (message.getReceiverType()) {
-
-		case CONTACT:
-
-			entitiesPane.updatePrivateMessage(message);
-
-			break;
-
-		case GROUP_OWNER:
-		case GROUP_MEMBER:
-
-			entitiesPane.updateGroupMessage(message);
-
-			break;
-
-		default:
-
-		}
+		entitiesPane.updateMessage(message);
 
 	}
 
@@ -257,7 +238,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updatePrivateMessageProgress(Long id, Long messageId, int progress) {
 
-		entitiesPane.updatePrivateMessageProgress(id, messageId, progress);
+		entitiesPane.updateMessageProgress(id, messageId, progress);
 
 	}
 
@@ -275,65 +256,31 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void scrollPaneToMessage(Long id, Long messageId) {
 
-		if (id > 0) {
-
-			entitiesPane.scrollPrivatePaneToMessage(id, messageId);
-
-		} else {
-
-			entitiesPane.scrollGroupPaneToMessage(-id, messageId);
-
-		}
+		entitiesPane.scrollPaneToMessage(id, messageId);
 
 	}
 
 	public void savePosition(Long id, Long messageId) {
 
-		if (id > 0) {
-
-			entitiesPane.savePrivatePosition(id, messageId);
-
-		} else {
-
-			entitiesPane.saveGroupPosition(-id, messageId);
-
-		}
+		entitiesPane.savePosition(id, messageId);
 
 	}
 
 	public void scrollToSavedPosition(Long id) {
 
-		if (id > 0) {
-
-			entitiesPane.scrollToSavedPrivatePosition(id);
-
-		} else {
-
-			entitiesPane.scrollToSavedGroupPosition(-id);
-
-		}
+		entitiesPane.scrollToSavedPosition(id);
 
 	}
 
-	public void allMessagesLoaded() {
+	public void allMessagesLoaded(Long id) {
 
-		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
-			messagePaneOnScreen.allMessagesLoaded();
+		entitiesPane.allMessagesLoaded(id);
 
 	}
 
 	public void allArchivedMessagesLoaded() {
 
 		starredMessagesPane.allMessagesLoaded();
-
-	}
-
-	public void recordingStarted() {
-
-		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
-			messagePaneOnScreen.recordingStarted();
 
 	}
 
@@ -464,45 +411,46 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
-	public void hideMessagePane(MessagePane messagePane) {
+	public void hideMessagePaneClicked() {
 
-		getChildren().remove(messagePane);
-
-	}
-
-	@Override
-	public void paneScrolledToTop(final Long id, final Long topMessageId) {
-
-		listeners.forEach(listener -> listener.paneScrolledToTop(id, topMessageId));
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			getChildren().remove(messagePaneOnScreen);
 
 	}
 
 	@Override
-	public void messagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
+	public void showAddUpdateGroupClicked() {
 
-		listeners.forEach(listener -> listener.messagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl));
-
-	}
-
-	@Override
-	public void sendMessageClicked(final Long id, final String messageTxt, final FileBuilder fileBuilder,
-			final Long refMessageId) {
-
-		listeners.forEach(listener -> listener.sendMessageClicked(id, messageTxt, fileBuilder, refMessageId));
+		listeners.forEach(listener -> listener.showAddUpdateGroupClicked());
 
 	}
 
 	@Override
-	public void showFoldersClicked(final Long id) {
+	public void paneScrolledToTop(final Long topMessageId) {
+
+		listeners.forEach(listener -> listener.paneScrolledToTop(topMessageId));
+
+	}
+
+	@Override
+	public void messagesClaimed(final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
+
+		listeners.forEach(listener -> listener.messagesClaimed(lastMessageIdExcl, firstMessageIdIncl));
+
+	}
+
+	@Override
+	public void sendMessageClicked(final String messageTxt, final FileBuilder fileBuilder, final Long refMessageId) {
+
+		listeners.forEach(listener -> listener.sendMessageClicked(messageTxt, fileBuilder, refMessageId));
+
+	}
+
+	@Override
+	public void showFoldersClicked() {
 
 		getChildren().add(foldersPane);
-
-	}
-
-	@Override
-	public void showAddUpdateGroupPaneClicked(final Long id) {
-
-		listeners.forEach(listener -> listener.showAddUpdateGroupClicked(id));
 
 	}
 
@@ -572,8 +520,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
 		if (messagePaneOnScreen != null)
-			listeners.forEach(
-					listener -> listener.recordEventTriggered(messagePaneOnScreen.getMessagePaneId(), refMessageId));
+			listeners.forEach(listener -> listener.recordEventTriggered(refMessageId));
 
 	}
 

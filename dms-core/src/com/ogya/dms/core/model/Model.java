@@ -249,6 +249,12 @@ public class Model {
 
 	}
 
+	public Long getOpenMessagePaneId() {
+
+		return openMessagePaneId.get();
+
+	}
+
 	public boolean isMessagePaneOpen(Long id) {
 
 		return Objects.equals(openMessagePaneId.get(), id);
