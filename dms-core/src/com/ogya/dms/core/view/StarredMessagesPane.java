@@ -15,7 +15,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
-import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
@@ -659,7 +658,7 @@ class StarredMessagesPane extends BorderPane {
 			this.messageId = message.getId();
 			this.content = message.getContent();
 			this.attachment = message.getAttachment();
-			this.isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
+			this.isOutgoing = message.isLocal();
 			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
 			this.receiverName = message.getDgroup() == null
 					? (isOutgoing ? message.getContact().getName() : CommonMethods.translate("YOU"))

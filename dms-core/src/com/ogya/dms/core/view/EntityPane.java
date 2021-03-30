@@ -4,9 +4,9 @@ import java.util.HashSet;
 import java.util.Objects;
 
 import com.ogya.dms.core.database.tables.EntityBase;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
-import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 
 import javafx.beans.binding.Bindings;
@@ -47,7 +47,7 @@ class EntityPane extends EntityPaneBase {
 
 	private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
 
-	EntityPane(Long entityId, BooleanProperty unreadProperty) {
+	EntityPane(EntityId entityId, BooleanProperty unreadProperty) {
 
 		super();
 
@@ -73,7 +73,7 @@ class EntityPane extends EntityPaneBase {
 		messagePane.setStatusColor(entity.getStatus().getStatusColor());
 		messagePane.setName(entity.getName());
 
-		if (!entity.isGroup())
+		if (!entity.getEntityId().isGroup())
 			return;
 
 		messagePane.setActive(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
@@ -91,7 +91,7 @@ class EntityPane extends EntityPaneBase {
 
 		messagePane.addUpdateMessage(message);
 
-		if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT))
+		if (message.isLocal())
 			return;
 
 		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ))

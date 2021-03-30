@@ -3,7 +3,6 @@ package com.ogya.dms.core.database.tables;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -158,21 +157,8 @@ public class Contact extends EntityBase {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof Contact))
-			return false;
-		Contact contact = (Contact) obj;
-		return Objects.equals(this.uuid, contact.uuid);
-	}
-
-	@Override
-	public int hashCode() {
-		return uuid.hashCode();
-	}
-
-	@Override
-	public boolean isGroup() {
-		return false;
+	public EntityId getEntityId() {
+		return EntityId.of(this.id, false);
 	}
 
 }

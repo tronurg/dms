@@ -3,6 +3,7 @@ package com.ogya.dms.core.view.intf;
 import java.nio.file.Path;
 import java.util.Set;
 
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 
@@ -12,7 +13,7 @@ public interface AppListener {
 
 	void statusUpdateRequested(Availability availability);
 
-	void messagePaneOpened(Long id);
+	void messagePaneOpened(EntityId entityId);
 
 	void messagePaneClosed();
 

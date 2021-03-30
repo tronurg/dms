@@ -40,6 +40,7 @@ import com.ogya.dms.core.common.SoundPlayer;
 import com.ogya.dms.core.database.DbManager;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Member;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
@@ -74,9 +75,7 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ContactMap;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.GroupMessageStatus;
-import com.ogya.dms.core.structures.GroupReceiverType;
 import com.ogya.dms.core.structures.GroupUpdate;
-import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
@@ -202,7 +201,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		});
 
 		dbManager.fetchAllGroups().forEach(group -> {
-			if (!Objects.equals(model.getLocalUuid(), group.getOwner().getUuid())) {
+			if (!group.isLocal()) {
 				group.setStatus(Availability.OFFLINE);
 				dbManager.addUpdateGroup(group);
 			}
@@ -252,7 +251,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				}
 
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
-					Platform.runLater(() -> dmsPanel.allMessagesLoaded(id));
+					Platform.runLater(() -> dmsPanel.allMessagesLoaded(contact.getEntityId()));
 
 				firstMessages.forEach(message -> addMessageToPane(message));
 
@@ -288,7 +287,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				}
 
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
-					Platform.runLater(() -> dmsPanel.allMessagesLoaded(-id));
+					Platform.runLater(() -> dmsPanel.allMessagesLoaded(group.getEntityId()));
 
 				firstMessages.forEach(message -> addMessageToPane(message));
 
@@ -409,27 +408,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void clearMessageProgresses() {
 
-		model.getPrivateMessageProgresses().forEach((id, messageIdProgress) -> messageIdProgress.forEach((messageId,
-				progress) -> Platform.runLater(() -> dmsPanel.updatePrivateMessageProgress(id, messageId, -1))));
+		model.getPrivateMessageProgresses()
+				.forEach((entityId, messageIdProgress) -> messageIdProgress.forEach((messageId, progress) -> Platform
+						.runLater(() -> dmsPanel.updateMessageProgress(entityId, messageId, -1))));
 
 		model.clearPrivateMessageProgresses();
 
-		Long detailedGroupMessageId = model.getDetailedGroupMessageId();
+		Long messageId = model.getDetailedGroupMessageId();
 
-		if (model.getGroupMessageProgresses(detailedGroupMessageId) != null)
-			model.getGroupMessageProgresses(detailedGroupMessageId).forEach(
-					(uuid, progress) -> Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(uuid, -1)));
+		Map<Long, Integer> groupMessageProgresses = model.getGroupMessageProgresses(messageId);
+		if (groupMessageProgresses != null)
+			groupMessageProgresses.forEach((contactId, progress) -> Platform
+					.runLater(() -> dmsPanel.updateDetailedMessageProgress(contactId, -1)));
 
 		model.clearGroupMessageProgresses();
 
 	}
 
-	private Message createOutgoingMessage(String messageTxt, Path attachment, Contact contact, Dgroup group,
-			Set<StatusReport> statusReports, GroupReceiverType groupReceiverType, UpdateType updateType,
-			AttachmentType attachmentType, Message refMessage, Integer messageCode, Integer apiFlag) throws Exception {
+	private Message createOutgoingMessage(String content, Path attachment, UpdateType updateType,
+			AttachmentType attachmentType, Message refMessage, Boolean senderGroupOwner, Integer messageCode,
+			Contact contact, Dgroup group, Set<StatusReport> statusReports, Integer apiFlag) throws Exception {
 
-		Message outgoingMessage = new Message(MessageDirection.OUT, groupReceiverType, updateType, attachmentType,
-				messageTxt, MessageStatus.FRESH, contact, model.getIdentity(), group, refMessage, messageCode, apiFlag);
+		Message outgoingMessage = new Message(content, updateType, attachmentType, refMessage, messageCode,
+				MessageStatus.FRESH, contact, model.getIdentity(), group, apiFlag);
+
+		outgoingMessage.setSenderGroupOwner(senderGroupOwner);
+		outgoingMessage.setLocal(true);
 
 		if (attachment != null)
 			outgoingMessage.setAttachment(attachment.toString());
@@ -450,7 +454,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
-		if (!Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()))
+		if (!group.isLocal())
 			statusReports.add(new StatusReport(group.getOwner().getId(), MessageStatus.FRESH));
 
 		group.getMembers().forEach(contact -> {
@@ -492,31 +496,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (!isActive)
 			group.getMembers().clear();
 
-		if (isActive && contactsToBeAdded != null) {
-
+		if (isActive && contactsToBeAdded != null)
 			group.getMembers().addAll(contactsToBeAdded);
 
-		}
-
-		if (isActive && contactsToBeRemoved != null) {
-
+		if (isActive && contactsToBeRemoved != null)
 			group.getMembers().removeAll(contactsToBeRemoved);
-
-		}
 
 		if (!isActive)
 			group.setStatus(Availability.OFFLINE);
-		else if (Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()))
+		else if (group.isLocal())
 			group.setStatus(Availability.AVAILABLE);
 		else
 			group.setStatus(
-					!group.getActive() || Objects.equals(owner.getStatus(), Availability.OFFLINE) ? Availability.OFFLINE
+					!group.isActive() || Objects.equals(owner.getStatus(), Availability.OFFLINE) ? Availability.OFFLINE
 							: Availability.LIMITED);
 
 		List<String> contactNames = new ArrayList<String>();
 		group.getMembers().forEach(contact -> contactNames.add(contact.getName()));
 		Collections.sort(contactNames, model.getCaseInsensitiveStringSorter());
-		if (!Objects.equals(owner.getUuid(), model.getLocalUuid()))
+		if (!group.isLocal())
 			contactNames.add(0, owner.getName());
 		group.setComment(String.join(", ", contactNames));
 
@@ -570,7 +568,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final List<String> onlineUuids = new ArrayList<String>();
 
-		if (Objects.equals(group.getOwner().getUuid(), model.getLocalUuid())) {
+		if (group.isLocal()) {
 			// It's my group, so I have to send this message to all the members except the
 			// original sender.
 
@@ -636,26 +634,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		Message refMessage = copyMessage.getRefMessage();
 
 		if (refMessage != null) {
-
 			Message newRefMessage = new Message();
-
 			newRefMessage.setId(refMessage.getId());
 			newRefMessage.setMessageRefId(refMessage.getMessageRefId());
-
 			copyMessage.setRefMessage(newRefMessage);
-
 		}
 
-		if (copyMessage.getDgroup() != null)
+		if (copyMessage.getDgroup() != null) {
 			copyMessage.setGroupRefId(copyMessage.getDgroup().getGroupRefId());
-
-		if (Objects.equals(copyMessage.getMessageDirection(), MessageDirection.IN)
-				&& Objects.equals(copyMessage.getGroupReceiverType(), GroupReceiverType.GROUP_OWNER))
-			copyMessage.setGroupReceiverType(GroupReceiverType.GROUP_MEMBER);
-
-		if (Objects.equals(copyMessage.getMessageDirection(), MessageDirection.IN)
-				&& Objects.equals(copyMessage.getGroupReceiverType(), GroupReceiverType.GROUP_MEMBER))
-			copyMessage.setContactRefId(copyMessage.getContact().getId());
+			if (!copyMessage.isLocal() && copyMessage.getDgroup().isLocal()) {
+				copyMessage.setSenderGroupOwner(Boolean.TRUE);
+				copyMessage.setContactRefId(copyMessage.getContact().getId());
+			}
+		}
 
 		Path path = null;
 		if (copyMessage.getAttachment() != null) {
@@ -767,10 +758,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (message.getUpdateType() != null)
 			return MessageStatus.READ;
 
-		return model.isMessagePaneOpen(
-				message.getDgroup() == null ? message.getContact().getId() : -message.getDgroup().getId())
-						? MessageStatus.READ
-						: MessageStatus.RECEIVED;
+		return model.isEntityOpen(message.getEntity().getEntityId()) ? MessageStatus.READ : MessageStatus.RECEIVED;
 
 	}
 
@@ -817,8 +805,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		String contactUuid = message.getContact().getUuid();
 
 		// Send this status to the original sender too.
-		if (Objects.equals(message.getMessageDirection(), MessageDirection.IN)
-				&& Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_OWNER)
+		if (!message.isLocal() && message.getDgroup() != null && message.getDgroup().isLocal()
 				&& model.isContactOnline(contactUuid)) {
 
 			GroupMessageStatus groupMessageStatus = new GroupMessageStatus(messageStatus, contactIds);
@@ -878,7 +865,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.setDone(Objects.equals(overallMessageStatus, MessageStatus.READ));
 
 			// If I am the owner, update the message status too
-			if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT))
+			if (message.isLocal())
 				message.setMessageStatus(overallMessageStatus);
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
@@ -895,9 +882,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				for (Long contactId : contactIds) {
 
-					if (Objects.equals(group.getOwner().getUuid(), model.getLocalUuid())
-							|| (Objects.equals(message.getMessageDirection(), MessageDirection.OUT)
-									&& Objects.equals(contactId, group.getOwner().getId())))
+					if (group.isLocal() || (message.isLocal() && Objects.equals(contactId, group.getOwner().getId())))
 						sendGroupMessage(newMessage, model.getContact(contactId).getUuid());
 
 				}
@@ -933,14 +918,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (group == null)
 			return;
 
-		String ownerUuid = group.getOwner().getUuid();
-
-		if (Objects.equals(ownerUuid, model.getLocalUuid()))
+		if (group.isLocal())
 			return;
 
 		try {
-			sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), null, message.getContact(), null,
-					null, null, UpdateType.CANCEL_MESSAGE, null, null, null, null));
+			sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), null, UpdateType.CANCEL_MESSAGE,
+					null, null, null, null, message.getContact(), null, null, null));
 		} catch (Exception e) {
 
 		}
@@ -1237,14 +1220,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (message == null)
 					return;
 
-				List<Long> remoteIds = new ArrayList<Long>();
+				List<EntityId> entityIds = new ArrayList<EntityId>();
 
 				for (String remoteUuid : remoteUuids) {
 
 					Contact contact = getContact(remoteUuid);
 
 					if (contact != null)
-						remoteIds.add(contact.getId());
+						entityIds.add(contact.getEntityId());
 
 				}
 
@@ -1252,34 +1235,35 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					// Update status in database and view; send update to message owner if necessary
 
-					updateMessageStatus(message, remoteIds, MessageStatus.SENT);
+					updateMessageStatus(message,
+							entityIds.stream().map(entityId -> entityId.getId()).collect(Collectors.toList()),
+							MessageStatus.SENT);
 
 				}
 
 				// Update view only
 
-				if (message.getUpdateType() != null
-						|| Objects.equals(message.getMessageDirection(), MessageDirection.IN))
+				if (!(message.getUpdateType() == null && message.isLocal()))
 					return;
 
 				if (message.getDgroup() == null) {
 
-					for (Long id : remoteIds) {
+					for (EntityId entityId : entityIds) {
 
-						model.storePrivateMessageProgress(id, messageId, progress);
+						model.storePrivateMessageProgress(entityId, messageId, progress);
 
-						Platform.runLater(() -> dmsPanel.updatePrivateMessageProgress(id, messageId, progress));
+						Platform.runLater(() -> dmsPanel.updateMessageProgress(entityId, messageId, progress));
 
 					}
 
 				} else {
 
-					for (Long id : remoteIds) {
+					for (EntityId entityId : entityIds) {
 
-						model.storeGroupMessageProgress(messageId, id, progress);
+						model.storeGroupMessageProgress(messageId, entityId.getId(), progress);
 
 						if (Objects.equals(messageId, model.getDetailedGroupMessageId()))
-							Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(id, progress));
+							Platform.runLater(() -> dmsPanel.updateDetailedMessageProgress(entityId.getId(), progress));
 
 					}
 
@@ -1341,7 +1325,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				boolean messageToBeRedirected = false;
 
-				if (Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_OWNER)) {
+				if (Objects.equals(message.getSenderGroupOwner(), Boolean.FALSE)) {
 
 					Dgroup dgroup = model.getGroup(message.getGroupRefId());
 
@@ -1358,7 +1342,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					messageToBeRedirected = !message.getStatusReports().isEmpty();
 
-				} else if (Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_MEMBER)) {
+				} else if (Objects.equals(message.getSenderGroupOwner(), Boolean.TRUE)) {
 
 					Dgroup dgroup = model.getGroup(remoteUuid, message.getGroupRefId());
 
@@ -1384,19 +1368,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				message.setDone(!messageToBeRedirected);
 
-				message.setMessageDirection(MessageDirection.IN);
-
 				Message newMessage = dbManager.addUpdateMessage(message);
 
 				if (newMessage.getUpdateType() == null) {
 
 					addMessageToPane(newMessage);
 
-					if (newMessage.getDgroup() == null && !model.isMessagePaneOpen(newMessage.getContact().getId()))
-						soundPlayer.playDuoTone();
-					else if (newMessage.getDgroup() != null
-							&& !model.isMessagePaneOpen(-newMessage.getDgroup().getId()))
-						soundPlayer.playTriTone();
+					if (!model.isEntityOpen(newMessage.getEntity().getEntityId())) {
+						if (newMessage.getEntity().getEntityId().isGroup())
+							soundPlayer.playTriTone();
+						else
+							soundPlayer.playDuoTone();
+					}
 
 					listenerTaskQueue.execute(() -> {
 
@@ -1868,36 +1851,31 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messagePaneOpened(final Long id) {
+	public void messagePaneOpened(final EntityId entityId) {
 
 		taskQueue.execute(() -> {
 
-			model.messagePaneOpened(id);
+			model.entityOpened(entityId);
 
-			if (id > 0) {
-
-				contactMessagePaneOpened(id);
-
-			} else {
-
-				groupMessagePaneOpened(-id);
-
-			}
+			if (entityId.isGroup())
+				groupMessagePaneOpened(entityId);
+			else
+				contactMessagePaneOpened(entityId);
 
 		});
 
 	}
 
-	private void contactMessagePaneOpened(final Long id) {
+	private void contactMessagePaneOpened(final EntityId entityId) {
 
-		Contact contact = model.getContact(id);
+		Contact contact = model.getContact(entityId.getId());
 
 		if (contact == null)
 			return;
 
 		try {
 
-			List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(id);
+			List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(contact.getId());
 
 			if (messagesWaitingFromContact.isEmpty())
 				return;
@@ -1908,7 +1886,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (newMessages.isEmpty())
 				return;
 
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(id, newMessages.get(0).getId()));
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
 
 			Map<Long, MessageStatus> messageIdStatusMap = new HashMap<Long, MessageStatus>();
 
@@ -1931,16 +1909,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void groupMessagePaneOpened(Long id) {
+	private void groupMessagePaneOpened(final EntityId entityId) {
 
-		Dgroup group = model.getGroup(id);
+		Dgroup group = model.getGroup(entityId.getId());
 
 		if (group == null)
 			return;
 
 		try {
 
-			List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(id);
+			List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(group.getId());
 
 			if (messagesWaitingFromGroup.isEmpty())
 				return;
@@ -1951,7 +1929,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (newMessages.isEmpty())
 				return;
 
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(-id, newMessages.get(0).getId()));
+			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
 
 			Map<String, Map<Long, MessageStatus>> contactUuidMessageIdStatusMap = new HashMap<String, Map<Long, MessageStatus>>();
 
@@ -1959,14 +1937,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				updateMessageInPane(message);
 
-				String contactUuid = null;
-				if (Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_OWNER))
-					contactUuid = message.getContact().getUuid();
-				else if (Objects.equals(message.getGroupReceiverType(), GroupReceiverType.GROUP_MEMBER))
-					contactUuid = group.getOwner().getUuid();
-
-				if (contactUuid == null)
-					continue;
+				String contactUuid = group.isLocal() ? message.getContact().getUuid() : group.getOwner().getUuid();
 
 				contactUuidMessageIdStatusMap.putIfAbsent(contactUuid, new HashMap<Long, MessageStatus>());
 				contactUuidMessageIdStatusMap.get(contactUuid).put(message.getMessageRefId(),
@@ -1990,7 +1961,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			model.messagePaneClosed();
+			model.entityClosed();
 
 		});
 
@@ -2001,8 +1972,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			final Long id = model.getOpenMessagePaneId();
-			if (id == null)
+			EntityId entityId = model.getOpenEntityId();
+			if (entityId == null)
 				return;
 
 			final Path attachment = fileBuilder == null ? null : fileBuilder.buildAndGet();
@@ -2011,12 +1982,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				if (id > 0)
-					sendPrivateMessageClaimed(id, messageTxt, attachment, refMessageId, attachmentType, messageCode,
-							null);
+				if (entityId.isGroup())
+					sendGroupMessageClaimed(messageTxt, attachment, attachmentType, refMessageId, messageCode,
+							entityId.getId(), null);
 				else
-					sendGroupMessageClaimed(-id, messageTxt, attachment, refMessageId, attachmentType, messageCode,
-							null);
+					sendPrivateMessageClaimed(messageTxt, attachment, attachmentType, refMessageId, messageCode,
+							entityId.getId(), null);
 
 			} catch (Exception e) {
 
@@ -2028,16 +1999,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Long sendPrivateMessageClaimed(final Long contactId, final String messageTxt, final Path attachment,
-			final Long refMessageId, AttachmentType attachmentType, Integer messageCode, Integer apiFlag)
-			throws Exception {
+	private Long sendPrivateMessageClaimed(final String content, final Path attachment, AttachmentType attachmentType,
+			final Long refMessageId, Integer messageCode, final Long contactId, Integer apiFlag) throws Exception {
 
 		Contact contact = model.getContact(contactId);
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
-		Message newMessage = createOutgoingMessage(messageTxt, attachment, contact, null, null, null, null,
-				attachmentType, refMessage, messageCode, apiFlag);
+		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage, null,
+				messageCode, contact, null, null, apiFlag);
 
 		addMessageToPane(newMessage);
 
@@ -2045,25 +2015,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Long messageId = newMessage.getId();
 
-		messageSentToListeners(messageId, messageTxt, attachment, attachmentType, messageCode, contactId, null);
+		messageSentToListeners(messageId, content, attachment, attachmentType, messageCode, contactId, null);
 
 		return messageId;
 
 	}
 
-	private Long sendGroupMessageClaimed(final Long groupId, final String messageTxt, final Path attachment,
-			final Long refMessageId, AttachmentType attachmentType, Integer messageCode, Integer apiFlag)
-			throws Exception {
+	private Long sendGroupMessageClaimed(final String content, final Path attachment, AttachmentType attachmentType,
+			final Long refMessageId, Integer messageCode, final Long groupId, Integer apiFlag) throws Exception {
 
 		Dgroup group = model.getGroup(groupId);
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
-		Message newMessage = createOutgoingMessage(messageTxt, attachment, group.getOwner(), group,
-				createStatusReports(group),
-				Objects.equals(group.getOwner().getUuid(), model.getLocalUuid()) ? GroupReceiverType.GROUP_MEMBER
-						: GroupReceiverType.GROUP_OWNER,
-				null, attachmentType, refMessage, messageCode, apiFlag);
+		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage,
+				group.isLocal(), messageCode, group.getOwner(), group, createStatusReports(group), apiFlag);
 
 		addMessageToPane(newMessage);
 
@@ -2071,7 +2037,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Long messageId = newMessage.getId();
 
-		messageSentToListeners(messageId, messageTxt, attachment, attachmentType, messageCode, null, groupId);
+		messageSentToListeners(messageId, content, attachment, attachmentType, messageCode, null, groupId);
 
 		return messageId;
 
@@ -2113,21 +2079,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			final Long id = model.getOpenMessagePaneId();
-			if (id == null)
+			EntityId entityId = model.getOpenEntityId();
+			if (entityId == null)
 				return;
 
 			try {
 
-				if (id > 0) {
-
-					contactPaneScrolledToTop(id, topMessageId);
-
-				} else {
-
-					groupPaneScrolledToTop(-id, topMessageId);
-
-				}
+				if (entityId.isGroup())
+					groupPaneScrolledToTop(entityId, topMessageId);
+				else
+					contactPaneScrolledToTop(entityId, topMessageId);
 
 			} catch (HibernateException e) {
 
@@ -2139,41 +2100,41 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void contactPaneScrolledToTop(final Long id, final Long topMessageId) throws HibernateException {
+	private void contactPaneScrolledToTop(final EntityId entityId, final Long topMessageId) throws HibernateException {
 
-		List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(id, topMessageId,
+		List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(entityId.getId(), topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
 		if (lastMessagesBeforeId.size() < MIN_MESSAGES_PER_PAGE)
-			Platform.runLater(() -> dmsPanel.allMessagesLoaded(id));
+			Platform.runLater(() -> dmsPanel.allMessagesLoaded(entityId));
 
 		if (lastMessagesBeforeId.isEmpty())
 			return;
 
-		Platform.runLater(() -> dmsPanel.savePosition(id, topMessageId));
+		Platform.runLater(() -> dmsPanel.savePosition(entityId, topMessageId));
 
 		lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
-		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(id));
+		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(entityId));
 
 	}
 
-	private void groupPaneScrolledToTop(final Long id, final Long topMessageId) throws HibernateException {
+	private void groupPaneScrolledToTop(final EntityId entityId, final Long topMessageId) throws HibernateException {
 
-		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(id, topMessageId,
+		List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(entityId.getId(), topMessageId,
 				MIN_MESSAGES_PER_PAGE);
 
 		if (lastMessagesBeforeId.size() < MIN_MESSAGES_PER_PAGE)
-			Platform.runLater(() -> dmsPanel.allMessagesLoaded(-id));
+			Platform.runLater(() -> dmsPanel.allMessagesLoaded(entityId));
 
 		if (lastMessagesBeforeId.isEmpty())
 			return;
 
-		Platform.runLater(() -> dmsPanel.savePosition(-id, topMessageId));
+		Platform.runLater(() -> dmsPanel.savePosition(entityId, topMessageId));
 
 		lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
 
-		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(-id));
+		Platform.runLater(() -> dmsPanel.scrollToSavedPosition(entityId));
 
 	}
 
@@ -2182,21 +2143,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			final Long id = model.getOpenMessagePaneId();
-			if (id == null)
+			EntityId entityId = model.getOpenEntityId();
+			if (entityId == null)
 				return;
 
 			try {
 
-				if (id > 0) {
-
-					contactMessagesClaimed(id, lastMessageIdExcl, firstMessageIdIncl);
-
-				} else {
-
-					groupMessagesClaimed(-id, lastMessageIdExcl, firstMessageIdIncl);
-
-				}
+				if (entityId.isGroup())
+					groupMessagesClaimed(entityId, lastMessageIdExcl, firstMessageIdIncl);
+				else
+					contactMessagesClaimed(entityId, lastMessageIdExcl, firstMessageIdIncl);
 
 			} catch (HibernateException e) {
 
@@ -2208,8 +2164,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	public void contactMessagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl)
-			throws HibernateException {
+	public void contactMessagesClaimed(final EntityId entityId, final Long lastMessageIdExcl,
+			final Long firstMessageIdIncl) throws HibernateException {
 
 		long topMessageId = lastMessageIdExcl;
 
@@ -2217,8 +2173,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		while (firstMessageIdIncl < topMessageId) {
 
-			List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(id, topMessageId,
-					MIN_MESSAGES_PER_PAGE);
+			List<Message> lastMessagesBeforeId = dbManager.getLastPrivateMessagesBeforeId(entityId.getId(),
+					topMessageId, MIN_MESSAGES_PER_PAGE);
 
 			if (lastMessagesBeforeId.isEmpty())
 				break;
@@ -2235,14 +2191,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
 
 		Platform.runLater(() -> {
-			dmsPanel.savePosition(id, firstMessageIdIncl);
-			dmsPanel.scrollToSavedPosition(id);
+			dmsPanel.savePosition(entityId, firstMessageIdIncl);
+			dmsPanel.scrollToSavedPosition(entityId);
 		});
 
 	}
 
-	public void groupMessagesClaimed(final Long id, final Long lastMessageIdExcl, final Long firstMessageIdIncl)
-			throws HibernateException {
+	public void groupMessagesClaimed(final EntityId entityId, final Long lastMessageIdExcl,
+			final Long firstMessageIdIncl) throws HibernateException {
 
 		long topMessageId = lastMessageIdExcl;
 
@@ -2250,7 +2206,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		while (firstMessageIdIncl < topMessageId) {
 
-			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(id, topMessageId,
+			List<Message> lastMessagesBeforeId = dbManager.getLastGroupMessagesBeforeId(entityId.getId(), topMessageId,
 					MIN_MESSAGES_PER_PAGE);
 
 			if (lastMessagesBeforeId.isEmpty())
@@ -2268,8 +2224,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
 
 		Platform.runLater(() -> {
-			dmsPanel.savePosition(-id, firstMessageIdIncl);
-			dmsPanel.scrollToSavedPosition(-id);
+			dmsPanel.savePosition(entityId, firstMessageIdIncl);
+			dmsPanel.scrollToSavedPosition(entityId);
 		});
 
 	}
@@ -2279,9 +2235,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			final Long id = model.getOpenMessagePaneId();
+			EntityId entityId = model.getOpenEntityId();
 
-			Dgroup group = id == null ? null : model.getGroup(-id);
+			Dgroup group = entityId == null || !entityId.isGroup() ? null : model.getGroup(entityId.getId());
 
 			model.setGroupToBeUpdated(group);
 
@@ -2326,6 +2282,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					group = new Dgroup();
 					group.setOwner(model.getIdentity());
+					group.setLocal(true);
 
 					final Dgroup newGroup = createUpdateGroup(group, groupName, true, selectedContacts, null);
 
@@ -2340,9 +2297,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					String groupUpdate = getGroupUpdate(newGroup.getName(), true, newGroup.getMembers(), null);
 
-					sendGroupMessage(createOutgoingMessage(groupUpdate, null, newGroup.getOwner(), newGroup,
-							createStatusReports(newGroup), GroupReceiverType.GROUP_MEMBER, UpdateType.UPDATE_GROUP,
-							null, null, null, null));
+					sendGroupMessage(createOutgoingMessage(groupUpdate, null, UpdateType.UPDATE_GROUP, null, null,
+							Boolean.TRUE, null, newGroup.getOwner(), newGroup, createStatusReports(newGroup), null));
 
 				} else {
 					// Update group
@@ -2362,7 +2318,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					String newGroupName = Objects.equals(group.getName(), groupName) ? null : groupName;
 
-					Dgroup newGroup = createUpdateGroup(group, newGroupName, group.getActive(), contactsToBeAdded,
+					Dgroup newGroup = createUpdateGroup(group, newGroupName, group.isActive(), contactsToBeAdded,
 							contactsToBeRemoved);
 
 					if (newGroup == null)
@@ -2377,9 +2333,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						String groupUpdateToAddedContacts = getGroupUpdate(newGroup.getName(), true,
 								newGroup.getMembers(), null);
 
-						sendGroupMessage(createOutgoingMessage(groupUpdateToAddedContacts, null, newGroup.getOwner(),
-								newGroup, createStatusReports(contactsToBeAdded), GroupReceiverType.GROUP_MEMBER,
-								UpdateType.UPDATE_GROUP, null, null, null, null), contactsToBeAdded);
+						sendGroupMessage(createOutgoingMessage(groupUpdateToAddedContacts, null,
+								UpdateType.UPDATE_GROUP, null, null, Boolean.TRUE, null, newGroup.getOwner(), newGroup,
+								createStatusReports(contactsToBeAdded), null), contactsToBeAdded);
 
 					}
 
@@ -2387,9 +2343,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 						String groupUpdateToRemovedContacts = getGroupUpdate(null, false, null, null);
 
-						sendGroupMessage(createOutgoingMessage(groupUpdateToRemovedContacts, null, newGroup.getOwner(),
-								newGroup, createStatusReports(contactsToBeRemoved), GroupReceiverType.GROUP_MEMBER,
-								UpdateType.UPDATE_GROUP, null, null, null, null), contactsToBeRemoved);
+						sendGroupMessage(createOutgoingMessage(groupUpdateToRemovedContacts, null,
+								UpdateType.UPDATE_GROUP, null, null, Boolean.TRUE, null, newGroup.getOwner(), newGroup,
+								createStatusReports(contactsToBeRemoved), null), contactsToBeRemoved);
 
 					}
 
@@ -2398,9 +2354,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						String groupUpdateToResidentContacts = getGroupUpdate(newGroupName, true, contactsToBeAdded,
 								contactsToBeRemoved);
 
-						sendGroupMessage(createOutgoingMessage(groupUpdateToResidentContacts, null, newGroup.getOwner(),
-								newGroup, createStatusReports(residentContacts), GroupReceiverType.GROUP_MEMBER,
-								UpdateType.UPDATE_GROUP, null, null, null, null), residentContacts);
+						sendGroupMessage(createOutgoingMessage(groupUpdateToResidentContacts, null,
+								UpdateType.UPDATE_GROUP, null, null, Boolean.TRUE, null, newGroup.getOwner(), newGroup,
+								createStatusReports(residentContacts), null), residentContacts);
 
 					}
 
@@ -2433,7 +2389,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				Dgroup newGroup = createUpdateGroup(group, null, group.getActive(), null, null);
+				Dgroup newGroup = createUpdateGroup(group, null, group.isActive(), null, null);
 
 				if (newGroup == null)
 					return;
@@ -2442,11 +2398,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-				String groupUpdate = getGroupUpdate(null, newGroup.getActive(), null, null);
+				String groupUpdate = getGroupUpdate(null, newGroup.isActive(), null, null);
 
-				sendGroupMessage(createOutgoingMessage(groupUpdate, null, newGroup.getOwner(), newGroup,
-						createStatusReports(contacts), GroupReceiverType.GROUP_MEMBER, UpdateType.UPDATE_GROUP, null,
-						null, null, null), contacts);
+				sendGroupMessage(createOutgoingMessage(groupUpdate, null, UpdateType.UPDATE_GROUP, null, null,
+						Boolean.TRUE, null, newGroup.getOwner(), newGroup, createStatusReports(contacts), null),
+						contacts);
 
 			} catch (Exception e) {
 
@@ -2530,8 +2486,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Dgroup group = message.getDgroup();
 
-				if (message == null || group == null
-						|| Objects.equals(message.getMessageDirection(), MessageDirection.IN))
+				if (message == null || group == null || !message.isLocal())
 					return;
 
 				model.setDetailedGroupMessageId(messageId);
@@ -2572,9 +2527,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.getStatusReports().forEach(statusReport -> Platform.runLater(() -> dmsPanel
 						.updateDetailedMessageStatus(statusReport.getContactId(), statusReport.getMessageStatus())));
 
-				if (model.getGroupMessageProgresses(messageId) != null)
-					model.getGroupMessageProgresses(messageId).forEach((id, progress) -> Platform
-							.runLater(() -> dmsPanel.updateDetailedMessageProgress(id, progress)));
+				Map<Long, Integer> groupMessageProgresses = model.getGroupMessageProgresses(messageId);
+				if (groupMessageProgresses != null)
+					groupMessageProgresses.forEach((contactId, progress) -> Platform
+							.runLater(() -> dmsPanel.updateDetailedMessageProgress(contactId, progress)));
 
 			} catch (Exception e) {
 
@@ -2702,8 +2658,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			final Long id = model.getOpenMessagePaneId();
-			if (id == null)
+			EntityId entityId = model.getOpenEntityId();
+			if (entityId == null)
 				return;
 
 			try {
@@ -2714,7 +2670,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Path dstFile = getDstFile(dstFolder, fileName);
 
-				audioCenter.startRecording(id, dstFile, refMessageId);
+				audioCenter.startRecording(entityId, dstFile, refMessageId);
 
 			} catch (Exception e) {
 
@@ -2740,7 +2696,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void recordingStopped(final Long id, final Path path, final Long refId) {
+	public void recordingStopped(final EntityId entityId, final Path path, final Long refId) {
 
 		taskQueue.execute(() -> {
 
@@ -2753,10 +2709,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				if (id > 0)
-					sendPrivateMessageClaimed(id, null, path, refId, AttachmentType.AUDIO, null, null);
+				if (entityId.isGroup())
+					sendGroupMessageClaimed(null, path, AttachmentType.AUDIO, refId, null, entityId.getId(), null);
 				else
-					sendGroupMessageClaimed(-id, null, path, refId, AttachmentType.AUDIO, null, null);
+					sendPrivateMessageClaimed(null, path, AttachmentType.AUDIO, refId, null, entityId.getId(), null);
 
 			} catch (Exception e) {
 
@@ -3169,9 +3125,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
 
-		String ownerUuid = group.getOwner().getUuid();
-		if (!Objects.equals(ownerUuid, model.getLocalUuid()))
-			contactUuids.add(ownerUuid);
+		if (!group.isLocal())
+			contactUuids.add(group.getOwner().getUuid());
 
 		sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
@@ -3198,7 +3153,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
-			return sendPrivateMessageClaimed(contactId, message, null, null, null, null, 1);
+			return sendPrivateMessageClaimed(message, null, null, null, null, contactId, 1);
 
 		}));
 
@@ -3209,7 +3164,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
-			return sendGroupMessageClaimed(groupId, message, null, null, null, null, 1);
+			return sendGroupMessageClaimed(message, null, null, null, null, groupId, 1);
 
 		}));
 
@@ -3222,7 +3177,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendPrivateMessageClaimed(contactId, message, dstFile, null, AttachmentType.FILE, null, 1);
+			return sendPrivateMessageClaimed(message, dstFile, AttachmentType.FILE, null, null, contactId, 1);
 
 		}));
 
@@ -3235,7 +3190,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendGroupMessageClaimed(groupId, message, dstFile, null, AttachmentType.FILE, null, 1);
+			return sendGroupMessageClaimed(message, dstFile, AttachmentType.FILE, null, null, groupId, 1);
 
 		}));
 
@@ -3248,7 +3203,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendPrivateMessageClaimed(contactId, message, dstFile, null, AttachmentType.REPORT, reportId, 1);
+			return sendPrivateMessageClaimed(message, dstFile, AttachmentType.REPORT, null, reportId, contactId, 1);
 
 		}));
 
@@ -3261,7 +3216,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendGroupMessageClaimed(groupId, message, dstFile, null, AttachmentType.REPORT, reportId, 1);
+			return sendGroupMessageClaimed(message, dstFile, AttachmentType.REPORT, null, reportId, groupId, 1);
 
 		}));
 

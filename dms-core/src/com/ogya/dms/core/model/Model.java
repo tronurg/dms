@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.structures.Availability;
 
 public class Model {
@@ -35,7 +36,7 @@ public class Model {
 			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
 	private final Map<Long, Dgroup> idGroups = Collections.synchronizedMap(new HashMap<Long, Dgroup>());
 
-	private final AtomicReference<Long> openMessagePaneId = new AtomicReference<Long>();
+	private final AtomicReference<EntityId> openEntityId = new AtomicReference<EntityId>();
 
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
 
@@ -46,8 +47,8 @@ public class Model {
 	private final Map<Long, Map<Long, Integer>> groupMessageProgresses = Collections
 			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
 
-	private final Map<Long, Map<Long, Integer>> privateMessageProgresses = Collections
-			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
+	private final Map<EntityId, Map<Long, Integer>> privateMessageProgresses = Collections
+			.synchronizedMap(new HashMap<EntityId, Map<Long, Integer>>());
 
 	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
 		@Override
@@ -203,7 +204,7 @@ public class Model {
 
 		idGroups.put(group.getId(), group);
 
-		if (Objects.equals(group.getOwner().getUuid(), localUuid))
+		if (group.isLocal())
 			return;
 
 		String ownerUuid = group.getOwner().getUuid();
@@ -237,27 +238,27 @@ public class Model {
 
 	}
 
-	public void messagePaneOpened(Long id) {
+	public void entityOpened(EntityId entityId) {
 
-		openMessagePaneId.set(id);
-
-	}
-
-	public void messagePaneClosed() {
-
-		openMessagePaneId.set(null);
+		openEntityId.set(entityId);
 
 	}
 
-	public Long getOpenMessagePaneId() {
+	public void entityClosed() {
 
-		return openMessagePaneId.get();
+		openEntityId.set(null);
 
 	}
 
-	public boolean isMessagePaneOpen(Long id) {
+	public EntityId getOpenEntityId() {
 
-		return Objects.equals(openMessagePaneId.get(), id);
+		return openEntityId.get();
+
+	}
+
+	public boolean isEntityOpen(EntityId entityId) {
+
+		return Objects.equals(openEntityId.get(), entityId);
 
 	}
 
@@ -343,29 +344,29 @@ public class Model {
 
 	}
 
-	public void storePrivateMessageProgress(Long contactId, Long messageId, int progress) {
+	public void storePrivateMessageProgress(EntityId entityId, Long messageId, int progress) {
 
 		if (progress < 0 || progress == 100) {
 
-			if (!privateMessageProgresses.containsKey(contactId))
+			if (!privateMessageProgresses.containsKey(entityId))
 				return;
 
-			privateMessageProgresses.get(contactId).remove(messageId);
+			privateMessageProgresses.get(entityId).remove(messageId);
 
-			if (privateMessageProgresses.get(contactId).isEmpty())
-				privateMessageProgresses.remove(contactId);
+			if (privateMessageProgresses.get(entityId).isEmpty())
+				privateMessageProgresses.remove(entityId);
 
 		} else {
 
-			privateMessageProgresses.putIfAbsent(contactId, Collections.synchronizedMap(new HashMap<Long, Integer>()));
+			privateMessageProgresses.putIfAbsent(entityId, Collections.synchronizedMap(new HashMap<Long, Integer>()));
 
-			privateMessageProgresses.get(contactId).put(messageId, progress);
+			privateMessageProgresses.get(entityId).put(messageId, progress);
 
 		}
 
 	}
 
-	public Map<Long, Map<Long, Integer>> getPrivateMessageProgresses() {
+	public Map<EntityId, Map<Long, Integer>> getPrivateMessageProgresses() {
 
 		return privateMessageProgresses;
 

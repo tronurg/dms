@@ -42,11 +42,14 @@ public class Dgroup extends EntityBase {
 	private Availability status;
 
 	@Column(name = "active", nullable = false)
-	private Boolean active;
+	private boolean active;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", nullable = false, updatable = false)
 	private Contact owner;
+
+	@Column(name = "local", nullable = false, updatable = false)
+	private boolean local = false;
 
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "dgroup_members", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
@@ -103,11 +106,11 @@ public class Dgroup extends EntityBase {
 		this.status = status;
 	}
 
-	public Boolean getActive() {
+	public boolean isActive() {
 		return active;
 	}
 
-	public void setActive(Boolean active) {
+	public void setActive(boolean active) {
 		this.active = active;
 	}
 
@@ -117,6 +120,14 @@ public class Dgroup extends EntityBase {
 
 	public void setOwner(Contact owner) {
 		this.owner = owner;
+	}
+
+	public boolean isLocal() {
+		return local;
+	}
+
+	public void setLocal(boolean local) {
+		this.local = local;
 	}
 
 	public Set<Contact> getMembers() {
@@ -144,8 +155,8 @@ public class Dgroup extends EntityBase {
 	}
 
 	@Override
-	public boolean isGroup() {
-		return true;
+	public EntityId getEntityId() {
+		return EntityId.of(this.id, true);
 	}
 
 }

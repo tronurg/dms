@@ -16,6 +16,6 @@ public abstract class EntityBase {
 
 	public abstract Double getLongitude();
 
-	public abstract boolean isGroup();
+	public abstract EntityId getEntityId();
 
 }

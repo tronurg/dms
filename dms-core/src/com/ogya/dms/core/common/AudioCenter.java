@@ -14,6 +14,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
 import javax.sound.sampled.TargetDataLine;
 
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.factory.DmsFactory;
 
 public class AudioCenter {
@@ -54,7 +55,7 @@ public class AudioCenter {
 
 	}
 
-	public void startRecording(final Long id, final Path path, final Long refId) throws Exception {
+	public void startRecording(final EntityId entityId, final Path path, final Long refId) throws Exception {
 
 		final TargetDataLine line = targetLineRef.get();
 
@@ -77,7 +78,7 @@ public class AudioCenter {
 
 			}
 
-			listeners.forEach(listener -> listener.recordingStopped(id, path, refId));
+			listeners.forEach(listener -> listener.recordingStopped(entityId, path, refId));
 
 		});
 
@@ -98,7 +99,7 @@ public class AudioCenter {
 
 	public static interface AudioCenterListener {
 
-		void recordingStopped(Long id, Path path, Long refId);
+		void recordingStopped(EntityId entityId, Path path, Long refId);
 
 	}
 

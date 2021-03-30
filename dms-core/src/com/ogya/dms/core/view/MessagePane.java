@@ -17,10 +17,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.FileBuilder;
-import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.RecordButton.RecordListener;
@@ -99,7 +99,7 @@ class MessagePane extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final Long messagePaneId;
+	private final EntityId entityId;
 
 	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 			new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT));
@@ -215,11 +215,11 @@ class MessagePane extends BorderPane {
 			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
 	};
 
-	MessagePane(Long messagePaneId, BooleanProperty unreadProperty) {
+	MessagePane(EntityId entityId, BooleanProperty unreadProperty) {
 
 		super();
 
-		this.messagePaneId = messagePaneId;
+		this.entityId = entityId;
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
 
 		init();
@@ -596,9 +596,9 @@ class MessagePane extends BorderPane {
 
 	}
 
-	Long getMessagePaneId() {
+	EntityId getEntityId() {
 
-		return messagePaneId;
+		return entityId;
 
 	}
 
@@ -1295,7 +1295,7 @@ class MessagePane extends BorderPane {
 
 			this.ownerId = messageInfo.ownerId;
 
-			if (messageInfo.isGroup && !messageInfo.isOutgoing) {
+			if (entityId.isGroup() && !messageInfo.isOutgoing) {
 				nameLbl = new Label(messageInfo.senderName);
 				initNameLbl(messageInfo.nameColor);
 			} else {
@@ -1508,7 +1508,7 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private static final class MessageInfo {
+	private final class MessageInfo {
 
 		final Long messageId;
 		final String content;
@@ -1517,7 +1517,6 @@ class MessagePane extends BorderPane {
 		final boolean isOutgoing;
 		final String senderName;
 		final LocalDateTime localDateTime;
-		final boolean isGroup;
 		final AttachmentType attachmentType;
 		final boolean infoAvailable;
 		final Color nameColor;
@@ -1531,12 +1530,11 @@ class MessagePane extends BorderPane {
 			this.content = message.getContent();
 			this.attachment = message.getAttachment();
 			this.ownerId = message.getOwner().getId();
-			this.isOutgoing = Objects.equals(message.getMessageDirection(), MessageDirection.OUT);
+			this.isOutgoing = message.isLocal();
 			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
 			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
-			this.isGroup = message.getDgroup() != null;
 			this.attachmentType = message.getAttachmentType();
-			this.infoAvailable = isGroup && isOutgoing;
+			this.infoAvailable = entityId.isGroup() && isOutgoing;
 			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
 			this.statusProperty.set(message.getMessageStatus());
 			this.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));

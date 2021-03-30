@@ -60,7 +60,7 @@ class EntityPaneBase extends HBox {
 		commentLabel.setText(entity.getComment());
 		coordinatesLabel.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
 				: CommonMethods.convertDoubleToCoordinates(entity.getLattitude(), entity.getLongitude()));
-		groupSign.setVisible(entity.isGroup());
+		groupSign.setVisible(entity.getEntityId().isGroup());
 
 	}
 

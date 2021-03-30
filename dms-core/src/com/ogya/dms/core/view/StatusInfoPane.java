@@ -116,9 +116,9 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	void updateMessageStatus(Long id, MessageStatus messageStatus) {
+	void updateMessageStatus(Long contactId, MessageStatus messageStatus) {
 
-		Card card = cards.get(id);
+		Card card = cards.get(contactId);
 
 		if (card == null)
 			return;
@@ -127,9 +127,9 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	void updateMessageProgress(Long id, int progress) {
+	void updateMessageProgress(Long contactId, int progress) {
 
-		Card card = cards.get(id);
+		Card card = cards.get(contactId);
 
 		if (card == null)
 			return;

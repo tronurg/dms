@@ -12,6 +12,7 @@ import java.util.Set;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.EntityBase;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -48,7 +49,8 @@ class EntitiesPane extends BorderPane {
 
 	private final AddUpdateGroupPane addUpdateGroupPane;
 
-	private final Map<Long, EntityPane> idEntityPane = Collections.synchronizedMap(new HashMap<Long, EntityPane>());
+	private final Map<EntityId, EntityPane> entityIdPane = Collections
+			.synchronizedMap(new HashMap<EntityId, EntityPane>());
 
 	private final List<IEntitiesPane> listeners = Collections.synchronizedList(new ArrayList<IEntitiesPane>());
 
@@ -153,17 +155,13 @@ class EntitiesPane extends BorderPane {
 
 	void updateEntity(EntityBase entity) {
 
-		getEntityPane(entity.isGroup() ? -entity.getId() : entity.getId()).updateEntity(entity);
+		getEntityPane(entity.getEntityId()).updateEntity(entity);
 
 	}
 
 	void addMessage(Message message) {
 
-		Long entityId = message.getDgroup() == null ? message.getContact().getId() : -message.getDgroup().getId();
-
-		EntityPane entityPane = getEntityPane(entityId);
-
-		entityPane.addUpdateMessage(message);
+		getEntityPane(message.getEntity().getEntityId()).addUpdateMessage(message);
 
 		FXCollections.sort(entities.getChildren(), entitiesSorter);
 
@@ -171,59 +169,45 @@ class EntitiesPane extends BorderPane {
 
 	void updateMessage(Message message) {
 
-		Long entityId = message.getDgroup() == null ? message.getContact().getId() : -message.getDgroup().getId();
-
-		EntityPane entityPane = getEntityPane(entityId);
-
-		entityPane.addUpdateMessage(message);
+		getEntityPane(message.getEntity().getEntityId()).addUpdateMessage(message);
 
 	}
 
-	void updateMessageProgress(Long id, Long messageId, int progress) {
+	void updateMessageProgress(EntityId entityId, Long messageId, int progress) {
 
-		EntityPane entityPane = getEntityPane(id);
-
-		entityPane.getMessagePane().updateMessageProgress(messageId, progress);
+		getEntityPane(entityId).getMessagePane().updateMessageProgress(messageId, progress);
 
 	}
 
-	void scrollPaneToMessage(Long id, Long messageId) {
+	void scrollPaneToMessage(EntityId entityId, Long messageId) {
 
-		EntityPane entityPane = getEntityPane(id);
-
-		entityPane.getMessagePane().scrollPaneToMessage(messageId);
+		getEntityPane(entityId).getMessagePane().scrollPaneToMessage(messageId);
 
 	}
 
-	void savePosition(Long id, Long messageId) {
+	void savePosition(EntityId entityId, Long messageId) {
 
-		EntityPane entityPane = getEntityPane(id);
-
-		entityPane.getMessagePane().savePosition(messageId);
+		getEntityPane(entityId).getMessagePane().savePosition(messageId);
 
 	}
 
-	void scrollToSavedPosition(Long id) {
+	void scrollToSavedPosition(EntityId entityId) {
 
-		EntityPane entityPane = getEntityPane(id);
-
-		entityPane.getMessagePane().scrollToSavedPosition();
+		getEntityPane(entityId).getMessagePane().scrollToSavedPosition();
 
 	}
 
-	void allMessagesLoaded(Long id) {
+	void allMessagesLoaded(EntityId entityId) {
 
-		EntityPane entityPane = getEntityPane(id);
-
-		entityPane.getMessagePane().allMessagesLoaded();
+		getEntityPane(entityId).getMessagePane().allMessagesLoaded();
 
 	}
 
-	private EntityPane getEntityPane(final Long id) {
+	private EntityPane getEntityPane(EntityId entityId) {
 
-		if (!idEntityPane.containsKey(id)) {
+		if (!entityIdPane.containsKey(entityId)) {
 
-			final EntityPane entityPane = new EntityPane(id, unreadProperty);
+			final EntityPane entityPane = new EntityPane(entityId, unreadProperty);
 
 			entityPane.managedProperty().bind(entityPane.visibleProperty());
 
@@ -244,13 +228,13 @@ class EntitiesPane extends BorderPane {
 
 			entityPane.getMessagePane().addListener(newMessagePaneListener());
 
-			idEntityPane.put(id, entityPane);
+			entityIdPane.put(entityId, entityPane);
 
 			entities.getChildren().add(entityPane);
 
 		}
 
-		return idEntityPane.get(id);
+		return entityIdPane.get(entityId);
 
 	}
 

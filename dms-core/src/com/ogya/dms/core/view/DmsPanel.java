@@ -13,10 +13,10 @@ import javax.swing.UIManager;
 import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
-import com.ogya.dms.core.structures.MessageDirection;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
@@ -41,7 +41,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final double gap = ViewFactory.getGap();
 
 	private final BooleanProperty unreadProperty = new SimpleBooleanProperty();
-	private final ObservableSet<Long> unreadMessagePaneIds = FXCollections.observableSet();
+	private final ObservableSet<EntityId> unreadEntityIds = FXCollections.observableSet();
 
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
@@ -98,7 +98,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 				topNode.setVisible(true);
 
 				if (Objects.equals(topNode, mainPane))
-					unreadMessagePaneIds.clear();
+					unreadEntityIds.clear();
 				else if (topNode instanceof MessagePane)
 					messagePaneOnScreenRef.set((MessagePane) topNode);
 
@@ -110,13 +110,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 			if (e2 == null) {
 				listeners.forEach(listener -> listener.messagePaneClosed());
 			} else {
-				Long messagePaneId = e2.getMessagePaneId();
-				unreadMessagePaneIds.remove(messagePaneId);
-				listeners.forEach(listener -> listener.messagePaneOpened(messagePaneId));
+				EntityId entityId = e2.getEntityId();
+				unreadEntityIds.remove(entityId);
+				listeners.forEach(listener -> listener.messagePaneOpened(entityId));
 			}
 		});
 
-		unreadProperty.bind(Bindings.isNotEmpty(unreadMessagePaneIds));
+		unreadProperty.bind(Bindings.isNotEmpty(unreadEntityIds));
 
 		VBox.setMargin(identityPane, new Insets(2 * gap));
 
@@ -206,13 +206,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		entitiesPane.addMessage(message);
 
-		if (Objects.equals(message.getMessageDirection(), MessageDirection.OUT)
+		if (getChildren().size() == 1 || message.isLocal()
 				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			return;
 
-		Long entityId = message.getDgroup() == null ? message.getContact().getId() : -message.getDgroup().getId();
-
-		unreadMessagePaneIds.add(entityId);
+		unreadEntityIds.add(message.getEntity().getEntityId());
 
 	}
 
@@ -236,45 +234,45 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
-	public void updatePrivateMessageProgress(Long id, Long messageId, int progress) {
+	public void updateMessageProgress(EntityId entityId, Long messageId, int progress) {
 
-		entitiesPane.updateMessageProgress(id, messageId, progress);
-
-	}
-
-	public void updateDetailedMessageStatus(Long id, MessageStatus messageStatus) {
-
-		statusInfoPane.updateMessageStatus(id, messageStatus);
+		entitiesPane.updateMessageProgress(entityId, messageId, progress);
 
 	}
 
-	public void updateDetailedMessageProgress(Long id, int progress) {
+	public void updateDetailedMessageStatus(Long contactId, MessageStatus messageStatus) {
 
-		statusInfoPane.updateMessageProgress(id, progress);
-
-	}
-
-	public void scrollPaneToMessage(Long id, Long messageId) {
-
-		entitiesPane.scrollPaneToMessage(id, messageId);
+		statusInfoPane.updateMessageStatus(contactId, messageStatus);
 
 	}
 
-	public void savePosition(Long id, Long messageId) {
+	public void updateDetailedMessageProgress(Long contactId, int progress) {
 
-		entitiesPane.savePosition(id, messageId);
-
-	}
-
-	public void scrollToSavedPosition(Long id) {
-
-		entitiesPane.scrollToSavedPosition(id);
+		statusInfoPane.updateMessageProgress(contactId, progress);
 
 	}
 
-	public void allMessagesLoaded(Long id) {
+	public void scrollPaneToMessage(EntityId entityId, Long messageId) {
 
-		entitiesPane.allMessagesLoaded(id);
+		entitiesPane.scrollPaneToMessage(entityId, messageId);
+
+	}
+
+	public void savePosition(EntityId entityId, Long messageId) {
+
+		entitiesPane.savePosition(entityId, messageId);
+
+	}
+
+	public void scrollToSavedPosition(EntityId entityId) {
+
+		entitiesPane.scrollToSavedPosition(entityId);
+
+	}
+
+	public void allMessagesLoaded(EntityId entityId) {
+
+		entitiesPane.allMessagesLoaded(entityId);
 
 	}
 
