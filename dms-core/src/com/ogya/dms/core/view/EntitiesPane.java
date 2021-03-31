@@ -203,6 +203,18 @@ class EntitiesPane extends BorderPane {
 
 	}
 
+	MessagePane getMessagePane(EntityId entityId) {
+
+		return getEntityPane(entityId).getMessagePane();
+
+	}
+
+	void goToMessage(EntityId entityId, Long messageId) {
+
+		getEntityPane(entityId).getMessagePane().goToMessage(messageId);
+
+	}
+
 	private EntityPane getEntityPane(EntityId entityId) {
 
 		if (!entityIdPane.containsKey(entityId)) {

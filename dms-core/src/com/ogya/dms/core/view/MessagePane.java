@@ -824,12 +824,7 @@ class MessagePane extends BorderPane {
 					}.play();
 				return;
 			}
-			if (messageBalloons.containsKey(messageId)) {
-				scrollPaneToMessage(messageId);
-			} else {
-				futureReference.set(messageId);
-				listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
-			}
+			goToMessage(messageId);
 			e.consume();
 		});
 
@@ -905,6 +900,22 @@ class MessagePane extends BorderPane {
 		}
 
 		return referenceBalloon;
+
+	}
+
+	void goToMessage(Long messageId) {
+
+		if (messageBalloons.containsKey(messageId)) {
+
+			scrollPaneToMessage(messageId);
+
+		} else {
+
+			futureReference.set(messageId);
+
+			listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
+
+		}
 
 	}
 
@@ -1011,6 +1022,7 @@ class MessagePane extends BorderPane {
 
 		private final MessageInfo messageInfo;
 
+		private final HBox messagePaneContainer = new HBox(gap);
 		private final GridPane messagePane = new GridPane();
 		private final Label timeLbl;
 		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
@@ -1054,21 +1066,10 @@ class MessagePane extends BorderPane {
 			col2.setPercentWidth(80.0);
 
 			initSelectionBtn();
-			initMessagePane();
-
-			HBox messagePaneContainer = new HBox(gap);
-			messagePaneContainer.setAlignment(Pos.CENTER_LEFT);
-			HBox.setHgrow(messagePane, Priority.ALWAYS);
+			initMessagePaneContainer();
 
 			add(selectionBtn, 1, 0, 1, 1);
 			add(messagePaneContainer, 2, 0, 1, 1);
-
-			messagePaneContainer.getChildren().add(messagePane);
-
-			if (messageInfo.infoAvailable)
-				messagePaneContainer.getChildren().add(getInfoBtn());
-
-			GridPane.setFillWidth(messagePaneContainer, false);
 
 			if (messageInfo.isOutgoing) {
 				col1.setHgrow(Priority.ALWAYS);
@@ -1132,6 +1133,22 @@ class MessagePane extends BorderPane {
 
 		}
 
+		private void initMessagePaneContainer() {
+
+			GridPane.setHgrow(messagePaneContainer, Priority.ALWAYS);
+			GridPane.setFillWidth(messagePaneContainer, false);
+
+			messagePaneContainer.setAlignment(Pos.CENTER_LEFT);
+
+			initMessagePane();
+
+			messagePaneContainer.getChildren().add(messagePane);
+
+			if (messageInfo.infoAvailable)
+				messagePaneContainer.getChildren().add(getInfoBtn());
+
+		}
+
 		private void initMessagePane() {
 
 			messagePane.setStyle("-fx-min-width: 6em;");
@@ -1169,7 +1186,8 @@ class MessagePane extends BorderPane {
 
 			Button infoBtn = ViewFactory.newInfoBtn();
 
-			infoBtn.disableProperty().bind(selectionModeProperty);
+			infoBtn.visibleProperty().bind(selectionModeProperty.not());
+			infoBtn.managedProperty().bind(infoBtn.visibleProperty());
 			infoBtn.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(messageInfo.messageId)));
 
 			return infoBtn;
@@ -1193,6 +1211,7 @@ class MessagePane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			HBox attachmentArea = new HBox(gap);
+			GridPane.setFillWidth(attachmentArea, false);
 			attachmentArea.setAlignment(Pos.CENTER_LEFT);
 
 			Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());

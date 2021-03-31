@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.ViewStatus;
@@ -456,6 +457,7 @@ class StarredMessagesPane extends BorderPane {
 		private final Label timeLbl;
 		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
+		private final Button forwardBtn = ViewFactory.newForwardBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
@@ -483,9 +485,11 @@ class StarredMessagesPane extends BorderPane {
 
 			initSelectionBtn();
 			initMessagePane();
+			initForwardBtn();
 
 			add(selectionBtn, 0, 0, 1, 1);
 			add(messagePane, 1, 0, 1, 1);
+			add(forwardBtn, 2, 0, 1, 1);
 
 		}
 
@@ -510,6 +514,9 @@ class StarredMessagesPane extends BorderPane {
 		}
 
 		private void initMessagePane() {
+
+			GridPane.setHgrow(messagePane, Priority.ALWAYS);
+			GridPane.setFillWidth(messagePane, false);
 
 			messagePane.setStyle("-fx-min-width: 6em;");
 
@@ -537,6 +544,17 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
+		private void initForwardBtn() {
+
+			GridPane.setMargin(forwardBtn, new Insets(0, 0, 0, gap));
+
+			forwardBtn.visibleProperty().bind(selectionModeProperty.not());
+			forwardBtn.managedProperty().bind(forwardBtn.visibleProperty());
+			forwardBtn.setOnAction(e -> listeners
+					.forEach(listener -> listener.goToMessageClicked(messageInfo.entityId, messageInfo.messageId)));
+
+		}
+
 		private Node getContentArea() {
 
 			Label contentLbl = new Label(messageInfo.content);
@@ -554,6 +572,7 @@ class StarredMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			HBox attachmentArea = new HBox(gap);
+			GridPane.setFillWidth(attachmentArea, false);
 			attachmentArea.setAlignment(Pos.CENTER_LEFT);
 
 			Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
@@ -643,6 +662,7 @@ class StarredMessagesPane extends BorderPane {
 
 	private static final class MessageInfo {
 
+		final EntityId entityId;
 		final Long messageId;
 		final String content;
 		final String attachment;
@@ -655,6 +675,7 @@ class StarredMessagesPane extends BorderPane {
 
 		MessageInfo(Message message) {
 
+			this.entityId = message.getEntity().getEntityId();
 			this.messageId = message.getId();
 			this.content = message.getContent();
 			this.attachment = message.getAttachment();
@@ -680,5 +701,7 @@ interface IStarredMessagesPane {
 	void attachmentClicked(Long messageId);
 
 	void archiveMessagesRequested(Long... messageIds);
+
+	void goToMessageClicked(EntityId entityId, Long messageId);
 
 }

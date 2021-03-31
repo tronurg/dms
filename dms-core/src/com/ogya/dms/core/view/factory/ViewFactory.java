@@ -323,14 +323,14 @@ public class ViewFactory {
 
 	public static Button newInfoBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = 0.75 * getViewFactor();
 
 		Button btn = new Button("i");
 		btn.setTextFill(Color.WHITE);
 		btn.setContentDisplay(ContentDisplay.CENTER);
-		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 * viewFactor));
+		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 25.0 * viewFactor));
 
-		Circle circle = new Circle(12.0 * viewFactor);
+		Circle circle = new Circle(16.0 * viewFactor);
 		btn.setGraphic(circle);
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
@@ -440,6 +440,30 @@ public class ViewFactory {
 		}
 		star.getPoints().addAll(points);
 		btn.setGraphic(star);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
+	public static Button newForwardBtn() {
+
+		double viewFactor = 0.75 * getViewFactor();
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(16.0 * viewFactor);
+		circle.fillProperty()
+				.bind(Bindings.createObjectBinding(
+						() -> btn.isHover() && !btn.isDisabled() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY,
+						btn.hoverProperty(), btn.disabledProperty()));
+		Polygon triangle = new Polygon();
+		triangle.getPoints().addAll(new Double[] { -7.0 * viewFactor, -10.5 * viewFactor, 13.0 * viewFactor, 0.0,
+				-7.0 * viewFactor, 10.5 * viewFactor });
+		triangle.setFill(Color.ANTIQUEWHITE);
+		Group group = new Group(circle, triangle);
+		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 

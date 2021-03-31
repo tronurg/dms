@@ -543,4 +543,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
+	@Override
+	public void goToMessageClicked(EntityId entityId, Long messageId) {
+
+		getChildren().add(entitiesPane.getMessagePane(entityId));
+
+		entitiesPane.goToMessage(entityId, messageId);
+
+	}
+
 }
