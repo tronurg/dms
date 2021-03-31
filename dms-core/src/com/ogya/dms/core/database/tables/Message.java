@@ -68,15 +68,15 @@ public class Message {
 
 	@Transient
 	@JsonProperty("h")
-	private Long groupRefId;
+	private Boolean senderGroupOwner;
 
 	@Transient
 	@JsonProperty("i")
-	private Long contactRefId;
+	private Long groupRefId;
 
 	@Transient
 	@JsonProperty("j")
-	private Boolean senderGroupOwner;
+	private Long contactRefId;
 
 	@Column(name = "message_code", updatable = false)
 	@JsonProperty("k")
@@ -233,6 +233,14 @@ public class Message {
 		this.refMessage = refMessage;
 	}
 
+	public Boolean getSenderGroupOwner() {
+		return senderGroupOwner;
+	}
+
+	public void setSenderGroupOwner(Boolean senderGroupOwner) {
+		this.senderGroupOwner = senderGroupOwner;
+	}
+
 	public Long getGroupRefId() {
 		return groupRefId;
 	}
@@ -247,14 +255,6 @@ public class Message {
 
 	public void setContactRefId(Long contactRefId) {
 		this.contactRefId = contactRefId;
-	}
-
-	public Boolean getSenderGroupOwner() {
-		return senderGroupOwner;
-	}
-
-	public void setSenderGroupOwner(Boolean senderGroupOwner) {
-		this.senderGroupOwner = senderGroupOwner;
 	}
 
 	public Integer getMessageCode() {
