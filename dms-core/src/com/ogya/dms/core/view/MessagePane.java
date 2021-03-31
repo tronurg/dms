@@ -808,24 +808,24 @@ class MessagePane extends BorderPane {
 		final Long messageId = messageInfo.messageId;
 
 		referenceBalloon.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
-			if (!referencedMessageIds.contains(messageId)) {
-				if (Objects.equals(shadow.getColor(), Color.DARKGRAY))
-					new Transition() {
-
-						{
-							setCycleDuration(Duration.millis(500.0));
-						}
-
-						@Override
-						protected void interpolate(double arg0) {
-							shadow.setColor(Color.RED.interpolate(Color.DARKGRAY, arg0));
-						}
-
-					}.play();
+			if (referencedMessageIds.contains(messageId)) {
+				goToMessage(messageId);
 				return;
 			}
-			goToMessage(messageId);
-			e.consume();
+			if (Objects.equals(shadow.getColor(), Color.DARKGRAY)) {
+				new Transition() {
+
+					{
+						setCycleDuration(Duration.millis(500.0));
+					}
+
+					@Override
+					protected void interpolate(double arg0) {
+						shadow.setColor(Color.RED.interpolate(Color.DARKGRAY, arg0));
+					}
+
+				}.play();
+			}
 		});
 
 		if (!Objects.equals(message.getViewStatus(), ViewStatus.DELETED))

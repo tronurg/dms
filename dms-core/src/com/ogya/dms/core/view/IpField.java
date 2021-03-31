@@ -48,7 +48,7 @@ public class IpField extends HBox {
 			ipField.setPrefColumnCount(3);
 
 			ipField.setStyle(
-					"-fx-text-box-border:transparent;-fx-focus-color:transparent;-fx-faint-focus-color:transparent");
+					"-fx-text-box-border: transparent;-fx-focus-color: transparent;-fx-faint-focus-color: transparent");
 
 			ipField.setAlignment(Pos.CENTER);
 
