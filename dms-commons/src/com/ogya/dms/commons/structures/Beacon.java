@@ -22,9 +22,9 @@ public class Beacon {
 	@JsonProperty("g")
 	public String secretId;
 	@JsonProperty("h")
-	public List<InetAddress> remoteInterfaces;
+	public List<byte[]> inetAddresses;
 	@JsonProperty("i")
-	public List<InetAddress> localInterfaces;
+	public List<InetAddress> localServerInterfaces;
 
 	public Beacon() {
 		super();
@@ -37,7 +37,7 @@ public class Beacon {
 	}
 
 	public Beacon(String uuid, String name, String comment, Integer status, Double lattitude, Double longitude,
-			String secretId) {
+			String secretId, List<byte[]> inetAddresses) {
 
 		this(uuid);
 
@@ -47,6 +47,7 @@ public class Beacon {
 		this.lattitude = lattitude;
 		this.longitude = longitude;
 		this.secretId = secretId;
+		this.inetAddresses = inetAddresses;
 
 	}
 

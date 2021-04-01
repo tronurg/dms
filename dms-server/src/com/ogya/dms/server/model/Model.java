@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsPackingFactory;
@@ -748,6 +749,9 @@ public class Model {
 		if (fromBeacon.secretId != null)
 			toBeacon.secretId = fromBeacon.secretId;
 
+		if (fromBeacon.inetAddresses != null)
+			toBeacon.inetAddresses = fromBeacon.inetAddresses;
+
 	}
 
 	private abstract class User {
@@ -777,16 +781,10 @@ public class Model {
 
 			try {
 
-				List<InetAddress> inetAddresses = new ArrayList<InetAddress>();
-				for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-					for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
-						if (ia instanceof Inet4Address)
-							inetAddresses.add(ia);
-					}
-				}
-
-				beacon.remoteInterfaces = inetAddresses;
-				beacon.localInterfaces = inetAddresses;
+				beacon.localServerInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
+						.flatMap(ni -> Collections.list(ni.getInetAddresses()).stream())
+						.filter(ia -> (ia instanceof Inet4Address) && !ia.isLoopbackAddress())
+						.collect(Collectors.toList());
 
 			} catch (SocketException e) {
 
@@ -808,8 +806,7 @@ public class Model {
 
 			this.dmsServer = dmsServer;
 
-			this.beacon.remoteInterfaces = dmsServer.remoteAddresses;
-			this.beacon.localInterfaces = dmsServer.localAddresses;
+			this.beacon.localServerInterfaces = dmsServer.localAddresses;
 
 		}
 

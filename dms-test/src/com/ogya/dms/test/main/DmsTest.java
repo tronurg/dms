@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -195,34 +196,42 @@ public class DmsTest {
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
-				final List<Long> selectedContactIds = csh.getSelectedContactIds();
-
-				csh.resetSelection();
-
-				TestPojo testPojo = new TestPojo();
-				List<TestPojo> testList = new ArrayList<TestPojo>();
-				testList.add(testPojo);
-
-				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-//				messageHandle.setFileHandle(
-//						dmsHandle.createFileHandle(Paths.get("D:/Onur/JEgtK/Kýþla Geliþim/kgp_new.psb"), 2));
-				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
-				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
 				try {
-					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds,
-							dmsHandle.createMessageRules().useTrackingId(123L).useTimeout(1000L));
-				} catch (Exception e1) {
+					dmsHandle.getIdsByAddress(InetAddress.getByName("localhost"))
+							.forEach(cid -> System.out.println(dmsHandle.getContactHandle(cid).getName()));
+				} catch (UnknownHostException e1) {
+					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
 
-				if (selectedContactIds.size() == 1)
-					try {
-						System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
-								dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0)).get(),
-								dmsHandle.getContactHandle(selectedContactIds.get(0)).getName()));
-					} catch (InterruptedException | ExecutionException e1) {
-						e1.printStackTrace();
-					}
+//				final List<Long> selectedContactIds = csh.getSelectedContactIds();
+//
+//				csh.resetSelection();
+//
+//				TestPojo testPojo = new TestPojo();
+//				List<TestPojo> testList = new ArrayList<TestPojo>();
+//				testList.add(testPojo);
+//
+//				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
+////				messageHandle.setFileHandle(
+////						dmsHandle.createFileHandle(Paths.get("D:/Onur/JEgtK/Kýþla Geliþim/kgp_new.psb"), 2));
+//				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
+//				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
+//				try {
+//					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds,
+//							dmsHandle.createMessageRules().useTrackingId(123L).useTimeout(1000L));
+//				} catch (Exception e1) {
+//					e1.printStackTrace();
+//				}
+//
+//				if (selectedContactIds.size() == 1)
+//					try {
+//						System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
+//								dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0)).get(),
+//								dmsHandle.getContactHandle(selectedContactIds.get(0)).getName()));
+//					} catch (InterruptedException | ExecutionException e1) {
+//						e1.printStackTrace();
+//					}
 
 			});
 

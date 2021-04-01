@@ -50,7 +50,7 @@ public class Contact extends EntityBase {
 	@Transient
 	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
 	@Transient
-	private final List<InetAddress> localInterfaces = new ArrayList<InetAddress>();
+	private final List<InetAddress> localServerInterfaces = new ArrayList<InetAddress>();
 
 	public Contact() {
 		super();
@@ -147,14 +147,14 @@ public class Contact extends EntityBase {
 			this.remoteInterfaces.addAll(remoteInterfaces);
 	}
 
-	public List<InetAddress> getLocalInterfaces() {
-		return localInterfaces;
+	public List<InetAddress> getLocalServerInterfaces() {
+		return localServerInterfaces;
 	}
 
-	public void setLocalInterfaces(List<InetAddress> localInterfaces) {
-		this.localInterfaces.clear();
-		if (localInterfaces != null)
-			this.localInterfaces.addAll(localInterfaces);
+	public void setLocalServerInterfaces(List<InetAddress> localServerInterfaces) {
+		this.localServerInterfaces.clear();
+		if (localServerInterfaces != null)
+			this.localServerInterfaces.addAll(localServerInterfaces);
 	}
 
 	@Override

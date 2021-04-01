@@ -1,8 +1,11 @@
 package com.ogya.dms.core.model;
 
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -14,6 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
@@ -67,10 +71,6 @@ public class Model {
 	public Model(Contact identity) {
 
 		this.identity = identity;
-		List<InetAddress> interfaces = Arrays.asList(InetAddress.getLoopbackAddress());
-		this.identity.setRemoteInterfaces(interfaces);
-		this.identity.setLocalInterfaces(interfaces);
-
 		this.localUuid = identity.getUuid();
 
 	}
@@ -84,6 +84,51 @@ public class Model {
 	public String getLocalUuid() {
 
 		return localUuid;
+
+	}
+
+	public List<InetAddress> getLocalInterfaces() {
+
+		try {
+
+			return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
+					.flatMap(ni -> Collections.list(ni.getInetAddresses()).stream())
+					.filter(ia -> (ia instanceof Inet4Address) && !ia.isLoopbackAddress()).collect(Collectors.toList());
+
+		} catch (SocketException e) {
+
+		}
+
+		return Collections.emptyList();
+
+	}
+
+	public List<InetAddress> getRemoteInterfaces(List<byte[]> remoteAddresses) {
+
+		if (remoteAddresses == null)
+			return null;
+
+		List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
+
+		remoteAddresses.forEach(addr -> {
+			try {
+				remoteInterfaces.add(InetAddress.getByAddress(addr));
+			} catch (UnknownHostException e) {
+
+			}
+		});
+
+		List<InetAddress> localInterfaces = getLocalInterfaces();
+
+		if (remoteInterfaces.stream().anyMatch(ia -> localInterfaces.contains(ia))) {
+			try {
+				remoteInterfaces.add(InetAddress.getByName("localhost"));
+			} catch (UnknownHostException e) {
+
+			}
+		}
+
+		return remoteInterfaces;
 
 	}
 

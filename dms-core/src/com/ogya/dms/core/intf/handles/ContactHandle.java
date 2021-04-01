@@ -25,6 +25,6 @@ public interface ContactHandle {
 
 	List<InetAddress> getRemoteInterfaces();
 
-	List<InetAddress> getLocalInterfaces();
+	List<InetAddress> getLocalServerInterfaces();
 
 }

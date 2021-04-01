@@ -19,7 +19,7 @@ public class ContactHandleImpl implements ContactHandle {
 	private final Availability availability;
 	private final String secretId;
 	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
-	private final List<InetAddress> localInterfaces = new ArrayList<InetAddress>();
+	private final List<InetAddress> localServerInterfaces = new ArrayList<InetAddress>();
 
 	public ContactHandleImpl(Contact contact) {
 
@@ -32,7 +32,7 @@ public class ContactHandleImpl implements ContactHandle {
 		this.availability = contact.getStatus();
 		this.secretId = contact.getSecretId();
 		this.remoteInterfaces.addAll(contact.getRemoteInterfaces());
-		this.localInterfaces.addAll(contact.getLocalInterfaces());
+		this.localServerInterfaces.addAll(contact.getLocalServerInterfaces());
 
 	}
 
@@ -100,9 +100,9 @@ public class ContactHandleImpl implements ContactHandle {
 	}
 
 	@Override
-	public List<InetAddress> getLocalInterfaces() {
+	public List<InetAddress> getLocalServerInterfaces() {
 
-		return localInterfaces;
+		return localServerInterfaces;
 
 	}
 

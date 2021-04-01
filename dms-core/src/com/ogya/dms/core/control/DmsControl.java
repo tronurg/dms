@@ -338,13 +338,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude,
-			String secretId) {
+			String secretId, List<byte[]> remoteInterfaces) {
 
 		if (!model.isServerConnected())
 			return;
 
 		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.index(),
-				lattitude, longitude, secretId);
+				lattitude, longitude, secretId, remoteInterfaces);
 
 		dmsClient.sendBeacon(beacon);
 
@@ -1018,8 +1018,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
-				newContact.setRemoteInterfaces(beacon.remoteInterfaces);
-				newContact.setLocalInterfaces(beacon.localInterfaces);
+				newContact.setRemoteInterfaces(model.getRemoteInterfaces(beacon.inetAddresses));
+				newContact.setLocalServerInterfaces(beacon.localServerInterfaces);
 
 				model.addContact(newContact);
 
@@ -1442,7 +1442,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				Contact identity = model.getIdentity();
 
 				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
-						identity.getLongitude(), identity.getSecretId());
+						identity.getLongitude(), identity.getSecretId(), model.getLocalInterfaces().stream()
+								.map(addr -> addr.getAddress()).collect(Collectors.toList()));
 
 				dmsClient.claimStartInfo();
 
@@ -1788,7 +1789,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, comment, null, null, null, null);
+				sendBeacon(null, comment, null, null, null, null, null);
 
 			} catch (HibernateException e) {
 
@@ -1820,7 +1821,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, newIdentity.getStatus(), null, null, null);
+				sendBeacon(null, null, newIdentity.getStatus(), null, null, null, null);
 
 			} catch (HibernateException e) {
 
@@ -2739,7 +2740,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, null, lattitude, longitude, null);
+				sendBeacon(null, null, null, lattitude, longitude, null, null);
 
 			} catch (HibernateException e) {
 
@@ -2796,7 +2797,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				model.updateSecretId(finalSecretId);
 
-				sendBeacon(null, null, null, null, null, finalSecretId);
+				sendBeacon(null, null, null, null, null, finalSecretId, null);
 
 			} catch (HibernateException e) {
 
