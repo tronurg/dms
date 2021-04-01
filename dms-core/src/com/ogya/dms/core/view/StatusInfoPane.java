@@ -11,7 +11,6 @@ import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -19,7 +18,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -138,12 +136,12 @@ public class StatusInfoPane extends BorderPane {
 
 	}
 
-	private final class Card extends GridPane {
+	private final class Card extends HBox {
 
 		private final double radius = 3.0 * viewFactor;
 
 		private final Circle statusCircle = new Circle(7.0 * viewFactor);
-		private final Label nameLabel = new Label();
+		private final Label nameLbl = new Label();
 		private final Label progressLbl = new Label();
 		private final Group infoGrp = new Group();
 		private final Circle waitingCircle = new Circle(radius, Color.TRANSPARENT);
@@ -151,7 +149,7 @@ public class StatusInfoPane extends BorderPane {
 
 		private Card() {
 
-			super();
+			super(gap);
 
 			init();
 
@@ -159,16 +157,13 @@ public class StatusInfoPane extends BorderPane {
 
 		private void init() {
 
-			setHgap(gap);
+			setAlignment(Pos.CENTER);
 
-			initNameLabel();
+			initNameLbl();
 			initProgressLbl();
 			initInfoGrp();
 
-			add(statusCircle, 0, 0, 1, 1);
-			add(nameLabel, 1, 0, 1, 1);
-			add(infoGrp, 2, 0, 1, 1);
-			add(progressLbl, 2, 0, 1, 1);
+			getChildren().addAll(statusCircle, nameLbl, progressLbl, infoGrp);
 
 		}
 
@@ -180,7 +175,7 @@ public class StatusInfoPane extends BorderPane {
 
 		void setName(String name) {
 
-			nameLabel.setText(name);
+			nameLbl.setText(name);
 
 		}
 
@@ -202,29 +197,29 @@ public class StatusInfoPane extends BorderPane {
 
 		}
 
-		private void initNameLabel() {
+		private void initNameLbl() {
 
-			GridPane.setHgrow(nameLabel, Priority.ALWAYS);
+			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 
-			nameLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			nameLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			nameLbl.setMaxWidth(Double.MAX_VALUE);
 
 		}
 
 		private void initProgressLbl() {
-
-			GridPane.setHalignment(progressLbl, HPos.RIGHT);
 
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
 			progressLbl.setFont(Font.font(11.25 * viewFactor));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());
+			progressLbl.managedProperty().bind(progressLbl.visibleProperty());
 
 		}
 
 		private void initInfoGrp() {
 
-			GridPane.setHalignment(infoGrp, HPos.RIGHT);
+			infoGrp.managedProperty().bind(infoGrp.visibleProperty());
 
 			transmittedCircle.setLayoutX(-2.0 * radius);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);

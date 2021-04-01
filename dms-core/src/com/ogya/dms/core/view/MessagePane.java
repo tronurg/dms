@@ -80,6 +80,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -136,7 +137,6 @@ class MessagePane extends BorderPane {
 	private final StackPane btnPane = new StackPane();
 	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
 
-	private final Button attachmentIcon = ViewFactory.newSimpleAttachBtn(1.0);
 	private final Label attachmentLbl = new Label();
 	private final Button removeAttachmentBtn = ViewFactory.newRemoveBtn(0.65);
 
@@ -203,6 +203,7 @@ class MessagePane extends BorderPane {
 
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
+	private final AtomicLong lastEventTime = new AtomicLong();
 
 	private final AtomicLong futureReference = new AtomicLong(-1L);
 
@@ -221,6 +222,8 @@ class MessagePane extends BorderPane {
 
 		this.entityId = entityId;
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
+
+		lastEventTime.set(System.currentTimeMillis());
 
 		init();
 
@@ -408,15 +411,15 @@ class MessagePane extends BorderPane {
 	private void initAttachmentArea() {
 
 		attachmentArea.getStyleClass().add("attachment-area");
+		attachmentArea.setAlignment(Pos.CENTER);
 		attachmentArea.setPadding(new Insets(gap));
 		attachmentArea.visibleProperty().bind(Bindings.isNotNull(attachmentProperty));
 		attachmentArea.managedProperty().bind(attachmentArea.visibleProperty());
 
-		initAttachmentIcon();
 		initAttachmentLbl();
 		initRemoveAttachmentBtn();
 
-		attachmentArea.getChildren().addAll(attachmentIcon, attachmentLbl, removeAttachmentBtn);
+		attachmentArea.getChildren().addAll(attachmentLbl, removeAttachmentBtn);
 
 	}
 
@@ -471,18 +474,12 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initAttachmentIcon() {
-
-		attachmentIcon.setMaxHeight(Double.MAX_VALUE);
-
-	}
-
 	private void initAttachmentLbl() {
 
 		HBox.setHgrow(attachmentLbl, Priority.ALWAYS);
 		attachmentLbl.getStyleClass().add("dim-label");
 		attachmentLbl.setMaxWidth(Double.MAX_VALUE);
-		attachmentLbl.setMaxHeight(Double.MAX_VALUE);
+		attachmentLbl.setGraphic(ViewFactory.newAttachGraph(1.0));
 		attachmentLbl.textProperty()
 				.bind(Bindings.createStringBinding(
 						() -> attachmentProperty.get() == null ? null : attachmentProperty.get().getFileName(),
@@ -492,7 +489,6 @@ class MessagePane extends BorderPane {
 
 	private void initRemoveAttachmentBtn() {
 
-		removeAttachmentBtn.setMaxHeight(Double.MAX_VALUE);
 		removeAttachmentBtn.setOnAction(e -> attachmentProperty.set(null));
 
 	}
@@ -602,9 +598,9 @@ class MessagePane extends BorderPane {
 
 	}
 
-	Long getMaxMessageId() {
+	Long getLastEventTime() {
 
-		return maxMessageId.get();
+		return lastEventTime.get();
 
 	}
 
@@ -673,6 +669,8 @@ class MessagePane extends BorderPane {
 			}
 
 		}
+
+		lastEventTime.set(System.currentTimeMillis());
 
 	}
 
@@ -858,18 +856,14 @@ class MessagePane extends BorderPane {
 
 			} else {
 
-				HBox attachmentArea = new HBox(gap);
-				attachmentArea.setAlignment(Pos.CENTER_LEFT);
+				Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
+						ViewFactory.newAttachGraph(0.8));
+				attachmentLabel.getStyleClass().add("dim-label");
+				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
-				Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
-				attachmentLbl.getStyleClass().add("dim-label");
-				attachmentLbl.setFont(Font.font(attachmentLbl.getFont().getSize() * 0.8));
+				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, gap));
 
-				attachmentArea.getChildren().addAll(ViewFactory.newSimpleAttachBtn(0.8), attachmentLbl);
-
-				VBox.setMargin(attachmentArea, new Insets(0.0, 0.0, 0.0, gap));
-
-				referenceBalloon.getChildren().add(attachmentArea);
+				referenceBalloon.getChildren().add(attachmentLabel);
 
 			}
 
@@ -1022,8 +1016,8 @@ class MessagePane extends BorderPane {
 
 		private final MessageInfo messageInfo;
 
-		private final HBox messagePaneContainer = new HBox(gap);
 		private final GridPane messagePane = new GridPane();
+		private final HBox statusPane = new HBox(gap);
 		private final Label timeLbl;
 		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
@@ -1066,23 +1060,23 @@ class MessagePane extends BorderPane {
 			col2.setPercentWidth(80.0);
 
 			initSelectionBtn();
-			initMessagePaneContainer();
+			initMessagePane();
 
-			add(selectionBtn, 1, 0, 1, 1);
-			add(messagePaneContainer, 2, 0, 1, 1);
+			add(selectionBtn, 1, 0);
+			add(messagePane, 2, 0);
 
-			if (messageInfo.isOutgoing) {
+			if (messageInfo.infoAvailable)
+				add(getInfoBtn(), 3, 0);
+
+			if (messageInfo.isOutgoing)
 				col1.setHgrow(Priority.ALWAYS);
-				GridPane.setHalignment(messagePaneContainer, HPos.RIGHT);
-			} else {
+			else
 				col3.setHgrow(Priority.ALWAYS);
-				GridPane.setHalignment(messagePaneContainer, HPos.LEFT);
-			}
 
 		}
 
 		void addNameLbl(Label nameLbl) {
-			messagePane.add(nameLbl, 0, 0, 3, 1);
+			messagePane.add(nameLbl, 0, 0);
 		}
 
 		void removeNameLbl(Label nameLbl) {
@@ -1098,7 +1092,7 @@ class MessagePane extends BorderPane {
 			GridPane.setMargin(referenceBalloon, new Insets(0, 0, gap, 0));
 			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
 
-			messagePane.add(referenceBalloon, 0, 1, 3, 1);
+			messagePane.add(referenceBalloon, 0, 1);
 
 		}
 
@@ -1133,58 +1127,39 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private void initMessagePaneContainer() {
-
-			GridPane.setHgrow(messagePaneContainer, Priority.ALWAYS);
-			GridPane.setFillWidth(messagePaneContainer, false);
-
-			messagePaneContainer.setAlignment(Pos.CENTER_LEFT);
-
-			initMessagePane();
-
-			messagePaneContainer.getChildren().add(messagePane);
-
-			if (messageInfo.infoAvailable)
-				messagePaneContainer.getChildren().add(getInfoBtn());
-
-		}
-
 		private void initMessagePane() {
 
+			if (messageInfo.isOutgoing) {
+				GridPane.setHalignment(messagePane, HPos.RIGHT);
+				messagePane.setBackground(outgoingBackground);
+			} else {
+				GridPane.setHalignment(messagePane, HPos.LEFT);
+				messagePane.setBackground(incomingBackground);
+			}
+
+			GridPane.setFillWidth(messagePane, false);
+
 			messagePane.setStyle("-fx-min-width: 6em;");
-
 			messagePane.setBorder(messagePaneBorder);
-			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
-
 			messagePane.setPadding(new Insets(gap));
-			messagePane.setHgap(gap);
-
 			messagePane.setEffect(shadow);
 
 			if (messageInfo.attachment != null)
-				messagePane.add(getAttachmentArea(), 0, 2, 3, 1);
+				messagePane.add(getAttachmentArea(), 0, 2);
 
 			if (messageInfo.content != null)
-				messagePane.add(getContentArea(), 0, 3, 3, 1);
+				messagePane.add(getContentArea(), 0, 3);
 
-			initSmallStarBtn();
-			initTimeLbl();
+			initStatusPane();
 
-			if (messageInfo.isOutgoing) {
-				messagePane.add(smallStarBtn, 0, 4, 1, 1);
-				messagePane.add(getInfoGrp(), 1, 4, 1, 1);
-				messagePane.add(getProgressLbl(), 1, 4, 1, 1);
-				messagePane.add(timeLbl, 2, 4, 1, 1);
-			} else {
-				messagePane.add(timeLbl, 0, 4, 1, 1);
-				messagePane.add(smallStarBtn, 2, 4, 1, 1);
-			}
+			messagePane.add(statusPane, 0, 4);
 
 		}
 
 		private Node getInfoBtn() {
 
 			Button infoBtn = ViewFactory.newInfoBtn();
+			GridPane.setMargin(infoBtn, new Insets(0, 0, 0, gap));
 
 			infoBtn.visibleProperty().bind(selectionModeProperty.not());
 			infoBtn.managedProperty().bind(infoBtn.visibleProperty());
@@ -1210,44 +1185,62 @@ class MessagePane extends BorderPane {
 			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO))
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
-			HBox attachmentArea = new HBox(gap);
-			GridPane.setFillWidth(attachmentArea, false);
-			attachmentArea.setAlignment(Pos.CENTER_LEFT);
+			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
+					ViewFactory.newAttachGraph(1.0));
+			GridPane.setFillWidth(attachmentLabel, false);
 
-			Label attachmentLbl = new Label(Paths.get(messageInfo.attachment).getFileName().toString());
-			attachmentLbl.getStyleClass().add("dim-label");
-			attachmentLbl.setTooltip(new Tooltip(attachmentLbl.getText()));
+			attachmentLabel.getStyleClass().add("dim-label");
+			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
 
-			attachmentArea.getChildren().addAll(ViewFactory.newSimpleAttachBtn(1.0), attachmentLbl);
-
-			attachmentArea.cursorProperty().bind(Bindings.createObjectBinding(
+			attachmentLabel.cursorProperty().bind(Bindings.createObjectBinding(
 					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
 
-			attachmentArea.setOnMouseClicked(
+			attachmentLabel.setOnMouseClicked(
 					e -> listeners.forEach(listener -> listener.attachmentClicked(messageInfo.messageId)));
 
 			final Effect colorAdjust = new ColorAdjust(-0.75, 1.0, 0.25, 0.0);
 
-			attachmentArea.effectProperty().bind(Bindings.createObjectBinding(
-					() -> attachmentArea.hoverProperty().and(selectionModeProperty.not()).get() ? colorAdjust : null,
-					attachmentArea.hoverProperty(), selectionModeProperty));
+			attachmentLabel.effectProperty().bind(Bindings.createObjectBinding(
+					() -> attachmentLabel.hoverProperty().and(selectionModeProperty.not()).get() ? colorAdjust : null,
+					attachmentLabel.hoverProperty(), selectionModeProperty));
 
-			return attachmentArea;
+			return attachmentLabel;
+
+		}
+
+		private void initStatusPane() {
+
+			GridPane.setHgrow(statusPane, Priority.ALWAYS);
+
+			statusPane.setAlignment(Pos.CENTER);
+
+			initSmallStarBtn();
+			initTimeLbl();
+
+			if (messageInfo.isOutgoing)
+				statusPane.getChildren().addAll(smallStarBtn, getSpace(), getProgressLbl(), getInfoGrp(), timeLbl);
+			else
+				statusPane.getChildren().addAll(timeLbl, getSpace(), smallStarBtn);
+
+		}
+
+		private Node getSpace() {
+
+			Region space = new Region();
+			HBox.setHgrow(space, Priority.ALWAYS);
+
+			return space;
 
 		}
 
 		private void initSmallStarBtn() {
 
 			smallStarBtn.setEffect(new DropShadow());
-
 			smallStarBtn.visibleProperty().bind(messageInfo.archivedProperty);
 
 		}
 
 		private void initTimeLbl() {
-
-			if (!messageInfo.isOutgoing)
-				GridPane.setHgrow(timeLbl, Priority.ALWAYS);
 
 			timeLbl.setFont(Font.font(11.25 * viewFactor));
 			timeLbl.setTextFill(Color.DIMGRAY);
@@ -1258,13 +1251,12 @@ class MessagePane extends BorderPane {
 
 			Label progressLbl = new Label();
 
-			GridPane.setHalignment(progressLbl, HPos.RIGHT);
-
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
 			progressLbl.setFont(Font.font(11.25 * viewFactor));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.FRESH));
+			progressLbl.managedProperty().bind(progressLbl.visibleProperty());
 			progressLbl.textProperty().bind(Bindings.createStringBinding(() -> {
 				int progress = messageInfo.progressProperty.get();
 				return progress < 0 ? "" : String.format("%d%%", progress);
@@ -1280,13 +1272,11 @@ class MessagePane extends BorderPane {
 			Circle waitingCircle = new Circle(radius, messageInfo.statusProperty.get().getWaitingColor());
 			Circle transmittedCircle = new Circle(radius, messageInfo.statusProperty.get().getTransmittedColor());
 
-			GridPane.setHgrow(infoGrp, Priority.ALWAYS);
-			GridPane.setHalignment(infoGrp, HPos.RIGHT);
-
 			transmittedCircle.setLayoutX(-2.0 * radius);
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 			infoGrp.visibleProperty().bind(messageInfo.statusProperty.isNotEqualTo(MessageStatus.FRESH));
+			infoGrp.managedProperty().bind(infoGrp.visibleProperty());
 			waitingCircle.fillProperty().bind(Bindings.createObjectBinding(
 					() -> messageInfo.statusProperty.get().getWaitingColor(), messageInfo.statusProperty));
 			transmittedCircle.fillProperty().bind(Bindings.createObjectBinding(

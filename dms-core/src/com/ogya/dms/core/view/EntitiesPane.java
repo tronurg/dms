@@ -65,7 +65,7 @@ class EntitiesPane extends BorderPane {
 			EntityPane group0 = (EntityPane) arg0;
 			EntityPane group1 = (EntityPane) arg1;
 
-			return group1.getMessagePane().getMaxMessageId().compareTo(group0.getMessagePane().getMaxMessageId());
+			return group1.getMessagePane().getLastEventTime().compareTo(group0.getMessagePane().getLastEventTime());
 
 		}
 
@@ -242,7 +242,7 @@ class EntitiesPane extends BorderPane {
 
 			entityIdPane.put(entityId, entityPane);
 
-			entities.getChildren().add(entityPane);
+			entities.getChildren().add(0, entityPane);
 
 		}
 

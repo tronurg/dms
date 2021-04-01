@@ -41,7 +41,7 @@ public class AudioCenter {
 
 	public void prepareRecording() throws Exception {
 
-		targetLineRef.set(null);
+		stopRecording();
 
 		DataLine.Info info = new DataLine.Info(TargetDataLine.class, audioFormat);
 

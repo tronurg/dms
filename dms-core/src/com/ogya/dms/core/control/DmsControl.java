@@ -426,13 +426,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private Message createOutgoingMessage(String content, Path attachment, UpdateType updateType,
-			AttachmentType attachmentType, Message refMessage, Boolean senderGroupOwner, Integer messageCode,
-			Contact contact, Dgroup group, Set<StatusReport> statusReports, Integer apiFlag) throws Exception {
+			AttachmentType attachmentType, Message refMessage, Integer messageCode, Contact contact, Dgroup group,
+			Set<StatusReport> statusReports, Integer apiFlag) throws Exception {
 
 		Message outgoingMessage = new Message(content, updateType, attachmentType, refMessage, messageCode,
 				MessageStatus.FRESH, contact, model.getIdentity(), group, apiFlag);
 
-		outgoingMessage.setSenderGroupOwner(senderGroupOwner);
 		outgoingMessage.setLocal(true);
 
 		if (attachment != null)
@@ -911,7 +910,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		try {
 			sendPrivateMessage(createOutgoingMessage(String.valueOf(message.getId()), null, UpdateType.CANCEL_MESSAGE,
-					null, null, null, null, message.getContact(), null, null, null));
+					null, null, null, message.getContact(), null, null, null));
 		} catch (Exception e) {
 
 		}
@@ -1989,8 +1988,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
-		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage, null,
-				messageCode, contact, null, null, apiFlag);
+		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage, messageCode,
+				contact, null, null, apiFlag);
 
 		addMessageToPane(newMessage);
 
@@ -2011,8 +2010,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
-		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage,
-				group.isLocal(), messageCode, group.getOwner(), group, createStatusReports(group), apiFlag);
+		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage, messageCode,
+				group.getOwner(), group, createStatusReports(group), apiFlag);
 
 		addMessageToPane(newMessage);
 
@@ -2207,8 +2206,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					String groupUpdate = getGroupUpdate(newGroup.getName(), true, newGroup.getMembers(), null);
 
-					sendGroupMessage(createOutgoingMessage(groupUpdate, null, UpdateType.UPDATE_GROUP, null, null,
-							Boolean.TRUE, null, newGroup.getOwner(), newGroup, createStatusReports(newGroup), null));
+					sendGroupMessage(createOutgoingMessage(groupUpdate, null, UpdateType.UPDATE_GROUP, null, null, null,
+							newGroup.getOwner(), newGroup, createStatusReports(newGroup), null));
 
 				} else {
 					// Update group
@@ -2237,7 +2236,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 								newGroup.getMembers(), null);
 
 						sendGroupMessage(createOutgoingMessage(groupUpdateToAddedContacts, null,
-								UpdateType.UPDATE_GROUP, null, null, Boolean.TRUE, null, newGroup.getOwner(), newGroup,
+								UpdateType.UPDATE_GROUP, null, null, null, newGroup.getOwner(), newGroup,
 								createStatusReports(contactsToBeAdded), null), contactsToBeAdded);
 
 					}
@@ -2247,7 +2246,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						String groupUpdateToRemovedContacts = getGroupUpdate(null, false, null, null);
 
 						sendGroupMessage(createOutgoingMessage(groupUpdateToRemovedContacts, null,
-								UpdateType.UPDATE_GROUP, null, null, Boolean.TRUE, null, newGroup.getOwner(), newGroup,
+								UpdateType.UPDATE_GROUP, null, null, null, newGroup.getOwner(), newGroup,
 								createStatusReports(contactsToBeRemoved), null), contactsToBeRemoved);
 
 					}
@@ -2258,7 +2257,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 								contactsToBeRemoved);
 
 						sendGroupMessage(createOutgoingMessage(groupUpdateToResidentContacts, null,
-								UpdateType.UPDATE_GROUP, null, null, Boolean.TRUE, null, newGroup.getOwner(), newGroup,
+								UpdateType.UPDATE_GROUP, null, null, null, newGroup.getOwner(), newGroup,
 								createStatusReports(residentContacts), null), residentContacts);
 
 					}
@@ -2296,9 +2295,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				String groupUpdate = getGroupUpdate(null, newGroup.isActive(), null, null);
 
-				sendGroupMessage(createOutgoingMessage(groupUpdate, null, UpdateType.UPDATE_GROUP, null, null,
-						Boolean.TRUE, null, newGroup.getOwner(), newGroup, createStatusReports(contacts), null),
-						contacts);
+				sendGroupMessage(createOutgoingMessage(groupUpdate, null, UpdateType.UPDATE_GROUP, null, null, null,
+						newGroup.getOwner(), newGroup, createStatusReports(contacts), null), contacts);
 
 			} catch (Exception e) {
 

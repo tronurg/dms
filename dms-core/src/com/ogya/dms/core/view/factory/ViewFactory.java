@@ -10,6 +10,7 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.effect.ColorAdjust;
@@ -266,11 +267,9 @@ public class ViewFactory {
 
 	}
 
-	public static Button newSimpleAttachBtn(double scaleFactor) {
+	public static Node newAttachGraph(double scaleFactor) {
 
 		double viewFactor = scaleFactor * getViewFactor();
-
-		Button btn = new Button();
 
 		Rectangle rectangle = new Rectangle(-6.0 * viewFactor, -2.5 * viewFactor, 12.0 * viewFactor, 5.0 * viewFactor);
 		rectangle.setArcWidth(3.0 * viewFactor);
@@ -282,12 +281,8 @@ public class ViewFactory {
 		Line line = new Line(-3.0 * viewFactor, 3.0 * viewFactor, 1.5 * viewFactor, -1.5 * viewFactor);
 		line.setStroke(Color.GRAY);
 		line.setStrokeWidth(1.0 * viewFactor);
-		Group group = new Group(rectangle, line);
-		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
-		return btn;
+		return new Group(rectangle, line);
 
 	}
 
@@ -323,14 +318,14 @@ public class ViewFactory {
 
 	public static Button newInfoBtn() {
 
-		double viewFactor = 0.75 * getViewFactor();
+		double viewFactor = getViewFactor();
 
 		Button btn = new Button("i");
 		btn.setTextFill(Color.WHITE);
 		btn.setContentDisplay(ContentDisplay.CENTER);
-		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 25.0 * viewFactor));
+		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 * viewFactor));
 
-		Circle circle = new Circle(16.0 * viewFactor);
+		Circle circle = new Circle(12.0 * viewFactor);
 		btn.setGraphic(circle);
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
