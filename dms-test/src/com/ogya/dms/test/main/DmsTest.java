@@ -19,7 +19,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import com.ogya.dms.core.intf.DmsHandle;
-import com.ogya.dms.core.intf.exceptions.DbException;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
@@ -293,7 +292,7 @@ public class DmsTest {
 
 						SwingUtilities.invokeLater(() -> frame.setVisible(true));
 
-					} catch (DbException e) {
+					} catch (Exception e) {
 
 						e.printStackTrace();
 

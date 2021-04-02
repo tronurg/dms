@@ -48,7 +48,6 @@ import com.ogya.dms.core.dmsclient.DmsClient;
 import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.core.factory.DmsFactory;
 import com.ogya.dms.core.intf.DmsHandle;
-import com.ogya.dms.core.intf.exceptions.DbException;
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.FileHandle;
@@ -117,7 +116,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final ExecutorService listenerTaskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	public DmsControl(String username, String password) throws DbException {
+	public DmsControl(String username, String password) throws Exception {
 
 		dbManager = new DbManager(username, password);
 
@@ -185,38 +184,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		//
 
-		initDatabase();
-		initModel();
+		initDbAndModel();
 		initGUI();
 
 		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
 
 	}
 
-	private void initDatabase() {
+	private void initDbAndModel() throws HibernateException {
 
 		dbManager.fetchAllContacts().forEach(contact -> {
 			contact.setStatus(Availability.OFFLINE);
-			dbManager.addUpdateContact(contact);
+			contact = dbManager.addUpdateContact(contact);
+			model.addContact(contact);
 		});
 
 		dbManager.fetchAllGroups().forEach(group -> {
 			if (!group.isLocal()) {
 				group.setStatus(Availability.OFFLINE);
-				dbManager.addUpdateGroup(group);
+				group = dbManager.addUpdateGroup(group);
 			}
+			model.addGroup(group);
 		});
 
 	}
 
-	private void initModel() {
-
-		dbManager.fetchAllContacts().forEach(contact -> model.addContact(contact));
-		dbManager.fetchAllGroups().forEach(group -> model.addGroup(group));
-
-	}
-
-	private void initGUI() {
+	private void initGUI() throws HibernateException {
 
 		Platform.runLater(() -> {
 
@@ -253,7 +246,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
 					Platform.runLater(() -> dmsPanel.allMessagesLoaded(contact.getEntityId()));
 
-				firstMessages.forEach(message -> addMessageToPane(message));
+				firstMessages.forEach(message -> addMessageToPane(message, false));
 
 			} catch (Exception e) {
 
@@ -289,7 +282,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
 					Platform.runLater(() -> dmsPanel.allMessagesLoaded(group.getEntityId()));
 
-				firstMessages.forEach(message -> addMessageToPane(message));
+				firstMessages.forEach(message -> addMessageToPane(message, false));
 
 			} catch (Exception e) {
 
@@ -298,6 +291,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 		});
+
+		Platform.runLater(() -> dmsPanel.sortEntities());
 
 		// ARCHIVED MESSAGES
 		try {
@@ -312,9 +307,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void addMessageToPane(final Message message) {
+	private void addMessageToPane(final Message message, final boolean moveToTop) {
 
-		Platform.runLater(() -> dmsPanel.addMessage(message));
+		Platform.runLater(() -> dmsPanel.addMessage(message, moveToTop));
 
 	}
 
@@ -1353,7 +1348,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (newMessage.getUpdateType() == null) {
 
-					addMessageToPane(newMessage);
+					addMessageToPane(newMessage, true);
 
 					if (!model.isEntityOpen(newMessage.getEntity().getEntityId())) {
 						if (newMessage.getEntity().getEntityId().isGroup())
@@ -1990,7 +1985,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage, messageCode,
 				contact, null, null, apiFlag);
 
-		addMessageToPane(newMessage);
+		addMessageToPane(newMessage, true);
 
 		sendPrivateMessage(newMessage);
 
@@ -2012,7 +2007,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		Message newMessage = createOutgoingMessage(content, attachment, null, attachmentType, refMessage, messageCode,
 				group.getOwner(), group, createStatusReports(group), apiFlag);
 
-		addMessageToPane(newMessage);
+		addMessageToPane(newMessage, true);
 
 		sendGroupMessage(newMessage);
 
@@ -2079,7 +2074,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.savePosition(entityId, topMessageId));
 
-				lastMessagesBeforeId.forEach(message -> addMessageToPane(message));
+				lastMessagesBeforeId.forEach(message -> addMessageToPane(message, false));
 
 				Platform.runLater(() -> dmsPanel.scrollToSavedPosition(entityId));
 
@@ -2128,7 +2123,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (lastMessagesBetweenIds.isEmpty())
 					return;
 
-				lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
+				lastMessagesBetweenIds.forEach(message -> addMessageToPane(message, false));
 
 				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, firstMessageIdIncl));
 

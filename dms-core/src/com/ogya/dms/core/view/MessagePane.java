@@ -204,7 +204,6 @@ class MessagePane extends BorderPane {
 
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
-	private final AtomicLong lastEventTime = new AtomicLong();
 
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
 
@@ -221,8 +220,6 @@ class MessagePane extends BorderPane {
 
 		this.entityId = entityId;
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
-
-		lastEventTime.set(System.currentTimeMillis());
 
 		init();
 
@@ -597,9 +594,9 @@ class MessagePane extends BorderPane {
 
 	}
 
-	Long getLastEventTime() {
+	Long getMaxMessageId() {
 
-		return lastEventTime.get();
+		return maxMessageId.get();
 
 	}
 
@@ -660,8 +657,6 @@ class MessagePane extends BorderPane {
 			}
 
 		}
-
-		lastEventTime.set(System.currentTimeMillis());
 
 	}
 

@@ -65,7 +65,13 @@ class EntitiesPane extends BorderPane {
 			EntityPane group0 = (EntityPane) arg0;
 			EntityPane group1 = (EntityPane) arg1;
 
-			return group1.getMessagePane().getLastEventTime().compareTo(group0.getMessagePane().getLastEventTime());
+			int comparison = group1.getMessagePane().getMaxMessageId()
+					.compareTo(group0.getMessagePane().getMaxMessageId());
+			if (comparison == 0)
+				return Long.compare(group1.getMessagePane().getEntityId().getId(),
+						group0.getMessagePane().getEntityId().getId());
+
+			return comparison;
 
 		}
 
@@ -159,11 +165,23 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void addMessage(Message message) {
-
-		getEntityPane(message.getEntity().getEntityId()).addUpdateMessage(message);
+	void sortEntities() {
 
 		FXCollections.sort(entities.getChildren(), entitiesSorter);
+
+	}
+
+	void addMessage(Message message, boolean moveToTop) {
+
+		EntityPane entityPane = getEntityPane(message.getEntity().getEntityId());
+
+		entityPane.addUpdateMessage(message);
+
+		if (!moveToTop)
+			return;
+
+		entities.getChildren().remove(entityPane);
+		entities.getChildren().add(0, entityPane);
 
 	}
 

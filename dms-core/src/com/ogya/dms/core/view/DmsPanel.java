@@ -202,9 +202,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
-	public void addMessage(Message message) {
+	public void sortEntities() {
 
-		entitiesPane.addMessage(message);
+		entitiesPane.sortEntities();
+
+	}
+
+	public void addMessage(Message message, boolean moveToTop) {
+
+		entitiesPane.addMessage(message, moveToTop);
 
 		if (getChildren().size() == 1 || message.isLocal()
 				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))

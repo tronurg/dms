@@ -18,7 +18,6 @@ import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.Member;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
-import com.ogya.dms.core.intf.exceptions.DbException;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
@@ -29,32 +28,22 @@ public class DbManager {
 
 	private final SessionFactory factory;
 
-	public DbManager(String dbName, String dbPassword) throws DbException {
+	public DbManager(String dbName, String dbPassword) throws Exception {
 
 		name = dbName;
 
 		if (name.length() > 40)
-			throw new DbException("Name too long, cannot exceed 40 characters.");
+			throw new Exception("Name too long, cannot exceed 40 characters.");
 
-		try {
+		factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
+				.setProperty("hibernate.connection.url",
+						"jdbc:h2:split:24:" + CommonConstants.DB_PATH + File.separator + dbName)
+				.setProperty("hibernate.connection.username", dbName)
+				.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Contact.class)
+				.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Member.class).addAnnotatedClass(Message.class)
+				.addAnnotatedClass(StatusReport.class).buildSessionFactory();
 
-			factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
-					.setProperty("hibernate.connection.url",
-							"jdbc:h2:split:24:" + CommonConstants.DB_PATH + File.separator + dbName)
-					.setProperty("hibernate.connection.username", dbName)
-					.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Contact.class)
-					.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Member.class).addAnnotatedClass(Message.class)
-					.addAnnotatedClass(StatusReport.class).buildSessionFactory();
-
-			Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
-
-		} catch (HibernateException e) {
-
-			e.printStackTrace();
-
-			throw new DbException("Database cannot be accessed. Wrong password or account in use.");
-
-		}
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
 
 	}
 
