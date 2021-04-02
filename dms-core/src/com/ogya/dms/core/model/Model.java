@@ -1,6 +1,7 @@
 package com.ogya.dms.core.model;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -162,39 +163,61 @@ public class Model {
 
 	}
 
-	public List<Long> getIdsByServerIp(final InetAddress remoteServerIp) {
+	public List<Long> getIdsByServerIp(InetAddress remoteServerIp) {
+
+		if (remoteServerIp.isLoopbackAddress())
+			try {
+				remoteServerIp = InetAddress.getLocalHost();
+			} catch (UnknownHostException e) {
+
+			}
+
+		final InetAddress ip = remoteServerIp;
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream()
-				.filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(remoteServerIp))
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(ip))
 				.forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 
 	}
 
-	public List<Long> getIdsByServerIpAndName(final InetAddress remoteServerIp, final String name) {
+	public List<Long> getIdsByServerIpAndName(InetAddress remoteServerIp, final String name) {
+
+		if (remoteServerIp.isLoopbackAddress())
+			try {
+				remoteServerIp = InetAddress.getLocalHost();
+			} catch (UnknownHostException e) {
+
+			}
+
+		final InetAddress ip = remoteServerIp;
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream()
-				.filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(remoteServerIp)
-						&& entry.getValue().getName().equals(name))
-				.forEach(entry -> ids.add(entry.getKey()));
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(ip)
+				&& entry.getValue().getName().equals(name)).forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 
 	}
 
-	public List<Long> getIdsByServerIpAndSecretId(final InetAddress remoteServerIp, final String secretId) {
+	public List<Long> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, final String secretId) {
+
+		if (remoteServerIp.isLoopbackAddress())
+			try {
+				remoteServerIp = InetAddress.getLocalHost();
+			} catch (UnknownHostException e) {
+
+			}
+
+		final InetAddress ip = remoteServerIp;
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream()
-				.filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(remoteServerIp)
-						&& entry.getValue().getSecretId().equals(secretId))
-				.forEach(entry -> ids.add(entry.getKey()));
+		idContacts.entrySet().stream().filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(ip)
+				&& entry.getValue().getSecretId().equals(secretId)).forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 

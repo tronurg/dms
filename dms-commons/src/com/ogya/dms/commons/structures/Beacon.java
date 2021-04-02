@@ -1,9 +1,13 @@
 package com.ogya.dms.commons.structures;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.KeyDeserializer;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public class Beacon {
 
@@ -22,6 +26,7 @@ public class Beacon {
 	@JsonProperty("g")
 	public String secretId;
 	@JsonProperty("h")
+	@JsonDeserialize(keyUsing = InetAddressDeserializer.class)
 	public Map<InetAddress, InetAddress> localRemoteServerIps;
 
 	public Beacon() {
@@ -45,6 +50,17 @@ public class Beacon {
 		this.lattitude = lattitude;
 		this.longitude = longitude;
 		this.secretId = secretId;
+
+	}
+
+	private static class InetAddressDeserializer extends KeyDeserializer {
+
+		@Override
+		public Object deserializeKey(String arg0, DeserializationContext arg1) throws IOException {
+
+			return InetAddress.getByName(arg0.split("/")[1]);
+
+		}
 
 	}
 
