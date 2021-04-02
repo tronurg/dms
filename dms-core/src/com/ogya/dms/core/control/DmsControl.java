@@ -2130,10 +2130,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				lastMessagesBetweenIds.forEach(message -> addMessageToPane(message));
 
-				Platform.runLater(() -> {
-					dmsPanel.savePosition(entityId, firstMessageIdIncl);
-					dmsPanel.scrollToSavedPosition(entityId);
-				});
+				Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, firstMessageIdIncl));
 
 			} catch (HibernateException e) {
 

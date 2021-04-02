@@ -54,6 +54,7 @@ import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -204,8 +205,6 @@ class MessagePane extends BorderPane {
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 	private final AtomicLong lastEventTime = new AtomicLong();
-
-	private final AtomicLong futureReference = new AtomicLong(-1L);
 
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
 
@@ -660,14 +659,6 @@ class MessagePane extends BorderPane {
 
 			}
 
-			if (Objects.equals(messageId, futureReference.get())) {
-
-				futureReference.set(-1L);
-
-				scrollPaneToMessage(messageId);
-
-			}
-
 		}
 
 		lastEventTime.set(System.currentTimeMillis());
@@ -899,24 +890,21 @@ class MessagePane extends BorderPane {
 
 	void goToMessage(Long messageId) {
 
-		if (messageBalloons.containsKey(messageId)) {
-
+		if (messageBalloons.containsKey(messageId))
 			scrollPaneToMessage(messageId);
-
-		} else {
-
-			futureReference.set(messageId);
-
+		else
 			listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
-
-		}
 
 	}
 
 	private void scrollPane(Node nodeToScrollTo, double bias) {
 
-		scrollPane.applyCss();
-		scrollPane.layout();
+		Parent parent = getParent();
+		if (parent == null)
+			return;
+
+		parent.applyCss();
+		parent.layout();
 
 		Double centerPaneHeight = centerPane.getHeight();
 		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
