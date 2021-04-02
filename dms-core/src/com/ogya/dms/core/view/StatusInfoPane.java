@@ -163,7 +163,7 @@ public class StatusInfoPane extends BorderPane {
 			initProgressLbl();
 			initInfoGrp();
 
-			getChildren().addAll(statusCircle, nameLbl, progressLbl, infoGrp);
+			getChildren().addAll(nameLbl, progressLbl, infoGrp);
 
 		}
 
@@ -201,6 +201,8 @@ public class StatusInfoPane extends BorderPane {
 
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 
+			nameLbl.setGraphic(statusCircle);
+			nameLbl.setGraphicTextGap(2 * gap);
 			nameLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
 

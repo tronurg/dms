@@ -485,6 +485,7 @@ class MessagePane extends BorderPane {
 
 	private void initRemoveAttachmentBtn() {
 
+		removeAttachmentBtn.setMaxHeight(Double.MAX_VALUE);
 		removeAttachmentBtn.setOnAction(e -> attachmentProperty.set(null));
 
 	}
