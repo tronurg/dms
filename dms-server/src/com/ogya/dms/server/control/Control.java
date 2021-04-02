@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -288,10 +289,9 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> remoteAddresses,
-			List<InetAddress> localAddresses) {
+	public void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps) {
 
-		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, remoteAddresses, localAddresses));
+		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, localRemoteIps));
 
 	}
 

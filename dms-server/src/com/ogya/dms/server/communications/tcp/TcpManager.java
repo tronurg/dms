@@ -355,16 +355,12 @@ public class TcpManager implements TcpServerListener {
 
 	private void serverConnectionsUpdated(DmsServer dmsServer) {
 
-		List<InetAddress> remoteAddresses = new ArrayList<InetAddress>();
-		List<InetAddress> localAddresses = new ArrayList<InetAddress>();
+		Map<InetAddress, InetAddress> localRemoteIps = new HashMap<InetAddress, InetAddress>();
 
-		dmsServer.connections.forEach(connection -> {
-			remoteAddresses.add(connection.remoteAddress);
-			localAddresses.add(connection.localAddress);
-		});
+		dmsServer.connections
+				.forEach(connection -> localRemoteIps.put(connection.localAddress, connection.remoteAddress));
 
-		listeners.forEach(
-				listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, remoteAddresses, localAddresses));
+		listeners.forEach(listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, localRemoteIps));
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected

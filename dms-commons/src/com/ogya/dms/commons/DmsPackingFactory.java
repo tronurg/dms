@@ -80,7 +80,7 @@ public class DmsPackingFactory {
 	private static abstract class BeaconRemoteMixin {
 
 		@JsonIgnore
-		public List<InetAddress> localServerInterfaces;
+		public Map<InetAddress, InetAddress> localRemoteServerIps;
 
 	}
 

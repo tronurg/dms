@@ -94,7 +94,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 
 		try {
 			dmsHandle.sendMessageToContacts(messageHandle,
-					dmsHandle.getIdsByAddressAndName(InetAddress.getByName("192.168.1.88"), "elma"));
+					dmsHandle.getIdsByServerIpAndName(InetAddress.getByName("192.168.1.88"), "elma"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

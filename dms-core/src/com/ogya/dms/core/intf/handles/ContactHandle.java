@@ -1,7 +1,7 @@
 package com.ogya.dms.core.intf.handles;
 
 import java.net.InetAddress;
-import java.util.List;
+import java.util.Map;
 
 import com.ogya.dms.core.structures.Availability;
 
@@ -23,8 +23,6 @@ public interface ContactHandle {
 
 	String getSecretId();
 
-	List<InetAddress> getRemoteInterfaces();
-
-	List<InetAddress> getLocalServerInterfaces();
+	Map<InetAddress, InetAddress> getLocalRemoteServerIps();
 
 }

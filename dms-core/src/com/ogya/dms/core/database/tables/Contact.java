@@ -1,8 +1,8 @@
 package com.ogya.dms.core.database.tables;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.persistence.Column;
@@ -48,9 +48,7 @@ public class Contact extends EntityBase {
 	private String secretId;
 
 	@Transient
-	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
-	@Transient
-	private final List<InetAddress> localServerInterfaces = new ArrayList<InetAddress>();
+	private final Map<InetAddress, InetAddress> localRemoteServerIps = new HashMap<InetAddress, InetAddress>();
 
 	public Contact() {
 		super();
@@ -137,24 +135,14 @@ public class Contact extends EntityBase {
 		this.secretId = secretId;
 	}
 
-	public List<InetAddress> getRemoteInterfaces() {
-		return remoteInterfaces;
+	public Map<InetAddress, InetAddress> getLocalRemoteServerIps() {
+		return localRemoteServerIps;
 	}
 
-	public void setRemoteInterfaces(List<InetAddress> remoteInterfaces) {
-		this.remoteInterfaces.clear();
-		if (remoteInterfaces != null)
-			this.remoteInterfaces.addAll(remoteInterfaces);
-	}
-
-	public List<InetAddress> getLocalServerInterfaces() {
-		return localServerInterfaces;
-	}
-
-	public void setLocalServerInterfaces(List<InetAddress> localServerInterfaces) {
-		this.localServerInterfaces.clear();
-		if (localServerInterfaces != null)
-			this.localServerInterfaces.addAll(localServerInterfaces);
+	public void setLocalRemoteServerIps(Map<InetAddress, InetAddress> localRemoteServerIps) {
+		this.localRemoteServerIps.clear();
+		if (localRemoteServerIps != null)
+			this.localRemoteServerIps.putAll(localRemoteServerIps);
 	}
 
 	@Override

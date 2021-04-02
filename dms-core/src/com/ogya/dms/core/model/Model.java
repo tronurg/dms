@@ -1,10 +1,6 @@
 package com.ogya.dms.core.model;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,7 +13,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
@@ -84,51 +79,6 @@ public class Model {
 	public String getLocalUuid() {
 
 		return localUuid;
-
-	}
-
-	public List<InetAddress> getLocalInterfaces() {
-
-		try {
-
-			return Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-					.flatMap(ni -> Collections.list(ni.getInetAddresses()).stream())
-					.filter(ia -> (ia instanceof Inet4Address) && !ia.isLoopbackAddress()).collect(Collectors.toList());
-
-		} catch (SocketException e) {
-
-		}
-
-		return Collections.emptyList();
-
-	}
-
-	public List<InetAddress> getRemoteInterfaces(List<byte[]> remoteAddresses) {
-
-		if (remoteAddresses == null)
-			return null;
-
-		List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
-
-		remoteAddresses.forEach(addr -> {
-			try {
-				remoteInterfaces.add(InetAddress.getByAddress(addr));
-			} catch (UnknownHostException e) {
-
-			}
-		});
-
-		List<InetAddress> localInterfaces = getLocalInterfaces();
-
-		if (remoteInterfaces.stream().anyMatch(ia -> localInterfaces.contains(ia))) {
-			try {
-				remoteInterfaces.add(InetAddress.getByName("localhost"));
-			} catch (UnknownHostException e) {
-
-			}
-		}
-
-		return remoteInterfaces;
 
 	}
 
@@ -212,34 +162,39 @@ public class Model {
 
 	}
 
-	public List<Long> getIdsByAddress(final InetAddress address) {
+	public List<Long> getIdsByServerIp(final InetAddress remoteServerIp) {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address))
+		idContacts.entrySet().stream()
+				.filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(remoteServerIp))
 				.forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 
 	}
 
-	public List<Long> getIdsByAddressAndName(final InetAddress address, final String name) {
+	public List<Long> getIdsByServerIpAndName(final InetAddress remoteServerIp, final String name) {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address)
-				&& entry.getValue().getName().equals(name)).forEach(entry -> ids.add(entry.getKey()));
+		idContacts.entrySet().stream()
+				.filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(remoteServerIp)
+						&& entry.getValue().getName().equals(name))
+				.forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 
 	}
 
-	public List<Long> getIdsByAddressAndSecretId(final InetAddress address, final String secretId) {
+	public List<Long> getIdsByServerIpAndSecretId(final InetAddress remoteServerIp, final String secretId) {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getRemoteInterfaces().contains(address)
-				&& entry.getValue().getSecretId().equals(secretId)).forEach(entry -> ids.add(entry.getKey()));
+		idContacts.entrySet().stream()
+				.filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(remoteServerIp)
+						&& entry.getValue().getSecretId().equals(secretId))
+				.forEach(entry -> ids.add(entry.getKey()));
 
 		return ids;
 

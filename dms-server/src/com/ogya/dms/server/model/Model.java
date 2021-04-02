@@ -22,7 +22,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsPackingFactory;
@@ -468,10 +467,9 @@ public class Model {
 
 	}
 
-	public void serverConnectionsUpdated(String dmsUuid, List<InetAddress> remoteAddresses,
-			List<InetAddress> localAddresses) {
+	public void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps) {
 
-		if (remoteAddresses.isEmpty()) {
+		if (localRemoteIps.isEmpty()) {
 
 			remoteServerDisconnected(dmsUuid);
 
@@ -491,10 +489,8 @@ public class Model {
 //
 //		}
 
-		dmsServer.remoteAddresses.clear();
-		dmsServer.remoteAddresses.addAll(remoteAddresses);
-		dmsServer.localAddresses.clear();
-		dmsServer.localAddresses.addAll(localAddresses);
+		dmsServer.localRemoteIps.clear();
+		dmsServer.localRemoteIps.putAll(localRemoteIps);
 
 		// This block is added upon a half-open connection error.
 		sendAllBeaconsToRemoteServer(dmsUuid);
@@ -560,7 +556,8 @@ public class Model {
 
 		Set<InetAddress> connectedRemoteIps = new HashSet<InetAddress>();
 
-		remoteUsers.forEach((uuid, remoteUser) -> connectedRemoteIps.addAll(remoteUser.dmsServer.remoteAddresses));
+		remoteUsers
+				.forEach((uuid, remoteUser) -> connectedRemoteIps.addAll(remoteUser.dmsServer.localRemoteIps.values()));
 
 		Set<InetAddress> unconnectedRemoteIps = new HashSet<InetAddress>(remoteIps);
 
@@ -749,9 +746,6 @@ public class Model {
 		if (fromBeacon.secretId != null)
 			toBeacon.secretId = fromBeacon.secretId;
 
-		if (fromBeacon.inetAddresses != null)
-			toBeacon.inetAddresses = fromBeacon.inetAddresses;
-
 	}
 
 	private abstract class User {
@@ -781,10 +775,15 @@ public class Model {
 
 			try {
 
-				beacon.localServerInterfaces = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
-						.flatMap(ni -> Collections.list(ni.getInetAddresses()).stream())
-						.filter(ia -> (ia instanceof Inet4Address) && !ia.isLoopbackAddress())
-						.collect(Collectors.toList());
+				Map<InetAddress, InetAddress> localRemoteIps = new HashMap<InetAddress, InetAddress>();
+				for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+					for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
+						if ((ia instanceof Inet4Address) && !ia.isLoopbackAddress())
+							localRemoteIps.put(ia, ia);
+					}
+				}
+
+				beacon.localRemoteServerIps = localRemoteIps;
 
 			} catch (SocketException e) {
 
@@ -806,7 +805,7 @@ public class Model {
 
 			this.dmsServer = dmsServer;
 
-			this.beacon.localServerInterfaces = dmsServer.localAddresses;
+			this.beacon.localRemoteServerIps = dmsServer.localRemoteIps;
 
 		}
 
@@ -816,8 +815,8 @@ public class Model {
 
 		private final String dmsUuid;
 		private final Map<String, User> mappedUsers = Collections.synchronizedMap(new HashMap<String, User>());
-		private final List<InetAddress> remoteAddresses = Collections.synchronizedList(new ArrayList<InetAddress>());
-		private final List<InetAddress> localAddresses = Collections.synchronizedList(new ArrayList<InetAddress>());
+		private final Map<InetAddress, InetAddress> localRemoteIps = Collections
+				.synchronizedMap(new HashMap<InetAddress, InetAddress>());
 
 		private DmsServer(String dmsUuid) {
 

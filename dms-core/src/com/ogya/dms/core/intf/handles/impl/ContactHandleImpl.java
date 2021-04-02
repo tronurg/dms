@@ -1,8 +1,8 @@
 package com.ogya.dms.core.intf.handles.impl;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.intf.handles.ContactHandle;
@@ -18,8 +18,7 @@ public class ContactHandleImpl implements ContactHandle {
 	private final Double longitude;
 	private final Availability availability;
 	private final String secretId;
-	private final List<InetAddress> remoteInterfaces = new ArrayList<InetAddress>();
-	private final List<InetAddress> localServerInterfaces = new ArrayList<InetAddress>();
+	private final Map<InetAddress, InetAddress> localRemoteServerIps = new HashMap<InetAddress, InetAddress>();
 
 	public ContactHandleImpl(Contact contact) {
 
@@ -31,8 +30,7 @@ public class ContactHandleImpl implements ContactHandle {
 		this.longitude = contact.getLongitude();
 		this.availability = contact.getStatus();
 		this.secretId = contact.getSecretId();
-		this.remoteInterfaces.addAll(contact.getRemoteInterfaces());
-		this.localServerInterfaces.addAll(contact.getLocalServerInterfaces());
+		this.localRemoteServerIps.putAll(contact.getLocalRemoteServerIps());
 
 	}
 
@@ -93,16 +91,9 @@ public class ContactHandleImpl implements ContactHandle {
 	}
 
 	@Override
-	public List<InetAddress> getRemoteInterfaces() {
+	public Map<InetAddress, InetAddress> getLocalRemoteServerIps() {
 
-		return remoteInterfaces;
-
-	}
-
-	@Override
-	public List<InetAddress> getLocalServerInterfaces() {
-
-		return localServerInterfaces;
+		return localRemoteServerIps;
 
 	}
 

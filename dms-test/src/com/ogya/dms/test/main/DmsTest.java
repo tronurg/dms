@@ -197,7 +197,7 @@ public class DmsTest {
 			btn.addActionListener(e -> {
 
 				try {
-					dmsHandle.getIdsByAddress(InetAddress.getByName("localhost"))
+					dmsHandle.getIdsByServerIp(InetAddress.getByName("localhost"))
 							.forEach(cid -> System.out.println(dmsHandle.getContactHandle(cid).getName()));
 				} catch (UnknownHostException e1) {
 					// TODO Auto-generated catch block

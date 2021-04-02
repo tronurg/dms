@@ -58,11 +58,11 @@ public interface DmsHandle {
 
 	List<GroupHandle> getAllGroupHandles();
 
-	List<Long> getIdsByAddress(InetAddress address);
+	List<Long> getIdsByServerIp(InetAddress remoteServerIp);
 
-	List<Long> getIdsByAddressAndName(InetAddress address, String name);
+	List<Long> getIdsByServerIpAndName(InetAddress remoteServerIp, String name);
 
-	List<Long> getIdsByAddressAndSecretId(InetAddress address, String secretId);
+	List<Long> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, String secretId);
 
 	MessageHandle createMessageHandle(String message, Integer messageCode);
 

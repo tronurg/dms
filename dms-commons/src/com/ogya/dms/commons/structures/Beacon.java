@@ -1,7 +1,7 @@
 package com.ogya.dms.commons.structures;
 
 import java.net.InetAddress;
-import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -22,9 +22,7 @@ public class Beacon {
 	@JsonProperty("g")
 	public String secretId;
 	@JsonProperty("h")
-	public List<byte[]> inetAddresses;
-	@JsonProperty("i")
-	public List<InetAddress> localServerInterfaces;
+	public Map<InetAddress, InetAddress> localRemoteServerIps;
 
 	public Beacon() {
 		super();
@@ -37,7 +35,7 @@ public class Beacon {
 	}
 
 	public Beacon(String uuid, String name, String comment, Integer status, Double lattitude, Double longitude,
-			String secretId, List<byte[]> inetAddresses) {
+			String secretId) {
 
 		this(uuid);
 
@@ -47,7 +45,6 @@ public class Beacon {
 		this.lattitude = lattitude;
 		this.longitude = longitude;
 		this.secretId = secretId;
-		this.inetAddresses = inetAddresses;
 
 	}
 
