@@ -209,7 +209,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void initGUI() throws HibernateException {
+	private void initGUI() {
 
 		Platform.runLater(() -> {
 
