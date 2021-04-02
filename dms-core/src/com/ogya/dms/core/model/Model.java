@@ -165,12 +165,13 @@ public class Model {
 
 	public List<Long> getIdsByServerIp(InetAddress remoteServerIp) {
 
-		if (remoteServerIp.isLoopbackAddress())
+		if (remoteServerIp.isLoopbackAddress()) {
 			try {
 				remoteServerIp = InetAddress.getLocalHost();
 			} catch (UnknownHostException e) {
 
 			}
+		}
 
 		final InetAddress ip = remoteServerIp;
 
@@ -185,12 +186,13 @@ public class Model {
 
 	public List<Long> getIdsByServerIpAndName(InetAddress remoteServerIp, final String name) {
 
-		if (remoteServerIp.isLoopbackAddress())
+		if (remoteServerIp.isLoopbackAddress()) {
 			try {
 				remoteServerIp = InetAddress.getLocalHost();
 			} catch (UnknownHostException e) {
 
 			}
+		}
 
 		final InetAddress ip = remoteServerIp;
 
@@ -205,12 +207,13 @@ public class Model {
 
 	public List<Long> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, final String secretId) {
 
-		if (remoteServerIp.isLoopbackAddress())
+		if (remoteServerIp.isLoopbackAddress()) {
 			try {
 				remoteServerIp = InetAddress.getLocalHost();
 			} catch (UnknownHostException e) {
 
 			}
+		}
 
 		final InetAddress ip = remoteServerIp;
 
