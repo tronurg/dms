@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
 
@@ -50,28 +51,42 @@ public class DbManager {
 	public Contact getIdentity() throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		Contact identity = session.createQuery("from Contact", Contact.class).setMaxResults(1).uniqueResult();
+		try {
 
-		if (identity == null) {
+			Contact identity = session.createQuery("from Contact", Contact.class).setMaxResults(1).uniqueResult();
 
-			identity = new Contact(UUID.randomUUID().toString());
+			if (identity == null) {
 
-			identity.setName(name);
+				identity = new Contact(UUID.randomUUID().toString());
 
-			identity.setStatus(Availability.AVAILABLE);
+				identity.setName(name);
 
-			session.beginTransaction();
+				identity.setStatus(Availability.AVAILABLE);
 
-			session.persist(identity);
+				tx = session.beginTransaction();
 
-			session.getTransaction().commit();
+				session.persist(identity);
+
+				tx.commit();
+
+			}
+
+			return identity;
+
+		} catch (HibernateException e) {
+
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
 
 		}
-
-		session.close();
-
-		return identity;
 
 	}
 
@@ -108,53 +123,77 @@ public class DbManager {
 	public Contact updateIdentity(Contact identity) throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		session.beginTransaction();
+		try {
 
-		Contact newIdentity = (Contact) session.merge(identity);
+			tx = session.beginTransaction();
 
-		session.getTransaction().commit();
+			Contact newIdentity = (Contact) session.merge(identity);
 
-		session.close();
+			tx.commit();
 
-		return newIdentity;
+			return newIdentity;
+
+		} catch (HibernateException e) {
+
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
+
+		}
 
 	}
 
 	public Contact addUpdateContact(Contact contact) throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		Contact dbContact = session.createQuery("from Contact where uuid like :uuid", Contact.class)
-				.setParameter("uuid", contact.getUuid()).uniqueResult();
+		try {
 
-		if (dbContact == null) {
+			Contact dbContact = session.createQuery("from Contact where uuid like :uuid", Contact.class)
+					.setParameter("uuid", contact.getUuid()).uniqueResult();
 
-			dbContact = contact;
+			tx = session.beginTransaction();
 
-			dbContact.setId(null);
+			if (dbContact == null) {
 
-			session.beginTransaction();
+				dbContact = contact;
 
-			session.persist(dbContact);
+				dbContact.setId(null);
 
-			session.getTransaction().commit();
+				session.persist(dbContact);
 
-		} else {
+			} else {
 
-			contact.setId(dbContact.getId());
+				contact.setId(dbContact.getId());
 
-			session.beginTransaction();
+				dbContact = (Contact) session.merge(contact);
 
-			dbContact = (Contact) session.merge(contact);
+			}
 
-			session.getTransaction().commit();
+			tx.commit();
+
+			return dbContact;
+
+		} catch (HibernateException e) {
+
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
 
 		}
-
-		session.close();
-
-		return dbContact;
 
 	}
 
@@ -174,78 +213,99 @@ public class DbManager {
 	public Dgroup addUpdateGroup(Dgroup group) throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		Dgroup dbGroup = session
-				.createQuery("from Dgroup where owner.uuid like :ownerUuid and groupRefId=:groupRefId", Dgroup.class)
-				.setParameter("ownerUuid", group.getOwner().getUuid()).setParameter("groupRefId", group.getGroupRefId())
-				.uniqueResult();
+		try {
 
-		if (dbGroup == null) {
+			Dgroup dbGroup = session
+					.createQuery("from Dgroup where owner.uuid like :ownerUuid and groupRefId=:groupRefId",
+							Dgroup.class)
+					.setParameter("ownerUuid", group.getOwner().getUuid())
+					.setParameter("groupRefId", group.getGroupRefId()).uniqueResult();
 
-			dbGroup = group;
+			tx = session.beginTransaction();
 
-			dbGroup.setId(null);
+			if (dbGroup == null) {
 
-			session.beginTransaction();
+				dbGroup = group;
 
-			session.persist(dbGroup);
+				dbGroup.setId(null);
 
-			session.getTransaction().commit();
+				session.persist(dbGroup);
 
-		} else {
+			} else {
 
-			group.setId(dbGroup.getId());
+				group.setId(dbGroup.getId());
 
-			session.beginTransaction();
+				dbGroup = (Dgroup) session.merge(group);
 
-			dbGroup = (Dgroup) session.merge(group);
+			}
 
-			session.getTransaction().commit();
+			tx.commit();
+
+			return dbGroup;
+
+		} catch (HibernateException e) {
+
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
 
 		}
-
-		session.close();
-
-		return dbGroup;
 
 	}
 
 	public Member addUpdateMember(Member member) throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		Member dbMember = session
-				.createQuery("from Member where owner=:owner and contactRefId=:contactRefId", Member.class)
-				.setParameter("owner", member.getOwner()).setParameter("contactRefId", member.getContactRefId())
-				.uniqueResult();
+		try {
 
-		if (dbMember == null) {
+			Member dbMember = session
+					.createQuery("from Member where owner=:owner and contactRefId=:contactRefId", Member.class)
+					.setParameter("owner", member.getOwner()).setParameter("contactRefId", member.getContactRefId())
+					.uniqueResult();
 
-			dbMember = member;
+			tx = session.beginTransaction();
 
-			dbMember.setId(null);
+			if (dbMember == null) {
 
-			session.beginTransaction();
+				dbMember = member;
 
-			session.persist(dbMember);
+				dbMember.setId(null);
 
-			session.getTransaction().commit();
+				session.persist(dbMember);
 
-		} else {
+			} else {
 
-			member.setId(dbMember.getId());
+				member.setId(dbMember.getId());
 
-			session.beginTransaction();
+				dbMember = (Member) session.merge(member);
 
-			dbMember = (Member) session.merge(member);
+			}
 
-			session.getTransaction().commit();
+			tx.commit();
+
+			return dbMember;
+
+		} catch (HibernateException e) {
+
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
 
 		}
-
-		session.close();
-
-		return dbMember;
 
 	}
 
@@ -270,68 +330,88 @@ public class DbManager {
 	public Message addUpdateMessage(Message message) throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		if (message.getId() == null) {
+		try {
 
-			resolveReferenceOfMessage(message, session);
+			tx = session.beginTransaction();
 
-			session.beginTransaction();
+			if (message.getId() == null) {
 
-			session.persist(message);
+				resolveReferenceOfMessage(message, session);
 
-			session.getTransaction().commit();
+				session.persist(message);
 
-		} else {
+			} else {
 
-			session.beginTransaction();
+				message = (Message) session.merge(message);
 
-			message = (Message) session.merge(message);
+			}
 
-			session.getTransaction().commit();
+			tx.commit();
+
+			return message;
+
+		} catch (HibernateException e) {
+
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
 
 		}
-
-		session.close();
-
-		return message;
 
 	}
 
 	public List<Message> addUpdateMessages(List<Message> messages) throws HibernateException {
 
 		Session session = factory.openSession();
+		Transaction tx = null;
 
-		List<Message> dbMessages = new ArrayList<Message>();
+		try {
 
-		messages.forEach(message -> {
+			List<Message> dbMessages = new ArrayList<Message>();
 
-			if (message.getId() == null) {
+			tx = session.beginTransaction();
 
-				resolveReferenceOfMessage(message, session);
+			for (Message message : messages) {
 
-				session.beginTransaction();
+				if (message.getId() == null) {
 
-				session.persist(message);
+					resolveReferenceOfMessage(message, session);
 
-				session.getTransaction().commit();
+					session.persist(message);
 
-			} else {
+				} else {
 
-				session.beginTransaction();
+					message = (Message) session.merge(message);
 
-				message = (Message) session.merge(message);
+				}
 
-				session.getTransaction().commit();
+				dbMessages.add(message);
 
 			}
 
-			dbMessages.add(message);
+			tx.commit();
 
-		});
+			return dbMessages;
 
-		session.close();
+		} catch (HibernateException e) {
 
-		return dbMessages;
+			if (tx != null)
+				tx.rollback();
+
+			throw e;
+
+		} finally {
+
+			session.close();
+
+		}
 
 	}
 
