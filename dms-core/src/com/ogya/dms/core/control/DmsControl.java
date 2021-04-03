@@ -422,7 +422,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private Message createOutgoingMessage(String content, Path attachment, UpdateType updateType,
 			AttachmentType attachmentType, Message refMessage, Integer messageCode, Contact contact, Dgroup group,
-			Set<StatusReport> statusReports, Integer apiFlag) throws Exception {
+			Set<StatusReport> statusReports, Boolean apiFlag) throws Exception {
 
 		Message outgoingMessage = new Message(content, updateType, attachmentType, refMessage, messageCode,
 				MessageStatus.FRESH, contact, model.getIdentity(), group, apiFlag);
@@ -1976,7 +1976,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private Long sendPrivateMessageClaimed(final String content, final Path attachment, AttachmentType attachmentType,
-			final Long refMessageId, Integer messageCode, final Long contactId, Integer apiFlag) throws Exception {
+			final Long refMessageId, Integer messageCode, final Long contactId, Boolean apiFlag) throws Exception {
 
 		Contact contact = model.getContact(contactId);
 
@@ -1998,7 +1998,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private Long sendGroupMessageClaimed(final String content, final Path attachment, AttachmentType attachmentType,
-			final Long refMessageId, Integer messageCode, final Long groupId, Integer apiFlag) throws Exception {
+			final Long refMessageId, Integer messageCode, final Long groupId, Boolean apiFlag) throws Exception {
 
 		Dgroup group = model.getGroup(groupId);
 
@@ -3038,7 +3038,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
-			return sendPrivateMessageClaimed(message, null, null, null, null, contactId, 1);
+			return sendPrivateMessageClaimed(message, null, null, null, null, contactId, Boolean.TRUE);
 
 		}));
 
@@ -3049,7 +3049,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
-			return sendGroupMessageClaimed(message, null, null, null, null, groupId, 1);
+			return sendGroupMessageClaimed(message, null, null, null, null, groupId, Boolean.TRUE);
 
 		}));
 
@@ -3062,7 +3062,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendPrivateMessageClaimed(message, dstFile, AttachmentType.FILE, null, null, contactId, 1);
+			return sendPrivateMessageClaimed(message, dstFile, AttachmentType.FILE, null, null, contactId,
+					Boolean.TRUE);
 
 		}));
 
@@ -3075,7 +3076,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendGroupMessageClaimed(message, dstFile, AttachmentType.FILE, null, null, groupId, 1);
+			return sendGroupMessageClaimed(message, dstFile, AttachmentType.FILE, null, null, groupId, Boolean.TRUE);
 
 		}));
 
@@ -3088,7 +3089,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendPrivateMessageClaimed(message, dstFile, AttachmentType.REPORT, null, reportId, contactId, 1);
+			return sendPrivateMessageClaimed(message, dstFile, AttachmentType.REPORT, null, reportId, contactId,
+					Boolean.TRUE);
 
 		}));
 
@@ -3101,7 +3103,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = copyFileToSendFolder(path);
 
-			return sendGroupMessageClaimed(message, dstFile, AttachmentType.REPORT, null, reportId, groupId, 1);
+			return sendGroupMessageClaimed(message, dstFile, AttachmentType.REPORT, null, reportId, groupId,
+					Boolean.TRUE);
 
 		}));
 

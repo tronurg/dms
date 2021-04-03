@@ -129,7 +129,7 @@ public class Message {
 
 	@Column(name = "api_flag", updatable = false)
 	@JsonIgnore
-	private Integer apiFlag;
+	private Boolean apiFlag;
 
 	public Message() {
 		super();
@@ -137,7 +137,7 @@ public class Message {
 
 	public Message(String content, UpdateType updateType, AttachmentType attachmentType, Message refMessage,
 			Integer messageCode, MessageStatus messageStatus, Contact contact, Contact owner, Dgroup dgroup,
-			Integer apiFlag) {
+			Boolean apiFlag) {
 		super();
 		this.content = content;
 		this.updateType = updateType;
@@ -351,11 +351,11 @@ public class Message {
 		statusReport.setMessage(null);
 	}
 
-	public Integer getApiFlag() {
+	public Boolean getApiFlag() {
 		return apiFlag;
 	}
 
-	public void setApiFlag(Integer apiFlag) {
+	public void setApiFlag(Boolean apiFlag) {
 		this.apiFlag = apiFlag;
 	}
 
