@@ -17,10 +17,13 @@ import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Arc;
+import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
@@ -256,8 +259,8 @@ public class ViewFactory {
 		rectangle.setRotate(-45.0);
 		rectangle.setFill(Color.TRANSPARENT);
 		Line line = new Line(-6.0 * viewFactor, 6.0 * viewFactor, 3.0 * viewFactor, -3.0 * viewFactor);
-		line.setStroke(Color.ANTIQUEWHITE);
 		line.setStrokeWidth(2.0 * viewFactor);
+		line.setStroke(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, rectangle, line);
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
@@ -279,8 +282,8 @@ public class ViewFactory {
 		rectangle.setRotate(-45.0);
 		rectangle.setFill(Color.TRANSPARENT);
 		Line line = new Line(-3.0 * viewFactor, 3.0 * viewFactor, 1.5 * viewFactor, -1.5 * viewFactor);
-		line.setStroke(Color.GRAY);
 		line.setStrokeWidth(1.0 * viewFactor);
+		line.setStroke(Color.GRAY);
 
 		return new Group(rectangle, line);
 
@@ -299,14 +302,14 @@ public class ViewFactory {
 		rectangle.setStroke(Color.ANTIQUEWHITE);
 		rectangle.setFill(Color.TRANSPARENT);
 		Line line1 = new Line(-2.0 * viewFactor, -4.0 * viewFactor, 2.0 * viewFactor, -4.0 * viewFactor);
-		line1.setStroke(Color.ANTIQUEWHITE);
 		line1.setStrokeWidth(2.0 * viewFactor);
+		line1.setStroke(Color.ANTIQUEWHITE);
 		Line line2 = new Line(-2.0 * viewFactor, 0.0, 2.0 * viewFactor, 0.0);
-		line2.setStroke(Color.ANTIQUEWHITE);
 		line2.setStrokeWidth(2.0 * viewFactor);
+		line2.setStroke(Color.ANTIQUEWHITE);
 		Line line3 = new Line(-2.0 * viewFactor, 4.0 * viewFactor, 2.0 * viewFactor, 4.0 * viewFactor);
-		line3.setStroke(Color.ANTIQUEWHITE);
 		line3.setStrokeWidth(2.0 * viewFactor);
+		line3.setStroke(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, rectangle, line1, line2, line3);
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
@@ -442,27 +445,42 @@ public class ViewFactory {
 
 	}
 
-	public static Button newForwardBtn() {
+	public static Button newGoToRefBtn() {
 
 		double viewFactor = 0.75 * getViewFactor();
 
 		Button btn = new Button();
 
-		Circle circle = new Circle(16.0 * viewFactor);
+		Circle circle = new Circle(-3.75 * viewFactor, 1.25 * viewFactor, 16.0 * viewFactor);
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
 						() -> btn.isHover() && !btn.isDisabled() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY,
 						btn.hoverProperty(), btn.disabledProperty()));
-		Polygon triangle = new Polygon();
-		triangle.getPoints().addAll(new Double[] { -7.0 * viewFactor, -10.5 * viewFactor, 13.0 * viewFactor, 0.0,
-				-7.0 * viewFactor, 10.5 * viewFactor });
-		triangle.setFill(Color.ANTIQUEWHITE);
-		Group group = new Group(circle, triangle);
+		Group group = new Group(circle, newFwdArrowGraph(0.75, Color.ANTIQUEWHITE));
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
 		return btn;
+
+	}
+
+	public static Node newFwdArrowGraph(double scaleFactor, Color fill) {
+
+		double viewFactor = scaleFactor * getViewFactor();
+
+		Polygon arrowHead = new Polygon();
+		arrowHead.getPoints()
+				.addAll(new Double[] { 0.0, -10.0 * viewFactor, 10.0 * viewFactor, 0.0, 0.0, 10.0 * viewFactor });
+		arrowHead.setFill(fill);
+		Arc arc1 = new Arc(0.0, 10.0 * viewFactor, 15.0 * viewFactor, 14.0 * viewFactor, 90.0, 90.0);
+		arc1.setType(ArcType.ROUND);
+		Arc arc2 = new Arc(0.0, 10.0 * viewFactor, 15.0 * viewFactor, 6.0 * viewFactor, 90.0, 90.0);
+		arc2.setType(ArcType.ROUND);
+		Shape arrowTail = Shape.subtract(arc1, arc2);
+		arrowTail.setFill(fill);
+
+		return new Group(arrowHead, arrowTail);
 
 	}
 

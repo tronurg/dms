@@ -453,7 +453,7 @@ class StarredMessagesPane extends BorderPane {
 		private final Label timeLbl;
 		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
-		private final Button forwardBtn = ViewFactory.newForwardBtn();
+		private final Button forwardBtn = ViewFactory.newGoToRefBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
