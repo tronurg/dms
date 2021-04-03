@@ -14,7 +14,6 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.PostPersist;
 import javax.persistence.Table;
 
 import com.ogya.dms.core.database.converters.AvailabilityConverter;
@@ -25,10 +24,10 @@ import com.ogya.dms.core.structures.Availability;
 public class Dgroup extends EntityBase {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Long id;
 
-	@Column(name = "group_ref_id")
+	@Column(name = "group_ref_id", updatable = false)
 	private Long groupRefId;
 
 	@Column(name = "name")
@@ -45,7 +44,7 @@ public class Dgroup extends EntityBase {
 	private boolean active;
 
 	@ManyToOne(fetch = FetchType.EAGER)
-	@JoinColumn(name = "dgroup_id", nullable = false, updatable = false)
+	@JoinColumn(name = "owner_id", nullable = false, updatable = false)
 	private Contact owner;
 
 	@Column(name = "local", nullable = false, updatable = false)
@@ -54,7 +53,7 @@ public class Dgroup extends EntityBase {
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "dgroup_members", joinColumns = { @JoinColumn(name = "dgroup_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "member_id") })
-	private Set<Contact> members = new HashSet<Contact>();
+	private final Set<Contact> members = new HashSet<Contact>();
 
 	public Dgroup() {
 		super();
@@ -75,7 +74,7 @@ public class Dgroup extends EntityBase {
 	}
 
 	public Long getGroupRefId() {
-		return groupRefId;
+		return local ? id : groupRefId;
 	}
 
 	public void setGroupRefId(Long groupRefId) {
@@ -132,16 +131,6 @@ public class Dgroup extends EntityBase {
 
 	public Set<Contact> getMembers() {
 		return members;
-	}
-
-	public void setMembers(Set<Contact> members) {
-		this.members = members;
-	}
-
-	@PostPersist
-	protected void onPersist() {
-		if (this.groupRefId == null)
-			this.groupRefId = this.id;
 	}
 
 	@Override

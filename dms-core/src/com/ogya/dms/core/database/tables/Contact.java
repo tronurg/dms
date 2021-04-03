@@ -22,7 +22,7 @@ import com.ogya.dms.core.structures.Availability;
 public class Contact extends EntityBase {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE)
 	private Long id;
 
 	@Column(name = "uuid", unique = true, nullable = false, updatable = false)

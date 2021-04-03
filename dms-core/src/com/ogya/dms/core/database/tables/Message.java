@@ -125,7 +125,7 @@ public class Message {
 
 	@OneToMany(mappedBy = "message", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
 	@JsonIgnore
-	private Set<StatusReport> statusReports = new HashSet<StatusReport>();
+	private final Set<StatusReport> statusReports = new HashSet<StatusReport>();
 
 	@Column(name = "api_flag", updatable = false)
 	@JsonIgnore
@@ -173,7 +173,6 @@ public class Message {
 		this.contact = message.contact;
 		this.owner = message.owner;
 		this.dgroup = message.dgroup;
-		this.statusReports = message.statusReports;
 		this.apiFlag = message.apiFlag;
 	}
 

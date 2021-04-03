@@ -11,7 +11,7 @@ public class EntityId {
 	private EntityId(long id, boolean isGroup) {
 		this.id = id;
 		this.isGroup = isGroup;
-		this.uid = isGroup ? -id : id;
+		this.uid = id;
 	}
 
 	static EntityId of(long id, boolean isGroup) {
