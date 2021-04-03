@@ -2,6 +2,7 @@ package com.ogya.dms.core.intf.handles.impl;
 
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -9,7 +10,7 @@ import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
-import com.ogya.dms.core.view.OnlineContactsPanel;
+import com.ogya.dms.core.view.SelectableEntitiesPane;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -17,10 +18,10 @@ import javafx.scene.Scene;
 
 public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
-	private final OnlineContactsPanel onlineContactsPanel;
+	private final SelectableEntitiesPane onlineContactsPanel;
 	private final JFXPanel onlineContactsPanelSwing;
 
-	public OnlineContactsHandleImpl(OnlineContactsPanel onlineContactsPanel) {
+	public OnlineContactsHandleImpl(SelectableEntitiesPane onlineContactsPanel) {
 
 		this.onlineContactsPanel = onlineContactsPanel;
 
@@ -82,7 +83,7 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
 		resetSelection();
 
-		onlineContactsPanel.setFilter(filter);
+		onlineContactsPanel.setContactFilter(filter);
 
 		return onlineContactsPanelSwing;
 
@@ -91,7 +92,8 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 	@Override
 	public List<Long> getSelectedContactIds() {
 
-		return onlineContactsPanel.getSelectedIds();
+		return onlineContactsPanel.getSelectedEntityIds().stream().map(entityId -> entityId.getId())
+				.collect(Collectors.toList());
 
 	}
 

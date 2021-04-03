@@ -7,10 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import com.ogya.dms.core.common.CommonMethods;
-import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
@@ -47,8 +45,6 @@ class EntitiesPane extends BorderPane {
 		}
 	};
 
-	private final AddUpdateGroupPane addUpdateGroupPane;
-
 	private final Map<EntityId, EntityPane> entityIdPane = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityPane>());
 
@@ -82,20 +78,12 @@ class EntitiesPane extends BorderPane {
 		super();
 
 		this.unreadProperty = unreadProperty;
-		this.addUpdateGroupPane = new AddUpdateGroupPane(unreadProperty);
 
 		init();
 
 	}
 
 	private void init() {
-
-		addUpdateGroupPane.setOnBackAction(
-				() -> listeners.forEach(listener -> listener.hideAddUpdateGroupPane(addUpdateGroupPane)));
-		addUpdateGroupPane.setOnAddUpdateGroupAction(
-				() -> listeners.forEach(listener -> listener.addUpdateGroupClicked(addUpdateGroupPane)));
-		addUpdateGroupPane.setOnDeleteGroupAction(
-				() -> listeners.forEach(listener -> listener.deleteGroupClicked(addUpdateGroupPane)));
 
 		initTopArea();
 
@@ -114,20 +102,6 @@ class EntitiesPane extends BorderPane {
 	void addListener(IEntitiesPane listener) {
 
 		listeners.add(listener);
-
-	}
-
-	void addUpdateGroupPaneUpdateContact(Contact contact) {
-
-		addUpdateGroupPane.updateContact(contact);
-
-	}
-
-	AddUpdateGroupPane getAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
-
-		addUpdateGroupPane.resetContent(groupName, selectedUuids, isNewGroup);
-
-		return addUpdateGroupPane;
 
 	}
 
@@ -350,12 +324,6 @@ class EntitiesPane extends BorderPane {
 }
 
 interface IEntitiesPane extends IMessagePane {
-
-	void hideAddUpdateGroupPane(AddUpdateGroupPane addUpdateGroupPane);
-
-	void addUpdateGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
-
-	void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane);
 
 	void showMessagePane(MessagePane messagePane);
 

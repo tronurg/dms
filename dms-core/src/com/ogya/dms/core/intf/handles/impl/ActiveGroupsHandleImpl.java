@@ -1,14 +1,16 @@
 package com.ogya.dms.core.intf.handles.impl;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 
+import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
-import com.ogya.dms.core.view.ActiveGroupsPanel;
+import com.ogya.dms.core.view.SelectableEntitiesPane;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -16,10 +18,10 @@ import javafx.scene.Scene;
 
 public class ActiveGroupsHandleImpl implements GroupSelectionHandle {
 
-	private final ActiveGroupsPanel activeGroupsPanel;
+	private final SelectableEntitiesPane activeGroupsPanel;
 	private final JFXPanel activeGroupsPanelSwing;
 
-	public ActiveGroupsHandleImpl(ActiveGroupsPanel activeGroupsPanel) {
+	public ActiveGroupsHandleImpl(SelectableEntitiesPane activeGroupsPanel) {
 
 		this.activeGroupsPanel = activeGroupsPanel;
 
@@ -81,7 +83,7 @@ public class ActiveGroupsHandleImpl implements GroupSelectionHandle {
 
 		resetSelection();
 
-		activeGroupsPanel.setFilter(filter);
+		activeGroupsPanel.setGroupFilter(filter);
 
 		return activeGroupsPanelSwing;
 
@@ -90,7 +92,11 @@ public class ActiveGroupsHandleImpl implements GroupSelectionHandle {
 	@Override
 	public Long getSelectedGroupId() {
 
-		return activeGroupsPanel.getSelectedId();
+		List<EntityId> selectedEntityIds = activeGroupsPanel.getSelectedEntityIds();
+		if (selectedEntityIds.isEmpty())
+			return null;
+
+		return selectedEntityIds.get(0).getId();
 
 	}
 

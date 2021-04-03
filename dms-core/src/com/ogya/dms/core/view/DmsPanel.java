@@ -47,16 +47,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final IdentityPane identityPane = new IdentityPane();
 	private final EntitiesPane entitiesPane = new EntitiesPane(unreadProperty);
 
-	private final ActiveGroupsPanel activeGroupsPanel = new ActiveGroupsPanel();
-	private final OnlineContactsPanel onlineContactsPanel = new OnlineContactsPanel();
-
 	private final FoldersPane foldersPane = new FoldersPane(
 			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath(), unreadProperty);
-
+	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane(unreadProperty);
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane(unreadProperty);
 	private final SettingsPane settingsPane = new SettingsPane(unreadProperty);
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
 	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
+
+	private final SelectableEntitiesPane activeGroupsPanel = new SelectableEntitiesPane(SelectionMode.SINGLE);
+	private final SelectableEntitiesPane onlineContactsPanel = new SelectableEntitiesPane(SelectionMode.MULTIPLE);
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -122,22 +122,43 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
 
-		identityPane.addListener(this);
-		entitiesPane.addListener(this);
-		foldersPane.setOnFileSelected(this::fileSelected);
-		foldersPane.setOnBackAction(this::backFromFoldersPane);
-		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
-		settingsPane.setOnBackAction(() -> getChildren().remove(settingsPane));
-		settingsPane.setOnSettingClickedAction(this::settingClicked);
-		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
-		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
-		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
-		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
-		starredMessagesPane.addListener(this);
+		registerListeners();
 
 		mainPane.getChildren().addAll(identityPane, entitiesPane);
 
 		getChildren().add(mainPane);
+
+	}
+
+	private void registerListeners() {
+
+		identityPane.addListener(this);
+		entitiesPane.addListener(this);
+
+		// Folders Pane
+		foldersPane.setOnFileSelected(this::fileSelected);
+		foldersPane.setOnBackAction(this::backFromFoldersPane);
+
+		// Add Update Group Pane
+		addUpdateGroupPane.setOnBackAction(this::hideAddUpdateGroupPane);
+		addUpdateGroupPane.setOnAddUpdateGroupAction(this::addUpdateGroupClicked);
+		addUpdateGroupPane.setOnDeleteGroupAction(this::deleteGroupClicked);
+
+		// Status Info Pane
+		statusInfoPane.setOnBackAction(this::backFromStatusInfoPane);
+
+		// Settings Pane
+		settingsPane.setOnBackAction(() -> getChildren().remove(settingsPane));
+		settingsPane.setOnSettingClickedAction(this::settingClicked);
+
+		// Remote IP Settings Pane
+		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
+		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
+		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
+
+		// Starred Messages Pane
+		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
+		starredMessagesPane.addListener(this);
 
 	}
 
@@ -161,13 +182,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
-	public ActiveGroupsPanel getActiveGroupsPanel() {
+	public SelectableEntitiesPane getActiveGroupsPanel() {
 
 		return activeGroupsPanel;
 
 	}
 
-	public OnlineContactsPanel getOnlineContactsPanel() {
+	public SelectableEntitiesPane getOnlineContactsPanel() {
 
 		return onlineContactsPanel;
 
@@ -188,10 +209,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void updateContact(Contact contact) {
 
 		entitiesPane.updateEntity(contact);
-		entitiesPane.addUpdateGroupPaneUpdateContact(contact);
+		addUpdateGroupPane.updateContact(contact);
 		statusInfoPane.updateContact(contact);
 		onlineContactsPanel.updateContact(contact);
-		activeGroupsPanel.updateContact(contact);
+		activeGroupsPanel.updateMember(contact);
 
 	}
 
@@ -298,7 +319,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void showAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
 
-		getChildren().add(entitiesPane.getAddUpdateGroupPane(groupName, selectedUuids, isNewGroup));
+		addUpdateGroupPane.resetContent(groupName, selectedUuids, isNewGroup);
+
+		getChildren().add(addUpdateGroupPane);
 
 	}
 
@@ -338,6 +361,29 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		getChildren().remove(foldersPane);
 
 		foldersPane.reset();
+
+	}
+
+	public void hideAddUpdateGroupPane() {
+
+		getChildren().remove(addUpdateGroupPane);
+
+	}
+
+	public void addUpdateGroupClicked() {
+
+		getChildren().remove(addUpdateGroupPane);
+
+		listeners.forEach(listener -> listener.addUpdateGroupRequested(addUpdateGroupPane.getGroupName(),
+				addUpdateGroupPane.getSelectedUuids()));
+
+	}
+
+	public void deleteGroupClicked() {
+
+		getChildren().remove(addUpdateGroupPane);
+
+		listeners.forEach(listener -> listener.deleteGroupRequested());
 
 	}
 
@@ -455,32 +501,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void showFoldersClicked() {
 
 		getChildren().add(foldersPane);
-
-	}
-
-	@Override
-	public void hideAddUpdateGroupPane(AddUpdateGroupPane addUpdateGroupPane) {
-
-		getChildren().remove(addUpdateGroupPane);
-
-	}
-
-	@Override
-	public void addUpdateGroupClicked(final AddUpdateGroupPane addUpdateGroupPane) {
-
-		getChildren().remove(addUpdateGroupPane);
-
-		listeners.forEach(listener -> listener.addUpdateGroupRequested(addUpdateGroupPane.getGroupName(),
-				addUpdateGroupPane.getSelectedUuids()));
-
-	}
-
-	@Override
-	public void deleteGroupClicked(AddUpdateGroupPane addUpdateGroupPane) {
-
-		getChildren().remove(addUpdateGroupPane);
-
-		listeners.forEach(listener -> listener.deleteGroupRequested());
 
 	}
 
