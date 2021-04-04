@@ -14,6 +14,10 @@
 .text-field {
 	-fx-background-color: transparent;
 	-fx-text-fill: -text-fill;
+	-fx-prompt-text-fill: gray;
+}
+.text-field:focused {
+	-fx-prompt-text-fill: transparent;
 }
 .black-label {
 	-fx-text-fill: black;
