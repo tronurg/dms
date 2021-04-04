@@ -16,6 +16,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.PrePersist;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
@@ -35,7 +36,8 @@ import com.ogya.dms.core.structures.ViewStatus;
 public class Message {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "message_gen")
+	@SequenceGenerator(name = "message_gen", sequenceName = "message_seq", initialValue = 1, allocationSize = 1)
 	@JsonProperty("a")
 	private Long id;
 

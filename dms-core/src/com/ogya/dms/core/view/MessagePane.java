@@ -249,7 +249,7 @@ class MessagePane extends BorderPane {
 		initStarBtn();
 		initDeleteBtn();
 
-		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, selectAllBtn, starBtn, deleteBtn);
+		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, getSpace(), selectAllBtn, starBtn, deleteBtn);
 
 	}
 
@@ -318,11 +318,9 @@ class MessagePane extends BorderPane {
 
 	private void initNameLbl() {
 
-		HBox.setHgrow(nameLabel, Priority.ALWAYS);
 		nameLabel.getStyleClass().add("black-label");
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
-		nameLabel.setMaxWidth(Double.MAX_VALUE);
 		nameLabel.setOnMouseClicked(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
@@ -556,6 +554,15 @@ class MessagePane extends BorderPane {
 			}
 
 		});
+
+	}
+
+	private Node getSpace() {
+
+		Region space = new Region();
+		HBox.setHgrow(space, Priority.ALWAYS);
+
+		return space;
 
 	}
 
@@ -1171,7 +1178,6 @@ class MessagePane extends BorderPane {
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
 					ViewFactory.newAttachGraph(1.0));
-			GridPane.setFillWidth(attachmentLabel, false);
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
@@ -1205,15 +1211,6 @@ class MessagePane extends BorderPane {
 				statusPane.getChildren().addAll(smallStarBtn, getSpace(), getProgressLbl(), getInfoGrp(), timeLbl);
 			else
 				statusPane.getChildren().addAll(timeLbl, getSpace(), smallStarBtn);
-
-		}
-
-		private Node getSpace() {
-
-			Region space = new Region();
-			HBox.setHgrow(space, Priority.ALWAYS);
-
-			return space;
 
 		}
 

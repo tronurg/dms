@@ -14,6 +14,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.ogya.dms.core.database.converters.AvailabilityConverter;
@@ -24,10 +25,11 @@ import com.ogya.dms.core.structures.Availability;
 public class Dgroup extends EntityBase {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "entity_gen")
+	@SequenceGenerator(name = "entity_gen", sequenceName = "entity_seq", initialValue = 1, allocationSize = 1)
 	private Long id;
 
-	@Column(name = "group_ref_id", updatable = false)
+	@Column(name = "group_ref_id")
 	private Long groupRefId;
 
 	@Column(name = "name")
@@ -74,7 +76,7 @@ public class Dgroup extends EntityBase {
 	}
 
 	public Long getGroupRefId() {
-		return local ? id : groupRefId;
+		return groupRefId;
 	}
 
 	public void setGroupRefId(Long groupRefId) {

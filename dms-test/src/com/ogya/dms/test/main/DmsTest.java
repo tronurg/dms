@@ -6,9 +6,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -21,7 +18,6 @@ import javax.swing.UIManager;
 import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
-import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.main.DmsCore;
 
 public class DmsTest {
@@ -111,8 +107,8 @@ public class DmsTest {
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = gsh.getGroupSelectionPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
+//			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
@@ -120,28 +116,33 @@ public class DmsTest {
 
 				gsh.resetSelection();
 
-				TestPojo testPojo = new TestPojo();
-				List<TestPojo> testList = new ArrayList<TestPojo>();
-				testList.add(testPojo);
+				if (selectedGroupId == null)
+					return;
 
-				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-//				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
-				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
-				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
-				try {
-					dmsHandle.sendMessageToGroup(messageHandle, selectedGroupId,
-							dmsHandle.createMessageRules().useTrackingId(124L));
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
+				System.out.println("Group " + dmsHandle.getGroupHandle(selectedGroupId).getName() + " selected.");
 
-				try {
-					System.out.println(String.format("armut: Message #%d sent to group %s\n",
-							dmsHandle.sendGuiMessageToGroup("api grup deneme", selectedGroupId).get(),
-							dmsHandle.getGroupHandle(selectedGroupId).getName()));
-				} catch (InterruptedException | ExecutionException e1) {
-					e1.printStackTrace();
-				}
+//				TestPojo testPojo = new TestPojo();
+//				List<TestPojo> testList = new ArrayList<TestPojo>();
+//				testList.add(testPojo);
+//
+//				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
+////				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
+//				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
+//				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
+//				try {
+//					dmsHandle.sendMessageToGroup(messageHandle, selectedGroupId,
+//							dmsHandle.createMessageRules().useTrackingId(124L));
+//				} catch (Exception e1) {
+//					e1.printStackTrace();
+//				}
+//
+//				try {
+//					System.out.println(String.format("armut: Message #%d sent to group %s\n",
+//							dmsHandle.sendGuiMessageToGroup("api grup deneme", selectedGroupId).get(),
+//							dmsHandle.getGroupHandle(selectedGroupId).getName()));
+//				} catch (InterruptedException | ExecutionException e1) {
+//					e1.printStackTrace();
+//				}
 
 			});
 
@@ -188,12 +189,15 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getOnlineContactsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
 //			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
-			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 //			JComponent mcPanel = csh.getContactSelectionPanel(contact -> Objects.equals(contact.getSecretId(), "sid"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
+
+				csh.getSelectedContactIds().forEach(
+						id -> System.out.println("Contact " + dmsHandle.getContactHandle(id).getName() + " selected."));
 
 				try {
 					dmsHandle.getIdsByServerIp(InetAddress.getByName("localhost"))

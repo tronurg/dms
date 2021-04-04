@@ -39,9 +39,9 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.common.SoundPlayer;
 import com.ogya.dms.core.database.DbManager;
 import com.ogya.dms.core.database.tables.Contact;
+import com.ogya.dms.core.database.tables.ContactRef;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.EntityId;
-import com.ogya.dms.core.database.tables.Member;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.dmsclient.DmsClient;
@@ -713,7 +713,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					contactsToBeAdded.add(contact);
 				}
 
-				dbManager.addUpdateMember(new Member(owner, contactMap.refId, model.getContact(uuid)));
+				dbManager.addUpdateContactRef(new ContactRef(owner, contactMap.refId, model.getContact(uuid)));
 
 			});
 
@@ -723,12 +723,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			groupUpdate.remove.forEach(refId -> {
 
-				Member member = dbManager.getMember(ownerUuid, refId);
+				ContactRef contactRef = dbManager.getContactRef(ownerUuid, refId);
 
-				if (member == null)
+				if (contactRef == null)
 					return;
 
-				contactsToBeRemoved.add(member.getContact());
+				contactsToBeRemoved.add(contactRef.getContact());
 
 			});
 
@@ -1328,9 +1328,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						dgroup = model.getGroup(remoteUuid, message.getGroupRefId());
 					}
 
-					Member member = dbManager.getMember(remoteUuid, message.getContactRefId());
-					if (member != null) {
-						message.setOwner(member.getContact());
+					ContactRef contactRef = dbManager.getContactRef(remoteUuid, message.getContactRefId());
+					if (contactRef != null) {
+						message.setOwner(contactRef.getContact());
 					}
 
 					message.setDgroup(dgroup);
@@ -1553,10 +1553,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					groupMessageStatus.refIds.forEach(refId -> {
 
-						Member member = dbManager.getMember(remoteUuid, refId);
+						ContactRef contactRef = dbManager.getContactRef(remoteUuid, refId);
 
-						if (member != null)
-							ids.add(member.getContact().getId());
+						if (contactRef != null)
+							ids.add(contactRef.getContact().getId());
 
 					});
 
@@ -1644,12 +1644,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					for (StatusReport statusReport : statusReports) {
 
-						Member member = dbManager.getMember(group.getOwner().getUuid(), statusReport.getContactId());
+						ContactRef contactRef = dbManager.getContactRef(group.getOwner().getUuid(),
+								statusReport.getContactId());
 
-						if (member == null)
+						if (contactRef == null)
 							continue;
 
-						Long contactId = member.getContact().getId();
+						Long contactId = contactRef.getContact().getId();
 
 						StatusReport oldStatusReport = statusReportMap.get(contactId);
 

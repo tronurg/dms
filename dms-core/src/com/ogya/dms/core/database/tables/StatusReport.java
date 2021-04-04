@@ -8,6 +8,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -20,7 +21,8 @@ import com.ogya.dms.core.structures.MessageStatus;
 public class StatusReport {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "status_report_gen")
+	@SequenceGenerator(name = "status_report_gen", sequenceName = "status_report_seq", initialValue = 1, allocationSize = 1)
 	@JsonIgnore
 	private Long id;
 

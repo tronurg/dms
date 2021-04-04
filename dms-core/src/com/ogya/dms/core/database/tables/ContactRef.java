@@ -8,14 +8,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "member")
-public class Member {
+@Table(name = "contact_ref")
+public class ContactRef {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "contact_ref_gen")
+	@SequenceGenerator(name = "contact_ref_gen", sequenceName = "contact_ref_seq", initialValue = 1, allocationSize = 1)
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.EAGER)
@@ -29,11 +31,11 @@ public class Member {
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
 	private Contact contact;
 
-	public Member() {
+	public ContactRef() {
 		super();
 	}
 
-	public Member(Contact owner, Long contactRefId, Contact contact) {
+	public ContactRef(Contact owner, Long contactRefId, Contact contact) {
 		super();
 		this.owner = owner;
 		this.contactRefId = contactRefId;

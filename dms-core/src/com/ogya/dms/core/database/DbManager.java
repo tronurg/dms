@@ -15,8 +15,8 @@ import org.hibernate.query.Query;
 
 import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Contact;
+import com.ogya.dms.core.database.tables.ContactRef;
 import com.ogya.dms.core.database.tables.Dgroup;
-import com.ogya.dms.core.database.tables.Member;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.structures.Availability;
@@ -41,7 +41,7 @@ public class DbManager {
 						"jdbc:h2:split:24:" + CommonConstants.DB_PATH + File.separator + dbName)
 				.setProperty("hibernate.connection.username", dbName)
 				.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Contact.class)
-				.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Member.class).addAnnotatedClass(Message.class)
+				.addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class).addAnnotatedClass(Message.class)
 				.addAnnotatedClass(StatusReport.class).buildSessionFactory();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
@@ -232,6 +232,12 @@ public class DbManager {
 				dbGroup.setId(null);
 
 				session.persist(dbGroup);
+				session.flush();
+
+				if (dbGroup.getGroupRefId() == null) {
+					dbGroup.setGroupRefId(dbGroup.getId());
+					session.persist(dbGroup);
+				}
 
 			} else {
 
@@ -260,39 +266,39 @@ public class DbManager {
 
 	}
 
-	public Member addUpdateMember(Member member) throws HibernateException {
+	public ContactRef addUpdateContactRef(ContactRef contactRef) throws HibernateException {
 
 		Session session = factory.openSession();
 		Transaction tx = null;
 
 		try {
 
-			Member dbMember = session
-					.createQuery("from Member where owner=:owner and contactRefId=:contactRefId", Member.class)
-					.setParameter("owner", member.getOwner()).setParameter("contactRefId", member.getContactRefId())
-					.uniqueResult();
+			ContactRef dbContactRef = session
+					.createQuery("from ContactRef where owner=:owner and contactRefId=:contactRefId", ContactRef.class)
+					.setParameter("owner", contactRef.getOwner())
+					.setParameter("contactRefId", contactRef.getContactRefId()).uniqueResult();
 
 			tx = session.beginTransaction();
 
-			if (dbMember == null) {
+			if (dbContactRef == null) {
 
-				dbMember = member;
+				dbContactRef = contactRef;
 
-				dbMember.setId(null);
+				dbContactRef.setId(null);
 
-				session.persist(dbMember);
+				session.persist(dbContactRef);
 
 			} else {
 
-				member.setId(dbMember.getId());
+				contactRef.setId(dbContactRef.getId());
 
-				dbMember = (Member) session.merge(member);
+				dbContactRef = (ContactRef) session.merge(contactRef);
 
 			}
 
 			tx.commit();
 
-			return dbMember;
+			return dbContactRef;
 
 		} catch (HibernateException e) {
 
@@ -309,21 +315,21 @@ public class DbManager {
 
 	}
 
-	public Member getMember(String ownerUuid, Long contactRefId) throws HibernateException {
+	public ContactRef getContactRef(String ownerUuid, Long contactRefId) throws HibernateException {
 
 		if (ownerUuid == null || contactRefId == null)
 			return null;
 
 		Session session = factory.openSession();
 
-		Member dbMember = session
-				.createQuery("from Member where owner.uuid like :ownerUuid and contactRefId=:contactRefId",
-						Member.class)
+		ContactRef dbContactRef = session
+				.createQuery("from ContactRef where owner.uuid like :ownerUuid and contactRefId=:contactRefId",
+						ContactRef.class)
 				.setParameter("ownerUuid", ownerUuid).setParameter("contactRefId", contactRefId).uniqueResult();
 
 		session.close();
 
-		return dbMember;
+		return dbContactRef;
 
 	}
 
