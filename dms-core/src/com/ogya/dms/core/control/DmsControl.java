@@ -495,9 +495,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		else if (group.isLocal())
 			group.setStatus(Availability.AVAILABLE);
 		else
-			group.setStatus(
-					!group.isActive() || Objects.equals(owner.getStatus(), Availability.OFFLINE) ? Availability.OFFLINE
-							: Availability.LIMITED);
+			group.setStatus(Objects.equals(owner.getStatus(), Availability.OFFLINE) ? Availability.OFFLINE
+					: Availability.LIMITED);
 
 		List<String> contactNames = new ArrayList<String>();
 		group.getMembers().forEach(contact -> contactNames.add(contact.getName()));
@@ -684,6 +683,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (owner == null || groupRefId == null)
 				return;
 			group = new Dgroup(owner, groupRefId);
+		} else {
+			group.setOwner(owner);
 		}
 
 		final Set<Contact> contactsToBeAdded = new HashSet<Contact>();

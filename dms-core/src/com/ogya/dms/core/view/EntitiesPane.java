@@ -215,10 +215,12 @@ class EntitiesPane extends BorderPane {
 
 			entityPane.managedProperty().bind(entityPane.visibleProperty());
 
-			entityPane.visibleProperty().bind(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || entityPane.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty()));
+			entityPane.visibleProperty()
+					.bind(entityPane.hiddenProperty().not().and(Bindings.createBooleanBinding(() -> {
+						String searchContactStr = searchTextField.getText().toLowerCase();
+						return searchContactStr.isEmpty()
+								|| entityPane.getName().toLowerCase().startsWith(searchContactStr);
+					}, searchTextField.textProperty())));
 
 			entityPane.setOnMouseClicked(e -> {
 

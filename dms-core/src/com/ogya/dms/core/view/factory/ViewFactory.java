@@ -25,6 +25,7 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
@@ -481,6 +482,29 @@ public class ViewFactory {
 		arrowTail.setFill(fill);
 
 		return new Group(arrowHead, arrowTail);
+
+	}
+
+	public static Node newInvisibleGraph(double scaleFactor) {
+
+		double viewFactor = scaleFactor;
+
+		Shape outerCircle = Shape.intersect(new Circle(0.0, -6.0 * viewFactor, 16.0 * viewFactor),
+				new Circle(0.0, 6.0 * viewFactor, 16.0 * viewFactor));
+		outerCircle.setStrokeLineJoin(StrokeLineJoin.ROUND);
+		outerCircle.setStrokeWidth(3.0 * viewFactor);
+		outerCircle.setFill(Color.TRANSPARENT);
+		outerCircle.setStroke(Color.RED);
+		Circle innerCircle = new Circle(0.0, 0.0, 6.0 * viewFactor);
+		innerCircle.setStrokeWidth(3.0 * viewFactor);
+		innerCircle.setFill(Color.TRANSPARENT);
+		innerCircle.setStroke(Color.RED);
+		Line line = new Line(-8.0 * viewFactor, 12.0 * viewFactor, 8.0 * viewFactor, -12.0 * viewFactor);
+		line.setStrokeLineCap(StrokeLineCap.ROUND);
+		line.setStrokeWidth(3.0 * viewFactor);
+		line.setStroke(Color.RED);
+
+		return new Group(outerCircle, innerCircle, line);
 
 	}
 

@@ -8,15 +8,19 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.Effect;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -42,10 +46,14 @@ class EntityPane extends EntityPaneBase {
 		}
 
 	};
+	private final Label invisibleLbl = new Label();
 
 	private final MessagePane messagePane;
 
 	private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
+
+	private final BooleanProperty hideableProperty = new SimpleBooleanProperty(false);
+	private final BooleanProperty hiddenProperty = new SimpleBooleanProperty(false);
 
 	EntityPane(EntityId entityId, BooleanProperty unreadProperty) {
 
@@ -69,6 +77,9 @@ class EntityPane extends EntityPaneBase {
 	void updateEntity(EntityBase entity) {
 
 		super.updateEntity(entity);
+
+		hideableProperty.set(Objects.equals(entity.getStatus(), Availability.OFFLINE));
+		hiddenProperty.set(Objects.equals(entity.getStatus(), Availability.HIDDEN));
 
 		messagePane.setStatusColor(entity.getStatus().getStatusColor());
 		messagePane.setName(entity.getName());
@@ -101,18 +112,26 @@ class EntityPane extends EntityPaneBase {
 
 	}
 
+	final BooleanProperty hiddenProperty() {
+
+		return hiddenProperty;
+
+	}
+
 	private void initRightPane() {
 
 		initUnreadMessagesLabel();
-
-		GridPane.setVgrow(unreadMessagesLabel, Priority.ALWAYS);
+		initInvisibleLbl();
 
 		rightPane.add(unreadMessagesLabel, 0, 0);
+		rightPane.add(invisibleLbl, 0, 0);
 		rightPane.add(new Label(), 0, 1);
 
 	}
 
 	private void initUnreadMessagesLabel() {
+
+		GridPane.setVgrow(unreadMessagesLabel, Priority.ALWAYS);
 
 		unreadMessagesLabel.backgroundProperty()
 				.bind(Bindings.createObjectBinding(
@@ -125,9 +144,27 @@ class EntityPane extends EntityPaneBase {
 		unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLabel.getFont().getSize()));
 		unreadMessagesLabel.setTextFill(Color.WHITE);
 
-		unreadMessagesLabel.visibleProperty().bind(Bindings.size(unreadMessages).greaterThan(0));
+		unreadMessagesLabel.visibleProperty().bind(Bindings.isNotEmpty(unreadMessages));
 		unreadMessagesLabel.managedProperty().bind(unreadMessagesLabel.visibleProperty());
 		unreadMessagesLabel.textProperty().bind(Bindings.size(unreadMessages).asString());
+
+	}
+
+	private void initInvisibleLbl() {
+
+		GridPane.setVgrow(invisibleLbl, Priority.ALWAYS);
+
+		invisibleLbl.setGraphic(ViewFactory.newInvisibleGraph(0.65));
+
+		final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
+		invisibleLbl.effectProperty().bind(Bindings
+				.createObjectBinding(() -> invisibleLbl.isHover() ? null : colorAdjust, invisibleLbl.hoverProperty()));
+
+		invisibleLbl.visibleProperty()
+				.bind(hideableProperty.and(hoverProperty()).and(unreadMessagesLabel.visibleProperty().not()));
+		invisibleLbl.managedProperty().bind(invisibleLbl.visibleProperty());
+
+		invisibleLbl.setOnMouseClicked(e -> hiddenProperty.set(true));
 
 	}
 
