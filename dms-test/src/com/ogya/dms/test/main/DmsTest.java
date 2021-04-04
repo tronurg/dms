@@ -107,8 +107,8 @@ public class DmsTest {
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = gsh.getGroupSelectionPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
+//			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 

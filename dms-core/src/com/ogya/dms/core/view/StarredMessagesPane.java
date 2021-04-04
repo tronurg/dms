@@ -590,7 +590,6 @@ class StarredMessagesPane extends BorderPane {
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
 					ViewFactory.newAttachGraph(1.0));
-			GridPane.setFillWidth(attachmentLabel, false);
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
