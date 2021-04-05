@@ -56,6 +56,7 @@ import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
+import com.ogya.dms.core.intf.handles.impl.ActiveContactsHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.ActiveGroupsHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.FileHandleImpl;
@@ -63,7 +64,6 @@ import com.ogya.dms.core.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.ListHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.ObjectHandleImpl;
-import com.ogya.dms.core.intf.handles.impl.OnlineContactsHandleImpl;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
 import com.ogya.dms.core.intf.tools.MessageRules;
@@ -103,7 +103,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private final ReportsDialog reportsDialog;
 
 	private final GroupSelectionHandle activeGroupsHandle;
-	private final ContactSelectionHandle onlineContactsHandle;
+	private final ContactSelectionHandle activeContactsHandle;
 
 	private final DmsClient dmsClient;
 
@@ -169,8 +169,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		//
 
-		activeGroupsHandle = new ActiveGroupsHandleImpl(dmsPanel.getActiveGroupsPanel());
-		onlineContactsHandle = new OnlineContactsHandleImpl(dmsPanel.getOnlineContactsPanel());
+		activeGroupsHandle = new ActiveGroupsHandleImpl(dmsPanel.getActiveGroupsPane());
+		activeContactsHandle = new ActiveContactsHandleImpl(dmsPanel.getActiveContactsPane());
 
 		//
 
@@ -194,13 +194,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private void initDbAndModel() throws HibernateException {
 
 		dbManager.fetchAllContacts().forEach(contact -> {
-			contact.setStatus(Availability.OFFLINE);
-			contact = dbManager.addUpdateContact(contact);
+			if (contact.getStatus().compare(Availability.OFFLINE) > 0) {
+				contact.setStatus(Availability.OFFLINE);
+				contact = dbManager.addUpdateContact(contact);
+			}
 			model.addContact(contact);
 		});
 
 		dbManager.fetchAllGroups().forEach(group -> {
-			if (!group.isLocal()) {
+			if (!group.isLocal() && group.getStatus().compare(Availability.OFFLINE) > 0) {
 				group.setStatus(Availability.OFFLINE);
 				group = dbManager.addUpdateGroup(group);
 			}
@@ -1848,13 +1850,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (entityId.isGroup())
 				groupMessagesRead(entityId, unreadMessagesOfEntity);
 			else
-				contactMessagesRead(entityId, unreadMessagesOfEntity);
+				privateMessagesRead(entityId, unreadMessagesOfEntity);
 
 		});
 
 	}
 
-	private void contactMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
+	private void privateMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
 
 		Contact contact = model.getContact(entityId.getId());
 
@@ -2662,6 +2664,41 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void hideEntity(EntityId entityId) {
+
+		taskQueue.execute(() -> {
+
+			if (entityId.isGroup()) {
+
+				Dgroup group = model.getGroup(entityId.getId());
+				if (group == null || !Objects.equals(group.getStatus(), Availability.OFFLINE))
+					return;
+
+				group.setStatus(Availability.HIDDEN);
+				Dgroup newGroup = dbManager.addUpdateGroup(group);
+				model.addGroup(newGroup);
+
+				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+			} else {
+
+				Contact contact = model.getContact(entityId.getId());
+				if (contact == null || !Objects.equals(contact.getStatus(), Availability.OFFLINE))
+					return;
+
+				contact.setStatus(Availability.HIDDEN);
+				Contact newContact = dbManager.addUpdateContact(contact);
+				model.addContact(newContact);
+
+				Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public void moreArchivedMessagesRequested(Long minMessageId) {
 
 		taskQueue.execute(() -> {
@@ -2858,9 +2895,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public ContactSelectionHandle getOnlineContactsHandle() {
+	public ContactSelectionHandle getActiveContactsHandle() {
 
-		return onlineContactsHandle;
+		return activeContactsHandle;
 
 	}
 

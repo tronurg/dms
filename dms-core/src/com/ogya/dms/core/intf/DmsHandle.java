@@ -48,7 +48,7 @@ public interface DmsHandle {
 
 	GroupSelectionHandle getActiveGroupsHandle();
 
-	ContactSelectionHandle getOnlineContactsHandle();
+	ContactSelectionHandle getActiveContactsHandle();
 
 	ContactHandle getContactHandle(Long contactId);
 

@@ -207,7 +207,7 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	private EntityPane getEntityPane(EntityId entityId) {
+	private EntityPane getEntityPane(final EntityId entityId) {
 
 		if (!entityIdPane.containsKey(entityId)) {
 
@@ -229,6 +229,12 @@ class EntitiesPane extends BorderPane {
 					return;
 
 				listeners.forEach(listener -> listener.showMessagePane(entityPane.getMessagePane()));
+
+			});
+
+			entityPane.setOnHideEntity(() -> {
+
+				listeners.forEach(listener -> listener.hideEntity(entityId));
 
 			});
 
@@ -328,5 +334,7 @@ class EntitiesPane extends BorderPane {
 interface IEntitiesPane extends IMessagePane {
 
 	void showMessagePane(MessagePane messagePane);
+
+	void hideEntity(EntityId entityId);
 
 }

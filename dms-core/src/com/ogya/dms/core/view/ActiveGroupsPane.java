@@ -1,15 +1,9 @@
 package com.ogya.dms.core.view;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
 import javax.swing.UIManager;
@@ -17,10 +11,7 @@ import javax.swing.UIManager;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
-import com.ogya.dms.core.database.tables.EntityId;
-import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.GroupHandle;
-import com.ogya.dms.core.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -47,13 +38,10 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-public class SelectableEntitiesPane extends BorderPane {
+public class ActiveGroupsPane extends BorderPane {
 
 	private final double gap = ViewFactory.getGap();
 	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final SelectionMode selectionMode;
-	private final AtomicInteger selectionLimit = new AtomicInteger(Integer.MAX_VALUE);
 
 	private final TextField searchTextField = new TextField();
 
@@ -64,15 +52,9 @@ public class SelectableEntitiesPane extends BorderPane {
 		}
 	};
 
-	private final Map<EntityId, ContactCard> idContactCards = Collections
-			.synchronizedMap(new HashMap<EntityId, ContactCard>());
-	private final Map<EntityId, GroupCard> idGroupCards = Collections
-			.synchronizedMap(new HashMap<EntityId, GroupCard>());
-
-	private final Map<EntityId, ObjectProperty<Color>> memberIdStatus = Collections
-			.synchronizedMap(new HashMap<EntityId, ObjectProperty<Color>>());
-
-	private final Set<EntityId> selectedEntityIds = new HashSet<EntityId>();
+	private final Map<Long, GroupCard> idGroupCards = Collections.synchronizedMap(new HashMap<Long, GroupCard>());
+	private final Map<Long, ObjectProperty<Color>> memberIdStatus = Collections
+			.synchronizedMap(new HashMap<Long, ObjectProperty<Color>>());
 
 	private final Comparator<Node> entitiesSorter = new Comparator<Node>() {
 
@@ -108,14 +90,11 @@ public class SelectableEntitiesPane extends BorderPane {
 
 	};
 
-	private final ObjectProperty<Predicate<ContactHandle>> contactFilterProperty = new SimpleObjectProperty<Predicate<ContactHandle>>();
 	private final ObjectProperty<Predicate<GroupHandle>> groupFilterProperty = new SimpleObjectProperty<Predicate<GroupHandle>>();
 
-	SelectableEntitiesPane(SelectionMode selectionMode) {
+	ActiveGroupsPane() {
 
 		super();
-
-		this.selectionMode = selectionMode;
 
 		init();
 
@@ -145,40 +124,33 @@ public class SelectableEntitiesPane extends BorderPane {
 
 	}
 
-	void setSelectionLimit(int limit) {
-
-	}
-
-	void updateContact(Contact contact) {
-
-		getContactCard(contact.getEntityId()).updateContact(contact);
-
-	}
-
 	void updateGroup(Dgroup group) {
 
-		getGroupCard(group.getEntityId()).updateGroup(group);
+		getGroupCard(group.getId()).updateGroup(group);
 
 	}
 
 	void updateMember(Contact member) {
 
-		EntityId entityId = member.getEntityId();
+		Long id = member.getId();
 
-		memberIdStatus.putIfAbsent(entityId, new SimpleObjectProperty<Color>());
-		memberIdStatus.get(entityId).set(member.getStatus().getStatusColor());
-
-	}
-
-	public List<EntityId> getSelectedEntityIds() {
-
-		return new ArrayList<EntityId>(selectedEntityIds);
+		memberIdStatus.putIfAbsent(id, new SimpleObjectProperty<Color>());
+		memberIdStatus.get(id).set(member.getStatus().getStatusColor());
 
 	}
 
-	public void setContactFilter(Predicate<ContactHandle> filter) {
+	public Long getSelectedId() {
 
-		contactFilterProperty.set(filter);
+		try {
+
+			return idGroupCards.entrySet().stream().filter(entry -> entry.getValue().selectedProperty().get()).findAny()
+					.get().getKey();
+
+		} catch (Exception e) {
+
+		}
+
+		return null;
 
 	}
 
@@ -190,12 +162,7 @@ public class SelectableEntitiesPane extends BorderPane {
 
 	public void resetSelection() {
 
-		selectedEntityIds.forEach(entityId -> {
-			if (entityId.isGroup())
-				getGroupCard(entityId).selectedProperty().set(false);
-			else
-				getContactCard(entityId).selectedProperty().set(false);
-		});
+		idGroupCards.forEach((id, card) -> card.selectedProperty().set(false));
 
 	}
 
@@ -213,79 +180,11 @@ public class SelectableEntitiesPane extends BorderPane {
 
 	}
 
-	private ContactCard getContactCard(EntityId entityId) {
+	private GroupCard getGroupCard(final Long id) {
 
-		if (!idContactCards.containsKey(entityId)) {
+		if (!idGroupCards.containsKey(id)) {
 
-			final ContactCard contactCard = new ContactCard(entityId);
-
-			contactCard.visibleProperty().bind(contactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty()
-						|| contactCard.entityPane.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty())));
-
-			contactCard.managedProperty().bind(contactCard.visibleProperty());
-
-			contactCard.setOnMouseClicked(e -> {
-
-				switch (selectionMode) {
-
-				case SINGLE: {
-
-					boolean wasSelected = contactCard.selectedProperty().get();
-					if (!wasSelected)
-						selectedEntityIds.forEach(selectedEntityId -> {
-							if (selectedEntityId.isGroup())
-								getGroupCard(selectedEntityId).selectedProperty().set(false);
-							else
-								getContactCard(selectedEntityId).selectedProperty().set(false);
-						});
-					contactCard.selectedProperty().set(!wasSelected);
-
-					break;
-
-				}
-				case MULTIPLE: {
-
-					contactCard.selectedProperty().set(!contactCard.selectedProperty().get());
-
-					break;
-
-				}
-				case LIMITED: {
-
-					boolean wasSelected = contactCard.selectedProperty().get();
-					if (wasSelected)
-						contactCard.selectedProperty().set(false);
-					else if (selectedEntityIds.size() < selectionLimit.get())
-						contactCard.selectedProperty().set(true);
-
-					break;
-
-				}
-
-				}
-
-			});
-
-			idContactCards.put(entityId, contactCard);
-
-			entities.getChildren().add(contactCard);
-
-			FXCollections.sort(entities.getChildren(), entitiesSorter);
-
-		}
-
-		return idContactCards.get(entityId);
-
-	}
-
-	private GroupCard getGroupCard(EntityId entityId) {
-
-		if (!idGroupCards.containsKey(entityId)) {
-
-			final GroupCard groupCard = new GroupCard(entityId);
+			final GroupCard groupCard = new GroupCard();
 
 			groupCard.visibleProperty().bind(groupCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchTextField.getText().toLowerCase();
@@ -295,49 +194,15 @@ public class SelectableEntitiesPane extends BorderPane {
 
 			groupCard.managedProperty().bind(groupCard.visibleProperty());
 
-			groupCard.setOnMouseClicked(e -> {
+			groupCard.entityCard.setOnMouseClicked(e -> {
 
-				switch (selectionMode) {
-
-				case SINGLE: {
-
-					boolean wasSelected = groupCard.selectedProperty().get();
-					if (!wasSelected)
-						selectedEntityIds.forEach(selectedEntityId -> {
-							if (selectedEntityId.isGroup())
-								getGroupCard(selectedEntityId).selectedProperty().set(false);
-							else
-								getContactCard(selectedEntityId).selectedProperty().set(false);
-						});
-					groupCard.selectedProperty().set(!wasSelected);
-
-					break;
-
-				}
-				case MULTIPLE: {
-
-					groupCard.selectedProperty().set(!groupCard.selectedProperty().get());
-
-					break;
-
-				}
-				case LIMITED: {
-
-					boolean wasSelected = groupCard.selectedProperty().get();
-					if (wasSelected)
-						groupCard.selectedProperty().set(false);
-					else if (selectedEntityIds.size() < selectionLimit.get())
-						groupCard.selectedProperty().set(true);
-
-					break;
-
-				}
-
-				}
+				boolean selected = !groupCard.selectedProperty().get();
+				idGroupCards.values().forEach(card -> card.selectedProperty().set(false));
+				groupCard.selectedProperty().set(selected);
 
 			});
 
-			idGroupCards.put(entityId, groupCard);
+			idGroupCards.put(id, groupCard);
 
 			entities.getChildren().add(groupCard);
 
@@ -345,13 +210,11 @@ public class SelectableEntitiesPane extends BorderPane {
 
 		}
 
-		return idGroupCards.get(entityId);
+		return idGroupCards.get(id);
 
 	}
 
 	private class EntityCard extends GridPane {
-
-		private final EntityId entityId;
 
 		protected final EntityPaneBase entityPane = new EntityPaneBase();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
@@ -359,11 +222,9 @@ public class SelectableEntitiesPane extends BorderPane {
 		protected final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 		protected final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
-		private EntityCard(EntityId entityId) {
+		private EntityCard() {
 
 			super();
-
-			this.entityId = entityId;
 
 			init();
 
@@ -375,15 +236,6 @@ public class SelectableEntitiesPane extends BorderPane {
 
 				if (!e2)
 					selectedProperty.set(false);
-
-			});
-
-			selectedProperty.addListener((e0, e1, e2) -> {
-
-				if (e2)
-					selectedEntityIds.add(entityId);
-				else
-					selectedEntityIds.remove(entityId);
 
 			});
 
@@ -417,62 +269,18 @@ public class SelectableEntitiesPane extends BorderPane {
 
 	}
 
-	private final class ContactCard extends EntityCard {
-
-		private final ObjectProperty<ContactHandle> contactHandleProperty = new SimpleObjectProperty<ContactHandle>();
-
-		private ContactCard(EntityId entityId) {
-
-			super(entityId);
-
-			init();
-
-		}
-
-		private void init() {
-
-			activeProperty.bind(Bindings.createBooleanBinding(() -> {
-
-				ContactHandle contactHandle = contactHandleProperty.get();
-
-				if (contactHandle == null)
-					return false;
-
-				boolean active = !Objects.equals(contactHandle.getAvailability(), Availability.OFFLINE);
-
-				Predicate<ContactHandle> filter = contactFilterProperty.get();
-
-				if (filter != null)
-					active = active && filter.test(contactHandle);
-
-				return active;
-
-			}, contactHandleProperty, contactFilterProperty));
-
-		}
-
-		private void updateContact(Contact contact) {
-
-			entityPane.updateEntity(contact);
-
-			contactHandleProperty.set(new ContactHandleImpl(contact));
-
-		}
-
-	}
-
 	private final class GroupCard extends BorderPane {
 
 		private final EntityCard entityCard;
 		private final VBox memberCards = new VBox();
 
-		private final ObjectProperty<GroupHandle> groupHandleProperty = new SimpleObjectProperty<GroupHandle>();
+		private final ObjectProperty<Dgroup> groupProperty = new SimpleObjectProperty<Dgroup>();
 
-		private GroupCard(EntityId entityId) {
+		private GroupCard() {
 
 			super();
 
-			this.entityCard = new EntityCard(entityId);
+			this.entityCard = new EntityCard();
 
 			init();
 
@@ -482,21 +290,21 @@ public class SelectableEntitiesPane extends BorderPane {
 
 			entityCard.activeProperty().bind(Bindings.createBooleanBinding(() -> {
 
-				GroupHandle groupHandle = groupHandleProperty.get();
+				Dgroup group = groupProperty.get();
 
-				if (groupHandle == null)
+				if (group == null)
 					return false;
 
-				boolean active = !Objects.equals(groupHandle.getAvailability(), Availability.OFFLINE);
+				boolean active = group.getStatus().compare(Availability.OFFLINE) > 0;
 
 				Predicate<GroupHandle> filter = groupFilterProperty.get();
 
 				if (filter != null)
-					active = active && filter.test(groupHandle);
+					active = active && filter.test(new GroupHandleImpl(group));
 
 				return active;
 
-			}, groupHandleProperty, groupFilterProperty));
+			}, groupProperty, groupFilterProperty));
 
 			initMemberCards();
 
@@ -517,7 +325,7 @@ public class SelectableEntitiesPane extends BorderPane {
 
 			entityCard.entityPane.updateEntity(group);
 
-			groupHandleProperty.set(new GroupHandleImpl(group));
+			groupProperty.set(group);
 
 			// Update members
 			Contact owner = group.getOwner();
@@ -526,25 +334,25 @@ public class SelectableEntitiesPane extends BorderPane {
 
 			group.getMembers().forEach(member -> {
 
-				EntityId memberEntityId = member.getEntityId();
+				Long memberId = member.getId();
 
-				if (memberEntityId.getId() == 1L)
+				if (memberId == 1L)
 					return;
 
-				if (memberIdStatus.containsKey(memberEntityId))
-					memberCards.getChildren().add(new MemberCard(member.getName(), memberIdStatus.get(memberEntityId)));
+				if (memberIdStatus.containsKey(memberId))
+					memberCards.getChildren().add(new MemberCard(member.getName(), memberIdStatus.get(memberId)));
 
 			});
 
 			FXCollections.sort(memberCards.getChildren(), membersSorter);
 
-			EntityId ownerEntityId = owner.getEntityId();
+			Long ownerId = owner.getId();
 
-			if (ownerEntityId.getId() == 1L)
+			if (ownerId == 1L)
 				return;
 
-			if (memberIdStatus.containsKey(ownerEntityId))
-				memberCards.getChildren().add(0, new MemberCard(owner.getName(), memberIdStatus.get(ownerEntityId)));
+			if (memberIdStatus.containsKey(ownerId))
+				memberCards.getChildren().add(0, new MemberCard(owner.getName(), memberIdStatus.get(ownerId)));
 
 		}
 
@@ -588,11 +396,5 @@ public class SelectableEntitiesPane extends BorderPane {
 		}
 
 	}
-
-}
-
-enum SelectionMode {
-
-	SINGLE, MULTIPLE, LIMITED
 
 }

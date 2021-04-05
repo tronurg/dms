@@ -44,4 +44,10 @@ public enum Availability {
 
 	}
 
+	public int compare(Availability availability) {
+
+		return (int) Math.signum(availability.index - this.index);
+
+	}
+
 }

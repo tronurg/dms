@@ -55,8 +55,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
 	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
 
-	private final SelectableEntitiesPane activeGroupsPanel = new SelectableEntitiesPane(SelectionMode.SINGLE);
-	private final SelectableEntitiesPane onlineContactsPanel = new SelectableEntitiesPane(SelectionMode.MULTIPLE);
+	private final ActiveGroupsPane activeGroupsPane = new ActiveGroupsPane();
+	private final ActiveContactsPane activeContactsPane = new ActiveContactsPane();
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
 
@@ -182,15 +182,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
-	public SelectableEntitiesPane getActiveGroupsPanel() {
+	public ActiveGroupsPane getActiveGroupsPane() {
 
-		return activeGroupsPanel;
+		return activeGroupsPane;
 
 	}
 
-	public SelectableEntitiesPane getOnlineContactsPanel() {
+	public ActiveContactsPane getActiveContactsPane() {
 
-		return onlineContactsPanel;
+		return activeContactsPane;
 
 	}
 
@@ -211,15 +211,15 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		entitiesPane.updateEntity(contact);
 		addUpdateGroupPane.updateContact(contact);
 		statusInfoPane.updateContact(contact);
-		onlineContactsPanel.updateContact(contact);
-		activeGroupsPanel.updateMember(contact);
+		activeContactsPane.updateContact(contact);
+		activeGroupsPane.updateMember(contact);
 
 	}
 
 	public void updateGroup(Dgroup group) {
 
 		entitiesPane.updateEntity(group);
-		activeGroupsPanel.updateGroup(group);
+		activeGroupsPane.updateGroup(group);
 
 	}
 
@@ -563,7 +563,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
-	public void loadMoreRequested(final Long bottomMessageId) {
+	public void hideEntity(final EntityId entityId) {
+
+		listeners.forEach(listener -> listener.hideEntity(entityId));
+
+	}
+
+	@Override
+	public void moreArchivedMessagesRequested(final Long bottomMessageId) {
 
 		listeners.forEach(listener -> listener.moreArchivedMessagesRequested(bottomMessageId));
 

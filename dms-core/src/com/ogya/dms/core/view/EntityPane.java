@@ -21,6 +21,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.Effect;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -89,6 +90,16 @@ class EntityPane extends EntityPaneBase {
 
 		messagePane.setActive(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
 		messagePane.setEditable(Objects.equals(entity.getStatus(), Availability.AVAILABLE));
+
+	}
+
+	void setOnHideEntity(final Runnable runnable) {
+
+		invisibleLbl.setOnMouseClicked(e -> {
+			if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
+				return;
+			runnable.run();
+		});
 
 	}
 
@@ -163,8 +174,6 @@ class EntityPane extends EntityPaneBase {
 		invisibleLbl.visibleProperty()
 				.bind(hideableProperty.and(hoverProperty()).and(unreadMessagesLabel.visibleProperty().not()));
 		invisibleLbl.managedProperty().bind(invisibleLbl.visibleProperty());
-
-		invisibleLbl.setOnMouseClicked(e -> hiddenProperty.set(true));
 
 	}
 

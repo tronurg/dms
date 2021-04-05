@@ -2,7 +2,6 @@ package com.ogya.dms.core.intf.handles.impl;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -10,20 +9,20 @@ import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
-import com.ogya.dms.core.view.SelectableEntitiesPane;
+import com.ogya.dms.core.view.ActiveContactsPane;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Scene;
 
-public class OnlineContactsHandleImpl implements ContactSelectionHandle {
+public class ActiveContactsHandleImpl implements ContactSelectionHandle {
 
-	private final SelectableEntitiesPane onlineContactsPanel;
+	private final ActiveContactsPane activeContactsPane;
 	private final JFXPanel onlineContactsPanelSwing;
 
-	public OnlineContactsHandleImpl(SelectableEntitiesPane onlineContactsPanel) {
+	public ActiveContactsHandleImpl(ActiveContactsPane activeContactsPane) {
 
-		this.onlineContactsPanel = onlineContactsPanel;
+		this.activeContactsPane = activeContactsPane;
 
 		onlineContactsPanelSwing = new JFXPanel() {
 
@@ -35,7 +34,7 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 			@Override
 			public void updateUI() {
 				super.updateUI();
-				Platform.runLater(() -> onlineContactsPanel.updateUI());
+				Platform.runLater(() -> activeContactsPane.updateUI());
 			}
 
 		};
@@ -63,7 +62,7 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
 		Platform.runLater(() -> {
 
-			Scene onlineContactsScene = new Scene(onlineContactsPanel);
+			Scene onlineContactsScene = new Scene(activeContactsPane);
 			onlineContactsScene.getStylesheets().add("/resources/css/style.css");
 			onlineContactsPanelSwing.setScene(onlineContactsScene);
 
@@ -83,7 +82,7 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 
 		resetSelection();
 
-		onlineContactsPanel.setContactFilter(filter);
+		activeContactsPane.setContactFilter(filter);
 
 		return onlineContactsPanelSwing;
 
@@ -92,15 +91,14 @@ public class OnlineContactsHandleImpl implements ContactSelectionHandle {
 	@Override
 	public List<Long> getSelectedContactIds() {
 
-		return onlineContactsPanel.getSelectedEntityIds().stream().map(entityId -> entityId.getId())
-				.collect(Collectors.toList());
+		return activeContactsPane.getSelectedEntityIds();
 
 	}
 
 	@Override
 	public void resetSelection() {
 
-		onlineContactsPanel.resetSelection();
+		activeContactsPane.resetSelection();
 
 	}
 

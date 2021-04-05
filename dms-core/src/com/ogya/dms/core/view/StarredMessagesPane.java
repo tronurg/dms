@@ -242,7 +242,8 @@ class StarredMessagesPane extends BorderPane {
 
 		loadBtn.getStyleClass().addAll("dim-label", "link-label");
 		loadBtn.managedProperty().bind(loadBtn.visibleProperty());
-		loadBtn.setOnAction(e -> listeners.forEach(listener -> listener.loadMoreRequested(minMessageId.get())));
+		loadBtn.setOnAction(
+				e -> listeners.forEach(listener -> listener.moreArchivedMessagesRequested(minMessageId.get())));
 
 	}
 
@@ -706,7 +707,7 @@ class StarredMessagesPane extends BorderPane {
 
 interface IStarredMessagesPane {
 
-	void loadMoreRequested(Long bottomMessageId);
+	void moreArchivedMessagesRequested(Long bottomMessageId);
 
 	void attachmentClicked(Long messageId);
 
