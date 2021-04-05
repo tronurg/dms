@@ -6,10 +6,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,7 +20,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.EntityId;
+import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.MessageStatus;
 
 public class Model {
 
@@ -35,6 +39,9 @@ public class Model {
 	private final Map<String, Map<Long, Dgroup>> uuidGroups = Collections
 			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
 	private final Map<Long, Dgroup> idGroups = Collections.synchronizedMap(new HashMap<Long, Dgroup>());
+
+	private final Map<EntityId, Set<Message>> unreadMessages = Collections
+			.synchronizedMap(new HashMap<EntityId, Set<Message>>());
 
 	private final AtomicReference<EntityId> openEntityId = new AtomicReference<EntityId>();
 
@@ -261,6 +268,48 @@ public class Model {
 	public Map<Long, Dgroup> getGroups() {
 
 		return idGroups;
+
+	}
+
+	public void registerMessage(Message message) {
+
+		if (message.isLocal() || message.getUpdateType() != null)
+			return;
+
+		EntityId entityId = message.getEntity().getEntityId();
+
+		Set<Message> unreadMessagesOfEntity = unreadMessages.get(entityId);
+
+		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ) && unreadMessagesOfEntity != null) {
+
+			unreadMessagesOfEntity.remove(message);
+
+			if (unreadMessagesOfEntity.isEmpty()) {
+				unreadMessages.remove(entityId);
+			}
+
+		} else if (!Objects.equals(message.getMessageStatus(), MessageStatus.READ)) {
+
+			if (unreadMessagesOfEntity == null) {
+				unreadMessagesOfEntity = new HashSet<Message>();
+				unreadMessages.put(entityId, unreadMessagesOfEntity);
+			}
+
+			unreadMessagesOfEntity.add(message);
+
+		}
+
+	}
+
+	public void registerMessages(List<Message> messages) {
+
+		messages.forEach(message -> registerMessage(message));
+
+	}
+
+	public Set<Message> getUnreadMessagesOfEntity(EntityId entityId) {
+
+		return unreadMessages.get(entityId);
 
 	}
 

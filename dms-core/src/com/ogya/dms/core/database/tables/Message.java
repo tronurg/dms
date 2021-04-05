@@ -2,6 +2,7 @@ package com.ogya.dms.core.database.tables;
 
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -388,6 +389,19 @@ public class Message {
 			this.viewStatus = ViewStatus.DEFAULT;
 		if (this.owner == null)
 			this.owner = this.contact;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof Message))
+			return false;
+		Message message = (Message) obj;
+		return Objects.equals(this.id, message.id);
+	}
+
+	@Override
+	public int hashCode() {
+		return id.hashCode();
 	}
 
 }

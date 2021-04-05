@@ -493,20 +493,6 @@ public class DbManager {
 
 	}
 
-	public List<Message> getPrivateMessagesWaitingFromContact(Long contactId) throws HibernateException {
-
-		Session session = factory.openSession();
-
-		List<Message> dbMessages = session.createQuery(
-				"from Message where contact.id=:contactId and local=false and dgroup is null and messageStatus not like :read and updateType is null",
-				Message.class).setParameter("contactId", contactId).setParameter("read", MessageStatus.READ).list();
-
-		session.close();
-
-		return dbMessages;
-
-	}
-
 	public List<Message> getAllPrivateMessagesSinceFirstUnreadMessage(Long contactId) throws HibernateException {
 
 		Session session = factory.openSession();
@@ -587,20 +573,6 @@ public class DbManager {
 		List<Message> dbMessages = session.createQuery(
 				"select m from Message m join m.statusReports s where m.done=false and s.contactId=:contactId and s.messageStatus not like :fresh and m.dgroup.owner.id=:contactId",
 				Message.class).setParameter("contactId", contactId).setParameter("fresh", MessageStatus.FRESH).list();
-
-		session.close();
-
-		return dbMessages;
-
-	}
-
-	public List<Message> getMessagesWaitingFromGroup(Long groupId) throws HibernateException {
-
-		Session session = factory.openSession();
-
-		List<Message> dbMessages = session.createQuery(
-				"from Message where dgroup.id=:groupId and local=false and messageStatus not like :read and updateType is null",
-				Message.class).setParameter("groupId", groupId).setParameter("read", MessageStatus.READ).list();
 
 		session.close();
 

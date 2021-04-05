@@ -226,22 +226,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				List<Message> firstMessages = new ArrayList<Message>();
+				List<Message> firstMessages = new ArrayList<Message>(
+						dbManager.getAllPrivateMessagesSinceFirstUnreadMessage(id));
 
-				List<Message> dbMessages = dbManager.getAllPrivateMessagesSinceFirstUnreadMessage(id);
-
-				firstMessages.addAll(dbMessages);
-
-				if (dbMessages.isEmpty()) {
+				if (firstMessages.isEmpty()) {
 
 					firstMessages.addAll(dbManager.getLastPrivateMessages(id, MIN_MESSAGES_PER_PAGE));
 
-				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+				} else if (firstMessages.size() < MIN_MESSAGES_PER_PAGE) {
 
-					firstMessages.addAll(dbManager.getLastPrivateMessagesBeforeId(id, dbMessages.get(0).getId(),
-							MIN_MESSAGES_PER_PAGE - dbMessages.size()));
+					firstMessages.addAll(dbManager.getLastPrivateMessagesBeforeId(id, firstMessages.get(0).getId(),
+							MIN_MESSAGES_PER_PAGE - firstMessages.size()));
 
 				}
+
+				model.registerMessages(firstMessages);
 
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
 					Platform.runLater(() -> dmsPanel.allMessagesLoaded(contact.getEntityId()));
@@ -262,22 +261,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				List<Message> firstMessages = new ArrayList<Message>();
+				List<Message> firstMessages = new ArrayList<Message>(
+						dbManager.getAllGroupMessagesSinceFirstUnreadMessage(id));
 
-				List<Message> dbMessages = dbManager.getAllGroupMessagesSinceFirstUnreadMessage(id);
-
-				firstMessages.addAll(dbMessages);
-
-				if (dbMessages.isEmpty()) {
+				if (firstMessages.isEmpty()) {
 
 					firstMessages.addAll(dbManager.getLastGroupMessages(id, MIN_MESSAGES_PER_PAGE));
 
-				} else if (dbMessages.size() < MIN_MESSAGES_PER_PAGE) {
+				} else if (firstMessages.size() < MIN_MESSAGES_PER_PAGE) {
 
-					firstMessages.addAll(dbManager.getLastGroupMessagesBeforeId(id, dbMessages.get(0).getId(),
-							MIN_MESSAGES_PER_PAGE - dbMessages.size()));
+					firstMessages.addAll(dbManager.getLastGroupMessagesBeforeId(id, firstMessages.get(0).getId(),
+							MIN_MESSAGES_PER_PAGE - firstMessages.size()));
 
 				}
+
+				model.registerMessages(firstMessages);
 
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
 					Platform.runLater(() -> dmsPanel.allMessagesLoaded(group.getEntityId()));
@@ -436,6 +434,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			statusReports.forEach(statusReport -> outgoingMessage.addStatusReport(statusReport));
 
 		Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
+		model.registerMessage(newMessage);
 
 		return newMessage;
 
@@ -811,6 +810,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.setDone(Objects.equals(messageStatus, MessageStatus.READ));
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
+			model.registerMessage(newMessage);
 
 			if (newMessage.getUpdateType() == null)
 				updateMessageInPane(newMessage);
@@ -855,6 +855,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.setMessageStatus(overallMessageStatus);
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
+			model.registerMessage(newMessage);
 
 			if (newMessage.getUpdateType() == null)
 				updateMessageInPane(newMessage);
@@ -887,6 +888,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		message.setDone(true);
 
 		Message newMessage = dbManager.addUpdateMessage(message);
+		model.registerMessage(newMessage);
 
 		dispatchCancellation(newMessage);
 
@@ -924,6 +926,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			message.setViewStatus(ViewStatus.DELETED);
 			message.setMessageStatus(MessageStatus.READ);
 		}).collect(Collectors.toList()));
+		model.registerMessages(newMessages);
 
 		cancellableMessages.forEach(message -> dispatchCancellation(message));
 
@@ -1346,6 +1349,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.setDone(!messageToBeRedirected);
 
 				Message newMessage = dbManager.addUpdateMessage(message);
+				model.registerMessage(newMessage);
 
 				if (newMessage.getUpdateType() == null) {
 
@@ -1675,6 +1679,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					dbMessage.setMessageStatus(dbMessage.getOverallStatus());
 
 					final Message newMessage = dbManager.addUpdateMessage(dbMessage);
+					model.registerMessage(newMessage);
 
 					if (newMessage.getUpdateType() == null)
 						updateMessageInPane(newMessage);
@@ -1835,16 +1840,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			model.entityOpened(entityId);
 
+			Set<Message> unreadMessagesOfEntity = model.getUnreadMessagesOfEntity(entityId);
+
+			if (unreadMessagesOfEntity == null)
+				return;
+
 			if (entityId.isGroup())
-				groupMessagePaneOpened(entityId);
+				groupMessagesRead(entityId, unreadMessagesOfEntity);
 			else
-				contactMessagePaneOpened(entityId);
+				contactMessagesRead(entityId, unreadMessagesOfEntity);
 
 		});
 
 	}
 
-	private void contactMessagePaneOpened(final EntityId entityId) {
+	private void contactMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
 
 		Contact contact = model.getContact(entityId.getId());
 
@@ -1853,16 +1863,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		try {
 
-			List<Message> messagesWaitingFromContact = dbManager.getPrivateMessagesWaitingFromContact(contact.getId());
-
-			if (messagesWaitingFromContact.isEmpty())
-				return;
-
-			List<Message> newMessages = dbManager.addUpdateMessages(messagesWaitingFromContact.stream()
+			List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
 					.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
 
 			if (newMessages.isEmpty())
 				return;
+
+			model.registerMessages(newMessages);
 
 			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
 
@@ -1887,7 +1894,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void groupMessagePaneOpened(final EntityId entityId) {
+	private void groupMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
 
 		Dgroup group = model.getGroup(entityId.getId());
 
@@ -1896,16 +1903,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		try {
 
-			List<Message> messagesWaitingFromGroup = dbManager.getMessagesWaitingFromGroup(group.getId());
-
-			if (messagesWaitingFromGroup.isEmpty())
-				return;
-
-			List<Message> newMessages = dbManager.addUpdateMessages(messagesWaitingFromGroup.stream()
+			List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
 					.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
 
 			if (newMessages.isEmpty())
 				return;
+
+			model.registerMessages(newMessages);
 
 			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
 
@@ -2464,6 +2468,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				List<Message> messages = dbManager.getMessagesById(messageIds);
 
 				List<Message> newMessages = archiveMessages(messages);
+				model.registerMessages(newMessages);
 
 				newMessages.forEach(message -> {
 					updateMessageInPane(message);
