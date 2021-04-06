@@ -99,6 +99,7 @@ class EntityPane extends EntityPaneBase {
 			if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
 				return;
 			runnable.run();
+			e.consume();
 		});
 
 	}

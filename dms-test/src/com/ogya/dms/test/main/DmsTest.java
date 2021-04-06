@@ -107,8 +107,8 @@ public class DmsTest {
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = gsh.getGroupSelectionPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
+//			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
@@ -189,9 +189,9 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
 //			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
-			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 //			JComponent mcPanel = csh.getContactSelectionPanel(contact -> Objects.equals(contact.getSecretId(), "sid"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {

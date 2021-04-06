@@ -12,12 +12,14 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsPackingFactory {
 
 	private static ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory())
+			.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
 			.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.ALL, Visibility.NONE)
 			.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
