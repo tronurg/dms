@@ -1010,7 +1010,7 @@ class MessagePane extends BorderPane {
 		private final GridPane messagePane = new GridPane();
 		private final HBox statusPane = new HBox(gap);
 		private final Label timeLbl;
-		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
+		private final Node starGraph = ViewFactory.newStarGraph(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final InnerShadow shadow = new InnerShadow(3 * gap, Color.TRANSPARENT);
@@ -1204,20 +1204,20 @@ class MessagePane extends BorderPane {
 
 			statusPane.setAlignment(Pos.CENTER);
 
-			initSmallStarBtn();
+			initStarGraph();
 			initTimeLbl();
 
 			if (messageInfo.isOutgoing)
-				statusPane.getChildren().addAll(smallStarBtn, getSpace(), getProgressLbl(), getInfoGrp(), timeLbl);
+				statusPane.getChildren().addAll(starGraph, getSpace(), getProgressLbl(), getInfoGrp(), timeLbl);
 			else
-				statusPane.getChildren().addAll(timeLbl, getSpace(), smallStarBtn);
+				statusPane.getChildren().addAll(timeLbl, getSpace(), starGraph);
 
 		}
 
-		private void initSmallStarBtn() {
+		private void initStarGraph() {
 
-			smallStarBtn.setEffect(new DropShadow());
-			smallStarBtn.visibleProperty().bind(messageInfo.archivedProperty);
+			starGraph.setEffect(new DropShadow());
+			starGraph.visibleProperty().bind(messageInfo.archivedProperty);
 
 		}
 

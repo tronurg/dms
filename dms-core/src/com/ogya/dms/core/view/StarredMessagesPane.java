@@ -452,9 +452,9 @@ class StarredMessagesPane extends BorderPane {
 		private final Label nameLbl = new Label();
 		private final Label dateLbl;
 		private final Label timeLbl;
-		private final Button smallStarBtn = ViewFactory.newStarBtn(0.65);
+		private final Node starGraph = ViewFactory.newStarGraph(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
-		private final Button forwardBtn = ViewFactory.newGoToRefBtn();
+		private final Button forwardBtn = ViewFactory.newForwardBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
@@ -556,9 +556,9 @@ class StarredMessagesPane extends BorderPane {
 			statusPane.setAlignment(Pos.CENTER);
 
 			initTimeLbl();
-			initSmallStarBtn();
+			initStarGraph();
 
-			statusPane.getChildren().addAll(timeLbl, smallStarBtn);
+			statusPane.getChildren().addAll(timeLbl, starGraph);
 
 		}
 
@@ -629,9 +629,9 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
-		private void initSmallStarBtn() {
+		private void initStarGraph() {
 
-			smallStarBtn.setEffect(new DropShadow());
+			starGraph.setEffect(new DropShadow());
 
 		}
 

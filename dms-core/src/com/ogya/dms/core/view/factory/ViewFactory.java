@@ -74,25 +74,12 @@ public class ViewFactory {
 				int green = Integer.valueOf(hex.substring(2, 4), 16);
 				int blue = Integer.valueOf(hex.substring(4, 6), 16);
 
-				int minRange = Math.min(Math.min(red, green), blue);
-				int maxRange = Math.max(Math.max(red, green), blue);
-
-				if (red == minRange)
-					red = 0;
-				else if (green == minRange)
-					green = 0;
-				else
-					blue = 0;
-
-				if (red == maxRange)
-					red = 255;
-				else if (green == maxRange)
-					green = 255;
-				else
-					blue = 255;
-
 				Color color = Color.rgb(red, green, blue);
-				color = Color.hsb(color.getHue(), color.getSaturation(), 0.8);
+
+				double hue = color.getHue();
+				double brightness = 0.0 < hue && hue < 200.0 ? 0.5 : 1.0;
+
+				color = Color.hsb(hue, 1.0, brightness);
 
 				colorMap.put(hex, color);
 
@@ -426,9 +413,19 @@ public class ViewFactory {
 
 	public static Button newStarBtn(double scaleFactor) {
 
-		double viewFactor = scaleFactor * getViewFactor();
-
 		Button btn = new Button();
+
+		btn.setGraphic(newStarGraph(scaleFactor));
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
+	public static Node newStarGraph(double scaleFactor) {
+
+		double viewFactor = scaleFactor * getViewFactor();
 
 		Polygon star = new Polygon();
 		star.setFill(Color.YELLOW);
@@ -438,15 +435,12 @@ public class ViewFactory {
 			points[2 * i + 1] = -12.0 * viewFactor * Math.sin(2 * Math.PI * (0.25 + 2.0 * i / 5));
 		}
 		star.getPoints().addAll(points);
-		btn.setGraphic(star);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
-		return btn;
+		return star;
 
 	}
 
-	public static Button newGoToRefBtn() {
+	public static Button newForwardBtn() {
 
 		double viewFactor = 0.75 * getViewFactor();
 
@@ -457,7 +451,7 @@ public class ViewFactory {
 				.bind(Bindings.createObjectBinding(
 						() -> btn.isHover() && !btn.isDisabled() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY,
 						btn.hoverProperty(), btn.disabledProperty()));
-		Group group = new Group(circle, newFwdArrowGraph(0.75, Color.ANTIQUEWHITE));
+		Group group = new Group(circle, newForwardGraph(0.75, Color.ANTIQUEWHITE));
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
@@ -466,7 +460,7 @@ public class ViewFactory {
 
 	}
 
-	public static Node newFwdArrowGraph(double scaleFactor, Color fill) {
+	public static Node newForwardGraph(double scaleFactor, Color fill) {
 
 		double viewFactor = scaleFactor * getViewFactor();
 
