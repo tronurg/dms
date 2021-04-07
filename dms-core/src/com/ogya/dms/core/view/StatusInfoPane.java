@@ -33,7 +33,7 @@ public class StatusInfoPane extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final HBox topPane = new HBox(gap);
+	private final HBox topPane = new HBox(2 * gap);
 	private final VBox centerPane = new VBox(2 * gap);
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {

@@ -48,7 +48,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	private final VBox mainPane = new VBox();
 	private final IdentityPane identityPane = new IdentityPane();
-	private final EntitiesPane entitiesPane = new EntitiesPane(unreadProperty);
+	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(
 			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath(), unreadProperty);
@@ -140,7 +140,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private void registerListeners() {
 
 		identityPane.addListener(this);
-		entitiesPane.addListener(this);
+
+		// Entities Pane
+		entitiesPane.addEntitiesPaneListener(this);
+		entitiesPane.setOnAddUpdateGroupClicked(this::showAddUpdateGroupClicked);
 
 		// Folders Pane
 		foldersPane.setOnFileSelected(this::fileSelected);
