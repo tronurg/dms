@@ -238,18 +238,7 @@ public class ViewFactory {
 
 		Circle circle = new Circle(16.0 * viewFactor);
 		circle.setFill(Color.GREEN);
-		Rectangle rectangle = new Rectangle(-12.0 * viewFactor, -5.0 * viewFactor, 24.0 * viewFactor,
-				10.0 * viewFactor);
-		rectangle.setArcWidth(6.0 * viewFactor);
-		rectangle.setArcHeight(6.0 * viewFactor);
-		rectangle.setStrokeWidth(2.0 * viewFactor);
-		rectangle.setStroke(Color.ANTIQUEWHITE);
-		rectangle.setRotate(-45.0);
-		rectangle.setFill(Color.TRANSPARENT);
-		Line line = new Line(-6.0 * viewFactor, 6.0 * viewFactor, 3.0 * viewFactor, -3.0 * viewFactor);
-		line.setStrokeWidth(2.0 * viewFactor);
-		line.setStroke(Color.ANTIQUEWHITE);
-		Group group = new Group(circle, rectangle, line);
+		Group group = new Group(circle, newAttachGraph(1.0, Color.ANTIQUEWHITE));
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
@@ -260,18 +249,25 @@ public class ViewFactory {
 
 	public static Node newAttachGraph(double scaleFactor) {
 
+		return newAttachGraph(scaleFactor, Color.GRAY);
+
+	}
+
+	private static Node newAttachGraph(double scaleFactor, Color color) {
+
 		double viewFactor = scaleFactor * getViewFactor();
 
-		Rectangle rectangle = new Rectangle(-6.0 * viewFactor, -2.5 * viewFactor, 12.0 * viewFactor, 5.0 * viewFactor);
-		rectangle.setArcWidth(3.0 * viewFactor);
-		rectangle.setArcHeight(3.0 * viewFactor);
-		rectangle.setStrokeWidth(1.0 * viewFactor);
-		rectangle.setStroke(Color.GRAY);
+		Rectangle rectangle = new Rectangle(-12.0 * viewFactor, -5.0 * viewFactor, 24.0 * viewFactor,
+				10.0 * viewFactor);
+		rectangle.setArcWidth(6.0 * viewFactor);
+		rectangle.setArcHeight(6.0 * viewFactor);
+		rectangle.setStrokeWidth(2.0 * viewFactor);
+		rectangle.setStroke(color);
 		rectangle.setRotate(-45.0);
 		rectangle.setFill(Color.TRANSPARENT);
-		Line line = new Line(-3.0 * viewFactor, 3.0 * viewFactor, 1.5 * viewFactor, -1.5 * viewFactor);
-		line.setStrokeWidth(1.0 * viewFactor);
-		line.setStroke(Color.GRAY);
+		Line line = new Line(-6.0 * viewFactor, 6.0 * viewFactor, 3.0 * viewFactor, -3.0 * viewFactor);
+		line.setStrokeWidth(2.0 * viewFactor);
+		line.setStroke(color);
 
 		return new Group(rectangle, line);
 

@@ -350,7 +350,7 @@ class StarredMessagesPane extends BorderPane {
 			} else {
 
 				Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
-						ViewFactory.newAttachGraph(0.8));
+						ViewFactory.newAttachGraph(0.4));
 				attachmentLabel.getStyleClass().add("dim-label");
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
@@ -590,7 +590,7 @@ class StarredMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
-					ViewFactory.newAttachGraph(1.0));
+					ViewFactory.newAttachGraph(0.5));
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));

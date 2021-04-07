@@ -473,7 +473,7 @@ class MessagePane extends BorderPane {
 		HBox.setHgrow(attachmentLbl, Priority.ALWAYS);
 		attachmentLbl.getStyleClass().add("dim-label");
 		attachmentLbl.setMaxWidth(Double.MAX_VALUE);
-		attachmentLbl.setGraphic(ViewFactory.newAttachGraph(1.0));
+		attachmentLbl.setGraphic(ViewFactory.newAttachGraph(0.5));
 		attachmentLbl.textProperty()
 				.bind(Bindings.createStringBinding(
 						() -> attachmentProperty.get() == null ? null : attachmentProperty.get().getFileName(),
@@ -851,7 +851,7 @@ class MessagePane extends BorderPane {
 			} else {
 
 				Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
-						ViewFactory.newAttachGraph(0.8));
+						ViewFactory.newAttachGraph(0.4));
 				attachmentLabel.getStyleClass().add("dim-label");
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
@@ -1177,7 +1177,7 @@ class MessagePane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
-					ViewFactory.newAttachGraph(1.0));
+					ViewFactory.newAttachGraph(0.5));
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));

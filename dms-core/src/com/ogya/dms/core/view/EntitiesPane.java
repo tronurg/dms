@@ -14,14 +14,17 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.view.factory.ViewFactory;
+import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.BorderPane;
@@ -90,7 +93,14 @@ class EntitiesPane extends BorderPane {
 		entities.setPadding(new Insets(2 * gap));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
+		scrollPane.setSkin(new ScrollPaneSkin(scrollPane) {
+			@Override
+			public void onTraverse(Node arg0, Bounds arg1) {
+
+			}
+		});
 
 		setTop(topArea);
 		setCenter(scrollPane);
