@@ -205,10 +205,12 @@ class EntitiesPane extends BorderPane {
 
 }
 
-interface IEntitiesPane extends IMessagePane {
+interface IEntitiesPane {
 
 	void entityDoubleClicked(EntityId entityId);
 
 	void hideEntityRequested(EntityId entityId);
+
+	void showAddUpdateGroupClicked();
 
 }

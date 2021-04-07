@@ -39,7 +39,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane, IStarredMessagesPane {
+public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane, IStarredMessagesPane, IMessagePane {
 
 	private final double gap = ViewFactory.getGap();
 
