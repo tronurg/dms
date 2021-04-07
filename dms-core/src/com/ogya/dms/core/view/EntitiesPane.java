@@ -12,7 +12,6 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
-import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
@@ -33,10 +32,6 @@ import javafx.scene.layout.VBox;
 class EntitiesPane extends BorderPane {
 
 	private final double gap = ViewFactory.getGap();
-
-	private final BooleanProperty unreadProperty;
-
-	private final HiddenEntitiesPane hiddenEntitiesPane;
 
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
 
@@ -62,14 +57,12 @@ class EntitiesPane extends BorderPane {
 			if (!(arg0 instanceof EntityPane && arg1 instanceof EntityPane))
 				return 0;
 
-			EntityPane group0 = (EntityPane) arg0;
-			EntityPane group1 = (EntityPane) arg1;
+			EntityPane pane0 = (EntityPane) arg0;
+			EntityPane pane1 = (EntityPane) arg1;
 
-			int comparison = group1.getMessagePane().getMaxMessageId()
-					.compareTo(group0.getMessagePane().getMaxMessageId());
+			int comparison = pane1.getMaxMessageId().compareTo(pane0.getMaxMessageId());
 			if (comparison == 0)
-				return Long.compare(group1.getMessagePane().getEntityId().getId(),
-						group0.getMessagePane().getEntityId().getId());
+				return Long.compare(pane1.getEntityId().getId(), pane0.getEntityId().getId());
 
 			return comparison;
 
@@ -80,9 +73,6 @@ class EntitiesPane extends BorderPane {
 	EntitiesPane(BooleanProperty unreadProperty) {
 
 		super();
-
-		this.unreadProperty = unreadProperty;
-		this.hiddenEntitiesPane = new HiddenEntitiesPane(unreadProperty);
 
 		init();
 
@@ -157,71 +147,18 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void addMessage(Message message, boolean moveToTop) {
+	public void updateMessageStatus(EntityId entityId, Message message) {
 
-		EntityPane entityPane = getEntityPane(message.getEntity().getEntityId());
+		getEntityPane(entityId).updateMessageStatus(message);
 
-		entityPane.addUpdateMessage(message);
+	}
 
-		if (!moveToTop)
-			return;
+	void moveEntityToTop(EntityId entityId) {
+
+		EntityPane entityPane = getEntityPane(entityId);
 
 		entities.getChildren().remove(entityPane);
 		entities.getChildren().add(0, entityPane);
-
-	}
-
-	void updateMessage(Message message) {
-
-		getEntityPane(message.getEntity().getEntityId()).addUpdateMessage(message);
-
-	}
-
-	void updateMessageProgress(EntityId entityId, Long messageId, int progress) {
-
-		getEntityPane(entityId).getMessagePane().updateMessageProgress(messageId, progress);
-
-	}
-
-	void scrollPaneToMessage(EntityId entityId, Long messageId) {
-
-		getEntityPane(entityId).getMessagePane().scrollPaneToMessage(messageId);
-
-	}
-
-	void savePosition(EntityId entityId, Long messageId) {
-
-		getEntityPane(entityId).getMessagePane().savePosition(messageId);
-
-	}
-
-	void scrollToSavedPosition(EntityId entityId) {
-
-		getEntityPane(entityId).getMessagePane().scrollToSavedPosition();
-
-	}
-
-	void allMessagesLoaded(EntityId entityId) {
-
-		getEntityPane(entityId).getMessagePane().allMessagesLoaded();
-
-	}
-
-	MessagePane getMessagePane(EntityId entityId) {
-
-		return getEntityPane(entityId).getMessagePane();
-
-	}
-
-	void goToMessage(EntityId entityId, Long messageId) {
-
-		getEntityPane(entityId).getMessagePane().goToMessage(messageId);
-
-	}
-
-	HiddenEntitiesPane getHiddenEntitiesPane() {
-
-		return hiddenEntitiesPane;
 
 	}
 
@@ -229,7 +166,7 @@ class EntitiesPane extends BorderPane {
 
 		if (!entityIdPane.containsKey(entityId)) {
 
-			final EntityPane entityPane = new EntityPane(entityId, unreadProperty);
+			final EntityPane entityPane = new EntityPane(entityId);
 
 			entityPane.managedProperty().bind(entityPane.visibleProperty());
 
@@ -246,17 +183,15 @@ class EntitiesPane extends BorderPane {
 						&& e.isStillSincePress()))
 					return;
 
-				listeners.forEach(listener -> listener.showMessagePane(entityPane.getMessagePane()));
+				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 
 			});
 
-			entityPane.setOnHideEntity(() -> {
+			entityPane.setOnHideEntityRequested(() -> {
 
-				listeners.forEach(listener -> listener.hideEntity(entityId));
+				listeners.forEach(listener -> listener.hideEntityRequested(entityId));
 
 			});
-
-			entityPane.getMessagePane().addListener(newMessagePaneListener());
 
 			entityIdPane.put(entityId, entityPane);
 
@@ -268,91 +203,12 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	private IMessagePane newMessagePaneListener() {
-
-		return new IMessagePane() {
-
-			@Override
-			public void hideMessagePaneClicked() {
-				listeners.forEach(listener -> listener.hideMessagePaneClicked());
-			}
-
-			@Override
-			public void showAddUpdateGroupClicked() {
-				listeners.forEach(listener -> listener.showAddUpdateGroupClicked());
-			}
-
-			@Override
-			public void showFoldersClicked() {
-				listeners.forEach(listener -> listener.showFoldersClicked());
-			}
-
-			@Override
-			public void reportClicked() {
-				listeners.forEach(listener -> listener.reportClicked());
-			}
-
-			@Override
-			public void sendMessageClicked(final String message, final FileBuilder fileBuilder,
-					final Long refMessageId) {
-				listeners.forEach(listener -> listener.sendMessageClicked(message, fileBuilder, refMessageId));
-			}
-
-			@Override
-			public void paneScrolledToTop(Long topMessageId) {
-				listeners.forEach(listener -> listener.paneScrolledToTop(topMessageId));
-			}
-
-			@Override
-			public void messagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl) {
-				listeners.forEach(listener -> listener.messagesClaimed(lastMessageIdExcl, firstMessageIdIncl));
-			}
-
-			@Override
-			public void attachmentClicked(Long messageId) {
-				listeners.forEach(listener -> listener.attachmentClicked(messageId));
-			}
-
-			@Override
-			public void infoClicked(Long messageId) {
-				listeners.forEach(listener -> listener.infoClicked(messageId));
-			}
-
-			@Override
-			public void deleteMessagesRequested(Long... messageIds) {
-				listeners.forEach(listener -> listener.deleteMessagesRequested(messageIds));
-			}
-
-			@Override
-			public void archiveMessagesRequested(Long... messageIds) {
-				listeners.forEach(listener -> listener.archiveMessagesRequested(messageIds));
-			}
-
-			@Override
-			public void recordButtonPressed() {
-				listeners.forEach(listener -> listener.recordButtonPressed());
-			}
-
-			@Override
-			public void recordEventTriggered(final Long refMessageId) {
-				listeners.forEach(listener -> listener.recordEventTriggered(refMessageId));
-			}
-
-			@Override
-			public void recordButtonReleased() {
-				listeners.forEach(listener -> listener.recordButtonReleased());
-			}
-
-		};
-
-	}
-
 }
 
 interface IEntitiesPane extends IMessagePane {
 
-	void showMessagePane(MessagePane messagePane);
+	void entityDoubleClicked(EntityId entityId);
 
-	void hideEntity(EntityId entityId);
+	void hideEntityRequested(EntityId entityId);
 
 }

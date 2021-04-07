@@ -4,7 +4,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
@@ -13,6 +15,7 @@ import javax.swing.UIManager;
 import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
+import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
@@ -53,12 +56,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane(unreadProperty);
 	private final SettingsPane settingsPane = new SettingsPane(unreadProperty);
 	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
+	private final HiddenEntitiesPane hiddenEntitiesPane = new HiddenEntitiesPane(unreadProperty);
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
 
 	private final ActiveGroupsPane activeGroupsPane = new ActiveGroupsPane();
 	private final ActiveContactsPane activeContactsPane = new ActiveContactsPane();
 
 	private final List<AppListener> listeners = Collections.synchronizedList(new ArrayList<AppListener>());
+
+	private final Map<EntityId, MessagePane> messagePanes = Collections
+			.synchronizedMap(new HashMap<EntityId, MessagePane>());
 
 	private final ObjectProperty<MessagePane> messagePaneOnScreenRef = new SimpleObjectProperty<MessagePane>();
 
@@ -156,7 +163,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		starredMessagesPane.addListener(this);
 
 		// Hidden Entities Pane
-		final HiddenEntitiesPane hiddenEntitiesPane = entitiesPane.getHiddenEntitiesPane();
 		hiddenEntitiesPane.setOnBackAction(() -> getChildren().remove(hiddenEntitiesPane));
 
 		// Remote IP Settings Pane
@@ -212,7 +218,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updateContact(Contact contact) {
 
-		entitiesPane.updateEntity(contact);
+		updateEntity(contact);
+
 		addUpdateGroupPane.updateContact(contact);
 		statusInfoPane.updateContact(contact);
 		activeContactsPane.updateContact(contact);
@@ -222,8 +229,16 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updateGroup(Dgroup group) {
 
-		entitiesPane.updateEntity(group);
+		updateEntity(group);
+
 		activeGroupsPane.updateGroup(group);
+
+	}
+
+	private void updateEntity(EntityBase entity) {
+
+		getMessagePane(entity.getEntityId()).updateEntity(entity);
+		entitiesPane.updateEntity(entity);
 
 	}
 
@@ -235,19 +250,33 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void addMessage(Message message, boolean moveToTop) {
 
-		entitiesPane.addMessage(message, moveToTop);
+		EntityId entityId = message.getEntity().getEntityId();
+
+		addUpdateMessage(entityId, message);
+
+		if (moveToTop)
+			entitiesPane.moveEntityToTop(entityId);
 
 		if (getChildren().size() == 1 || message.isLocal()
 				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
 			return;
 
-		unreadEntityIds.add(message.getEntity().getEntityId());
+		unreadEntityIds.add(entityId);
 
 	}
 
 	public void updateMessage(Message message) {
 
-		entitiesPane.updateMessage(message);
+		EntityId entityId = message.getEntity().getEntityId();
+
+		addUpdateMessage(entityId, message);
+
+	}
+
+	private void addUpdateMessage(EntityId entityId, Message message) {
+
+		getMessagePane(entityId).addUpdateMessage(message);
+		entitiesPane.updateMessageStatus(entityId, message);
 
 	}
 
@@ -267,7 +296,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void updateMessageProgress(EntityId entityId, Long messageId, int progress) {
 
-		entitiesPane.updateMessageProgress(entityId, messageId, progress);
+		getMessagePane(entityId).updateMessageProgress(messageId, progress);
 
 	}
 
@@ -285,25 +314,25 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	public void scrollPaneToMessage(EntityId entityId, Long messageId) {
 
-		entitiesPane.scrollPaneToMessage(entityId, messageId);
+		getMessagePane(entityId).scrollPaneToMessage(messageId);
 
 	}
 
 	public void savePosition(EntityId entityId, Long messageId) {
 
-		entitiesPane.savePosition(entityId, messageId);
+		getMessagePane(entityId).savePosition(messageId);
 
 	}
 
 	public void scrollToSavedPosition(EntityId entityId) {
 
-		entitiesPane.scrollToSavedPosition(entityId);
+		getMessagePane(entityId).scrollToSavedPosition();
 
 	}
 
 	public void allMessagesLoaded(EntityId entityId) {
 
-		entitiesPane.allMessagesLoaded(entityId);
+		getMessagePane(entityId).allMessagesLoaded();
 
 	}
 
@@ -391,6 +420,18 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
+	private MessagePane getMessagePane(EntityId entityId) {
+
+		if (!messagePanes.containsKey(entityId)) {
+			MessagePane messagePane = new MessagePane(entityId, unreadProperty);
+			messagePane.addListener(this);
+			messagePanes.put(entityId, messagePane);
+		}
+
+		return messagePanes.get(entityId);
+
+	}
+
 	private void backFromStatusInfoPane() {
 
 		getChildren().remove(statusInfoPane);
@@ -414,7 +455,6 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		case HIDDEN_CONVERSATIONS:
 
-			HiddenEntitiesPane hiddenEntitiesPane = entitiesPane.getHiddenEntitiesPane();
 			hiddenEntitiesPane.scrollToTop();
 			getChildren().add(hiddenEntitiesPane);
 
@@ -467,9 +507,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
-	public void showMessagePane(MessagePane messagePane) {
+	public void entityDoubleClicked(EntityId entityId) {
 
-		getChildren().add(messagePane);
+		getChildren().add(getMessagePane(entityId));
 
 	}
 
@@ -576,9 +616,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
-	public void hideEntity(final EntityId entityId) {
+	public void hideEntityRequested(final EntityId entityId) {
 
-		listeners.forEach(listener -> listener.hideEntity(entityId));
+		listeners.forEach(listener -> listener.hideEntityRequested(entityId));
 
 	}
 
@@ -592,9 +632,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	@Override
 	public void goToMessageClicked(EntityId entityId, Long messageId) {
 
-		getChildren().add(entitiesPane.getMessagePane(entityId));
+		MessagePane messagePane = getMessagePane(entityId);
 
-		entitiesPane.goToMessage(entityId, messageId);
+		getChildren().add(messagePane);
+
+		messagePane.goToMessage(messageId);
 
 	}
 

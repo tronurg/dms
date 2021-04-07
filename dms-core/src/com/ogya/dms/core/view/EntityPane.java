@@ -2,6 +2,7 @@ package com.ogya.dms.core.view;
 
 import java.util.HashSet;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
@@ -33,6 +34,8 @@ import javafx.scene.text.FontWeight;
 
 class EntityPane extends EntityPaneBase {
 
+	private final EntityId entityId;
+
 	private final GridPane rightPane = new GridPane();
 	private final Label unreadMessagesLabel = new Label() {
 
@@ -49,18 +52,18 @@ class EntityPane extends EntityPaneBase {
 	};
 	private final Label invisibleLbl = new Label();
 
-	private final MessagePane messagePane;
+	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
 	private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
 
 	private final BooleanProperty hideableProperty = new SimpleBooleanProperty(false);
 	private final BooleanProperty hiddenProperty = new SimpleBooleanProperty(false);
 
-	EntityPane(EntityId entityId, BooleanProperty unreadProperty) {
+	EntityPane(EntityId entityId) {
 
 		super();
 
-		this.messagePane = new MessagePane(entityId, unreadProperty);
+		this.entityId = entityId;
 
 		init();
 
@@ -82,18 +85,9 @@ class EntityPane extends EntityPaneBase {
 		hideableProperty.set(Objects.equals(entity.getStatus(), Availability.OFFLINE));
 		hiddenProperty.set(Objects.equals(entity.getStatus(), Availability.HIDDEN));
 
-		messagePane.setStatusColor(entity.getStatus().getStatusColor());
-		messagePane.setName(entity.getName());
-
-		if (!entity.getEntityId().isGroup())
-			return;
-
-		messagePane.setActive(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
-		messagePane.setEditable(Objects.equals(entity.getStatus(), Availability.AVAILABLE));
-
 	}
 
-	void setOnHideEntity(final Runnable runnable) {
+	void setOnHideEntityRequested(final Runnable runnable) {
 
 		invisibleLbl.setOnMouseClicked(e -> {
 			if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
@@ -104,23 +98,31 @@ class EntityPane extends EntityPaneBase {
 
 	}
 
-	MessagePane getMessagePane() {
+	EntityId getEntityId() {
 
-		return messagePane;
+		return entityId;
 
 	}
 
-	void addUpdateMessage(Message message) {
+	void updateMessageStatus(Message message) {
 
-		messagePane.addUpdateMessage(message);
+		Long messageId = message.getId();
+
+		maxMessageId.set(Math.max(maxMessageId.get(), messageId));
 
 		if (message.isLocal())
 			return;
 
 		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ))
-			unreadMessages.remove(message.getId());
+			unreadMessages.remove(messageId);
 		else
-			unreadMessages.add(message.getId());
+			unreadMessages.add(messageId);
+
+	}
+
+	Long getMaxMessageId() {
+
+		return maxMessageId.get();
 
 	}
 

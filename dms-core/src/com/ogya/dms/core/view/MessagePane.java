@@ -17,9 +17,11 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
+import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
@@ -85,7 +87,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -572,27 +573,16 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void setStatusColor(Paint fill) {
+	void updateEntity(EntityBase entity) {
 
-		statusCircle.setFill(fill);
+		statusCircle.setFill(entity.getStatus().getStatusColor());
+		nameLabel.setText(entity.getName());
 
-	}
+		if (!entity.getEntityId().isGroup())
+			return;
 
-	void setName(String name) {
-
-		nameLabel.setText(name);
-
-	}
-
-	void setActive(boolean active) {
-
-		activeProperty.setValue(active);
-
-	}
-
-	void setEditable(boolean editable) {
-
-		editableProperty.set(editable);
+		activeProperty.setValue(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
+		editableProperty.set(Objects.equals(entity.getStatus(), Availability.AVAILABLE));
 
 	}
 

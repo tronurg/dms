@@ -698,7 +698,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				String uuid = contactMap.uuid;
 
 				if (Objects.equals(model.getLocalUuid(), uuid))
-					return;
+					continue;
 
 				Contact contact = model.getContact(uuid);
 				if (contact == null) {
@@ -728,7 +728,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				ContactRef contactRef = dbManager.getContactRef(ownerUuid, refId);
 
 				if (contactRef == null)
-					return;
+					continue;
 
 				contactsToBeRemoved.add(contactRef.getContact());
 
@@ -2664,7 +2664,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void hideEntity(EntityId entityId) {
+	public void hideEntityRequested(EntityId entityId) {
 
 		taskQueue.execute(() -> {
 
