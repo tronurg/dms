@@ -52,8 +52,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane(unreadProperty);
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane(unreadProperty);
 	private final SettingsPane settingsPane = new SettingsPane(unreadProperty);
-	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
 	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
+	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
 
 	private final ActiveGroupsPane activeGroupsPane = new ActiveGroupsPane();
 	private final ActiveContactsPane activeContactsPane = new ActiveContactsPane();
@@ -151,14 +151,18 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		settingsPane.setOnBackAction(() -> getChildren().remove(settingsPane));
 		settingsPane.setOnSettingClickedAction(this::settingClicked);
 
+		// Starred Messages Pane
+		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
+		starredMessagesPane.addListener(this);
+
+		// Hidden Entities Pane
+		final HiddenEntitiesPane hiddenEntitiesPane = entitiesPane.getHiddenEntitiesPane();
+		hiddenEntitiesPane.setOnBackAction(() -> getChildren().remove(hiddenEntitiesPane));
+
 		// Remote IP Settings Pane
 		remoteIpSettingsPane.setOnBackAction(() -> getChildren().remove(remoteIpSettingsPane));
 		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
 		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
-
-		// Starred Messages Pane
-		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
-		starredMessagesPane.addListener(this);
 
 	}
 
@@ -408,8 +412,17 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 			break;
 
+		case HIDDEN_CONVERSATIONS:
+
+			HiddenEntitiesPane hiddenEntitiesPane = entitiesPane.getHiddenEntitiesPane();
+			hiddenEntitiesPane.scrollToTop();
+			getChildren().add(hiddenEntitiesPane);
+
+			break;
+
 		case EDIT_REMOTE_IPS:
 
+			remoteIpSettingsPane.scrollToTop();
 			getChildren().add(remoteIpSettingsPane);
 
 			break;

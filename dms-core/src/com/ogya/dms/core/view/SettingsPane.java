@@ -112,6 +112,18 @@ public class SettingsPane extends BorderPane {
 
 		scrollableContent.getChildren().add(starredMessagesLbl);
 
+		// HIDDEN_CONVERSATIONS
+		Label hiddenConversationsLbl = new Label(CommonMethods.translate("HIDDEN_CONVERSATIONS"));
+		hiddenConversationsLbl.getStyleClass().add("link-label");
+		hiddenConversationsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		hiddenConversationsLbl.setOnMouseClicked(e -> {
+			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
+			if (settingsClickedAction != null)
+				settingsClickedAction.accept(Settings.HIDDEN_CONVERSATIONS);
+		});
+
+		scrollableContent.getChildren().add(hiddenConversationsLbl);
+
 		// EDIT_REMOTE_IPS
 		Label editRemoteIpsLbl = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 		editRemoteIpsLbl.getStyleClass().add("link-label");
@@ -130,6 +142,6 @@ public class SettingsPane extends BorderPane {
 
 enum Settings {
 
-	STARRED_MESSAGES, EDIT_REMOTE_IPS
+	STARRED_MESSAGES, HIDDEN_CONVERSATIONS, EDIT_REMOTE_IPS
 
 }

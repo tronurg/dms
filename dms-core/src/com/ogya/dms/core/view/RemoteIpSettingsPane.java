@@ -137,6 +137,12 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	}
 
+	void scrollToTop() {
+
+		scrollPane.setVvalue(scrollPane.getVmin());
+
+	}
+
 	private void initTopPane() {
 
 		initHeadingLabel();

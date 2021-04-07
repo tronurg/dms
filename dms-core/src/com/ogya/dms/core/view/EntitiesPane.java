@@ -36,11 +36,12 @@ class EntitiesPane extends BorderPane {
 
 	private final BooleanProperty unreadProperty;
 
-	private final VBox topArea = new VBox();
+	private final HiddenEntitiesPane hiddenEntitiesPane;
 
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
-	private final TextField searchTextField = new TextField();
 
+	private final VBox centerArea = new VBox();
+	private final TextField searchTextField = new TextField();
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(entities) {
 		@Override
@@ -81,6 +82,7 @@ class EntitiesPane extends BorderPane {
 		super();
 
 		this.unreadProperty = unreadProperty;
+		this.hiddenEntitiesPane = new HiddenEntitiesPane(unreadProperty);
 
 		init();
 
@@ -88,7 +90,36 @@ class EntitiesPane extends BorderPane {
 
 	private void init() {
 
-		initTopArea();
+		initCreateGroupBtn();
+		initCenterArea();
+
+		setTop(createGroupBtn);
+		setCenter(centerArea);
+
+		setPadding(Insets.EMPTY);
+
+	}
+
+	void addListener(IEntitiesPane listener) {
+
+		listeners.add(listener);
+
+	}
+
+	private void initCreateGroupBtn() {
+
+		createGroupBtn.getStyleClass().add("dim-label");
+		createGroupBtn.setMnemonicParsing(false);
+		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
+		createGroupBtn.setPadding(new Insets(2 * gap));
+
+		createGroupBtn.setOnAction(e -> listeners.forEach(listener -> listener.showAddUpdateGroupClicked()));
+
+	}
+
+	private void initCenterArea() {
+
+		initSearchTextField();
 
 		entities.setPadding(new Insets(2 * gap));
 
@@ -102,36 +133,7 @@ class EntitiesPane extends BorderPane {
 			}
 		});
 
-		setTop(topArea);
-		setCenter(scrollPane);
-
-		setPadding(Insets.EMPTY);
-
-	}
-
-	void addListener(IEntitiesPane listener) {
-
-		listeners.add(listener);
-
-	}
-
-	private void initTopArea() {
-
-		initCreateGroupBtn();
-		initSearchTextField();
-
-		topArea.getChildren().addAll(createGroupBtn, searchTextField);
-
-	}
-
-	private void initCreateGroupBtn() {
-
-		createGroupBtn.getStyleClass().add("dim-label");
-		createGroupBtn.setMnemonicParsing(false);
-		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
-		createGroupBtn.setPadding(new Insets(2 * gap));
-
-		createGroupBtn.setOnAction(e -> listeners.forEach(listener -> listener.showAddUpdateGroupClicked()));
+		centerArea.getChildren().addAll(searchTextField, scrollPane);
 
 	}
 
@@ -214,6 +216,12 @@ class EntitiesPane extends BorderPane {
 	void goToMessage(EntityId entityId, Long messageId) {
 
 		getEntityPane(entityId).getMessagePane().goToMessage(messageId);
+
+	}
+
+	HiddenEntitiesPane getHiddenEntitiesPane() {
+
+		return hiddenEntitiesPane;
 
 	}
 

@@ -693,7 +693,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		if (groupUpdate.add != null) {
 
-			groupUpdate.add.forEach(contactMap -> {
+			for (ContactMap contactMap : groupUpdate.add) {
 
 				String uuid = contactMap.uuid;
 
@@ -717,13 +717,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				dbManager.addUpdateContactRef(new ContactRef(owner, contactMap.refId, model.getContact(uuid)));
 
-			});
+			}
 
 		}
 
 		if (groupUpdate.remove != null) {
 
-			groupUpdate.remove.forEach(refId -> {
+			for (Long refId : groupUpdate.remove) {
 
 				ContactRef contactRef = dbManager.getContactRef(ownerUuid, refId);
 
@@ -732,7 +732,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				contactsToBeRemoved.add(contactRef.getContact());
 
-			});
+			}
 
 		}
 
