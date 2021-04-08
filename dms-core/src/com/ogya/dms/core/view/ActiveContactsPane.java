@@ -165,7 +165,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	}
 
-	private final class ContactCard extends EntityCard {
+	private final class ContactCard extends SelectableEntityPane {
 
 		private final ObjectProperty<Contact> contactProperty = new SimpleObjectProperty<Contact>();
 

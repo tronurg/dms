@@ -53,6 +53,8 @@ public interface AppListener {
 
 	void recordButtonReleased();
 
+	void showEntityRequested(EntityId entityId);
+
 	void hideEntityRequested(EntityId entityId);
 
 	void moreArchivedMessagesRequested(Long minMessageId);

@@ -581,7 +581,7 @@ class MessagePane extends BorderPane {
 		if (!entity.getEntityId().isGroup())
 			return;
 
-		activeProperty.setValue(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
+		activeProperty.setValue(entity.getStatus().compare(Availability.OFFLINE) > 0);
 		editableProperty.set(Objects.equals(entity.getStatus(), Availability.AVAILABLE));
 
 	}

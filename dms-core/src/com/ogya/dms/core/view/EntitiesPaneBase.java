@@ -108,9 +108,12 @@ class EntitiesPaneBase extends BorderPane {
 
 	}
 
-	void updateEntity(EntityBase entity) {
+	void updateEntity(EntityBase entity, boolean active) {
 
-		getEntityPane(entity.getEntityId()).updateEntity(entity);
+		EntityPane entityPane = getEntityPane(entity.getEntityId());
+
+		entityPane.activeProperty().set(active);
+		entityPane.updateEntity(entity);
 
 	}
 
@@ -149,12 +152,10 @@ class EntitiesPaneBase extends BorderPane {
 
 			entityPane.managedProperty().bind(entityPane.visibleProperty());
 
-			entityPane.visibleProperty()
-					.bind(entityPane.hiddenProperty().not().and(Bindings.createBooleanBinding(() -> {
-						String searchContactStr = searchTextField.getText().toLowerCase();
-						return searchContactStr.isEmpty()
-								|| entityPane.getName().toLowerCase().startsWith(searchContactStr);
-					}, searchTextField.textProperty())));
+			entityPane.visibleProperty().bind(entityPane.activeProperty().and(Bindings.createBooleanBinding(() -> {
+				String searchContactStr = searchTextField.getText().toLowerCase();
+				return searchContactStr.isEmpty() || entityPane.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchTextField.textProperty())));
 
 			entityPane.setOnMouseClicked(e -> {
 
@@ -166,11 +167,11 @@ class EntitiesPaneBase extends BorderPane {
 
 			});
 
-			entityPane.setOnHideEntityRequested(() -> {
+			entityPane.setOnShowEntityRequested(
+					() -> listeners.forEach(listener -> listener.showEntityRequested(entityId)));
 
-				listeners.forEach(listener -> listener.hideEntityRequested(entityId));
-
-			});
+			entityPane.setOnHideEntityRequested(
+					() -> listeners.forEach(listener -> listener.hideEntityRequested(entityId)));
 
 			entityIdPane.put(entityId, entityPane);
 
@@ -187,6 +188,8 @@ class EntitiesPaneBase extends BorderPane {
 interface IEntitiesPane {
 
 	void entityDoubleClicked(EntityId entityId);
+
+	void showEntityRequested(EntityId entityId);
 
 	void hideEntityRequested(EntityId entityId);
 

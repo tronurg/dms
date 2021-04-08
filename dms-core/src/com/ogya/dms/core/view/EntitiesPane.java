@@ -4,6 +4,7 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
+import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.geometry.Insets;
@@ -36,6 +37,15 @@ class EntitiesPane extends BorderPane {
 
 	}
 
+	private void initCreateGroupBtn() {
+
+		createGroupBtn.getStyleClass().add("dim-label");
+		createGroupBtn.setMnemonicParsing(false);
+		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
+		createGroupBtn.setPadding(new Insets(2 * gap));
+
+	}
+
 	void addEntitiesPaneListener(IEntitiesPane listener) {
 
 		entitiesPane.addListener(listener);
@@ -48,18 +58,9 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	private void initCreateGroupBtn() {
-
-		createGroupBtn.getStyleClass().add("dim-label");
-		createGroupBtn.setMnemonicParsing(false);
-		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
-		createGroupBtn.setPadding(new Insets(2 * gap));
-
-	}
-
 	void updateEntity(EntityBase entity) {
 
-		entitiesPane.updateEntity(entity);
+		entitiesPane.updateEntity(entity, entity.getStatus().compare(Availability.HIDDEN) > 0);
 
 	}
 
@@ -69,7 +70,7 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	public void updateMessageStatus(EntityId entityId, Message message) {
+	void updateMessageStatus(EntityId entityId, Message message) {
 
 		entitiesPane.updateMessageStatus(entityId, message);
 

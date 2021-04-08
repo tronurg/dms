@@ -1,6 +1,12 @@
 package com.ogya.dms.core.view;
 
+import java.util.Objects;
+
 import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.database.tables.EntityBase;
+import com.ogya.dms.core.database.tables.EntityId;
+import com.ogya.dms.core.database.tables.Message;
+import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -69,15 +75,39 @@ public class HiddenEntitiesPane extends BorderPane {
 
 	}
 
+	void addEntitiesPaneListener(IEntitiesPane listener) {
+
+		entitiesPane.addListener(listener);
+
+	}
+
 	void setOnBackAction(final Runnable runnable) {
 
 		backBtn.setOnAction(e -> runnable.run());
 
 	}
 
+	void updateEntity(EntityBase entity) {
+
+		entitiesPane.updateEntity(entity, Objects.equals(entity.getStatus(), Availability.HIDDEN));
+
+	}
+
 	void sortEntities() {
 
 		entitiesPane.sortEntities();
+
+	}
+
+	void updateMessageStatus(EntityId entityId, Message message) {
+
+		entitiesPane.updateMessageStatus(entityId, message);
+
+	}
+
+	void moveEntityToTop(EntityId entityId) {
+
+		entitiesPane.moveEntityToTop(entityId);
 
 	}
 

@@ -7,13 +7,13 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.control.Button;
 
-class EntityCard extends EntityPaneBase {
+class SelectableEntityPane extends EntityPaneBase {
 
 	private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 	private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
-	EntityCard() {
+	SelectableEntityPane() {
 
 		super();
 

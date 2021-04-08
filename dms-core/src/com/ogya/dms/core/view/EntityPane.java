@@ -49,6 +49,7 @@ class EntityPane extends EntityPaneBase {
 
 	};
 
+	private final Label visibleLbl = new Label();
 	private final Label invisibleLbl = new Label();
 
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
@@ -70,9 +71,11 @@ class EntityPane extends EntityPaneBase {
 
 	private void init() {
 
-		initUnreadMessagesLabel();
+		initVisibleLbl();
 		initInvisibleLbl();
+		initUnreadMessagesLabel();
 
+		addRightNode(visibleLbl);
 		addRightNode(invisibleLbl);
 		addRightNode(unreadMessagesLabel);
 
@@ -85,6 +88,17 @@ class EntityPane extends EntityPaneBase {
 
 		hideableProperty.set(Objects.equals(entity.getStatus(), Availability.OFFLINE));
 		hiddenProperty.set(Objects.equals(entity.getStatus(), Availability.HIDDEN));
+
+	}
+
+	void setOnShowEntityRequested(final Runnable runnable) {
+
+		visibleLbl.setOnMouseClicked(e -> {
+			if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress()))
+				return;
+			runnable.run();
+			e.consume();
+		});
 
 	}
 
@@ -151,6 +165,20 @@ class EntityPane extends EntityPaneBase {
 		unreadMessagesLabel.visibleProperty().bind(Bindings.isNotEmpty(unreadMessages));
 		unreadMessagesLabel.managedProperty().bind(unreadMessagesLabel.visibleProperty());
 		unreadMessagesLabel.textProperty().bind(Bindings.size(unreadMessages).asString());
+
+	}
+
+	private void initVisibleLbl() {
+
+		visibleLbl.setGraphic(ViewFactory.newVisibleGraph(0.65));
+
+		final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
+		visibleLbl.effectProperty().bind(Bindings.createObjectBinding(() -> visibleLbl.isHover() ? null : colorAdjust,
+				visibleLbl.hoverProperty()));
+
+		visibleLbl.visibleProperty()
+				.bind(hiddenProperty.and(hoverProperty()).and(unreadMessagesLabel.visibleProperty().not()));
+		visibleLbl.managedProperty().bind(visibleLbl.visibleProperty());
 
 	}
 

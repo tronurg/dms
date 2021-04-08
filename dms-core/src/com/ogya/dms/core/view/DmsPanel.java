@@ -160,10 +160,11 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		settingsPane.setOnSettingClickedAction(this::settingClicked);
 
 		// Starred Messages Pane
-		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
 		starredMessagesPane.addListener(this);
+		starredMessagesPane.setOnBackAction(() -> getChildren().remove(starredMessagesPane));
 
 		// Hidden Entities Pane
+		hiddenEntitiesPane.addEntitiesPaneListener(this);
 		hiddenEntitiesPane.setOnBackAction(() -> getChildren().remove(hiddenEntitiesPane));
 
 		// Remote IP Settings Pane
@@ -240,12 +241,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		getMessagePane(entity.getEntityId()).updateEntity(entity);
 		entitiesPane.updateEntity(entity);
+		hiddenEntitiesPane.updateEntity(entity);
 
 	}
 
 	public void sortEntities() {
 
 		entitiesPane.sortEntities();
+		hiddenEntitiesPane.sortEntities();
 
 	}
 
@@ -255,8 +258,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		addUpdateMessage(entityId, message);
 
-		if (moveToTop)
+		if (moveToTop) {
 			entitiesPane.moveEntityToTop(entityId);
+			hiddenEntitiesPane.moveEntityToTop(entityId);
+		}
 
 		if (getChildren().size() == 1 || message.isLocal()
 				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
@@ -278,6 +283,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		getMessagePane(entityId).addUpdateMessage(message);
 		entitiesPane.updateMessageStatus(entityId, message);
+		hiddenEntitiesPane.updateMessageStatus(entityId, message);
 
 	}
 
@@ -613,6 +619,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void reportClicked() {
 
 		listeners.forEach(listener -> listener.reportClicked());
+
+	}
+
+	@Override
+	public void showEntityRequested(final EntityId entityId) {
+
+		listeners.forEach(listener -> listener.showEntityRequested(entityId));
 
 	}
 

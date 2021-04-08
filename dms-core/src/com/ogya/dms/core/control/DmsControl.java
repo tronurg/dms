@@ -2664,7 +2664,42 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void hideEntityRequested(EntityId entityId) {
+	public void showEntityRequested(final EntityId entityId) {
+
+		taskQueue.execute(() -> {
+
+			if (entityId.isGroup()) {
+
+				Dgroup group = model.getGroup(entityId.getId());
+				if (group == null || !Objects.equals(group.getStatus(), Availability.HIDDEN))
+					return;
+
+				group.setStatus(Availability.OFFLINE);
+				Dgroup newGroup = dbManager.addUpdateGroup(group);
+				model.addGroup(newGroup);
+
+				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+			} else {
+
+				Contact contact = model.getContact(entityId.getId());
+				if (contact == null || !Objects.equals(contact.getStatus(), Availability.HIDDEN))
+					return;
+
+				contact.setStatus(Availability.OFFLINE);
+				Contact newContact = dbManager.addUpdateContact(contact);
+				model.addContact(newContact);
+
+				Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void hideEntityRequested(final EntityId entityId) {
 
 		taskQueue.execute(() -> {
 

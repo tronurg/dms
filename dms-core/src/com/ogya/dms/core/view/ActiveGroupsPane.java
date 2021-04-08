@@ -207,7 +207,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	}
 
-	private final class GroupCard extends EntityCard {
+	private final class GroupCard extends SelectableEntityPane {
 
 		private final VBox memberCards = new VBox();
 
@@ -310,6 +310,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private void init() {
 
+			setGraphicTextGap(gap);
 			setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 			setGraphic(statusCircle);
 
