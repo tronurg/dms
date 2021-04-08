@@ -456,45 +456,66 @@ public class ViewFactory {
 
 	}
 
-	public static Node newForwardGraph(double scaleFactor, Color fill) {
+	public static Node newForwardGraph(double scaleFactor, Color color) {
 
 		double viewFactor = scaleFactor * getViewFactor();
 
 		Polygon arrowHead = new Polygon();
 		arrowHead.getPoints()
 				.addAll(new Double[] { 0.0, -10.0 * viewFactor, 10.0 * viewFactor, 0.0, 0.0, 10.0 * viewFactor });
-		arrowHead.setFill(fill);
+		arrowHead.setFill(color);
 		Arc arc1 = new Arc(0.0, 10.0 * viewFactor, 15.0 * viewFactor, 14.0 * viewFactor, 90.0, 90.0);
 		arc1.setType(ArcType.ROUND);
 		Arc arc2 = new Arc(0.0, 10.0 * viewFactor, 15.0 * viewFactor, 6.0 * viewFactor, 90.0, 90.0);
 		arc2.setType(ArcType.ROUND);
 		Shape arrowTail = Shape.subtract(arc1, arc2);
-		arrowTail.setFill(fill);
+		arrowTail.setFill(color);
 
 		return new Group(arrowHead, arrowTail);
 
 	}
 
+	public static Node newVisibleGraph(double scaleFactor) {
+
+		double viewFactor = scaleFactor * getViewFactor();
+
+		return newEyeGraph(viewFactor, Color.DEEPSKYBLUE);
+
+	}
+
 	public static Node newInvisibleGraph(double scaleFactor) {
 
-		double viewFactor = scaleFactor;
+		double viewFactor = scaleFactor * getViewFactor();
+
+		return newNoEyeGraph(viewFactor, Color.RED);
+
+	}
+
+	private static Node newEyeGraph(double viewFactor, Color color) {
 
 		Shape outerCircle = Shape.intersect(new Circle(0.0, -6.0 * viewFactor, 16.0 * viewFactor),
 				new Circle(0.0, 6.0 * viewFactor, 16.0 * viewFactor));
 		outerCircle.setStrokeLineJoin(StrokeLineJoin.ROUND);
 		outerCircle.setStrokeWidth(3.0 * viewFactor);
 		outerCircle.setFill(Color.TRANSPARENT);
-		outerCircle.setStroke(Color.RED);
+		outerCircle.setStroke(color);
 		Circle innerCircle = new Circle(0.0, 0.0, 6.0 * viewFactor);
 		innerCircle.setStrokeWidth(3.0 * viewFactor);
 		innerCircle.setFill(Color.TRANSPARENT);
-		innerCircle.setStroke(Color.RED);
+		innerCircle.setStroke(color);
+
+		return new Group(outerCircle, innerCircle);
+
+	}
+
+	private static Node newNoEyeGraph(double viewFactor, Color color) {
+
 		Line line = new Line(-8.0 * viewFactor, 12.0 * viewFactor, 8.0 * viewFactor, -12.0 * viewFactor);
 		line.setStrokeLineCap(StrokeLineCap.ROUND);
 		line.setStrokeWidth(3.0 * viewFactor);
-		line.setStroke(Color.RED);
+		line.setStroke(color);
 
-		return new Group(outerCircle, innerCircle, line);
+		return new Group(newEyeGraph(viewFactor, color), line);
 
 	}
 

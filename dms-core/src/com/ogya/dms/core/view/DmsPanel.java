@@ -35,9 +35,8 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 
 public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane, IStarredMessagesPane, IMessagePane {
 
@@ -46,7 +45,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final BooleanProperty unreadProperty = new SimpleBooleanProperty();
 	private final ObservableSet<EntityId> unreadEntityIds = FXCollections.observableSet();
 
-	private final VBox mainPane = new VBox();
+	private final BorderPane mainPane = new BorderPane();
 	private final IdentityPane identityPane = new IdentityPane();
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
@@ -125,13 +124,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		unreadProperty.bind(Bindings.isNotEmpty(unreadEntityIds));
 
-		VBox.setMargin(identityPane, new Insets(2 * gap));
-
-		VBox.setVgrow(entitiesPane, Priority.ALWAYS);
+		BorderPane.setMargin(identityPane, new Insets(2 * gap));
 
 		registerListeners();
 
-		mainPane.getChildren().addAll(identityPane, entitiesPane);
+		mainPane.setTop(identityPane);
+		mainPane.setCenter(entitiesPane);
 
 		getChildren().add(mainPane);
 

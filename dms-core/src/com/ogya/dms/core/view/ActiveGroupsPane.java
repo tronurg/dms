@@ -17,7 +17,6 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
@@ -183,13 +182,12 @@ public class ActiveGroupsPane extends BorderPane {
 
 			groupCard.visibleProperty().bind(groupCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty()
-						|| groupCard.entityCard.entityPane.getName().toLowerCase().startsWith(searchContactStr);
+				return searchContactStr.isEmpty() || groupCard.getName().toLowerCase().startsWith(searchContactStr);
 			}, searchTextField.textProperty())));
 
 			groupCard.managedProperty().bind(groupCard.visibleProperty());
 
-			groupCard.entityCard.setOnMouseClicked(e -> {
+			groupCard.setOnMouseClicked(e -> {
 
 				boolean selected = !groupCard.selectedProperty().get();
 				idGroupCards.values().forEach(card -> card.selectedProperty().set(false));
@@ -209,9 +207,8 @@ public class ActiveGroupsPane extends BorderPane {
 
 	}
 
-	private final class GroupCard extends BorderPane {
+	private final class GroupCard extends EntityCard {
 
-		private final EntityCard entityCard;
 		private final VBox memberCards = new VBox();
 
 		private final ObjectProperty<Dgroup> groupProperty = new SimpleObjectProperty<Dgroup>();
@@ -220,15 +217,13 @@ public class ActiveGroupsPane extends BorderPane {
 
 			super();
 
-			this.entityCard = new EntityCard();
-
 			init();
 
 		}
 
 		private void init() {
 
-			entityCard.activeProperty().bind(Bindings.createBooleanBinding(() -> {
+			activeProperty().bind(Bindings.createBooleanBinding(() -> {
 
 				Dgroup group = groupProperty.get();
 
@@ -248,22 +243,21 @@ public class ActiveGroupsPane extends BorderPane {
 
 			initMemberCards();
 
-			setTop(entityCard);
-			setCenter(memberCards);
+			addBottomNode(memberCards);
 
 		}
 
 		private void initMemberCards() {
 
-			memberCards.setPadding(new Insets(0.0, 0.0, 15.0 * viewFactor, 66.0 * viewFactor));
-			memberCards.visibleProperty().bind(entityCard.selectedProperty());
+			memberCards.setPadding(new Insets(0.0, 0.0, 15.0 * viewFactor, 0.0));
+			memberCards.visibleProperty().bind(selectedProperty());
 			memberCards.managedProperty().bind(memberCards.visibleProperty());
 
 		}
 
 		private void updateGroup(Dgroup group) {
 
-			entityCard.entityPane.updateEntity(group);
+			updateEntity(group);
 
 			groupProperty.set(group);
 
@@ -293,18 +287,6 @@ public class ActiveGroupsPane extends BorderPane {
 
 			if (memberIdStatus.containsKey(ownerId))
 				memberCards.getChildren().add(0, new MemberCard(owner.getName(), memberIdStatus.get(ownerId)));
-
-		}
-
-		protected final BooleanProperty activeProperty() {
-
-			return entityCard.activeProperty();
-
-		}
-
-		private final BooleanProperty selectedProperty() {
-
-			return entityCard.selectedProperty();
 
 		}
 

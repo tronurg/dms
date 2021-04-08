@@ -243,6 +243,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		groupNameTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
+		groupNameTextField.setPadding(Insets.EMPTY);
 		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
 		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));

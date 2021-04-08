@@ -5,22 +5,25 @@ import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Orientation;
+import javafx.geometry.VPos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tooltip;
-import javafx.scene.layout.HBox;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-class EntityPaneBase extends HBox {
+class EntityPaneBase extends GridPane {
 
 	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
 
@@ -30,14 +33,15 @@ class EntityPaneBase extends HBox {
 	private final Label initialLabel = new Label();
 	private final Label groupSign = new Label("G");
 
-	private final VBox middlePane = new VBox();
 	private final Label nameLabel = new Label();
 	private final Label commentLabel = new Label();
 	private final Label coordinatesLabel = new Label();
 
+	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
+
 	EntityPaneBase() {
 
-		super(ViewFactory.getGap());
+		super();
 
 		init();
 
@@ -45,32 +49,24 @@ class EntityPaneBase extends HBox {
 
 	private final void init() {
 
+		setHgap(ViewFactory.getGap());
+
 		initProfilePicture();
-		initMiddlePane();
+		initNameLabel();
+		initCommentLabel();
+		initCoordinatesLabel();
 
-		getChildren().addAll(profilePicture, new Separator(Orientation.VERTICAL), middlePane);
-
-	}
-
-	void updateEntity(EntityBase entity) {
-
-		statusCircle.setStroke(entity.getStatus().getStatusColor());
-		initialLabel.setText(entity.getName().substring(0, 1).toUpperCase());
-		nameLabel.setText(entity.getName());
-		commentLabel.setText(entity.getComment());
-		coordinatesLabel.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
-				: CommonMethods.convertDoubleToCoordinates(entity.getLattitude(), entity.getLongitude()));
-		groupSign.setVisible(entity.getEntityId().isGroup());
-
-	}
-
-	String getName() {
-
-		return nameLabel.getText();
+		add(profilePicture, 0, 0, 1, 3);
+		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
+		add(nameLabel, 2, 0, 1, 1);
+		add(commentLabel, 2, 1, 1, 1);
+		add(coordinatesLabel, 2, 2, 1, 1);
 
 	}
 
 	private void initProfilePicture() {
+
+		GridPane.setValignment(profilePicture, VPos.TOP);
 
 		initStatusCircle();
 		initProfileRound();
@@ -125,18 +121,6 @@ class EntityPaneBase extends HBox {
 
 	}
 
-	private void initMiddlePane() {
-
-		initNameLabel();
-		initCommentLabel();
-		initCoordinatesLabel();
-
-		setHgrow(middlePane, Priority.ALWAYS);
-
-		middlePane.getChildren().addAll(nameLabel, commentLabel, coordinatesLabel);
-
-	}
-
 	private void initNameLabel() {
 
 		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
@@ -167,8 +151,49 @@ class EntityPaneBase extends HBox {
 
 	private void initCoordinatesLabel() {
 
+		GridPane.setHgrow(coordinatesLabel, Priority.ALWAYS);
+
 		coordinatesLabel.setOpacity(0.5);
 		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+
+	}
+
+	void updateEntity(EntityBase entity) {
+
+		String name = entity.getName();
+
+		statusCircle.setStroke(entity.getStatus().getStatusColor());
+		if (!(name == null || name.isEmpty()))
+			initialLabel.setText(name.substring(0, 1).toUpperCase());
+		nameLabel.setText(name);
+		commentLabel.setText(entity.getComment());
+		coordinatesLabel.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
+				: CommonMethods.convertDoubleToCoordinates(entity.getLattitude(), entity.getLongitude()));
+		groupSign.setVisible(entity.getEntityId().isGroup());
+
+	}
+
+	String getName() {
+
+		return nameLabel.getText();
+
+	}
+
+	final BooleanProperty activeProperty() {
+
+		return activeProperty;
+
+	}
+
+	protected void addRightNode(Node node) {
+
+		add(node, 3, 0, 1, 2);
+
+	}
+
+	protected void addBottomNode(Node node) {
+
+		add(node, 2, 3, 1, 1);
 
 	}
 

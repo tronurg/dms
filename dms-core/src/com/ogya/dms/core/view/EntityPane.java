@@ -26,8 +26,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -36,7 +35,6 @@ class EntityPane extends EntityPaneBase {
 
 	private final EntityId entityId;
 
-	private final GridPane rightPane = new GridPane();
 	private final Label unreadMessagesLabel = new Label() {
 
 		@Override
@@ -45,11 +43,12 @@ class EntityPane extends EntityPaneBase {
 		}
 
 		@Override
-		protected double computeMinWidth(double height) {
-			return height;
+		protected double computePrefWidth(double height) {
+			return Math.max(super.computePrefWidth(height), height);
 		}
 
 	};
+
 	private final Label invisibleLbl = new Label();
 
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
@@ -71,9 +70,11 @@ class EntityPane extends EntityPaneBase {
 
 	private void init() {
 
-		initRightPane();
+		initUnreadMessagesLabel();
+		initInvisibleLbl();
 
-		getChildren().add(rightPane);
+		addRightNode(invisibleLbl);
+		addRightNode(unreadMessagesLabel);
 
 	}
 
@@ -132,20 +133,9 @@ class EntityPane extends EntityPaneBase {
 
 	}
 
-	private void initRightPane() {
-
-		initUnreadMessagesLabel();
-		initInvisibleLbl();
-
-		rightPane.add(unreadMessagesLabel, 0, 0);
-		rightPane.add(invisibleLbl, 0, 0);
-		rightPane.add(new Label(), 0, 1);
-
-	}
-
 	private void initUnreadMessagesLabel() {
 
-		GridPane.setVgrow(unreadMessagesLabel, Priority.ALWAYS);
+		unreadMessagesLabel.setMinWidth(Region.USE_PREF_SIZE);
 
 		unreadMessagesLabel.backgroundProperty()
 				.bind(Bindings.createObjectBinding(
@@ -165,8 +155,6 @@ class EntityPane extends EntityPaneBase {
 	}
 
 	private void initInvisibleLbl() {
-
-		GridPane.setVgrow(invisibleLbl, Priority.ALWAYS);
 
 		invisibleLbl.setGraphic(ViewFactory.newInvisibleGraph(0.65));
 

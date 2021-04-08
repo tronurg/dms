@@ -145,8 +145,7 @@ public class ActiveContactsPane extends BorderPane {
 
 			contactCard.visibleProperty().bind(contactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty()
-						|| contactCard.entityPane.getName().toLowerCase().startsWith(searchContactStr);
+				return searchContactStr.isEmpty() || contactCard.getName().toLowerCase().startsWith(searchContactStr);
 			}, searchTextField.textProperty())));
 
 			contactCard.managedProperty().bind(contactCard.visibleProperty());
@@ -180,7 +179,7 @@ public class ActiveContactsPane extends BorderPane {
 
 		private void init() {
 
-			activeProperty.bind(Bindings.createBooleanBinding(() -> {
+			activeProperty().bind(Bindings.createBooleanBinding(() -> {
 
 				Contact contact = contactProperty.get();
 
@@ -202,7 +201,7 @@ public class ActiveContactsPane extends BorderPane {
 
 		private void updateContact(Contact contact) {
 
-			entityPane.updateEntity(contact);
+			updateEntity(contact);
 
 			contactProperty.set(contact);
 
