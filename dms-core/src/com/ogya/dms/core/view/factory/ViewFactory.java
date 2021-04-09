@@ -443,6 +443,23 @@ public class ViewFactory {
 		Button btn = new Button();
 
 		Circle circle = new Circle(-3.75 * viewFactor, 1.25 * viewFactor, 16.0 * viewFactor);
+		circle.setFill(Color.DODGERBLUE);
+		Group group = new Group(circle, newForwardGraph(0.75, Color.ANTIQUEWHITE));
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
+	public static Button newGoToRefBtn() {
+
+		double viewFactor = 0.75 * getViewFactor();
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(-3.75 * viewFactor, 1.25 * viewFactor, 16.0 * viewFactor);
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
 						() -> btn.isHover() && !btn.isDisabled() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY,

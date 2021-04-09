@@ -123,6 +123,7 @@ class MessagePane extends BorderPane {
 	private final Circle statusCircle = new Circle(7.0 * viewFactor);
 	private final Label nameLabel = new Label();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
+	private final Button forwardBtn = ViewFactory.newForwardBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
@@ -247,10 +248,12 @@ class MessagePane extends BorderPane {
 		initBackBtn();
 		initNameLbl();
 		initSelectAllBtn();
+		initForwardBtn();
 		initStarBtn();
 		initDeleteBtn();
 
-		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, getSpace(), selectAllBtn, starBtn, deleteBtn);
+		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, getSpace(), selectAllBtn, forwardBtn, starBtn,
+				deleteBtn);
 
 	}
 
@@ -344,12 +347,27 @@ class MessagePane extends BorderPane {
 
 	}
 
+	private void initForwardBtn() {
+
+		forwardBtn.visibleProperty().bind(selectionModeProperty);
+		forwardBtn.managedProperty().bind(forwardBtn.visibleProperty());
+		forwardBtn.disableProperty()
+				.bind(Bindings.isEmpty(selectedBalloons).or(Bindings.size(selectedBalloons).greaterThan(3)));
+		forwardBtn.setOnAction(e -> {
+			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId).sorted()
+					.toArray(Long[]::new);
+			backBtn.fire();
+			listeners.forEach(listener -> listener.forwardMessagesRequested(selectedIds));
+		});
+
+	}
+
 	private void initStarBtn() {
 
 		starBtn.visibleProperty().bind(selectionModeProperty);
 		starBtn.managedProperty().bind(starBtn.visibleProperty());
 		starBtn.setOnAction(e -> {
-			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId)
+			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId).sorted()
 					.toArray(Long[]::new);
 			backBtn.fire();
 			listeners.forEach(listener -> listener.archiveMessagesRequested(selectedIds));
@@ -461,7 +479,7 @@ class MessagePane extends BorderPane {
 		deleteSelectedBtn.visibleProperty().bind(deleteModeProperty);
 		deleteSelectedBtn.managedProperty().bind(deleteSelectedBtn.visibleProperty());
 		deleteSelectedBtn.setOnAction(e -> {
-			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId)
+			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId).sorted()
 					.toArray(Long[]::new);
 			backBtn.fire();
 			listeners.forEach(listener -> listener.deleteMessagesRequested(selectedIds));
@@ -1550,9 +1568,11 @@ interface IMessagePane {
 
 	void infoClicked(Long messageId);
 
-	void deleteMessagesRequested(Long... messageIds);
+	void forwardMessagesRequested(Long... messageIds);
 
 	void archiveMessagesRequested(Long... messageIds);
+
+	void deleteMessagesRequested(Long... messageIds);
 
 	void recordButtonPressed();
 

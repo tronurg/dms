@@ -454,7 +454,7 @@ class StarredMessagesPane extends BorderPane {
 		private final Label timeLbl;
 		private final Node starGraph = ViewFactory.newStarGraph(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
-		private final Button forwardBtn = ViewFactory.newForwardBtn();
+		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
@@ -482,11 +482,11 @@ class StarredMessagesPane extends BorderPane {
 
 			initSelectionBtn();
 			initMessagePane();
-			initForwardBtn();
+			initGoToRefBtn();
 
 			add(selectionBtn, 0, 0);
 			add(messagePane, 1, 0);
-			add(forwardBtn, 2, 0);
+			add(goToRefBtn, 2, 0);
 
 		}
 
@@ -562,13 +562,13 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
-		private void initForwardBtn() {
+		private void initGoToRefBtn() {
 
-			GridPane.setMargin(forwardBtn, new Insets(0, 0, 0, gap));
+			GridPane.setMargin(goToRefBtn, new Insets(0, 0, 0, gap));
 
-			forwardBtn.visibleProperty().bind(selectionModeProperty.not());
-			forwardBtn.managedProperty().bind(forwardBtn.visibleProperty());
-			forwardBtn.setOnAction(e -> listeners
+			goToRefBtn.visibleProperty().bind(selectionModeProperty.not());
+			goToRefBtn.managedProperty().bind(goToRefBtn.visibleProperty());
+			goToRefBtn.setOnAction(e -> listeners
 					.forEach(listener -> listener.goToMessageClicked(messageInfo.entityId, messageInfo.messageId)));
 
 		}

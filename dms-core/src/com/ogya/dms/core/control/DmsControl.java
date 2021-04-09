@@ -917,6 +917,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
+	private List<Message> archiveMessages(List<Message> messages) throws Exception {
+
+		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED)))
+			return dbManager.addUpdateMessages(messages.stream()
+					.peek(message -> message.setViewStatus(ViewStatus.DEFAULT)).collect(Collectors.toList()));
+
+		return dbManager.addUpdateMessages(
+				messages.stream().filter(message -> Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT))
+						.peek(message -> message.setViewStatus(ViewStatus.ARCHIVED)).collect(Collectors.toList()));
+
+	}
+
 	private List<Message> deleteMessages(List<Message> messages) throws Exception {
 
 		List<Message> cancellableMessages = messages.stream()
@@ -938,18 +950,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				.execute(() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(newMessageIds)));
 
 		return newMessages;
-
-	}
-
-	private List<Message> archiveMessages(List<Message> messages) throws Exception {
-
-		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED)))
-			return dbManager.addUpdateMessages(messages.stream()
-					.peek(message -> message.setViewStatus(ViewStatus.DEFAULT)).collect(Collectors.toList()));
-
-		return dbManager.addUpdateMessages(
-				messages.stream().filter(message -> Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT))
-						.peek(message -> message.setViewStatus(ViewStatus.ARCHIVED)).collect(Collectors.toList()));
 
 	}
 
@@ -2436,25 +2436,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void deleteMessagesRequested(final Long... messageIds) {
+	public void forwardMessagesRequested(final Long... messageIds) {
 
 		taskQueue.execute(() -> {
 
-			try {
+			// TODO
 
-				List<Message> messages = dbManager.getMessagesById(messageIds);
-
-				List<Message> newMessages = deleteMessages(messages.stream()
-						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
-						.collect(Collectors.toList()));
-
-				newMessages.forEach(message -> updateMessageInPane(message));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			System.out.println(Arrays.toString(messageIds));
 
 		});
 
@@ -2478,6 +2466,31 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						return;
 					Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message));
 				});
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void deleteMessagesRequested(final Long... messageIds) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				List<Message> messages = dbManager.getMessagesById(messageIds);
+
+				List<Message> newMessages = deleteMessages(messages.stream()
+						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
+						.collect(Collectors.toList()));
+
+				newMessages.forEach(message -> updateMessageInPane(message));
 
 			} catch (Exception e) {
 
