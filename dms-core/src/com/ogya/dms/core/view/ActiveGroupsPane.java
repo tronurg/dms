@@ -25,6 +25,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -252,6 +253,8 @@ public class ActiveGroupsPane extends BorderPane {
 			memberCards.setPadding(new Insets(0.0, 0.0, 15.0 * viewFactor, 0.0));
 			memberCards.visibleProperty().bind(selectedProperty());
 			memberCards.managedProperty().bind(memberCards.visibleProperty());
+
+			memberCards.addEventFilter(MouseEvent.ANY, e -> e.consume());
 
 		}
 

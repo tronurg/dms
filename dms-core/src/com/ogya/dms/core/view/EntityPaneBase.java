@@ -16,8 +16,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tooltip;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
@@ -61,6 +63,10 @@ class EntityPaneBase extends GridPane {
 		add(nameLabel, 2, 0, 1, 1);
 		add(commentLabel, 2, 1, 1, 1);
 		add(coordinatesLabel, 2, 2, 1, 1);
+
+		Region unclickableRegion = new Region();
+		unclickableRegion.addEventFilter(MouseEvent.ANY, e -> e.consume());
+		add(unclickableRegion, 0, 3, 4, 1);
 
 	}
 

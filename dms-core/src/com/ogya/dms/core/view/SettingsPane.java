@@ -31,7 +31,6 @@ public class SettingsPane extends BorderPane {
 	private final HBox topPane = new HBox(2 * gap);
 
 	private final Button backBtn;
-	private final Label headingLabel = new Label(CommonMethods.translate("SETTINGS"));
 
 	private final VBox scrollableContent = new VBox(gap);
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
@@ -79,20 +78,11 @@ public class SettingsPane extends BorderPane {
 
 	private void initTopPane() {
 
-		initHeadingLabel();
-
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 		topPane.setPadding(new Insets(gap));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
-		topPane.getChildren().addAll(backBtn, headingLabel);
-
-	}
-
-	private void initHeadingLabel() {
-
-		headingLabel.getStyleClass().add("black-label");
-		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		topPane.getChildren().addAll(backBtn);
 
 	}
 

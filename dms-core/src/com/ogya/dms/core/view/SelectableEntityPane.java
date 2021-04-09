@@ -30,6 +30,7 @@ class SelectableEntityPane extends EntityPaneBase {
 
 		});
 
+		selectionBtn.setMouseTransparent(true);
 		selectionBtn.opacityProperty()
 				.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
 

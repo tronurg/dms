@@ -14,6 +14,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.PrePersist;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
@@ -32,7 +33,7 @@ public class Dgroup extends EntityBase {
 	@Column(name = "group_ref_id")
 	private Long groupRefId;
 
-	@Column(name = "name")
+	@Column(name = "name", nullable = false)
 	private String name;
 
 	@Column(name = "comment", length = Integer.MAX_VALUE)
@@ -147,7 +148,13 @@ public class Dgroup extends EntityBase {
 
 	@Override
 	public EntityId getEntityId() {
-		return EntityId.of(this.id, true);
+		return EntityId.of(id, true);
+	}
+
+	@PrePersist
+	protected void prePersist() {
+		if (name == null || name.isEmpty())
+			name = owner.getName();
 	}
 
 }

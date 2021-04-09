@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PrePersist;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
@@ -30,7 +31,7 @@ public class Contact extends EntityBase {
 	@Column(name = "uuid", unique = true, nullable = false, updatable = false)
 	private String uuid;
 
-	@Column(name = "name")
+	@Column(name = "name", nullable = false)
 	private String name;
 
 	@Column(name = "comment")
@@ -147,9 +148,15 @@ public class Contact extends EntityBase {
 			this.localRemoteServerIps.putAll(localRemoteServerIps);
 	}
 
+	@PrePersist
+	protected void prePersist() {
+		if (name == null || name.isEmpty())
+			name = uuid;
+	}
+
 	@Override
 	public EntityId getEntityId() {
-		return EntityId.of(this.id, false);
+		return EntityId.of(id, false);
 	}
 
 	@Override

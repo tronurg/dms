@@ -344,12 +344,12 @@ public class Message {
 	}
 
 	public void addStatusReport(StatusReport statusReport) {
-		this.statusReports.add(statusReport);
+		statusReports.add(statusReport);
 		statusReport.setMessage(this);
 	}
 
 	public void removeStatusReport(StatusReport statusReport) {
-		this.statusReports.remove(statusReport);
+		statusReports.remove(statusReport);
 		statusReport.setMessage(null);
 	}
 
@@ -362,7 +362,7 @@ public class Message {
 	}
 
 	public EntityBase getEntity() {
-		return this.dgroup == null ? this.contact : this.dgroup;
+		return dgroup == null ? contact : dgroup;
 	}
 
 	public MessageStatus getOverallStatus() {
@@ -383,12 +383,12 @@ public class Message {
 	}
 
 	@PrePersist
-	protected void onCreate() {
-		this.date = new Date();
-		if (this.updateType == null && this.viewStatus == null)
-			this.viewStatus = ViewStatus.DEFAULT;
-		if (this.owner == null)
-			this.owner = this.contact;
+	protected void prePersist() {
+		date = new Date();
+		if (updateType == null && viewStatus == null)
+			viewStatus = ViewStatus.DEFAULT;
+		if (owner == null)
+			owner = contact;
 	}
 
 	@Override
