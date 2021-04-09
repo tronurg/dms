@@ -17,6 +17,7 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
@@ -264,8 +265,9 @@ class EntitiesPaneBase extends BorderPane {
 
 			super.updateEntity(entity);
 
-			hideableProperty.set(Objects.equals(entity.getStatus(), Availability.OFFLINE));
-			hiddenProperty.set(Objects.equals(entity.getStatus(), Availability.HIDDEN));
+			hideableProperty.set(Objects.equals(entity.getStatus(), Availability.OFFLINE)
+					&& Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT));
+			hiddenProperty.set(Objects.equals(entity.getViewStatus(), ViewStatus.ARCHIVED));
 
 		}
 

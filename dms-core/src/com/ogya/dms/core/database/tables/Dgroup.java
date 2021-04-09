@@ -1,6 +1,7 @@
 package com.ogya.dms.core.database.tables;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -15,11 +16,15 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ogya.dms.core.database.converters.AvailabilityConverter;
+import com.ogya.dms.core.database.converters.ViewStatusConverter;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
 @Table(name = "dgroup")
@@ -42,6 +47,11 @@ public class Dgroup extends EntityBase {
 	@Column(name = "status", nullable = false)
 	@Convert(converter = AvailabilityConverter.class)
 	private Availability status;
+
+	@Column(name = "view_status", nullable = false)
+	@Convert(converter = ViewStatusConverter.class)
+	@JsonIgnore
+	private ViewStatus viewStatus;
 
 	@Column(name = "active", nullable = false)
 	private boolean active;
@@ -108,6 +118,14 @@ public class Dgroup extends EntityBase {
 		this.status = status;
 	}
 
+	public ViewStatus getViewStatus() {
+		return viewStatus;
+	}
+
+	public void setViewStatus(ViewStatus viewStatus) {
+		this.viewStatus = viewStatus;
+	}
+
 	public boolean isActive() {
 		return active;
 	}
@@ -140,6 +158,13 @@ public class Dgroup extends EntityBase {
 	protected void prePersist() {
 		if (name == null || name.isEmpty())
 			name = owner.getName();
+		preUpdate();
+	}
+
+	@PreUpdate
+	protected void preUpdate() {
+		if (viewStatus == null || !Objects.equals(status, Availability.OFFLINE))
+			viewStatus = ViewStatus.DEFAULT;
 	}
 
 	@Override

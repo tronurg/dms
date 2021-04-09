@@ -194,7 +194,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private void initDbAndModel() throws HibernateException {
 
 		dbManager.fetchAllContacts().forEach(contact -> {
-			if (contact.getStatus().compare(Availability.OFFLINE) > 0) {
+			if (!Objects.equals(contact.getStatus(), Availability.OFFLINE)) {
 				contact.setStatus(Availability.OFFLINE);
 				contact = dbManager.addUpdateContact(contact);
 			}
@@ -202,7 +202,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		});
 
 		dbManager.fetchAllGroups().forEach(group -> {
-			if (!group.isLocal() && group.getStatus().compare(Availability.OFFLINE) > 0) {
+			if (Objects.equals(group.getStatus(), Availability.LIMITED)) {
 				group.setStatus(Availability.OFFLINE);
 				group = dbManager.addUpdateGroup(group);
 			}
@@ -2671,10 +2671,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (entityId.isGroup()) {
 
 				Dgroup group = model.getGroup(entityId.getId());
-				if (group == null || !Objects.equals(group.getStatus(), Availability.HIDDEN))
+				if (group == null)
 					return;
 
-				group.setStatus(Availability.OFFLINE);
+				group.setViewStatus(ViewStatus.DEFAULT);
 				Dgroup newGroup = dbManager.addUpdateGroup(group);
 				model.addGroup(newGroup);
 
@@ -2683,10 +2683,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			} else {
 
 				Contact contact = model.getContact(entityId.getId());
-				if (contact == null || !Objects.equals(contact.getStatus(), Availability.HIDDEN))
+				if (contact == null)
 					return;
 
-				contact.setStatus(Availability.OFFLINE);
+				contact.setViewStatus(ViewStatus.DEFAULT);
 				Contact newContact = dbManager.addUpdateContact(contact);
 				model.addContact(newContact);
 
@@ -2706,10 +2706,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (entityId.isGroup()) {
 
 				Dgroup group = model.getGroup(entityId.getId());
-				if (group == null || !Objects.equals(group.getStatus(), Availability.OFFLINE))
+				if (group == null)
 					return;
 
-				group.setStatus(Availability.HIDDEN);
+				group.setViewStatus(ViewStatus.ARCHIVED);
 				Dgroup newGroup = dbManager.addUpdateGroup(group);
 				model.addGroup(newGroup);
 
@@ -2718,10 +2718,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			} else {
 
 				Contact contact = model.getContact(entityId.getId());
-				if (contact == null || !Objects.equals(contact.getStatus(), Availability.OFFLINE))
+				if (contact == null)
 					return;
 
-				contact.setStatus(Availability.HIDDEN);
+				contact.setViewStatus(ViewStatus.ARCHIVED);
 				Contact newContact = dbManager.addUpdateContact(contact);
 				model.addContact(newContact);
 
@@ -3063,8 +3063,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		contactIds.forEach(id -> {
 			Contact contact = model.getContact(id);
-			if (contact != null && contact.getStatus().compare(Availability.OFFLINE) > 0)
-				contactUuids.add(contact.getUuid());
+			if (contact == null || Objects.equals(contact.getStatus(), Availability.OFFLINE))
+				return;
+			contactUuids.add(contact.getUuid());
 		});
 
 		if (contactUuids.isEmpty())

@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -186,7 +187,7 @@ public class ActiveContactsPane extends BorderPane {
 				if (contact == null)
 					return false;
 
-				boolean active = contact.getStatus().compare(Availability.OFFLINE) > 0;
+				boolean active = !Objects.equals(contact.getStatus(), Availability.OFFLINE);
 
 				Predicate<ContactHandle> filter = contactFilterProperty.get();
 

@@ -9,7 +9,7 @@ import javafx.scene.paint.Color;
 public enum Availability {
 
 	AVAILABLE(0, Color.LIMEGREEN), AWAY(1, Color.ORANGE), BUSY(2, Color.RED), LIMITED(3, Color.BLUE),
-	OFFLINE(4, Color.GRAY), HIDDEN(5, Color.GRAY), DELETED(6, Color.TRANSPARENT);
+	OFFLINE(4, Color.GRAY);
 
 	private static final Map<Integer, Availability> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, Availability>());
@@ -41,12 +41,6 @@ public enum Availability {
 	public Color getStatusColor() {
 
 		return statusColor;
-
-	}
-
-	public int compare(Availability availability) {
-
-		return (int) Math.signum(availability.index - this.index);
 
 	}
 

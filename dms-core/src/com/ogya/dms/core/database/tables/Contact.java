@@ -12,12 +12,16 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrePersist;
+import javax.persistence.PreUpdate;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ogya.dms.core.database.converters.AvailabilityConverter;
+import com.ogya.dms.core.database.converters.ViewStatusConverter;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
 @Table(name = "contact")
@@ -40,6 +44,11 @@ public class Contact extends EntityBase {
 	@Column(name = "status", nullable = false)
 	@Convert(converter = AvailabilityConverter.class)
 	private Availability status;
+
+	@Column(name = "view_status", nullable = false)
+	@Convert(converter = ViewStatusConverter.class)
+	@JsonIgnore
+	private ViewStatus viewStatus;
 
 	@Column(name = "lattitude")
 	private Double lattitude;
@@ -114,6 +123,14 @@ public class Contact extends EntityBase {
 		this.status = status;
 	}
 
+	public ViewStatus getViewStatus() {
+		return viewStatus;
+	}
+
+	public void setViewStatus(ViewStatus viewStatus) {
+		this.viewStatus = viewStatus;
+	}
+
 	public Double getLattitude() {
 		return lattitude;
 	}
@@ -152,6 +169,13 @@ public class Contact extends EntityBase {
 	protected void prePersist() {
 		if (name == null || name.isEmpty())
 			name = uuid;
+		preUpdate();
+	}
+
+	@PreUpdate
+	protected void preUpdate() {
+		if (viewStatus == null || !Objects.equals(status, Availability.OFFLINE))
+			viewStatus = ViewStatus.DEFAULT;
 	}
 
 	@Override

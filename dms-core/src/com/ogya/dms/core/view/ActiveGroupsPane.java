@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import javax.swing.UIManager;
@@ -231,7 +232,7 @@ public class ActiveGroupsPane extends BorderPane {
 				if (group == null)
 					return false;
 
-				boolean active = group.getStatus().compare(Availability.OFFLINE) > 0;
+				boolean active = !Objects.equals(group.getStatus(), Availability.OFFLINE);
 
 				Predicate<GroupHandle> filter = groupFilterProperty.get();
 

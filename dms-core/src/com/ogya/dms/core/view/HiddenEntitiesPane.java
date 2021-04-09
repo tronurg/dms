@@ -6,7 +6,7 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
-import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -89,7 +89,7 @@ public class HiddenEntitiesPane extends BorderPane {
 
 	void updateEntity(EntityBase entity) {
 
-		entitiesPane.updateEntity(entity, Objects.equals(entity.getStatus(), Availability.HIDDEN));
+		entitiesPane.updateEntity(entity, Objects.equals(entity.getViewStatus(), ViewStatus.ARCHIVED));
 
 	}
 

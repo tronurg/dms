@@ -1,10 +1,12 @@
 package com.ogya.dms.core.view;
 
+import java.util.Objects;
+
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
-import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.geometry.Insets;
@@ -60,7 +62,7 @@ class EntitiesPane extends BorderPane {
 
 	void updateEntity(EntityBase entity) {
 
-		entitiesPane.updateEntity(entity, entity.getStatus().compare(Availability.HIDDEN) > 0);
+		entitiesPane.updateEntity(entity, Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT));
 
 	}
 
