@@ -3090,12 +3090,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		List<String> contactUuids = new ArrayList<String>();
 
 		group.getMembers().forEach(contact -> {
-			if (model.isContactOnline(contact.getUuid()))
-				contactUuids.add(contact.getUuid());
+			String contactUuid = contact.getUuid();
+			if (model.isContactOnline(contactUuid))
+				contactUuids.add(contactUuid);
 		});
 
-		if (!group.isLocal() && model.isContactOnline(group.getOwner().getUuid()))
-			contactUuids.add(group.getOwner().getUuid());
+		String ownerUuid = group.getOwner().getUuid();
+		if (!group.isLocal() && model.isContactOnline(ownerUuid))
+			contactUuids.add(ownerUuid);
 
 		if (contactUuids.isEmpty())
 			return false;
