@@ -136,6 +136,12 @@ public class Dgroup extends EntityBase {
 		return members;
 	}
 
+	@PrePersist
+	protected void prePersist() {
+		if (name == null || name.isEmpty())
+			name = owner.getName();
+	}
+
 	@Override
 	public Double getLattitude() {
 		return null;
@@ -149,12 +155,6 @@ public class Dgroup extends EntityBase {
 	@Override
 	public EntityId getEntityId() {
 		return EntityId.of(id, true);
-	}
-
-	@PrePersist
-	protected void prePersist() {
-		if (name == null || name.isEmpty())
-			name = owner.getName();
 	}
 
 }
