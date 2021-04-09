@@ -496,8 +496,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		else if (group.isLocal())
 			group.setStatus(Availability.AVAILABLE);
 		else
-			group.setStatus(Objects.equals(owner.getStatus(), Availability.OFFLINE) ? Availability.OFFLINE
-					: Availability.LIMITED);
+			group.setStatus(
+					model.isContactOnline(group.getOwner().getUuid()) ? Availability.LIMITED : Availability.OFFLINE);
 
 		List<String> contactNames = new ArrayList<String>();
 		group.getMembers().forEach(contact -> contactNames.add(contact.getName()));
@@ -3063,10 +3063,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		contactIds.forEach(id -> {
 			Contact contact = model.getContact(id);
-			if (contact == null)
-				return;
-			contactUuids.add(contact.getUuid());
+			if (contact != null && contact.getStatus().compare(Availability.OFFLINE) > 0)
+				contactUuids.add(contact.getUuid());
 		});
+
+		if (contactUuids.isEmpty())
+			return false;
 
 		sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
@@ -3082,15 +3084,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup group = model.getGroup(groupId);
 
-		if (group == null || Objects.equals(group.getStatus(), Availability.OFFLINE))
+		if (group == null)
 			return false;
 
 		List<String> contactUuids = new ArrayList<String>();
 
-		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
+		group.getMembers().forEach(contact -> {
+			if (model.isContactOnline(contact.getUuid()))
+				contactUuids.add(contact.getUuid());
+		});
 
-		if (!group.isLocal())
+		if (!group.isLocal() && model.isContactOnline(group.getOwner().getUuid()))
 			contactUuids.add(group.getOwner().getUuid());
+
+		if (contactUuids.isEmpty())
+			return false;
 
 		sendMessageToUuids(messageHandle, contactUuids, messageRules);
 

@@ -160,7 +160,7 @@ public class Model {
 
 	public boolean isContactOnline(String uuid) {
 
-		return uuidContacts.containsKey(uuid) && !Objects.equals(getContact(uuid).getStatus(), Availability.OFFLINE);
+		return uuidContacts.containsKey(uuid) && getContact(uuid).getStatus().compare(Availability.OFFLINE) > 0;
 
 	}
 
