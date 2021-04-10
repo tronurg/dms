@@ -681,7 +681,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Contact owner = message.getContact();
 			Long groupRefId = message.getGroupRefId();
-			Dgroup group = getGroup(null, groupRefId);
+			Dgroup group = getGroup(owner.getUuid(), groupRefId);
 			if (group == null)
 				group = new Dgroup(owner, groupRefId);
 
