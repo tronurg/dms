@@ -139,7 +139,7 @@ public class Model {
 
 	}
 
-	public void addContact(Contact contact) {
+	public void addUpdateContact(Contact contact) {
 
 		uuidContacts.put(contact.getUuid(), contact);
 		idContacts.put(contact.getId(), contact);
@@ -233,7 +233,7 @@ public class Model {
 
 	}
 
-	public void addGroup(Dgroup group) {
+	public void addUpdateGroup(Dgroup group) {
 
 		idGroups.put(group.getId(), group);
 

@@ -200,7 +200,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					e.printStackTrace();
 				}
 			}
-			model.addContact(contact);
+			model.addUpdateContact(contact);
 		});
 
 		dbManager.fetchAllGroups().forEach(group -> {
@@ -212,7 +212,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					e.printStackTrace();
 				}
 			}
-			model.addGroup(group);
+			model.addUpdateGroup(group);
 		});
 
 	}
@@ -355,13 +355,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final Long id = contact.getId();
 
+		if (Objects.equals(contact.getStatus(), Availability.OFFLINE))
+			return;
+
 		contact.setStatus(Availability.OFFLINE);
 
 		try {
 
 			final Contact newContact = dbManager.addUpdateContact(contact);
 
-			model.addContact(newContact);
+			model.addUpdateContact(newContact);
 
 			Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -378,13 +381,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			dbManager.getAllActiveGroupsOfContact(id).forEach(group -> {
 
+				if (Objects.equals(group.getStatus(), Availability.OFFLINE))
+					return;
+
 				group.setStatus(Availability.OFFLINE);
 
 				try {
 
 					final Dgroup newGroup = dbManager.addUpdateGroup(group);
 
-					model.addGroup(newGroup);
+					model.addUpdateGroup(newGroup);
 
 					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
@@ -514,7 +520,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup newGroup = dbManager.addUpdateGroup(group);
 
-		model.addGroup(newGroup);
+		model.addUpdateGroup(newGroup);
 
 		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
@@ -673,26 +679,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			GroupUpdate groupUpdate = DmsPackingFactory.unpack(Base64.getDecoder().decode(message.getContent()),
 					GroupUpdate.class);
 
-			groupUpdateReceived(message.getContact().getUuid(), message.getGroupRefId(), groupUpdate);
+			Contact owner = message.getContact();
+			Long groupRefId = message.getGroupRefId();
+			Dgroup group = getGroup(null, groupRefId);
+			if (group == null)
+				group = new Dgroup(owner, groupRefId);
+
+			groupUpdateReceived(group, groupUpdate);
 
 		}
 
 	}
 
-	private void groupUpdateReceived(final String ownerUuid, final Long groupRefId, final GroupUpdate groupUpdate)
-			throws Exception {
+	private Dgroup groupUpdateReceived(final Dgroup group, final GroupUpdate groupUpdate) throws Exception {
 
-		Dgroup group = model.getGroup(ownerUuid, groupRefId);
+		if (group.getGroupRefId() == null)
+			throw new Exception("Group reference id cannot be null.");
 
-		Contact owner = getContact(ownerUuid);
-
-		if (group == null) {
-			if (owner == null || groupRefId == null)
-				return;
-			group = new Dgroup(owner, groupRefId);
-		} else {
-			group.setOwner(owner);
-		}
+		Contact owner = group.getOwner();
+		String ownerUuid = owner.getUuid();
 
 		final Set<Contact> contactsToBeAdded = new HashSet<Contact>();
 		final Set<Contact> contactsToBeRemoved = new HashSet<Contact>();
@@ -731,7 +736,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		createUpdateGroup(group, groupUpdate.name, groupUpdate.active == null ? true : groupUpdate.active,
+		return createUpdateGroup(group, groupUpdate.name, groupUpdate.active == null ? true : groupUpdate.active,
 				contactsToBeAdded, contactsToBeRemoved);
 
 	}
@@ -964,7 +969,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final Contact newContact = dbManager.addUpdateContact(contact);
 
-		model.addContact(newContact);
+		model.addUpdateContact(newContact);
 
 		Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -1000,7 +1005,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final Contact newContact = dbManager.addUpdateContact(contact);
 
-		model.addContact(newContact);
+		model.addUpdateContact(newContact);
 
 		Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -1008,6 +1013,60 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
 		return newContact;
+
+	}
+
+	private Dgroup getGroup(Long id) {
+
+		Dgroup group = model.getGroup(id);
+
+		if (group != null)
+			return group;
+
+		group = dbManager.getGroupById(id);
+
+		if (group == null)
+			return null;
+
+		group.setViewStatus(ViewStatus.DEFAULT); // Group exists but was deleted, so revive it
+
+		final Dgroup newGroup = dbManager.addUpdateGroup(group);
+
+		model.addUpdateGroup(newGroup);
+
+		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+		listenerTaskQueue
+				.execute(() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
+
+		return newGroup;
+
+	}
+
+	private Dgroup getGroup(String ownerUuid, Long groupRefId) {
+
+		Dgroup group = model.getGroup(ownerUuid, groupRefId);
+
+		if (group != null)
+			return group;
+
+		group = dbManager.getGroupByOwner(ownerUuid, groupRefId);
+
+		if (group == null)
+			return null;
+
+		group.setViewStatus(ViewStatus.DEFAULT); // Group exists but was deleted, so revive it
+
+		final Dgroup newGroup = dbManager.addUpdateGroup(group);
+
+		model.addUpdateGroup(newGroup);
+
+		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+		listenerTaskQueue
+				.execute(() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
+
+		return newGroup;
 
 	}
 
@@ -1048,7 +1107,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
 
-				model.addContact(newContact);
+				model.addUpdateContact(newContact);
 
 				Long contactId = newContact.getId();
 
@@ -1057,7 +1116,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				listenerTaskQueue.execute(() -> dmsListeners
 						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
-				if (!wasOnline) {
+				if (!wasOnline && model.isContactOnline(userUuid)) {
 
 					// If the contact has just been online, send all things waiting for it, adjust
 					// its groups' availability.
@@ -1173,7 +1232,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 									final Dgroup newGroup = dbManager.addUpdateGroup(group);
 
-									model.addGroup(newGroup);
+									model.addUpdateGroup(newGroup);
 
 									Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
@@ -1323,15 +1382,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
+				// If message already received, return
+				if (dbManager.getMessageBySender(remoteUuid, message.getId()) != null)
+					return;
+
 				message.setMessageRefId(message.getId());
 				message.setId(null);
 
-				Message dbMessage = dbManager.getMessageBySender(remoteUuid, message.getMessageRefId());
+				Contact contact = getContact(remoteUuid);
+				if (!Objects.equals(contact.getViewStatus(), ViewStatus.DEFAULT)) {
+					contact.setViewStatus(ViewStatus.DEFAULT);
+					final Contact newContact = dbManager.addUpdateContact(contact);
+					model.addUpdateContact(newContact);
+					Platform.runLater(() -> dmsPanel.updateContact(newContact));
+				}
 
-				if (dbMessage != null)
-					return;
-
-				message.setContact(getContact(remoteUuid));
+				message.setContact(contact);
 
 				if (message.getUpdateType() != null)
 					updateMessageReceived(message);
@@ -1340,11 +1406,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (Objects.equals(message.getSenderGroupOwner(), Boolean.FALSE)) {
 
-					Dgroup dgroup = model.getGroup(message.getGroupRefId());
+					Dgroup group = getGroup(message.getGroupRefId());
+					if (group == null) {
+						return;
+					} else if (!Objects.equals(group.getViewStatus(), ViewStatus.DEFAULT)) {
+						group.setViewStatus(ViewStatus.DEFAULT);
+						final Dgroup newGroup = dbManager.addUpdateGroup(group);
+						model.addUpdateGroup(newGroup);
+						Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+					}
 
-					message.setDgroup(dgroup);
+					message.setDgroup(group);
 
-					dgroup.getMembers().forEach(member -> {
+					group.getMembers().forEach(member -> {
 
 						if (Objects.equals(member.getUuid(), remoteUuid))
 							return;
@@ -1357,10 +1431,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else if (Objects.equals(message.getSenderGroupOwner(), Boolean.TRUE)) {
 
-					Dgroup dgroup = model.getGroup(remoteUuid, message.getGroupRefId());
-					if (dgroup == null) {
-						groupUpdateReceived(remoteUuid, message.getGroupRefId(), new GroupUpdate());
-						dgroup = model.getGroup(remoteUuid, message.getGroupRefId());
+					Dgroup group = getGroup(remoteUuid, message.getGroupRefId());
+					if (group == null) {
+						group = groupUpdateReceived(new Dgroup(contact, message.getGroupRefId()), new GroupUpdate());
+					} else if (!Objects.equals(group.getViewStatus(), ViewStatus.DEFAULT)) {
+						group.setViewStatus(ViewStatus.DEFAULT);
+						final Dgroup newGroup = dbManager.addUpdateGroup(group);
+						model.addUpdateGroup(newGroup);
+						Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 					}
 
 					ContactRef contactRef = dbManager.getContactRef(remoteUuid, message.getContactRefId());
@@ -1368,7 +1446,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						message.setOwner(contactRef.getContact());
 					}
 
-					message.setDgroup(dgroup);
+					message.setDgroup(group);
 
 				}
 
@@ -1922,7 +2000,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void groupMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
 
-		Dgroup group = model.getGroup(entityId.getId());
+		Dgroup group = getGroup(entityId.getId());
 
 		if (group == null)
 			return;
@@ -2032,7 +2110,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private Long sendGroupMessageClaimed(final String content, final Path attachment, AttachmentType attachmentType,
 			final Long refMessageId, Integer messageCode, final Long groupId, Boolean apiFlag) throws Exception {
 
-		Dgroup group = model.getGroup(groupId);
+		Dgroup group = getGroup(groupId);
 
 		Message refMessage = dbManager.getMessageById(refMessageId);
 
@@ -2176,7 +2254,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			EntityId entityId = model.getOpenEntityId();
 
-			Dgroup group = entityId == null || !entityId.isGroup() ? null : model.getGroup(entityId.getId());
+			Dgroup group = entityId == null || !entityId.isGroup() ? null : getGroup(entityId.getId());
 
 			model.setGroupToBeUpdated(group);
 
@@ -2711,25 +2789,23 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (entityId.isGroup()) {
 
-					Dgroup group = model.getGroup(entityId.getId());
+					Dgroup group = getGroup(entityId.getId());
 					if (group == null)
 						return;
 
 					group.setViewStatus(ViewStatus.DEFAULT);
 					Dgroup newGroup = dbManager.addUpdateGroup(group);
-					model.addGroup(newGroup);
+					model.addUpdateGroup(newGroup);
 
 					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
 				} else {
 
 					Contact contact = getContact(entityId.getId());
-					if (contact == null)
-						return;
 
 					contact.setViewStatus(ViewStatus.DEFAULT);
 					Contact newContact = dbManager.addUpdateContact(contact);
-					model.addContact(newContact);
+					model.addUpdateContact(newContact);
 
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -2763,25 +2839,23 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (entityId.isGroup()) {
 
-					Dgroup group = model.getGroup(entityId.getId());
+					Dgroup group = getGroup(entityId.getId());
 					if (group == null)
 						return;
 
 					group.setViewStatus(ViewStatus.ARCHIVED);
 					Dgroup newGroup = dbManager.addUpdateGroup(group);
-					model.addGroup(newGroup);
+					model.addUpdateGroup(newGroup);
 
 					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
 				} else {
 
 					Contact contact = getContact(entityId.getId());
-					if (contact == null)
-						return;
 
 					contact.setViewStatus(ViewStatus.ARCHIVED);
 					Contact newContact = dbManager.addUpdateContact(contact);
-					model.addContact(newContact);
+					model.addUpdateContact(newContact);
 
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
@@ -3016,7 +3090,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public GroupHandle getGroupHandle(Long groupId) {
 
-		Dgroup group = model.getGroup(groupId);
+		Dgroup group = getGroup(groupId);
 
 		if (group == null)
 			return null;
@@ -3151,7 +3225,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (!model.isServerConnected())
 			return false;
 
-		Dgroup group = model.getGroup(groupId);
+		Dgroup group = getGroup(groupId);
 
 		if (group == null)
 			return false;

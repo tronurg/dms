@@ -5,11 +5,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -71,7 +73,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final Map<Long, ContactGroup> idContactGroups = Collections
 			.synchronizedMap(new HashMap<Long, ContactGroup>());
-	private final ObservableSet<Long> selectedIds = FXCollections.observableSet(new HashSet<Long>());
+	private final ObservableSet<Long> selectedIds = FXCollections.observableSet();
 
 	private final BooleanProperty updateMode = new SimpleBooleanProperty();
 	private final BooleanProperty deleteMode = new SimpleBooleanProperty();
@@ -142,13 +144,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	void resetContent(String groupName, Set<Long> newSelectedIds, boolean isNewGroup) {
+	void resetContent(String groupName, Set<Long> selectedIds, boolean isNewGroup) {
 
 		searchContactTextField.setText("");
 		groupNameTextField.setText(groupName == null ? "" : groupName);
 		selectedIds.clear();
-		if (newSelectedIds != null) {
-			newSelectedIds.forEach(id -> {
+		if (selectedIds != null) {
+			selectedIds.forEach(id -> {
 				getContactGroup(id); // initialize if not exists
 				selectedIds.add(id);
 			});
@@ -293,8 +295,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
-		addUpdateGroupBtn.disableProperty().bind(deleteMode.not()
-				.and(Bindings.size(selectedIds).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty())));
+		addUpdateGroupBtn.disableProperty().bind(
+				deleteMode.not().and(Bindings.isEmpty(selectedIds).or(groupNameTextField.textProperty().isEmpty())));
 
 		addUpdateGroupBtn.setOnAction(e -> {
 
@@ -444,6 +446,8 @@ public class AddUpdateGroupPane extends BorderPane {
 		private final AddContactBox addContactBox;
 		private final RemoveContactBox removeContactBox;
 
+		private final BooleanProperty activeProperty = new SimpleBooleanProperty(false);
+
 		private ContactGroup(Long id) {
 
 			super();
@@ -466,7 +470,7 @@ public class AddUpdateGroupPane extends BorderPane {
 				return searchContactStr.isEmpty() || addContactBox.getName().toLowerCase().startsWith(searchContactStr);
 			}, searchContactTextField.textProperty(), addContactBox.nameProperty());
 
-			addContactBox.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
+			addContactBox.visibleProperty().bind(activeProperty.and(searchContactBinding).and(addContactBinding.not()));
 			removeContactBox.visibleProperty().bind(addContactBinding);
 
 			addContactBox.setOnAction(e -> {
@@ -487,6 +491,8 @@ public class AddUpdateGroupPane extends BorderPane {
 		}
 
 		private void updateContact(Contact contact) {
+
+			activeProperty.set(!Objects.equals(contact.getViewStatus(), ViewStatus.DELETED));
 
 			addContactBox.updateContact(contact);
 			removeContactBox.updateContact(contact);

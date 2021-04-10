@@ -279,6 +279,33 @@ public class DbManager {
 
 	}
 
+	public Dgroup getGroupById(Long id) {
+
+		Session session = factory.openSession();
+
+		Dgroup dbGroup = session.createQuery("from Dgroup where id like :id", Dgroup.class).setParameter("id", id)
+				.uniqueResult();
+
+		session.close();
+
+		return dbGroup;
+
+	}
+
+	public Dgroup getGroupByOwner(String ownerUuid, Long groupRefId) {
+
+		Session session = factory.openSession();
+
+		Dgroup dbGroup = session
+				.createQuery("from Dgroup where owner.uuid like :ownerUuid and groupRefId=:groupRefId", Dgroup.class)
+				.setParameter("ownerUuid", ownerUuid).setParameter("groupRefId", groupRefId).uniqueResult();
+
+		session.close();
+
+		return dbGroup;
+
+	}
+
 	public ContactRef addUpdateContactRef(ContactRef contactRef) throws HibernateException {
 
 		Session session = factory.openSession();

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -233,7 +232,7 @@ class EntitiesPaneBase extends BorderPane {
 
 		private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
-		private final ObservableSet<Long> unreadMessages = FXCollections.observableSet(new HashSet<Long>());
+		private final ObservableSet<Long> unreadMessages = FXCollections.observableSet();
 
 		private final BooleanProperty hideableProperty = new SimpleBooleanProperty(false);
 		private final BooleanProperty hiddenProperty = new SimpleBooleanProperty(false);
