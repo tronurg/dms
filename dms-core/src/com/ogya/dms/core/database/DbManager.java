@@ -210,6 +210,19 @@ public class DbManager {
 
 	}
 
+	public Contact getContactById(Long id) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		Contact dbContact = session.createQuery("from Contact where id like :id", Contact.class).setParameter("id", id)
+				.uniqueResult();
+
+		session.close();
+
+		return dbContact;
+
+	}
+
 	public Dgroup addUpdateGroup(Dgroup group) throws HibernateException {
 
 		Session session = factory.openSession();

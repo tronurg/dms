@@ -357,9 +357,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
-	public void showAddUpdateGroupPane(String groupName, Set<String> selectedUuids, boolean isNewGroup) {
+	public void showAddUpdateGroupPane(String groupName, Set<Long> selectedIds, boolean isNewGroup) {
 
-		addUpdateGroupPane.resetContent(groupName, selectedUuids, isNewGroup);
+		addUpdateGroupPane.resetContent(groupName, selectedIds, isNewGroup);
 
 		getChildren().add(addUpdateGroupPane);
 
@@ -415,7 +415,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		getChildren().remove(addUpdateGroupPane);
 
 		listeners.forEach(listener -> listener.addUpdateGroupRequested(addUpdateGroupPane.getGroupName(),
-				addUpdateGroupPane.getSelectedUuids()));
+				addUpdateGroupPane.getSelectedIds()));
 
 	}
 

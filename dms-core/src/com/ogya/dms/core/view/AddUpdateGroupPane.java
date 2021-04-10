@@ -15,9 +15,8 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
 import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
@@ -42,7 +41,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -71,9 +69,9 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final Button addUpdateGroupBtn = new Button();
 
-	private final Map<String, ObjectProperty<Color>> uuidStatus = Collections
-			.synchronizedMap(new HashMap<String, ObjectProperty<Color>>());
-	private final ObservableSet<String> selectedUuids = FXCollections.observableSet(new HashSet<String>());
+	private final Map<Long, ContactGroup> idContactGroups = Collections
+			.synchronizedMap(new HashMap<Long, ContactGroup>());
+	private final ObservableSet<Long> selectedIds = FXCollections.observableSet(new HashSet<Long>());
 
 	private final BooleanProperty updateMode = new SimpleBooleanProperty();
 	private final BooleanProperty deleteMode = new SimpleBooleanProperty();
@@ -128,48 +126,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		final String uuid = contact.getUuid();
-		final String name = contact.getName();
-		final Color statusColor = contact.getStatus().getStatusColor();
-
-		if (!uuidStatus.containsKey(uuid)) {
-
-			uuidStatus.put(uuid, new SimpleObjectProperty<Color>(statusColor));
-
-			final AddContactBox addContactBox = new AddContactBox(name);
-			final RemoveContactBox removeContactBox = new RemoveContactBox(name);
-
-			addContactBox.statusColorProperty().bind(uuidStatus.get(uuid));
-			removeContactBox.statusColorProperty().bind(uuidStatus.get(uuid));
-
-			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedUuids.contains(uuid),
-					selectedUuids);
-			BooleanBinding searchContactBinding = Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchContactTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || name.toLowerCase().startsWith(searchContactStr);
-			}, searchContactTextField.textProperty());
-
-			addContactBox.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
-			removeContactBox.visibleProperty().bind(addContactBinding);
-
-			addContactBox.setOnAction(e -> {
-
-				addedContactsPane.getChildren().remove(removeContactBox);
-				addedContactsPane.getChildren().add(0, removeContactBox);
-
-				selectedUuids.add(uuid);
-
-			});
-
-			removeContactBox.setOnAction(e -> selectedUuids.remove(uuid));
-
-			addedContactsPane.getChildren().add(removeContactBox);
-			notAddedContactsPane.getChildren().add(addContactBox);
-			FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
-
-		}
-
-		uuidStatus.get(uuid).setValue(statusColor);
+		getContactGroup(contact.getId()).updateContact(contact);
 
 	}
 
@@ -179,21 +136,21 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	Set<String> getSelectedUuids() {
+	Set<Long> getSelectedIds() {
 
-		return new HashSet<String>(selectedUuids);
+		return new HashSet<Long>(selectedIds);
 
 	}
 
-	void resetContent(String groupName, Set<String> newSelectedUuids, boolean isNewGroup) {
+	void resetContent(String groupName, Set<Long> newSelectedIds, boolean isNewGroup) {
 
 		searchContactTextField.setText("");
 		groupNameTextField.setText(groupName == null ? "" : groupName);
-		selectedUuids.clear();
-		if (newSelectedUuids != null) {
-			newSelectedUuids.forEach(uuid -> {
-				if (uuidStatus.containsKey(uuid))
-					selectedUuids.add(uuid);
+		selectedIds.clear();
+		if (newSelectedIds != null) {
+			newSelectedIds.forEach(id -> {
+				getContactGroup(id); // initialize if not exists
+				selectedIds.add(id);
 			});
 		}
 
@@ -337,7 +294,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
 		addUpdateGroupBtn.disableProperty().bind(deleteMode.not()
-				.and(Bindings.size(selectedUuids).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty())));
+				.and(Bindings.size(selectedIds).isEqualTo(0).or(groupNameTextField.textProperty().isEmpty())));
 
 		addUpdateGroupBtn.setOnAction(e -> {
 
@@ -361,18 +318,27 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
+	private ContactGroup getContactGroup(Long id) {
+
+		ContactGroup contactGroup = idContactGroups.get(id);
+
+		if (contactGroup == null) {
+			contactGroup = new ContactGroup(id);
+			idContactGroups.put(id, contactGroup);
+		}
+
+		return contactGroup;
+
+	}
+
 	private abstract class AddRemoveContactBox extends HBox {
-
-		protected final double viewFactor = ViewFactory.getViewFactor();
-
-		protected final String name;
 
 		protected Button addRemoveBtn;
 		private final Circle addRemoveStatusCircle = new Circle(7.0 * viewFactor);
 
-		AddRemoveContactBox(String name) {
+		private AddRemoveContactBox() {
 
-			this.name = name;
+			super();
 
 			init();
 
@@ -398,21 +364,28 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		}
 
-		ObjectProperty<Paint> statusColorProperty() {
-
-			return addRemoveStatusCircle.fillProperty();
-
-		}
-
-		void setOnAction(EventHandler<ActionEvent> arg0) {
+		protected void setOnAction(EventHandler<ActionEvent> arg0) {
 
 			addRemoveBtn.setOnAction(arg0);
 
 		}
 
-		String getName() {
+		protected void updateContact(Contact contact) {
 
-			return name;
+			addRemoveBtn.setText(contact.getName());
+			addRemoveStatusCircle.setFill(contact.getStatus().getStatusColor());
+
+		}
+
+		protected String getName() {
+
+			return addRemoveBtn.getText();
+
+		}
+
+		protected final StringProperty nameProperty() {
+
+			return addRemoveBtn.textProperty();
 
 		}
 
@@ -420,9 +393,9 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private class AddContactBox extends AddRemoveContactBox {
 
-		AddContactBox(String name) {
+		private AddContactBox() {
 
-			super(name);
+			super();
 
 		}
 
@@ -430,7 +403,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			addRemoveBtn = ViewFactory.newAddBtn();
 
-			addRemoveBtn.setText(name);
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
@@ -444,9 +416,9 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private class RemoveContactBox extends AddRemoveContactBox {
 
-		RemoveContactBox(String name) {
+		private RemoveContactBox() {
 
-			super(name);
+			super();
 
 		}
 
@@ -454,13 +426,70 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			addRemoveBtn = ViewFactory.newRemoveBtn(1.0);
 
-			addRemoveBtn.setText(name);
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
 			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 			addRemoveBtn.setPadding(new Insets(gap));
+
+		}
+
+	}
+
+	private class ContactGroup {
+
+		private final Long id;
+
+		private final AddContactBox addContactBox;
+		private final RemoveContactBox removeContactBox;
+
+		private ContactGroup(Long id) {
+
+			super();
+
+			this.id = id;
+
+			addContactBox = new AddContactBox();
+			removeContactBox = new RemoveContactBox();
+
+			init();
+
+		}
+
+		private void init() {
+
+			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedIds.contains(id),
+					selectedIds);
+			BooleanBinding searchContactBinding = Bindings.createBooleanBinding(() -> {
+				String searchContactStr = searchContactTextField.getText().toLowerCase();
+				return searchContactStr.isEmpty() || addContactBox.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchContactTextField.textProperty(), addContactBox.nameProperty());
+
+			addContactBox.visibleProperty().bind(searchContactBinding.and(addContactBinding.not()));
+			removeContactBox.visibleProperty().bind(addContactBinding);
+
+			addContactBox.setOnAction(e -> {
+
+				addedContactsPane.getChildren().remove(removeContactBox);
+				addedContactsPane.getChildren().add(0, removeContactBox);
+
+				selectedIds.add(id);
+
+			});
+
+			removeContactBox.setOnAction(e -> selectedIds.remove(id));
+
+			addedContactsPane.getChildren().add(removeContactBox);
+			notAddedContactsPane.getChildren().add(addContactBox);
+			FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
+
+		}
+
+		private void updateContact(Contact contact) {
+
+			addContactBox.updateContact(contact);
+			removeContactBox.updateContact(contact);
 
 		}
 

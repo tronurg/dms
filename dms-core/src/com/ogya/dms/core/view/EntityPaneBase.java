@@ -7,6 +7,7 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.StringProperty;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
@@ -179,9 +180,15 @@ class EntityPaneBase extends GridPane {
 
 	}
 
-	String getName() {
+	final String getName() {
 
 		return nameLabel.getText();
+
+	}
+
+	final StringProperty nameProperty() {
+
+		return nameLabel.textProperty();
 
 	}
 

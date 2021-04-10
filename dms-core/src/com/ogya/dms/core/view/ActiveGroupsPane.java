@@ -130,8 +130,12 @@ public class ActiveGroupsPane extends BorderPane {
 
 		Long id = member.getId();
 
-		memberIdStatus.putIfAbsent(id, new SimpleObjectProperty<Color>());
-		memberIdStatus.get(id).set(member.getStatus().getStatusColor());
+		ObjectProperty<Color> colorProperty = memberIdStatus.get(id);
+		if (colorProperty == null) {
+			colorProperty = new SimpleObjectProperty<Color>();
+			memberIdStatus.put(id, colorProperty);
+		}
+		colorProperty.set(member.getStatus().getStatusColor());
 
 	}
 
@@ -178,34 +182,37 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private GroupCard getGroupCard(final Long id) {
 
-		if (!idGroupCards.containsKey(id)) {
+		GroupCard groupCard = idGroupCards.get(id);
 
-			final GroupCard groupCard = new GroupCard();
+		if (groupCard == null) {
 
-			groupCard.visibleProperty().bind(groupCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
+			final GroupCard fGroupCard = new GroupCard();
+			groupCard = fGroupCard;
+
+			fGroupCard.visibleProperty().bind(fGroupCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || groupCard.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty())));
+				return searchContactStr.isEmpty() || fGroupCard.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchTextField.textProperty(), fGroupCard.nameProperty())));
 
-			groupCard.managedProperty().bind(groupCard.visibleProperty());
+			fGroupCard.managedProperty().bind(fGroupCard.visibleProperty());
 
-			groupCard.setOnMouseClicked(e -> {
+			fGroupCard.setOnMouseClicked(e -> {
 
-				boolean selected = !groupCard.selectedProperty().get();
+				boolean selected = !fGroupCard.selectedProperty().get();
 				idGroupCards.values().forEach(card -> card.selectedProperty().set(false));
-				groupCard.selectedProperty().set(selected);
+				fGroupCard.selectedProperty().set(selected);
 
 			});
 
-			idGroupCards.put(id, groupCard);
+			idGroupCards.put(id, fGroupCard);
 
-			entities.getChildren().add(groupCard);
+			entities.getChildren().add(fGroupCard);
 
 			FXCollections.sort(entities.getChildren(), entitiesSorter);
 
 		}
 
-		return idGroupCards.get(id);
+		return groupCard;
 
 	}
 
@@ -277,8 +284,12 @@ public class ActiveGroupsPane extends BorderPane {
 				if (memberId == 1L)
 					return;
 
-				if (memberIdStatus.containsKey(memberId))
-					memberCards.getChildren().add(new MemberCard(member.getName(), memberIdStatus.get(memberId)));
+				ObjectProperty<Color> colorProperty = memberIdStatus.get(memberId);
+				if (colorProperty == null) {
+					colorProperty = new SimpleObjectProperty<Color>();
+					memberIdStatus.put(memberId, colorProperty);
+				}
+				memberCards.getChildren().add(new MemberCard(member.getName(), colorProperty));
 
 			});
 
@@ -289,8 +300,12 @@ public class ActiveGroupsPane extends BorderPane {
 			if (ownerId == 1L)
 				return;
 
-			if (memberIdStatus.containsKey(ownerId))
-				memberCards.getChildren().add(0, new MemberCard(owner.getName(), memberIdStatus.get(ownerId)));
+			ObjectProperty<Color> colorProperty = memberIdStatus.get(ownerId);
+			if (colorProperty == null) {
+				colorProperty = new SimpleObjectProperty<Color>();
+				memberIdStatus.put(ownerId, colorProperty);
+			}
+			memberCards.getChildren().add(0, new MemberCard(owner.getName(), colorProperty));
 
 		}
 

@@ -27,7 +27,7 @@ public interface AppListener {
 
 	void showAddUpdateGroupClicked();
 
-	void addUpdateGroupRequested(String groupName, Set<String> selectedUuids);
+	void addUpdateGroupRequested(String groupName, Set<Long> selectedIds);
 
 	void deleteGroupRequested();
 

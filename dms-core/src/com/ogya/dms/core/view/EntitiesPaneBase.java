@@ -179,7 +179,7 @@ class EntitiesPaneBase extends BorderPane {
 			entityPane.visibleProperty().bind(entityPane.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchTextField.getText().toLowerCase();
 				return searchContactStr.isEmpty() || entityPane.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty())));
+			}, searchTextField.textProperty(), entityPane.nameProperty())));
 
 			entityPane.setOnMouseClicked(e -> {
 				EventTarget clickedTarget = e.getTarget();

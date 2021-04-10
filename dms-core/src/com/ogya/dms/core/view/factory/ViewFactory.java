@@ -66,7 +66,9 @@ public class ViewFactory {
 
 		String hex = uuid.substring(0, 6);
 
-		if (!colorMap.containsKey(hex)) {
+		Color color = colorMap.get(hex);
+
+		if (color == null) {
 
 			try {
 
@@ -74,7 +76,7 @@ public class ViewFactory {
 				int green = Integer.valueOf(hex.substring(2, 4), 16);
 				int blue = Integer.valueOf(hex.substring(4, 6), 16);
 
-				Color color = Color.rgb(red, green, blue);
+				color = Color.rgb(red, green, blue);
 
 				double hue = color.getHue();
 				double brightness = 0.0 < hue && hue < 200.0 ? 0.5 : 1.0;
@@ -89,7 +91,7 @@ public class ViewFactory {
 
 		}
 
-		return colorMap.get(hex);
+		return color;
 
 	}
 

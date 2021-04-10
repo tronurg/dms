@@ -140,29 +140,32 @@ public class ActiveContactsPane extends BorderPane {
 
 	private ContactCard getContactCard(final Long id) {
 
-		if (!idContactCards.containsKey(id)) {
+		ContactCard contactCard = idContactCards.get(id);
 
-			final ContactCard contactCard = new ContactCard();
+		if (contactCard == null) {
 
-			contactCard.visibleProperty().bind(contactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
+			final ContactCard fContactCard = new ContactCard();
+			contactCard = fContactCard;
+
+			fContactCard.visibleProperty().bind(fContactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchTextField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || contactCard.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty())));
+				return searchContactStr.isEmpty() || fContactCard.getName().toLowerCase().startsWith(searchContactStr);
+			}, searchTextField.textProperty(), fContactCard.nameProperty())));
 
-			contactCard.managedProperty().bind(contactCard.visibleProperty());
+			fContactCard.managedProperty().bind(fContactCard.visibleProperty());
 
-			contactCard
-					.setOnMouseClicked(e -> contactCard.selectedProperty().set(!contactCard.selectedProperty().get()));
+			fContactCard.setOnMouseClicked(
+					e -> fContactCard.selectedProperty().set(!fContactCard.selectedProperty().get()));
 
-			idContactCards.put(id, contactCard);
+			idContactCards.put(id, fContactCard);
 
-			entities.getChildren().add(contactCard);
+			entities.getChildren().add(fContactCard);
 
 			FXCollections.sort(entities.getChildren(), entitiesSorter);
 
 		}
 
-		return idContactCards.get(id);
+		return contactCard;
 
 	}
 
