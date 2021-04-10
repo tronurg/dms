@@ -3080,7 +3080,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		try {
 			return new ContactHandleImpl(getContact(contactId));
 		} catch (Exception e) {
-			e.printStackTrace();
+
 		}
 
 		return null;

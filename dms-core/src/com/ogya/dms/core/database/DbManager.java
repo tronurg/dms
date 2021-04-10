@@ -214,7 +214,7 @@ public class DbManager {
 
 		Session session = factory.openSession();
 
-		Contact dbContact = session.createQuery("from Contact where id like :id", Contact.class).setParameter("id", id)
+		Contact dbContact = session.createQuery("from Contact where id=:id", Contact.class).setParameter("id", id)
 				.uniqueResult();
 
 		session.close();
@@ -283,7 +283,7 @@ public class DbManager {
 
 		Session session = factory.openSession();
 
-		Dgroup dbGroup = session.createQuery("from Dgroup where id like :id", Dgroup.class).setParameter("id", id)
+		Dgroup dbGroup = session.createQuery("from Dgroup where id=:id", Dgroup.class).setParameter("id", id)
 				.uniqueResult();
 
 		session.close();
