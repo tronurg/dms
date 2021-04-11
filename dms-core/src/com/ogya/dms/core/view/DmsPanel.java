@@ -599,6 +599,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	}
 
 	@Override
+	public void clearConversationRequested() {
+
+		listeners.forEach(listener -> listener.clearConversationRequested());
+
+	}
+
+	@Override
 	public void recordButtonPressed() {
 
 		listeners.forEach(listener -> listener.recordButtonPressed());

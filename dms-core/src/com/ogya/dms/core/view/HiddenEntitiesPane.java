@@ -14,6 +14,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -64,6 +65,8 @@ public class HiddenEntitiesPane extends BorderPane {
 		topPane.setPadding(new Insets(gap));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
+		backBtn.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> entitiesPane.resetDeleteMode());
+
 		topPane.getChildren().addAll(backBtn, headingLabel);
 
 	}
@@ -83,10 +86,7 @@ public class HiddenEntitiesPane extends BorderPane {
 
 	void setOnBackAction(final Runnable runnable) {
 
-		backBtn.setOnAction(e -> {
-			entitiesPane.resetDeleteMode();
-			runnable.run();
-		});
+		backBtn.setOnAction(e -> runnable.run());
 
 	}
 

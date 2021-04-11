@@ -2564,6 +2564,33 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void clearConversationRequested() {
+
+		taskQueue.execute(() -> {
+
+			EntityId entityId = model.getOpenEntityId();
+			if (entityId == null)
+				return;
+
+			try {
+
+				Long[] deletedMessageIds = deleteMessages(
+						entityId.isGroup() ? dbManager.getAllDeletableGroupMessages(entityId.getId())
+								: dbManager.getAllDeletablePrivateMessages(entityId.getId()));
+
+				dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public void statusInfoClosed() {
 
 		taskQueue.execute(() -> {

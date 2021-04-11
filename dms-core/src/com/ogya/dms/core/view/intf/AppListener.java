@@ -43,6 +43,8 @@ public interface AppListener {
 
 	void deleteMessagesRequested(Long... messageIds);
 
+	void clearConversationRequested();
+
 	void statusInfoClosed();
 
 	void addIpClicked(String ip);

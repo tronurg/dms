@@ -126,6 +126,7 @@ class MessagePane extends BorderPane {
 	private final Button forwardBtn = ViewFactory.newForwardBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
+	private final Button clearBtn = ViewFactory.newDeleteBtn();
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
@@ -139,6 +140,7 @@ class MessagePane extends BorderPane {
 	private final TextArea messageArea = new TextArea();
 	private final StackPane btnPane = new StackPane();
 	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
+	private final Button clearConversationBtn = new Button(CommonMethods.translate("CLEAR_CONVERSATION"));
 
 	private final Label attachmentLbl = new Label();
 	private final Button removeAttachmentBtn = ViewFactory.newRemoveBtn(0.65);
@@ -180,6 +182,7 @@ class MessagePane extends BorderPane {
 
 	};
 
+	private final BooleanProperty clearModeProperty = new SimpleBooleanProperty(false);
 	private final BooleanProperty deleteModeProperty = new SimpleBooleanProperty(false);
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
@@ -251,9 +254,10 @@ class MessagePane extends BorderPane {
 		initForwardBtn();
 		initStarBtn();
 		initDeleteBtn();
+		initClearBtn();
 
 		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, getSpace(), selectAllBtn, forwardBtn, starBtn,
-				deleteBtn);
+				deleteBtn, clearBtn);
 
 	}
 
@@ -286,8 +290,7 @@ class MessagePane extends BorderPane {
 		bottomPane.setPadding(new Insets(gap));
 		bottomPane.setHgap(gap);
 		bottomPane.setVgap(gap);
-		bottomPane.managedProperty().bind(bottomPane.visibleProperty());
-		bottomPane.visibleProperty().bind(activeProperty);
+		bottomPane.managedProperty().bind(activeProperty.or(deleteModeProperty).or(clearModeProperty));
 
 		initReferencePane();
 		initCloseReferenceBtn();
@@ -295,6 +298,7 @@ class MessagePane extends BorderPane {
 		initMessageArea();
 		initBtnPane();
 		initDeleteSelectedBtn();
+		initClearConversationBtn();
 
 		bottomPane.add(referencePane, 0, 0);
 		bottomPane.add(closeReferenceBtn, 0, 0);
@@ -302,6 +306,7 @@ class MessagePane extends BorderPane {
 		bottomPane.add(messageArea, 0, 2);
 		bottomPane.add(btnPane, 1, 2);
 		bottomPane.add(deleteSelectedBtn, 0, 2, 2, 1);
+		bottomPane.add(clearConversationBtn, 0, 2, 2, 1);
 
 	}
 
@@ -387,9 +392,9 @@ class MessagePane extends BorderPane {
 		deleteBtn.visibleProperty().bind(selectionModeProperty);
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 		deleteBtn.setOnAction(e -> deleteModeProperty.set(!deleteModeProperty.get()));
-		final Effect deleteShadow = new DropShadow();
+		final Effect dropShadow = new DropShadow();
 		deleteBtn.effectProperty().bind(
-				Bindings.createObjectBinding(() -> deleteModeProperty.get() ? deleteShadow : null, deleteModeProperty));
+				Bindings.createObjectBinding(() -> deleteModeProperty.get() ? dropShadow : null, deleteModeProperty));
 		deleteBtn.disableProperty()
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
@@ -397,9 +402,24 @@ class MessagePane extends BorderPane {
 
 	}
 
+	private void initClearBtn() {
+
+		clearBtn.visibleProperty().bind(selectionModeProperty.not());
+		clearBtn.managedProperty().bind(clearBtn.visibleProperty());
+		clearBtn.setOnAction(e -> clearModeProperty.set(!clearModeProperty.get()));
+		final Effect dropShadow = new DropShadow();
+		clearBtn.effectProperty().bind(
+				Bindings.createObjectBinding(() -> clearModeProperty.get() ? dropShadow : null, clearModeProperty));
+
+		backBtn.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> clearModeProperty.set(false));
+		nameLabel.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> clearModeProperty.set(false));
+		scrollPane.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> clearModeProperty.set(false));
+
+	}
+
 	private void initReferencePane() {
 
-		referencePane.getStyleClass().add("reference-panel");
+		referencePane.getStyleClass().add("reference-pane");
 		referenceMessageProperty.addListener((e0, e1, e2) -> {
 			referencePane.getChildren().clear();
 			if (e2 == null)
@@ -454,10 +474,13 @@ class MessagePane extends BorderPane {
 				}
 			}
 		});
+		messageArea.visibleProperty().bind(activeProperty);
 
 	}
 
 	private void initBtnPane() {
+
+		btnPane.visibleProperty().bind(activeProperty);
 
 		initReportBtn();
 		initShowFoldersBtn();
@@ -483,6 +506,23 @@ class MessagePane extends BorderPane {
 					.toArray(Long[]::new);
 			backBtn.fire();
 			listeners.forEach(listener -> listener.deleteMessagesRequested(selectedIds));
+		});
+
+	}
+
+	private void initClearConversationBtn() {
+
+		clearConversationBtn.setStyle("-fx-background-color: red;");
+		clearConversationBtn.setTextFill(Color.ANTIQUEWHITE);
+		clearConversationBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		clearConversationBtn.setMnemonicParsing(false);
+		clearConversationBtn.setMaxWidth(Double.MAX_VALUE);
+		clearConversationBtn.setMaxHeight(Double.MAX_VALUE);
+		clearConversationBtn.visibleProperty().bind(clearModeProperty);
+		clearConversationBtn.managedProperty().bind(clearConversationBtn.visibleProperty());
+		clearConversationBtn.setOnAction(e -> {
+			clearModeProperty.set(false);
+			listeners.forEach(listener -> listener.clearConversationRequested());
 		});
 
 	}
@@ -601,6 +641,12 @@ class MessagePane extends BorderPane {
 
 		activeProperty.setValue(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
 		editableProperty.set(Objects.equals(entity.getStatus(), Availability.AVAILABLE));
+
+		if (activeProperty.get())
+			return;
+
+		referenceMessageProperty.set(null);
+		attachmentProperty.set(null);
 
 	}
 
@@ -1573,6 +1619,8 @@ interface IMessagePane {
 	void archiveMessagesRequested(Long... messageIds);
 
 	void deleteMessagesRequested(Long... messageIds);
+
+	void clearConversationRequested();
 
 	void recordButtonPressed();
 

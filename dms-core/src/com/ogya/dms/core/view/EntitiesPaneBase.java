@@ -42,6 +42,7 @@ import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -249,15 +250,11 @@ class EntitiesPaneBase extends BorderPane {
 				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 			});
 
-			entityPane.visibleBtn.setOnAction(e -> {
-				entityToBeRemoved.set(null);
-				listeners.forEach(listener -> listener.showEntityRequested(entityId));
-			});
+			entityPane.visibleBtn
+					.setOnAction(e -> listeners.forEach(listener -> listener.showEntityRequested(entityId)));
 
-			entityPane.invisibleBtn.setOnAction(e -> {
-				entityToBeRemoved.set(null);
-				listeners.forEach(listener -> listener.hideEntityRequested(entityId));
-			});
+			entityPane.invisibleBtn
+					.setOnAction(e -> listeners.forEach(listener -> listener.hideEntityRequested(entityId)));
 
 			entityIdPane.put(entityId, entityPane);
 
@@ -397,6 +394,9 @@ class EntitiesPaneBase extends BorderPane {
 				else
 					entityToBeRemoved.set(this.entityId);
 			});
+
+			visibleBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> entityToBeRemoved.set(null));
+			invisibleBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> entityToBeRemoved.set(null));
 
 		}
 
