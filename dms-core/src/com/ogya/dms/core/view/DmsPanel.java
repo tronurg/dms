@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import javax.swing.UIManager;
 
@@ -357,9 +356,9 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
-	public void showAddUpdateGroupPane(String groupName, Set<Long> selectedIds, boolean isNewGroup) {
+	public void showAddUpdateGroupPane(Dgroup group, boolean isNewGroup) {
 
-		addUpdateGroupPane.resetContent(groupName, selectedIds, isNewGroup);
+		addUpdateGroupPane.resetContent(group, isNewGroup);
 
 		getChildren().add(addUpdateGroupPane);
 
@@ -640,6 +639,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void hideEntityRequested(final EntityId entityId) {
 
 		listeners.forEach(listener -> listener.hideEntityRequested(entityId));
+
+	}
+
+	@Override
+	public void removeEntityRequested(EntityId entityId) {
+
+		listeners.forEach(listener -> listener.removeEntityRequested(entityId));
 
 	}
 

@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
+import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -128,7 +129,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		getContactGroup(contact.getId()).updateContact(contact);
+		getContactGroup(contact.getId()).updateContact(contact.getName(), contact.getStatus().getStatusColor(),
+				!Objects.equals(contact.getViewStatus(), ViewStatus.DELETED));
 
 	}
 
@@ -144,14 +146,17 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	void resetContent(String groupName, Set<Long> newSelectedIds, boolean isNewGroup) {
+	void resetContent(Dgroup group, boolean isNewGroup) {
 
 		searchContactTextField.setText("");
-		groupNameTextField.setText(groupName == null ? "" : groupName);
+		groupNameTextField.setText(group == null ? "" : group.getName());
 		selectedIds.clear();
-		if (newSelectedIds != null) {
-			newSelectedIds.forEach(id -> {
-				getContactGroup(id); // initialize if not exists
+		if (group != null) {
+			group.getMembers().forEach(contact -> {
+				Long id = contact.getId();
+				// initialize if not exists
+				if (!idContactGroups.containsKey(id))
+					getContactGroup(id).updateContact(contact.getName(), Color.BLACK, false);
 				selectedIds.add(id);
 			});
 		}
@@ -372,10 +377,10 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		}
 
-		protected void updateContact(Contact contact) {
+		protected void updateContact(String name, Color statusColor) {
 
-			addRemoveBtn.setText(contact.getName());
-			addRemoveStatusCircle.setFill(contact.getStatus().getStatusColor());
+			addRemoveBtn.setText(name);
+			addRemoveStatusCircle.setFill(statusColor);
 
 		}
 
@@ -489,14 +494,14 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		}
 
-		private void updateContact(Contact contact) {
+		private void updateContact(String name, Color statusColor, boolean active) {
 
-			activeProperty.set(!Objects.equals(contact.getViewStatus(), ViewStatus.DELETED));
+			activeProperty.set(active);
 
-			boolean toBeSorted = !Objects.equals(addContactBox.getName(), contact.getName());
+			boolean toBeSorted = !Objects.equals(addContactBox.getName(), name);
 
-			addContactBox.updateContact(contact);
-			removeContactBox.updateContact(contact);
+			addContactBox.updateContact(name, statusColor);
+			removeContactBox.updateContact(name, statusColor);
 
 			if (toBeSorted)
 				FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);

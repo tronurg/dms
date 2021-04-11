@@ -16,6 +16,7 @@ import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -101,7 +102,24 @@ public class ActiveContactsPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		getContactCard(contact.getId()).updateContact(contact);
+		Long id = contact.getId();
+
+		if (Objects.equals(contact.getViewStatus(), ViewStatus.DELETED)) {
+			removeContact(id);
+			return;
+		}
+
+		getContactCard(id).updateContact(contact);
+
+	}
+
+	private void removeContact(Long id) {
+
+		ContactCard contactCard = idContactCards.remove(id);
+		if (contactCard == null)
+			return;
+
+		entities.getChildren().remove(contactCard);
 
 	}
 

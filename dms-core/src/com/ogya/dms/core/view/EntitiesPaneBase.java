@@ -22,7 +22,9 @@ import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.EventTarget;
@@ -31,17 +33,20 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextField;
 import javafx.scene.effect.ColorAdjust;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -52,6 +57,8 @@ class EntitiesPaneBase extends BorderPane {
 
 	private final double gap = ViewFactory.getGap();
 
+	private final double viewFactor = ViewFactory.getViewFactor();
+
 	private final TextField searchTextField = new TextField();
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(entities) {
@@ -59,6 +66,7 @@ class EntitiesPaneBase extends BorderPane {
 		public void requestFocus() {
 		}
 	};
+	private final Button removeEntityBtn = new Button(CommonMethods.translate("REMOVE_COMPLETELY"));
 
 	private final Map<EntityId, EntityPane> entityIdPane = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityPane>());
@@ -88,6 +96,8 @@ class EntitiesPaneBase extends BorderPane {
 
 	private final AtomicReference<EventTarget> lastClickedTarget = new AtomicReference<EventTarget>();
 
+	private final ObjectProperty<EntityId> entityToBeRemoved = new SimpleObjectProperty<EntityId>();
+
 	EntitiesPaneBase() {
 
 		super();
@@ -112,8 +122,11 @@ class EntitiesPaneBase extends BorderPane {
 			}
 		});
 
+		initRemoveEntityBtn();
+
 		setTop(searchTextField);
 		setCenter(scrollPane);
+		setBottom(removeEntityBtn);
 
 	}
 
@@ -131,12 +144,48 @@ class EntitiesPaneBase extends BorderPane {
 
 	}
 
+	private void initRemoveEntityBtn() {
+
+		removeEntityBtn.setStyle("-fx-background-color: red;");
+		removeEntityBtn.setTextFill(Color.ANTIQUEWHITE);
+		removeEntityBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		removeEntityBtn.setMnemonicParsing(false);
+		removeEntityBtn.setMaxWidth(Double.MAX_VALUE);
+		removeEntityBtn.setMaxHeight(Double.MAX_VALUE);
+		removeEntityBtn.visibleProperty().bind(entityToBeRemoved.isNotNull());
+		removeEntityBtn.managedProperty().bind(removeEntityBtn.visibleProperty());
+
+		removeEntityBtn.setOnAction(e -> {
+			EntityId entityId = entityToBeRemoved.get();
+			entityToBeRemoved.set(null);
+			listeners.forEach(listener -> listener.removeEntityRequested(entityId));
+		});
+
+	}
+
 	void updateEntity(EntityBase entity, boolean active) {
 
-		EntityPane entityPane = getEntityPane(entity.getEntityId());
+		EntityId entityId = entity.getEntityId();
+
+		if (Objects.equals(entity.getViewStatus(), ViewStatus.DELETED)) {
+			removeEntity(entityId);
+			return;
+		}
+
+		EntityPane entityPane = getEntityPane(entityId);
 
 		entityPane.activeProperty().set(active);
 		entityPane.updateEntity(entity);
+
+	}
+
+	private void removeEntity(EntityId entityId) {
+
+		EntityPane entityPane = entityIdPane.remove(entityId);
+		if (entityPane == null)
+			return;
+
+		entities.getChildren().remove(entityPane);
 
 	}
 
@@ -148,7 +197,10 @@ class EntitiesPaneBase extends BorderPane {
 
 	public void updateMessageStatus(EntityId entityId, Message message) {
 
-		getEntityPane(entityId).updateMessageStatus(message);
+		EntityPane entityPane = entityIdPane.get(entityId);
+
+		if (entityPane != null)
+			entityPane.updateMessageStatus(message);
 
 	}
 
@@ -164,6 +216,12 @@ class EntitiesPaneBase extends BorderPane {
 	void scrollToTop() {
 
 		scrollPane.setVvalue(scrollPane.getVmin());
+
+	}
+
+	void resetDeleteMode() {
+
+		entityToBeRemoved.set(null);
 
 	}
 
@@ -184,19 +242,21 @@ class EntitiesPaneBase extends BorderPane {
 				EventTarget clickedTarget = e.getTarget();
 				if (!Objects.equals(lastClickedTarget.getAndSet(clickedTarget), clickedTarget))
 					return;
-				if (Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.getClickCount() == 2
-						&& e.isStillSincePress())
-					listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
+				if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.getClickCount() == 2
+						&& e.isStillSincePress()))
+					return;
+				entityToBeRemoved.set(null);
+				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 			});
 
-			entityPane.visibleLbl.setOnMouseClicked(e -> {
-				if (Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress())
-					listeners.forEach(listener -> listener.showEntityRequested(entityId));
+			entityPane.visibleBtn.setOnAction(e -> {
+				entityToBeRemoved.set(null);
+				listeners.forEach(listener -> listener.showEntityRequested(entityId));
 			});
 
-			entityPane.invisibleLbl.setOnMouseClicked(e -> {
-				if (Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.isStillSincePress())
-					listeners.forEach(listener -> listener.hideEntityRequested(entityId));
+			entityPane.invisibleBtn.setOnAction(e -> {
+				entityToBeRemoved.set(null);
+				listeners.forEach(listener -> listener.hideEntityRequested(entityId));
 			});
 
 			entityIdPane.put(entityId, entityPane);
@@ -213,7 +273,7 @@ class EntitiesPaneBase extends BorderPane {
 
 		private final EntityId entityId;
 
-		private final Label unreadMessagesLabel = new Label() {
+		private final Label unreadMessagesLbl = new Label() {
 
 			@Override
 			public Orientation getContentBias() {
@@ -227,8 +287,9 @@ class EntitiesPaneBase extends BorderPane {
 
 		};
 
-		private final Label visibleLbl = new Label();
-		private final Label invisibleLbl = new Label();
+		private final Button visibleBtn = ViewFactory.newVisibleBtn(0.65);
+		private final Button invisibleBtn = ViewFactory.newInvisibleBtn(0.65);
+		private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
 		private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
@@ -249,13 +310,16 @@ class EntitiesPaneBase extends BorderPane {
 
 		private void init() {
 
-			initVisibleLbl();
-			initInvisibleLbl();
-			initUnreadMessagesLabel();
+			initVisibleBtn();
+			initInvisibleBtn();
+			initDeleteBtn();
+			initUnreadMessagesLbl();
 
-			addRightNode(visibleLbl);
-			addRightNode(invisibleLbl);
-			addRightNode(unreadMessagesLabel);
+			HBox btnBox = new HBox(2 * gap);
+			btnBox.setAlignment(Pos.CENTER);
+			btnBox.getChildren().addAll(visibleBtn, invisibleBtn, deleteBtn, unreadMessagesLbl);
+
+			addRightNode(btnBox);
 
 		}
 
@@ -286,52 +350,74 @@ class EntitiesPaneBase extends BorderPane {
 
 		}
 
-		private void initUnreadMessagesLabel() {
+		private void initVisibleBtn() {
 
-			unreadMessagesLabel.setMinWidth(Region.USE_PREF_SIZE);
+			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
+			visibleBtn.effectProperty().bind(Bindings
+					.createObjectBinding(() -> visibleBtn.isHover() ? null : colorAdjust, visibleBtn.hoverProperty()));
 
-			unreadMessagesLabel.backgroundProperty()
+			visibleBtn.visibleProperty()
+					.bind(hiddenProperty.and(hoverProperty()).and(unreadMessagesLbl.visibleProperty().not()));
+			visibleBtn.managedProperty().bind(visibleBtn.visibleProperty());
+
+		}
+
+		private void initInvisibleBtn() {
+
+			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
+			invisibleBtn.effectProperty().bind(Bindings.createObjectBinding(
+					() -> invisibleBtn.isHover() ? null : colorAdjust, invisibleBtn.hoverProperty()));
+
+			invisibleBtn.visibleProperty()
+					.bind(hideableProperty.and(hoverProperty()).and(unreadMessagesLbl.visibleProperty().not()));
+			invisibleBtn.managedProperty().bind(invisibleBtn.visibleProperty());
+
+		}
+
+		private void initDeleteBtn() {
+
+			final Effect dropShadow = new DropShadow();
+			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
+			deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> {
+				if (Objects.equals(entityToBeRemoved.get(), entityId))
+					return dropShadow;
+				if (deleteBtn.isHover())
+					return null;
+				return colorAdjust;
+			}, entityToBeRemoved, deleteBtn.hoverProperty()));
+
+			deleteBtn.visibleProperty().bind(entityToBeRemoved.isEqualTo(entityId)
+					.or(hiddenProperty.and(hoverProperty()).and(unreadMessagesLbl.visibleProperty().not())));
+			deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
+
+			deleteBtn.setOnAction(e -> {
+				EntityId entityId = entityToBeRemoved.get();
+				if (Objects.equals(entityId, this.entityId))
+					entityToBeRemoved.set(null);
+				else
+					entityToBeRemoved.set(this.entityId);
+			});
+
+		}
+
+		private void initUnreadMessagesLbl() {
+
+			unreadMessagesLbl.setMinWidth(Region.USE_PREF_SIZE);
+
+			unreadMessagesLbl.backgroundProperty()
 					.bind(Bindings.createObjectBinding(
 							() -> new Background(new BackgroundFill(Color.RED,
-									new CornerRadii(unreadMessagesLabel.getHeight() / 2), Insets.EMPTY)),
-							unreadMessagesLabel.heightProperty()));
+									new CornerRadii(unreadMessagesLbl.getHeight() / 2), Insets.EMPTY)),
+							unreadMessagesLbl.heightProperty()));
 
-			unreadMessagesLabel.setAlignment(Pos.CENTER);
+			unreadMessagesLbl.setAlignment(Pos.CENTER);
 
-			unreadMessagesLabel.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLabel.getFont().getSize()));
-			unreadMessagesLabel.setTextFill(Color.WHITE);
+			unreadMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLbl.getFont().getSize()));
+			unreadMessagesLbl.setTextFill(Color.WHITE);
 
-			unreadMessagesLabel.visibleProperty().bind(Bindings.isNotEmpty(unreadMessages));
-			unreadMessagesLabel.managedProperty().bind(unreadMessagesLabel.visibleProperty());
-			unreadMessagesLabel.textProperty().bind(Bindings.size(unreadMessages).asString());
-
-		}
-
-		private void initVisibleLbl() {
-
-			visibleLbl.setGraphic(ViewFactory.newVisibleGraph(0.65));
-
-			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
-			visibleLbl.effectProperty().bind(Bindings
-					.createObjectBinding(() -> visibleLbl.isHover() ? null : colorAdjust, visibleLbl.hoverProperty()));
-
-			visibleLbl.visibleProperty()
-					.bind(hiddenProperty.and(hoverProperty()).and(unreadMessagesLabel.visibleProperty().not()));
-			visibleLbl.managedProperty().bind(visibleLbl.visibleProperty());
-
-		}
-
-		private void initInvisibleLbl() {
-
-			invisibleLbl.setGraphic(ViewFactory.newInvisibleGraph(0.65));
-
-			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
-			invisibleLbl.effectProperty().bind(Bindings.createObjectBinding(
-					() -> invisibleLbl.isHover() ? null : colorAdjust, invisibleLbl.hoverProperty()));
-
-			invisibleLbl.visibleProperty()
-					.bind(hideableProperty.and(hoverProperty()).and(unreadMessagesLabel.visibleProperty().not()));
-			invisibleLbl.managedProperty().bind(invisibleLbl.visibleProperty());
+			unreadMessagesLbl.visibleProperty().bind(Bindings.isNotEmpty(unreadMessages));
+			unreadMessagesLbl.managedProperty().bind(unreadMessagesLbl.visibleProperty());
+			unreadMessagesLbl.textProperty().bind(Bindings.size(unreadMessages).asString());
 
 		}
 
@@ -346,5 +432,7 @@ interface IEntitiesPane {
 	void showEntityRequested(EntityId entityId);
 
 	void hideEntityRequested(EntityId entityId);
+
+	void removeEntityRequested(EntityId entityId);
 
 }

@@ -15,6 +15,7 @@ import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -122,7 +123,24 @@ public class ActiveGroupsPane extends BorderPane {
 
 	void updateGroup(Dgroup group) {
 
-		getGroupCard(group.getId()).updateGroup(group);
+		Long id = group.getId();
+
+		if (Objects.equals(group.getViewStatus(), ViewStatus.DELETED)) {
+			removeGroup(id);
+			return;
+		}
+
+		getGroupCard(id).updateGroup(group);
+
+	}
+
+	private void removeGroup(Long id) {
+
+		GroupCard groupCard = idGroupCards.remove(id);
+		if (groupCard == null)
+			return;
+
+		entities.getChildren().remove(groupCard);
 
 	}
 

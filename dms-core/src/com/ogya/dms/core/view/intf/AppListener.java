@@ -59,6 +59,8 @@ public interface AppListener {
 
 	void hideEntityRequested(EntityId entityId);
 
+	void removeEntityRequested(EntityId entityId);
+
 	void moreArchivedMessagesRequested(Long minMessageId);
 
 }

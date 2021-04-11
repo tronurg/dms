@@ -83,7 +83,10 @@ public class HiddenEntitiesPane extends BorderPane {
 
 	void setOnBackAction(final Runnable runnable) {
 
-		backBtn.setOnAction(e -> runnable.run());
+		backBtn.setOnAction(e -> {
+			entitiesPane.resetDeleteMode();
+			runnable.run();
+		});
 
 	}
 

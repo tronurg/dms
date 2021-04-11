@@ -229,4 +229,20 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 
 	}
 
+	@Override
+	public void guiPrivateConversationDeleted(Long contactId, Long[] deletedMessageIds) {
+
+		System.out.println(String.format("Private conversation deleted: %s\nDeleted messages: %s\n",
+				dmsHandle.getContactHandle(contactId).getName(), Arrays.toString(deletedMessageIds)));
+
+	}
+
+	@Override
+	public void guiGroupConversationDeleted(Long groupId, Long[] deletedMessageIds) {
+
+		System.out.println(String.format("Group conversation deleted: %s\nDeleted messages: %s\n",
+				dmsHandle.getGroupHandle(groupId).getName(), Arrays.toString(deletedMessageIds)));
+
+	}
+
 }

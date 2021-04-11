@@ -214,10 +214,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			Long id = newContact.getId();
 			boolean entityDeleted = Objects.equals(newContact.getViewStatus(), ViewStatus.DELETED);
 
-			if (!entityDeleted) {
+			if (!entityDeleted)
 				model.addUpdateContact(newContact);
-				Platform.runLater(() -> dmsPanel.updateContact(newContact));
-			}
 
 			try {
 
@@ -237,6 +235,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (entityDeleted && firstMessages.isEmpty())
 					return;
+
+				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
 				model.registerMessages(firstMessages);
 
@@ -268,10 +268,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			Long id = newGroup.getId();
 			boolean entityDeleted = Objects.equals(newGroup.getViewStatus(), ViewStatus.DELETED);
 
-			if (!entityDeleted) {
+			if (!entityDeleted)
 				model.addUpdateGroup(newGroup);
-				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-			}
 
 			try {
 
@@ -291,6 +289,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (entityDeleted && firstMessages.isEmpty())
 					return;
+
+				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
 				model.registerMessages(firstMessages);
 
@@ -938,7 +938,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private List<Message> deleteMessages(List<Message> messages) throws Exception {
+	private Long[] deleteMessages(List<Message> messages) throws Exception {
 
 		List<Message> cancellableMessages = messages.stream()
 				.filter(message -> Objects.equals(message.getMessageStatus(), MessageStatus.FRESH) && !message.isDone())
@@ -953,12 +953,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		cancellableMessages.forEach(message -> dispatchCancellation(message));
 
-		final Long[] newMessageIds = newMessages.stream().map(message -> message.getId()).toArray(Long[]::new);
+		newMessages.forEach(message -> updateMessageInPane(message));
 
-		listenerTaskQueue
-				.execute(() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(newMessageIds)));
-
-		return newMessages;
+		return newMessages.stream().map(message -> message.getId()).toArray(Long[]::new);
 
 	}
 
@@ -1921,93 +1918,86 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (unreadMessagesOfEntity == null)
 				return;
 
-			if (entityId.isGroup())
-				groupMessagesRead(entityId, unreadMessagesOfEntity);
-			else
-				privateMessagesRead(entityId, unreadMessagesOfEntity);
+			try {
+
+				if (entityId.isGroup())
+					groupMessagesRead(entityId, unreadMessagesOfEntity);
+				else
+					privateMessagesRead(entityId, unreadMessagesOfEntity);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
 	}
 
-	private void privateMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
+	private void privateMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity)
+			throws Exception {
 
-		try {
+		Contact contact = getContact(entityId.getId());
 
-			Contact contact = getContact(entityId.getId());
+		List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
+				.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
 
-			List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
-					.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
+		if (newMessages.isEmpty())
+			return;
 
-			if (newMessages.isEmpty())
-				return;
+		model.registerMessages(newMessages);
 
-			model.registerMessages(newMessages);
+		Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
 
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
+		Map<Long, MessageStatus> messageIdStatusMap = new HashMap<Long, MessageStatus>();
 
-			Map<Long, MessageStatus> messageIdStatusMap = new HashMap<Long, MessageStatus>();
+		for (Message message : newMessages) {
 
-			for (Message message : newMessages) {
+			updateMessageInPane(message);
 
-				updateMessageInPane(message);
-
-				messageIdStatusMap.put(message.getMessageRefId(), message.getMessageStatus());
-
-			}
-
-			if (!messageIdStatusMap.isEmpty())
-				dmsClient.feedMessageStatus(messageIdStatusMap, contact.getUuid());
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
+			messageIdStatusMap.put(message.getMessageRefId(), message.getMessageStatus());
 
 		}
 
+		if (!messageIdStatusMap.isEmpty())
+			dmsClient.feedMessageStatus(messageIdStatusMap, contact.getUuid());
+
 	}
 
-	private void groupMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity) {
+	private void groupMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity)
+			throws Exception {
 
 		Dgroup group = getGroup(entityId.getId());
 
 		if (group == null)
 			return;
 
-		try {
+		List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
+				.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
 
-			List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
-					.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
+		if (newMessages.isEmpty())
+			return;
 
-			if (newMessages.isEmpty())
-				return;
+		model.registerMessages(newMessages);
 
-			model.registerMessages(newMessages);
+		Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
 
-			Platform.runLater(() -> dmsPanel.scrollPaneToMessage(entityId, newMessages.get(0).getId()));
+		Map<String, Map<Long, MessageStatus>> contactUuidMessageIdStatusMap = new HashMap<String, Map<Long, MessageStatus>>();
 
-			Map<String, Map<Long, MessageStatus>> contactUuidMessageIdStatusMap = new HashMap<String, Map<Long, MessageStatus>>();
+		for (Message message : newMessages) {
 
-			for (Message message : newMessages) {
+			updateMessageInPane(message);
 
-				updateMessageInPane(message);
+			String contactUuid = group.isLocal() ? message.getContact().getUuid() : group.getOwner().getUuid();
 
-				String contactUuid = group.isLocal() ? message.getContact().getUuid() : group.getOwner().getUuid();
-
-				contactUuidMessageIdStatusMap.putIfAbsent(contactUuid, new HashMap<Long, MessageStatus>());
-				contactUuidMessageIdStatusMap.get(contactUuid).put(message.getMessageRefId(),
-						message.getMessageStatus());
-
-			}
-
-			contactUuidMessageIdStatusMap.forEach(
-					(contactUuid, messageIdStatusMap) -> dmsClient.feedMessageStatus(messageIdStatusMap, contactUuid));
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
+			contactUuidMessageIdStatusMap.putIfAbsent(contactUuid, new HashMap<Long, MessageStatus>());
+			contactUuidMessageIdStatusMap.get(contactUuid).put(message.getMessageRefId(), message.getMessageStatus());
 
 		}
+
+		contactUuidMessageIdStatusMap.forEach(
+				(contactUuid, messageIdStatusMap) -> dmsClient.feedMessageStatus(messageIdStatusMap, contactUuid));
 
 	}
 
@@ -2230,15 +2220,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (group == null) {
 				// New group
 
-				Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(null, null, true));
+				Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(null, true));
 
 			} else {
 				// Update group
 
-				Set<Long> ids = new HashSet<Long>();
-				group.getMembers().forEach(contact -> ids.add(contact.getId()));
-
-				Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(group.getName(), ids, false));
+				Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(group, false));
 
 			}
 
@@ -2559,11 +2546,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				List<Message> messages = dbManager.getMessagesById(messageIds);
 
-				List<Message> newMessages = deleteMessages(messages.stream()
+				Long[] deletedMessageIds = deleteMessages(messages.stream()
 						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
 						.collect(Collectors.toList()));
 
-				newMessages.forEach(message -> updateMessageInPane(message));
+				listenerTaskQueue.execute(
+						() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds)));
 
 			} catch (Exception e) {
 
@@ -2756,29 +2744,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				if (entityId.isGroup()) {
-
-					Dgroup group = getGroup(entityId.getId());
-					if (group == null)
-						return;
-
-					group.setViewStatus(ViewStatus.DEFAULT);
-					Dgroup newGroup = dbManager.addUpdateGroup(group);
-					model.addUpdateGroup(newGroup);
-
-					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-
-				} else {
-
-					Contact contact = getContact(entityId.getId());
-
-					contact.setViewStatus(ViewStatus.DEFAULT);
-					Contact newContact = dbManager.addUpdateContact(contact);
-					model.addUpdateContact(newContact);
-
-					Platform.runLater(() -> dmsPanel.updateContact(newContact));
-
-				}
+				updateViewStatusRequested(entityId, ViewStatus.DEFAULT);
 
 			} catch (Exception e) {
 
@@ -2800,35 +2766,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				// Messages will be read normally, but as a precaution...
 				Set<Message> unreadMessagesOfEntity = model.getUnreadMessagesOfEntity(entityId);
 				if (unreadMessagesOfEntity != null) {
-					List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
-							.peek(message -> message.setMessageStatus(MessageStatus.READ))
-							.collect(Collectors.toList()));
-					model.registerMessages(newMessages);
+					if (entityId.isGroup())
+						groupMessagesRead(entityId, unreadMessagesOfEntity);
+					else
+						privateMessagesRead(entityId, unreadMessagesOfEntity);
 				}
 
-				if (entityId.isGroup()) {
-
-					Dgroup group = getGroup(entityId.getId());
-					if (group == null)
-						return;
-
-					group.setViewStatus(ViewStatus.ARCHIVED);
-					Dgroup newGroup = dbManager.addUpdateGroup(group);
-					model.addUpdateGroup(newGroup);
-
-					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-
-				} else {
-
-					Contact contact = getContact(entityId.getId());
-
-					contact.setViewStatus(ViewStatus.ARCHIVED);
-					Contact newContact = dbManager.addUpdateContact(contact);
-					model.addUpdateContact(newContact);
-
-					Platform.runLater(() -> dmsPanel.updateContact(newContact));
-
-				}
+				updateViewStatusRequested(entityId, ViewStatus.ARCHIVED);
 
 			} catch (Exception e) {
 
@@ -2837,6 +2781,76 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 		});
+
+	}
+
+	@Override
+	public void removeEntityRequested(final EntityId entityId) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				// Messages will be read normally, but as a precaution...
+				Set<Message> unreadMessagesOfEntity = model.getUnreadMessagesOfEntity(entityId);
+				if (unreadMessagesOfEntity != null) {
+					if (entityId.isGroup())
+						groupMessagesRead(entityId, unreadMessagesOfEntity);
+					else
+						privateMessagesRead(entityId, unreadMessagesOfEntity);
+				}
+
+				// Delete all messages
+				if (entityId.isGroup()) {
+					Long[] deletedMessageIds = deleteMessages(dbManager.getAllDeletableGroupMessages(entityId.getId()));
+					dmsGuiListeners.forEach(
+							listener -> listener.guiGroupConversationDeleted(entityId.getId(), deletedMessageIds));
+				} else {
+					Long[] deletedMessageIds = deleteMessages(
+							dbManager.getAllDeletablePrivateMessages(entityId.getId()));
+					dmsGuiListeners.forEach(
+							listener -> listener.guiPrivateConversationDeleted(entityId.getId(), deletedMessageIds));
+				}
+
+				updateViewStatusRequested(entityId, ViewStatus.DELETED);
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	private void updateViewStatusRequested(EntityId entityId, ViewStatus status) throws Exception {
+
+		if (entityId.isGroup()) {
+
+			Dgroup group = getGroup(entityId.getId());
+			if (group == null || !Objects.equals(group.getStatus(), Availability.OFFLINE))
+				return;
+
+			group.setViewStatus(status);
+			Dgroup newGroup = dbManager.addUpdateGroup(group);
+			model.addUpdateGroup(newGroup);
+
+			Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+
+		} else {
+
+			Contact contact = getContact(entityId.getId());
+			if (!Objects.equals(contact.getStatus(), Availability.OFFLINE))
+				return;
+
+			contact.setViewStatus(status);
+			Contact newContact = dbManager.addUpdateContact(contact);
+			model.addUpdateContact(newContact);
+
+			Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+		}
 
 	}
 

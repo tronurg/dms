@@ -494,19 +494,31 @@ public class ViewFactory {
 
 	}
 
-	public static Node newVisibleGraph(double scaleFactor) {
+	public static Button newVisibleBtn(double scaleFactor) {
 
 		double viewFactor = scaleFactor * getViewFactor();
 
-		return newEyeGraph(viewFactor, Color.DEEPSKYBLUE);
+		Button btn = new Button();
+
+		btn.setGraphic(newEyeGraph(viewFactor, Color.DEEPSKYBLUE));
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
 
 	}
 
-	public static Node newInvisibleGraph(double scaleFactor) {
+	public static Button newInvisibleBtn(double scaleFactor) {
 
 		double viewFactor = scaleFactor * getViewFactor();
 
-		return newNoEyeGraph(viewFactor, Color.RED);
+		Button btn = new Button();
+
+		btn.setGraphic(newNoEyeGraph(viewFactor, Color.RED));
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
 
 	}
 

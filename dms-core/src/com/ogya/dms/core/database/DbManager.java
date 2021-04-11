@@ -592,6 +592,20 @@ public class DbManager {
 
 	}
 
+	public List<Message> getAllDeletablePrivateMessages(Long contactId) {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session.createQuery(
+				"from Message where viewStatus like :default and contact.id=:contactId and dgroup is null and updateType is null",
+				Message.class).setParameter("default", ViewStatus.DEFAULT).setParameter("contactId", contactId).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
 	public List<Message> getGroupMessagesWaitingToContact(Long contactId) throws HibernateException {
 
 		Session session = factory.openSession();
@@ -672,6 +686,22 @@ public class DbManager {
 				"from Message where viewStatus not like :deleted and id<:messageId and dgroup.id=:groupId and updateType is null order by id desc",
 				Message.class).setParameter("deleted", ViewStatus.DELETED).setParameter("messageId", messageId)
 				.setParameter("groupId", groupId).setMaxResults(messageCount).list();
+
+		session.close();
+
+		return dbMessages;
+
+	}
+
+	public List<Message> getAllDeletableGroupMessages(Long groupId) {
+
+		Session session = factory.openSession();
+
+		List<Message> dbMessages = session
+				.createQuery(
+						"from Message where viewStatus like :default and dgroup.id=:groupId and updateType is null",
+						Message.class)
+				.setParameter("default", ViewStatus.DEFAULT).setParameter("groupId", groupId).list();
 
 		session.close();
 
