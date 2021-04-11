@@ -182,42 +182,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		//
 
-		initDbAndModel();
-		initGUI();
+		initDbModelAndGui();
 
 		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
 
 	}
 
-	private void initDbAndModel() throws Exception {
-
-		dbManager.fetchAllContacts().forEach(contact -> {
-			if (!Objects.equals(contact.getStatus(), Availability.OFFLINE)) {
-				contact.setStatus(Availability.OFFLINE);
-				try {
-					contact = dbManager.addUpdateContact(contact);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			model.addUpdateContact(contact);
-		});
-
-		dbManager.fetchAllGroups().forEach(group -> {
-			if (Objects.equals(group.getStatus(), Availability.LIMITED)) {
-				group.setStatus(Availability.OFFLINE);
-				try {
-					group = dbManager.addUpdateGroup(group);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			model.addUpdateGroup(group);
-		});
-
-	}
-
-	private void initGUI() {
+	private void initDbModelAndGui() throws Exception {
 
 		Platform.runLater(() -> {
 
@@ -228,9 +199,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		});
 
-		model.getContacts().forEach((id, contact) -> {
+		dbManager.fetchAllContacts().forEach(contact -> {
 
-			Platform.runLater(() -> dmsPanel.updateContact(contact));
+			if (!Objects.equals(contact.getStatus(), Availability.OFFLINE)) {
+				contact.setStatus(Availability.OFFLINE);
+				try {
+					contact = dbManager.addUpdateContact(contact);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+			final Contact newContact = contact;
+			Long id = newContact.getId();
+			boolean entityDeleted = Objects.equals(newContact.getViewStatus(), ViewStatus.DELETED);
+
+			if (!entityDeleted) {
+				model.addUpdateContact(newContact);
+				Platform.runLater(() -> dmsPanel.updateContact(newContact));
+			}
 
 			try {
 
@@ -248,10 +235,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
+				if (entityDeleted && firstMessages.isEmpty())
+					return;
+
 				model.registerMessages(firstMessages);
 
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
-					Platform.runLater(() -> dmsPanel.allMessagesLoaded(contact.getEntityId()));
+					Platform.runLater(() -> dmsPanel.allMessagesLoaded(newContact.getEntityId()));
 
 				firstMessages.forEach(message -> addMessageToPane(message, false));
 
@@ -263,9 +253,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		});
 
-		model.getGroups().forEach((id, group) -> {
+		dbManager.fetchAllGroups().forEach(group -> {
 
-			Platform.runLater(() -> dmsPanel.updateGroup(group));
+			if (Objects.equals(group.getStatus(), Availability.LIMITED)) {
+				group.setStatus(Availability.OFFLINE);
+				try {
+					group = dbManager.addUpdateGroup(group);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+
+			final Dgroup newGroup = group;
+			Long id = newGroup.getId();
+			boolean entityDeleted = Objects.equals(newGroup.getViewStatus(), ViewStatus.DELETED);
+
+			if (!entityDeleted) {
+				model.addUpdateGroup(newGroup);
+				Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
+			}
 
 			try {
 
@@ -283,10 +289,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
+				if (entityDeleted && firstMessages.isEmpty())
+					return;
+
 				model.registerMessages(firstMessages);
 
 				if (firstMessages.size() < MIN_MESSAGES_PER_PAGE)
-					Platform.runLater(() -> dmsPanel.allMessagesLoaded(group.getEntityId()));
+					Platform.runLater(() -> dmsPanel.allMessagesLoaded(newGroup.getEntityId()));
 
 				firstMessages.forEach(message -> addMessageToPane(message, false));
 
@@ -681,7 +690,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Contact owner = message.getContact();
 			Long groupRefId = message.getGroupRefId();
-			Dgroup group = getGroup(owner.getUuid(), groupRefId);
+			Dgroup group = getRemoteGroup(owner.getUuid(), groupRefId);
 			if (group == null)
 				group = new Dgroup(owner, groupRefId);
 
@@ -957,26 +966,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Contact contact = model.getContact(id);
 
-		if (contact != null)
-			return contact;
-
-		contact = dbManager.getContactById(id);
+		if (contact == null)
+			contact = dbManager.getContactById(id);
 
 		if (contact == null)
 			throw new Exception(String.format("Contact #%d does not exist!", id));
 
-		contact.setViewStatus(ViewStatus.DEFAULT); // Contact exists but was deleted, so revive it
-
-		final Contact newContact = dbManager.addUpdateContact(contact);
-
-		model.addUpdateContact(newContact);
-
-		Platform.runLater(() -> dmsPanel.updateContact(newContact));
-
-		listenerTaskQueue.execute(
-				() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
-
-		return newContact;
+		return contact;
 
 	}
 
@@ -999,20 +995,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			contact = new Contact(uuid);
 			contact.setName(name);
 			contact.setStatus(Availability.OFFLINE);
-		} else {
-			contact.setViewStatus(ViewStatus.DEFAULT); // Contact exists but was deleted, so revive it
+			final Contact newContact = dbManager.addUpdateContact(contact);
+			contact = newContact;
+			model.addUpdateContact(newContact);
+			Platform.runLater(() -> dmsPanel.updateContact(newContact));
+			listenerTaskQueue.execute(
+					() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 		}
 
-		final Contact newContact = dbManager.addUpdateContact(contact);
-
-		model.addUpdateContact(newContact);
-
-		Platform.runLater(() -> dmsPanel.updateContact(newContact));
-
-		listenerTaskQueue.execute(
-				() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
-
-		return newContact;
+		return contact;
 
 	}
 
@@ -1020,53 +1011,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Dgroup group = model.getGroup(id);
 
-		if (group != null)
-			return group;
-
-		group = dbManager.getGroupById(id);
-
 		if (group == null)
-			return null;
+			group = dbManager.getGroupById(id);
 
-		group.setViewStatus(ViewStatus.DEFAULT); // Group exists but was deleted, so revive it
-
-		final Dgroup newGroup = dbManager.addUpdateGroup(group);
-
-		model.addUpdateGroup(newGroup);
-
-		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-
-		listenerTaskQueue
-				.execute(() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
-
-		return newGroup;
+		return group;
 
 	}
 
-	private Dgroup getGroup(String ownerUuid, Long groupRefId) {
+	private Dgroup getRemoteGroup(String ownerUuid, Long groupRefId) {
 
-		Dgroup group = model.getGroup(ownerUuid, groupRefId);
-
-		if (group != null)
-			return group;
-
-		group = dbManager.getGroupByOwner(ownerUuid, groupRefId);
+		Dgroup group = model.getRemoteGroup(ownerUuid, groupRefId);
 
 		if (group == null)
-			return null;
+			group = dbManager.getGroupByOwner(ownerUuid, groupRefId);
 
-		group.setViewStatus(ViewStatus.DEFAULT); // Group exists but was deleted, so revive it
-
-		final Dgroup newGroup = dbManager.addUpdateGroup(group);
-
-		model.addUpdateGroup(newGroup);
-
-		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-
-		listenerTaskQueue
-				.execute(() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
-
-		return newGroup;
+		return group;
 
 	}
 
@@ -1116,10 +1075,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				listenerTaskQueue.execute(() -> dmsListeners
 						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
-				if (!wasOnline && model.isContactOnline(userUuid)) {
+				boolean isOnline = model.isContactOnline(userUuid);
 
+				if (wasOnline && !isOnline) {
+					// Contact has just been made offline through api.
+
+					contactDisconnected(newContact);
+
+				} else if (!wasOnline && isOnline) {
 					// If the contact has just been online, send all things waiting for it, adjust
 					// its groups' availability.
+
 					taskQueue.execute(() -> {
 
 						List<Long> messageIds = new ArrayList<Long>();
@@ -1393,6 +1359,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (!Objects.equals(contact.getViewStatus(), ViewStatus.DEFAULT)) {
 					contact.setViewStatus(ViewStatus.DEFAULT);
 					final Contact newContact = dbManager.addUpdateContact(contact);
+					contact = newContact;
 					model.addUpdateContact(newContact);
 					Platform.runLater(() -> dmsPanel.updateContact(newContact));
 				}
@@ -1412,6 +1379,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					} else if (!Objects.equals(group.getViewStatus(), ViewStatus.DEFAULT)) {
 						group.setViewStatus(ViewStatus.DEFAULT);
 						final Dgroup newGroup = dbManager.addUpdateGroup(group);
+						group = newGroup;
 						model.addUpdateGroup(newGroup);
 						Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 					}
@@ -1431,12 +1399,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else if (Objects.equals(message.getSenderGroupOwner(), Boolean.TRUE)) {
 
-					Dgroup group = getGroup(remoteUuid, message.getGroupRefId());
+					Dgroup group = getRemoteGroup(remoteUuid, message.getGroupRefId());
 					if (group == null) {
 						group = groupUpdateReceived(new Dgroup(contact, message.getGroupRefId()), new GroupUpdate());
 					} else if (!Objects.equals(group.getViewStatus(), ViewStatus.DEFAULT)) {
 						group.setViewStatus(ViewStatus.DEFAULT);
 						final Dgroup newGroup = dbManager.addUpdateGroup(group);
+						group = newGroup;
 						model.addUpdateGroup(newGroup);
 						Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 					}

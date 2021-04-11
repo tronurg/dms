@@ -19,6 +19,7 @@ import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.core.main.DmsCore;
+import com.ogya.dms.core.structures.Availability;
 
 public class DmsTest {
 
@@ -107,10 +108,14 @@ public class DmsTest {
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = gsh.getGroupSelectionPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
+//			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
+
+				dmsHandle.setAvailability(dmsHandle.getMyContactHandle().getAvailability().equals(Availability.OFFLINE)
+						? Availability.AVAILABLE
+						: Availability.OFFLINE);
 
 				final Long selectedGroupId = gsh.getSelectedGroupId();
 

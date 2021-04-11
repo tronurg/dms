@@ -144,13 +144,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	void resetContent(String groupName, Set<Long> selectedIds, boolean isNewGroup) {
+	void resetContent(String groupName, Set<Long> newSelectedIds, boolean isNewGroup) {
 
 		searchContactTextField.setText("");
 		groupNameTextField.setText(groupName == null ? "" : groupName);
 		selectedIds.clear();
-		if (selectedIds != null) {
-			selectedIds.forEach(id -> {
+		if (newSelectedIds != null) {
+			newSelectedIds.forEach(id -> {
 				getContactGroup(id); // initialize if not exists
 				selectedIds.add(id);
 			});
@@ -486,7 +486,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			addedContactsPane.getChildren().add(removeContactBox);
 			notAddedContactsPane.getChildren().add(addContactBox);
-			FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
 
 		}
 
@@ -494,8 +493,13 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			activeProperty.set(!Objects.equals(contact.getViewStatus(), ViewStatus.DELETED));
 
+			boolean toBeSorted = !Objects.equals(addContactBox.getName(), contact.getName());
+
 			addContactBox.updateContact(contact);
 			removeContactBox.updateContact(contact);
+
+			if (toBeSorted)
+				FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
 
 		}
 

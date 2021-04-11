@@ -23,6 +23,7 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.structures.ViewStatus;
 
 public class Model {
 
@@ -36,9 +37,9 @@ public class Model {
 
 	private final Map<String, Contact> uuidContacts = Collections.synchronizedMap(new HashMap<String, Contact>());
 	private final Map<Long, Contact> idContacts = Collections.synchronizedMap(new HashMap<Long, Contact>());
-	private final Map<String, Map<Long, Dgroup>> uuidGroups = Collections
-			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
 	private final Map<Long, Dgroup> idGroups = Collections.synchronizedMap(new HashMap<Long, Dgroup>());
+	private final Map<String, Map<Long, Dgroup>> uuidRemoteGroups = Collections
+			.synchronizedMap(new HashMap<String, Map<Long, Dgroup>>());
 
 	private final Map<EntityId, Set<Message>> unreadMessages = Collections
 			.synchronizedMap(new HashMap<EntityId, Set<Message>>());
@@ -141,8 +142,20 @@ public class Model {
 
 	public void addUpdateContact(Contact contact) {
 
+		if (Objects.equals(contact.getViewStatus(), ViewStatus.DELETED)) {
+			removeContact(contact);
+			return;
+		}
+
 		uuidContacts.put(contact.getUuid(), contact);
 		idContacts.put(contact.getId(), contact);
+
+	}
+
+	private void removeContact(Contact contact) {
+
+		uuidContacts.remove(contact.getUuid());
+		idContacts.remove(contact.getId());
 
 	}
 
@@ -235,6 +248,11 @@ public class Model {
 
 	public void addUpdateGroup(Dgroup group) {
 
+		if (Objects.equals(group.getViewStatus(), ViewStatus.DELETED)) {
+			removeGroup(group);
+			return;
+		}
+
 		idGroups.put(group.getId(), group);
 
 		if (group.isLocal())
@@ -242,26 +260,47 @@ public class Model {
 
 		String ownerUuid = group.getOwner().getUuid();
 
-		uuidGroups.putIfAbsent(ownerUuid, new HashMap<Long, Dgroup>());
-		uuidGroups.get(ownerUuid).put(group.getGroupRefId(), group);
+		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
+		if (contactsGroups == null) {
+			contactsGroups = new HashMap<Long, Dgroup>();
+			uuidRemoteGroups.put(ownerUuid, contactsGroups);
+		}
+		contactsGroups.put(group.getGroupRefId(), group);
+
+	}
+
+	private void removeGroup(Dgroup group) {
+
+		idGroups.remove(group.getId());
+
+		if (group.isLocal())
+			return;
+
+		String ownerUuid = group.getOwner().getUuid();
+
+		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
+		if (contactsGroups == null)
+			return;
+		contactsGroups.remove(group.getGroupRefId());
+		if (contactsGroups.isEmpty())
+			uuidRemoteGroups.remove(ownerUuid);
 
 	}
 
 	public Dgroup getGroup(Long groupId) {
 
-		if (groupId == null)
-			return null;
-
 		return idGroups.get(groupId);
 
 	}
 
-	public Dgroup getGroup(String ownerUuid, Long groupRefId) {
+	public Dgroup getRemoteGroup(String ownerUuid, Long groupRefId) {
 
-		if (uuidGroups.containsKey(ownerUuid))
-			return uuidGroups.get(ownerUuid).get(groupRefId);
+		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
 
-		return null;
+		if (contactsGroups == null)
+			return null;
+
+		return contactsGroups.get(groupRefId);
 
 	}
 
