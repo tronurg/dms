@@ -24,7 +24,11 @@ public interface DmsGuiListener {
 
 	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId);
 
-	void guiMessagesDeleted(Long... messageIds);
+	void guiMessagesDeleted(Long[] messageIds);
+
+	void guiPrivateConversationCleared(Long contactId, Long[] deletedMessageIds);
+
+	void guiGroupConversationCleared(Long groupId, Long[] deletedMessageIds);
 
 	void guiPrivateConversationDeleted(Long contactId, Long[] deletedMessageIds);
 

@@ -404,8 +404,11 @@ class MessagePane extends BorderPane {
 
 	private void initClearBtn() {
 
-		clearBtn.visibleProperty().bind(selectionModeProperty.not());
+		clearBtn.visibleProperty().bind(topPane.hoverProperty().or(clearModeProperty).and(selectionModeProperty.not()));
 		clearBtn.managedProperty().bind(clearBtn.visibleProperty());
+		clearBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> clearBtn.isHover() || clearModeProperty.get() ? 1.0 : 0.5,
+						clearBtn.hoverProperty(), clearModeProperty));
 		clearBtn.setOnAction(e -> clearModeProperty.set(!clearModeProperty.get()));
 		final Effect dropShadow = new DropShadow();
 		clearBtn.effectProperty().bind(
@@ -1614,11 +1617,11 @@ interface IMessagePane {
 
 	void infoClicked(Long messageId);
 
-	void forwardMessagesRequested(Long... messageIds);
+	void forwardMessagesRequested(Long[] messageIds);
 
-	void archiveMessagesRequested(Long... messageIds);
+	void archiveMessagesRequested(Long[] messageIds);
 
-	void deleteMessagesRequested(Long... messageIds);
+	void deleteMessagesRequested(Long[] messageIds);
 
 	void clearConversationRequested();
 

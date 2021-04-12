@@ -711,7 +711,7 @@ interface IStarredMessagesPane {
 
 	void attachmentClicked(Long messageId);
 
-	void archiveMessagesRequested(Long... messageIds);
+	void archiveMessagesRequested(Long[] messageIds);
 
 	void goToMessageClicked(EntityId entityId, Long messageId);
 

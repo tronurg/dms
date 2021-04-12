@@ -2496,7 +2496,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void forwardMessagesRequested(final Long... messageIds) {
+	public void forwardMessagesRequested(final Long[] messageIds) {
 
 		taskQueue.execute(() -> {
 
@@ -2509,7 +2509,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void archiveMessagesRequested(final Long... messageIds) {
+	public void archiveMessagesRequested(final Long[] messageIds) {
 
 		taskQueue.execute(() -> {
 
@@ -2538,20 +2538,23 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void deleteMessagesRequested(final Long... messageIds) {
+	public void deleteMessagesRequested(final Long[] messageIds) {
 
 		taskQueue.execute(() -> {
 
 			try {
 
-				List<Message> messages = dbManager.getMessagesById(messageIds);
-
-				Long[] deletedMessageIds = deleteMessages(messages.stream()
+				List<Message> messages = dbManager.getMessagesById(messageIds).stream()
 						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
-						.collect(Collectors.toList()));
+						.collect(Collectors.toList());
+				if (messages.isEmpty())
+					return;
 
-				listenerTaskQueue.execute(
-						() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds)));
+				Long[] deletedMessageIds = deleteMessages(messages);
+
+				if (deletedMessageIds.length > 0)
+					listenerTaskQueue.execute(
+							() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds)));
 
 			} catch (Exception e) {
 
@@ -2572,13 +2575,35 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (entityId == null)
 				return;
 
+			final Long id = entityId.getId();
+
 			try {
 
-				Long[] deletedMessageIds = deleteMessages(
-						entityId.isGroup() ? dbManager.getAllDeletableGroupMessages(entityId.getId())
-								: dbManager.getAllDeletablePrivateMessages(entityId.getId()));
+				if (entityId.isGroup()) {
 
-				dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds));
+					List<Message> deletableMessages = dbManager.getAllDeletableGroupMessages(id);
+					if (deletableMessages.isEmpty())
+						return;
+
+					Long[] deletedMessageIds = deleteMessages(deletableMessages);
+
+					if (deletedMessageIds.length > 0)
+						dmsGuiListeners
+								.forEach(listener -> listener.guiGroupConversationCleared(id, deletedMessageIds));
+
+				} else {
+
+					List<Message> deletableMessages = dbManager.getAllDeletablePrivateMessages(id);
+					if (deletableMessages.isEmpty())
+						return;
+
+					Long[] deletedMessageIds = deleteMessages(deletableMessages);
+
+					if (deletedMessageIds.length > 0)
+						dmsGuiListeners
+								.forEach(listener -> listener.guiPrivateConversationCleared(id, deletedMessageIds));
+
+				}
 
 			} catch (Exception e) {
 
@@ -2816,6 +2841,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
+			final Long id = entityId.getId();
+
 			try {
 
 				// Messages will be read normally, but as a precaution...
@@ -2829,14 +2856,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				// Delete all messages
 				if (entityId.isGroup()) {
-					Long[] deletedMessageIds = deleteMessages(dbManager.getAllDeletableGroupMessages(entityId.getId()));
-					dmsGuiListeners.forEach(
-							listener -> listener.guiGroupConversationDeleted(entityId.getId(), deletedMessageIds));
+					List<Message> deletableMessages = dbManager.getAllDeletableGroupMessages(id);
+					Long[] deletedMessageIds = deletableMessages.isEmpty() ? new Long[0]
+							: deleteMessages(deletableMessages);
+					dmsGuiListeners.forEach(listener -> listener.guiGroupConversationDeleted(id, deletedMessageIds));
 				} else {
-					Long[] deletedMessageIds = deleteMessages(
-							dbManager.getAllDeletablePrivateMessages(entityId.getId()));
-					dmsGuiListeners.forEach(
-							listener -> listener.guiPrivateConversationDeleted(entityId.getId(), deletedMessageIds));
+					List<Message> deletableMessages = dbManager.getAllDeletablePrivateMessages(id);
+					Long[] deletedMessageIds = deletableMessages.isEmpty() ? new Long[0]
+							: deleteMessages(deletableMessages);
+					dmsGuiListeners.forEach(listener -> listener.guiPrivateConversationDeleted(id, deletedMessageIds));
 				}
 
 				updateViewStatusRequested(entityId, ViewStatus.DELETED);

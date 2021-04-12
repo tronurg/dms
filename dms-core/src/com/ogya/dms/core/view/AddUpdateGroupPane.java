@@ -136,7 +136,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	String getGroupName() {
 
-		return groupNameTextField.getText().trim();
+		return groupNameTextField.textProperty().getValueSafe().trim();
 
 	}
 
@@ -300,8 +300,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
-		addUpdateGroupBtn.disableProperty().bind(
-				deleteMode.not().and(Bindings.isEmpty(selectedIds).or(groupNameTextField.textProperty().isEmpty())));
+		addUpdateGroupBtn.disableProperty().bind(deleteMode.not().and(Bindings.isEmpty(selectedIds)
+				.or(Bindings.createBooleanBinding(() -> getGroupName().isEmpty(), groupNameTextField.textProperty()))));
 
 		addUpdateGroupBtn.setOnAction(e -> {
 
