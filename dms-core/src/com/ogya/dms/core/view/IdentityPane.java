@@ -54,15 +54,15 @@ class IdentityPane extends GridPane {
 	private final StackPane profilePicture = new StackPane();
 	private final Circle statusCircle = new Circle(unitSize);
 	private final Circle profileRound = new Circle(unitSize * 0.8);
-	private final Label profileLabel = new Label();
+	private final Label profileLbl = new Label();
 	private final Button availableBtn = newStatusBtn(Availability.AVAILABLE.getStatusColor());
 	private final Button awayBtn = newStatusBtn(Availability.AWAY.getStatusColor());
 	private final Button busyBtn = newStatusBtn(Availability.BUSY.getStatusColor());
 
-	private final Label nameLabel = new Label();
+	private final Label nameLbl = new Label();
 	private final Button settingsButton = ViewFactory.newSettingsBtn();
 	private final TextField commentTextField = new TextField();
-	private final Label coordinatesLabel = new Label();
+	private final Label coordinatesLbl = new Label();
 
 	private final List<IIdentityPane> listeners = Collections.synchronizedList(new ArrayList<IIdentityPane>());
 
@@ -80,10 +80,10 @@ class IdentityPane extends GridPane {
 	private void init() {
 
 		initProfilePicture();
-		initNameLabel();
+		initNameLbl();
 		initSettingsButton();
 		initCommentTextField();
-		initCoordinatesLabel();
+		initCoordinatesLbl();
 
 		setHgap(gap);
 		setValignment(profilePicture, VPos.TOP);
@@ -91,10 +91,10 @@ class IdentityPane extends GridPane {
 		setHgrow(commentTextField, Priority.ALWAYS);
 
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
-		add(nameLabel, 2, 0, 1, 1);
+		add(nameLbl, 2, 0, 1, 1);
 		add(settingsButton, 3, 0, 1, 1);
 		add(commentTextField, 2, 1, 1, 1);
-		add(coordinatesLabel, 2, 2, 1, 1);
+		add(coordinatesLbl, 2, 2, 1, 1);
 		add(profilePicture, 0, 0, 1, 3);
 
 	}
@@ -108,12 +108,12 @@ class IdentityPane extends GridPane {
 	void setIdentity(Contact identity) {
 
 		availabilityProperty.set(identity.getStatus());
-		profileLabel.setText(identity.getName().substring(0, 1).toUpperCase());
+		profileLbl.setText(identity.getName().substring(0, 1).toUpperCase());
 
-		nameLabel.setText(identity.getName());
+		nameLbl.setText(identity.getName());
 		if (!commentTextField.isEditable())
 			commentTextField.setText(identity.getComment());
-		coordinatesLabel.setText(identity.getLattitude() == null || identity.getLongitude() == null ? ""
+		coordinatesLbl.setText(identity.getLattitude() == null || identity.getLongitude() == null ? ""
 				: CommonMethods.convertDoubleToCoordinates(identity.getLattitude(), identity.getLongitude()));
 
 	}
@@ -131,9 +131,9 @@ class IdentityPane extends GridPane {
 
 		initStatusCircle();
 		initProfileRound();
-		initProfileLabel();
+		initProfileLbl();
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLabel, busyBtn, awayBtn, availableBtn);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLbl, busyBtn, awayBtn, availableBtn);
 
 		final Rotate awayBtnRotate = new Rotate();
 		final Rotate busyBtnRotate = new Rotate();
@@ -247,20 +247,20 @@ class IdentityPane extends GridPane {
 
 	}
 
-	private void initProfileLabel() {
+	private void initProfileLbl() {
 
-		profileLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		profileLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		profileLabel.setStyle("-fx-text-fill: #404040;");
-		profileLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
+		profileLbl.setStyle("-fx-text-fill: #404040;");
+		profileLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
 	}
 
-	private void initNameLabel() {
+	private void initNameLbl() {
 
-		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
+		nameLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
 
 	}
 
@@ -321,10 +321,10 @@ class IdentityPane extends GridPane {
 
 	}
 
-	private void initCoordinatesLabel() {
+	private void initCoordinatesLbl() {
 
-		coordinatesLabel.setOpacity(0.5);
-		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		coordinatesLbl.setOpacity(0.5);
+		coordinatesLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 
