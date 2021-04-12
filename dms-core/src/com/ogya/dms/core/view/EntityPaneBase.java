@@ -33,12 +33,12 @@ class EntityPaneBase extends GridPane {
 	private final Group profilePicture = new Group();
 	private final Circle statusCircle = new Circle(unitSize);
 	private final Circle profileRound = new Circle(unitSize * 0.8);
-	private final Label initialLabel = new Label();
+	private final Label initialLbl = new Label();
 	private final Label groupSign = new Label("G");
 
-	private final Label nameLabel = new Label();
-	private final Label commentLabel = new Label();
-	private final Label coordinatesLabel = new Label();
+	private final Label nameLbl = new Label();
+	private final Label commentLbl = new Label();
+	private final Label coordinatesLbl = new Label();
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 
@@ -55,15 +55,15 @@ class EntityPaneBase extends GridPane {
 		setHgap(ViewFactory.getGap());
 
 		initProfilePicture();
-		initNameLabel();
-		initCommentLabel();
-		initCoordinatesLabel();
+		initNameLbl();
+		initCommentLbl();
+		initCoordinatesLbl();
 
 		add(profilePicture, 0, 0, 1, 3);
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
-		add(nameLabel, 2, 0, 1, 1);
-		add(commentLabel, 2, 1, 1, 1);
-		add(coordinatesLabel, 2, 2, 1, 1);
+		add(nameLbl, 2, 0, 1, 1);
+		add(commentLbl, 2, 1, 1, 1);
+		add(coordinatesLbl, 2, 2, 1, 1);
 
 		Region unclickableRegion = new Region();
 		unclickableRegion.addEventFilter(MouseEvent.ANY, e -> e.consume());
@@ -77,10 +77,10 @@ class EntityPaneBase extends GridPane {
 
 		initStatusCircle();
 		initProfileRound();
-		initInitialLabel();
+		initInitialLbl();
 		initGroupSign();
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLabel, groupSign);
+		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLbl, groupSign);
 
 	}
 
@@ -97,17 +97,17 @@ class EntityPaneBase extends GridPane {
 
 	}
 
-	private void initInitialLabel() {
+	private void initInitialLbl() {
 
-		initialLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		initialLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		initialLabel.setStyle("-fx-text-fill: #404040;");
-		initialLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize));
+		initialLbl.setStyle("-fx-text-fill: #404040;");
+		initialLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize));
 
-		initialLabel.translateXProperty().bind(Bindings
-				.createDoubleBinding(() -> -initialLabel.widthProperty().get() / 2, initialLabel.widthProperty()));
-		initialLabel.translateYProperty().bind(Bindings
-				.createDoubleBinding(() -> -initialLabel.heightProperty().get() / 2, initialLabel.heightProperty()));
+		initialLbl.translateXProperty().bind(
+				Bindings.createDoubleBinding(() -> -initialLbl.widthProperty().get() / 2, initialLbl.widthProperty()));
+		initialLbl.translateYProperty().bind(Bindings.createDoubleBinding(() -> -initialLbl.heightProperty().get() / 2,
+				initialLbl.heightProperty()));
 
 	}
 
@@ -128,40 +128,40 @@ class EntityPaneBase extends GridPane {
 
 	}
 
-	private void initNameLabel() {
+	private void initNameLbl() {
 
-		nameLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
+		nameLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
 
-		nameLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
-			String name = nameLabel.getText();
+		nameLbl.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
+			String name = nameLbl.getText();
 			if (name == null || name.isEmpty())
 				return null;
 			return new Tooltip(name);
-		}, nameLabel.textProperty()));
+		}, nameLbl.textProperty()));
 
 	}
 
-	private void initCommentLabel() {
+	private void initCommentLbl() {
 
-		commentLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		commentLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		commentLabel.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
-			String comment = commentLabel.getText();
+		commentLbl.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
+			String comment = commentLbl.getText();
 			if (comment == null || comment.isEmpty())
 				return null;
 			return new Tooltip(comment);
-		}, commentLabel.textProperty()));
+		}, commentLbl.textProperty()));
 
 	}
 
-	private void initCoordinatesLabel() {
+	private void initCoordinatesLbl() {
 
-		GridPane.setHgrow(coordinatesLabel, Priority.ALWAYS);
+		GridPane.setHgrow(coordinatesLbl, Priority.ALWAYS);
 
-		coordinatesLabel.setOpacity(0.5);
-		coordinatesLabel.setTextOverrun(OverrunStyle.ELLIPSIS);
+		coordinatesLbl.setOpacity(0.5);
+		coordinatesLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
 
@@ -171,10 +171,10 @@ class EntityPaneBase extends GridPane {
 
 		statusCircle.setStroke(entity.getStatus().getStatusColor());
 		if (!(name == null || name.isEmpty()))
-			initialLabel.setText(name.substring(0, 1).toUpperCase());
-		nameLabel.setText(name);
-		commentLabel.setText(entity.getComment());
-		coordinatesLabel.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
+			initialLbl.setText(name.substring(0, 1).toUpperCase());
+		nameLbl.setText(name);
+		commentLbl.setText(entity.getComment());
+		coordinatesLbl.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
 				: CommonMethods.convertDoubleToCoordinates(entity.getLattitude(), entity.getLongitude()));
 		groupSign.setVisible(entity.getEntityId().isGroup());
 
@@ -182,13 +182,13 @@ class EntityPaneBase extends GridPane {
 
 	final String getName() {
 
-		return nameLabel.getText();
+		return nameLbl.getText();
 
 	}
 
 	final StringProperty nameProperty() {
 
-		return nameLabel.textProperty();
+		return nameLbl.textProperty();
 
 	}
 
