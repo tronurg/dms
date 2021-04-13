@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.UIManager;
 
@@ -56,6 +57,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
 	private final HiddenEntitiesPane hiddenEntitiesPane = new HiddenEntitiesPane(unreadProperty);
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
+	private final ForwardSelectionPane fwdSelectionPane = new ForwardSelectionPane(unreadProperty);
 
 	private final ActiveGroupsPane activeGroupsPane = new ActiveGroupsPane();
 	private final ActiveContactsPane activeContactsPane = new ActiveContactsPane();
@@ -66,6 +68,8 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 			.synchronizedMap(new HashMap<EntityId, MessagePane>());
 
 	private final ObjectProperty<MessagePane> messagePaneOnScreenRef = new SimpleObjectProperty<MessagePane>();
+
+	private final AtomicReference<Long[]> fwdMessageIds = new AtomicReference<Long[]>();
 
 	public DmsPanel() {
 
@@ -171,6 +175,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		remoteIpSettingsPane.setOnAddIpAction(this::addIpClicked);
 		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
 
+		// Forward Selection Pane
+		fwdSelectionPane.setOnBackAction(() -> getChildren().remove(fwdSelectionPane));
+		fwdSelectionPane.setOnSendAction(this::forwardMessagesRequested);
+
 	}
 
 	public void updateUI() {
@@ -241,6 +249,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		getMessagePane(entity.getEntityId()).updateEntity(entity);
 		entitiesPane.updateEntity(entity);
 		hiddenEntitiesPane.updateEntity(entity);
+		fwdSelectionPane.updateEntity(entity);
 
 	}
 
@@ -283,6 +292,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		getMessagePane(entityId).addUpdateMessage(message);
 		entitiesPane.updateMessageStatus(entityId, message);
 		hiddenEntitiesPane.updateMessageStatus(entityId, message);
+		fwdSelectionPane.updateMessageStatus(entityId, message);
 
 	}
 
@@ -491,6 +501,25 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
+	public void forwardMessagesRequested() {
+
+		Long[] messageIds = fwdMessageIds.getAndSet(null);
+		EntityId entityId = fwdSelectionPane.getSelectedEntityId();
+
+		ObservableList<Node> children = getChildren();
+		while (children.size() > 1)
+			children.remove(children.size() - 1);
+
+		listeners.forEach(listener -> listener.forwardMessagesRequested(entityId, messageIds));
+
+	}
+
+	public void showMessagePane(EntityId entityId) {
+
+		getChildren().add(getMessagePane(entityId));
+
+	}
+
 	@Override
 	public void commentUpdateRequested(final String comment) {
 
@@ -580,7 +609,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	@Override
 	public void forwardMessagesRequested(Long[] messageIds) {
 
-		listeners.forEach(listener -> listener.forwardMessagesRequested(messageIds));
+		fwdMessageIds.set(messageIds);
+
+		fwdSelectionPane.resetSelection();
+		fwdSelectionPane.sortEntities();
+
+		getChildren().add(fwdSelectionPane);
 
 	}
 

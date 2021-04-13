@@ -2496,13 +2496,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void forwardMessagesRequested(final Long[] messageIds) {
+	public void forwardMessagesRequested(final EntityId entityId, final Long[] messageIds) {
 
 		taskQueue.execute(() -> {
 
 			// TODO
 
-			System.out.println(Arrays.toString(messageIds));
+			System.out.println(entityId.getId() + " -> " + Arrays.toString(messageIds));
+
+			Platform.runLater(() -> {
+				dmsPanel.showMessagePane(entityId);
+//				dmsPanel.scrollPaneToMessage(entityId, messageIds[0]);
+			});
 
 		});
 
@@ -2579,31 +2584,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				if (entityId.isGroup()) {
-
-					List<Message> deletableMessages = dbManager.getAllDeletableGroupMessages(id);
-					if (deletableMessages.isEmpty())
-						return;
-
-					Long[] deletedMessageIds = deleteMessages(deletableMessages);
-
-					if (deletedMessageIds.length > 0)
-						dmsGuiListeners
-								.forEach(listener -> listener.guiGroupConversationCleared(id, deletedMessageIds));
-
-				} else {
-
-					List<Message> deletableMessages = dbManager.getAllDeletablePrivateMessages(id);
-					if (deletableMessages.isEmpty())
-						return;
-
-					Long[] deletedMessageIds = deleteMessages(deletableMessages);
-
-					if (deletedMessageIds.length > 0)
-						dmsGuiListeners
-								.forEach(listener -> listener.guiPrivateConversationCleared(id, deletedMessageIds));
-
-				}
+				if (entityId.isGroup())
+					clearGroupConversationRequested(id);
+				else
+					clearPrivateConversationRequested(id);
 
 			} catch (Exception e) {
 
@@ -2612,6 +2596,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 		});
+
+	}
+
+	private void clearPrivateConversationRequested(Long id) throws Exception {
+
+		List<Message> deletableMessages = dbManager.getAllDeletablePrivateMessages(id);
+		if (deletableMessages.isEmpty())
+			return;
+
+		Long[] deletedMessageIds = deleteMessages(deletableMessages);
+
+		if (deletedMessageIds.length > 0)
+			dmsGuiListeners.forEach(listener -> listener.guiPrivateConversationCleared(id, deletedMessageIds));
+
+	}
+
+	private void clearGroupConversationRequested(Long id) throws Exception {
+
+		List<Message> deletableMessages = dbManager.getAllDeletableGroupMessages(id);
+		if (deletableMessages.isEmpty())
+			return;
+
+		Long[] deletedMessageIds = deleteMessages(deletableMessages);
+
+		if (deletedMessageIds.length > 0)
+			dmsGuiListeners.forEach(listener -> listener.guiGroupConversationCleared(id, deletedMessageIds));
 
 	}
 
@@ -3304,7 +3314,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public Future<Long> sendGuiMessageToContact(String message, Long contactId) {
+	public Future<Long> sendGuiMessageToContact(final String message, final Long contactId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
@@ -3315,7 +3325,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public Future<Long> sendGuiMessageToGroup(String message, Long groupId) {
+	public Future<Long> sendGuiMessageToGroup(final String message, final Long groupId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
@@ -3326,7 +3336,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public Future<Long> sendGuiFileToContact(String message, Path path, Long contactId) {
+	public Future<Long> sendGuiFileToContact(final String message, final Path path, final Long contactId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
@@ -3340,7 +3350,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public Future<Long> sendGuiFileToGroup(String message, Path path, Long groupId) {
+	public Future<Long> sendGuiFileToGroup(final String message, final Path path, final Long groupId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
@@ -3353,7 +3363,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public Future<Long> sendGuiReportToContact(String message, Integer reportId, Path path, Long contactId) {
+	public Future<Long> sendGuiReportToContact(final String message, final Integer reportId, final Path path,
+			final Long contactId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
@@ -3367,7 +3378,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public Future<Long> sendGuiReportToGroup(String message, Integer reportId, Path path, Long groupId) {
+	public Future<Long> sendGuiReportToGroup(final String message, final Integer reportId, final Path path,
+			final Long groupId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {
 
@@ -3377,6 +3389,36 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					Boolean.TRUE);
 
 		}));
+
+	}
+
+	@Override
+	public void clearPrivateConversation(final Long id) {
+
+		taskQueue.execute(() -> {
+
+			try {
+				clearPrivateConversationRequested(id);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		});
+
+	}
+
+	@Override
+	public void clearGroupConversation(final Long id) {
+
+		taskQueue.execute(() -> {
+
+			try {
+				clearGroupConversationRequested(id);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		});
 
 	}
 

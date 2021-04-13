@@ -37,7 +37,7 @@ public interface AppListener {
 
 	void infoClicked(Long messageId);
 
-	void forwardMessagesRequested(Long[] messageIds);
+	void forwardMessagesRequested(EntityId entityId, Long[] messageIds);
 
 	void archiveMessagesRequested(Long[] messageIds);
 

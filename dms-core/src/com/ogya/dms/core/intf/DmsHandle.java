@@ -94,6 +94,8 @@ public interface DmsHandle {
 
 	Future<Long> sendGuiReportToGroup(String message, Integer reportId, Path path, Long groupId);
 
-//	void clearConversation(Long id);
+	void clearPrivateConversation(Long id);
+
+	void clearGroupConversation(Long id);
 
 }
