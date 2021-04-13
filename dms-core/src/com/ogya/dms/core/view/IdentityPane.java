@@ -310,7 +310,7 @@ class IdentityPane extends GridPane {
 			commentTextField.setEditable(false);
 			requestFocus();
 
-			final String comment = commentTextField.getText();
+			final String comment = commentTextField.textProperty().getValueSafe().trim();
 
 			listeners.forEach(listener -> listener.commentUpdateRequested(comment));
 

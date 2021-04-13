@@ -96,10 +96,6 @@ public class ActiveContactsPane extends BorderPane {
 
 	}
 
-	void setSelectionLimit(int limit) {
-
-	}
-
 	void updateContact(Contact contact) {
 
 		Long id = contact.getId();

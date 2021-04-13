@@ -62,6 +62,8 @@ class EntityPaneBase extends GridPane {
 		add(profilePicture, 0, 0, 1, 3);
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
 		add(nameLbl, 2, 0, 1, 1);
+		add(commentLbl, 2, 1, 1, 1);
+		add(coordinatesLbl, 2, 2, 1, 1);
 
 		Region unclickableRegion = new Region();
 		unclickableRegion.addEventFilter(MouseEvent.ANY, e -> e.consume());

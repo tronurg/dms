@@ -196,7 +196,7 @@ class EntitiesPaneBase extends BorderPane {
 
 	}
 
-	public void updateMessageStatus(EntityId entityId, Message message) {
+	void updateMessageStatus(EntityId entityId, Message message) {
 
 		EntityPane entityPane = entityIdPane.get(entityId);
 
