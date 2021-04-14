@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
@@ -1843,7 +1844,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void commentUpdateRequested(String comment) {
+	public void commentUpdateRequested(final String comment) {
 
 		taskQueue.execute(() -> {
 
@@ -2500,14 +2501,71 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
-			// TODO
+			try {
 
-			System.out.println(entityId.getId() + " -> " + Arrays.toString(messageIds));
+				final Contact contact = entityId.isGroup() ? null : getContact(entityId.getId());
+				final Dgroup group = entityId.isGroup() ? getGroup(entityId.getId()) : null;
 
-			Platform.runLater(() -> {
-				dmsPanel.showMessagePane(entityId);
-//				dmsPanel.scrollPaneToMessage(entityId, messageIds[0]);
-			});
+				List<Message> forwardedMessages = new ArrayList<Message>();
+
+				dbManager.getMessagesById(messageIds).forEach(message -> {
+
+					try {
+
+						Message outgoingMessage = new Message(message.getContent(), message.getUpdateType(),
+								message.getAttachmentType(), null, message.getMessageCode(), MessageStatus.FRESH,
+								contact, model.getIdentity(), group, null);
+
+						outgoingMessage.setLocal(true);
+
+						outgoingMessage.setAttachment(message.getAttachment());
+
+						if (group != null)
+							createStatusReports(group)
+									.forEach(statusReport -> outgoingMessage.addStatusReport(statusReport));
+
+						outgoingMessage.setForwardCount(message.getForwardCount());
+						if (outgoingMessage.getForwardCount() == null)
+							outgoingMessage.setForwardCount(0);
+						if (!message.isLocal())
+							outgoingMessage.setForwardCount(outgoingMessage.getForwardCount() + 1);
+
+						Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
+						model.registerMessage(newMessage);
+
+						forwardedMessages.add(newMessage);
+
+						addMessageToPane(newMessage, true);
+
+						if (entityId.isGroup())
+							sendGroupMessage(newMessage);
+						else
+							sendPrivateMessage(newMessage);
+
+						messageSentToListeners(newMessage.getId(), newMessage.getContent(),
+								newMessage.getAttachment() == null ? null : Paths.get(newMessage.getAttachment()),
+								newMessage.getAttachmentType(), newMessage.getMessageCode(),
+								contact == null ? null : contact.getId(), group == null ? null : group.getId());
+
+					} catch (Exception e) {
+
+						e.printStackTrace();
+
+					}
+
+				});
+
+				if (!forwardedMessages.isEmpty())
+					Platform.runLater(() -> {
+						dmsPanel.showMessagePane(entityId);
+						dmsPanel.scrollPaneToMessage(entityId, forwardedMessages.get(0).getId());
+					});
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
 
 		});
 
@@ -3170,6 +3228,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public List<ContactHandle> getContactHandles(Predicate<ContactHandle> filter) {
+
+		return model.getContacts().values().stream().map(contact -> new ContactHandleImpl(contact))
+				.filter(contactHandle -> filter.test(contactHandle)).collect(Collectors.toList());
+
+	}
+
+	@Override
+	public List<GroupHandle> getGroupHandles(Predicate<GroupHandle> filter) {
+
+		return model.getGroups().values().stream().map(group -> new GroupHandleImpl(group))
+				.filter(groupHandle -> filter.test(groupHandle)).collect(Collectors.toList());
+
+	}
+
+	@Override
 	public List<Long> getIdsByServerIp(InetAddress remoteServerIp) {
 
 		return model.getIdsByServerIp(remoteServerIp);
@@ -3393,7 +3467,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void clearPrivateConversation(final Long id) {
+	public void clearGuiPrivateConversation(final Long id) {
 
 		taskQueue.execute(() -> {
 
@@ -3408,7 +3482,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void clearGroupConversation(final Long id) {
+	public void clearGuiGroupConversation(final Long id) {
 
 		taskQueue.execute(() -> {
 

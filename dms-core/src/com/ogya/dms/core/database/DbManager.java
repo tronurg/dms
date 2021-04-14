@@ -492,7 +492,7 @@ public class DbManager {
 
 	}
 
-	public List<Message> getMessagesById(Long... ids) throws HibernateException {
+	public List<Message> getMessagesById(Long[] ids) throws HibernateException {
 
 		if (ids == null)
 			return null;

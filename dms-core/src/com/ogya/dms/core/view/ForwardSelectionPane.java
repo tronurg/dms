@@ -11,6 +11,7 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
+import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -118,7 +119,8 @@ public class ForwardSelectionPane extends GridPane {
 
 	private void initEntities() {
 
-		GridPane.setMargin(scrollPane, new Insets(2 * gap));
+		entities.setPadding(new Insets(2 * gap));
+
 		GridPane.setHgrow(scrollPane, Priority.ALWAYS);
 		GridPane.setVgrow(scrollPane, Priority.ALWAYS);
 		scrollPane.getStyleClass().add("edge-to-edge");
@@ -145,7 +147,8 @@ public class ForwardSelectionPane extends GridPane {
 
 		EntityCard entityCard = getEntityCard(entityId);
 
-		entityCard.activeProperty().set(Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT));
+		entityCard.activeProperty().set(Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT)
+				&& !(entityId.isGroup() && Objects.equals(entity.getStatus(), Availability.OFFLINE)));
 		entityCard.updateEntity(entity);
 
 	}

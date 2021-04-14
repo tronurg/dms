@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.function.Predicate;
 
 import javax.swing.JComponent;
 
@@ -58,6 +59,10 @@ public interface DmsHandle {
 
 	List<GroupHandle> getAllGroupHandles();
 
+	List<ContactHandle> getContactHandles(Predicate<ContactHandle> filter);
+
+	List<GroupHandle> getGroupHandles(Predicate<GroupHandle> filter);
+
 	List<Long> getIdsByServerIp(InetAddress remoteServerIp);
 
 	List<Long> getIdsByServerIpAndName(InetAddress remoteServerIp, String name);
@@ -94,8 +99,8 @@ public interface DmsHandle {
 
 	Future<Long> sendGuiReportToGroup(String message, Integer reportId, Path path, Long groupId);
 
-	void clearPrivateConversation(Long id);
+	void clearGuiPrivateConversation(Long id);
 
-	void clearGroupConversation(Long id);
+	void clearGuiGroupConversation(Long id);
 
 }

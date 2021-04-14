@@ -312,6 +312,8 @@ class IdentityPane extends GridPane {
 
 			final String comment = commentTextField.textProperty().getValueSafe().trim();
 
+			commentTextField.setText(comment);
+
 			listeners.forEach(listener -> listener.commentUpdateRequested(comment));
 
 		});

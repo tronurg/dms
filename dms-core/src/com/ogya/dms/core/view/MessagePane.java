@@ -1265,9 +1265,10 @@ class MessagePane extends BorderPane {
 			initTimeLbl();
 
 			if (messageInfo.isOutgoing)
-				statusPane.getChildren().addAll(starGraph, getSpace(), getProgressLbl(), getInfoGrp(), timeLbl);
+				statusPane.getChildren().addAll(starGraph, getSpace(), getProgressLbl(), getInfoGrp(), getFwdGraph(),
+						timeLbl);
 			else
-				statusPane.getChildren().addAll(timeLbl, getSpace(), starGraph);
+				statusPane.getChildren().addAll(timeLbl, getFwdGraph(), getSpace(), starGraph);
 
 		}
 
@@ -1275,6 +1276,21 @@ class MessagePane extends BorderPane {
 
 			starGraph.setEffect(new DropShadow());
 			starGraph.visibleProperty().bind(messageInfo.archivedProperty);
+
+		}
+
+		private Node getFwdGraph() {
+
+			if (messageInfo.fwdCount == null)
+				return new Region();
+
+			Node fwdGraph = ViewFactory.newForwardGraph(0.5, Color.GRAY);
+
+			if (messageInfo.fwdCount > 1)
+				Tooltip.install(fwdGraph,
+						new Tooltip(String.format(CommonMethods.translate("FORWARDED_N_TIMES"), messageInfo.fwdCount)));
+
+			return fwdGraph;
 
 		}
 
@@ -1567,6 +1583,7 @@ class MessagePane extends BorderPane {
 		final AttachmentType attachmentType;
 		final boolean infoAvailable;
 		final Color nameColor;
+		final Integer fwdCount;
 		final ObjectProperty<MessageStatus> statusProperty = new SimpleObjectProperty<MessageStatus>();
 		final IntegerProperty progressProperty = new SimpleIntegerProperty(-1);
 		final BooleanProperty archivedProperty = new SimpleBooleanProperty();
@@ -1583,6 +1600,7 @@ class MessagePane extends BorderPane {
 			this.attachmentType = message.getAttachmentType();
 			this.infoAvailable = entityId.isGroup() && isOutgoing;
 			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
+			fwdCount = message.getForwardCount();
 			this.statusProperty.set(message.getMessageStatus());
 			this.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
 
