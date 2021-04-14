@@ -176,7 +176,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		remoteIpSettingsPane.setOnRemoveIpAction(this::removeIpClicked);
 
 		// Forward Selection Pane
-		fwdSelectionPane.setOnBackAction(() -> getChildren().remove(fwdSelectionPane));
+		fwdSelectionPane.setOnBackAction(() -> {
+			getChildren().remove(fwdSelectionPane);
+			fwdMessageIds.set(null);
+		});
 		fwdSelectionPane.setOnSendAction(this::forwardMessagesRequested);
 
 	}
