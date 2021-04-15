@@ -1,4 +1,4 @@
-package com.ogya.dms.core.view;
+package com.ogya.dms.core.view.component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

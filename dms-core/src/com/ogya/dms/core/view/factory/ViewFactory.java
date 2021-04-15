@@ -373,7 +373,7 @@ public class ViewFactory {
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
-		final Effect dropShadow = new DropShadow(2.0 * viewFactor, Color.DODGERBLUE);
+		final Effect dropShadow = new DropShadow(getGap(), Color.DODGERBLUE);
 		colorProperty.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.DODGERBLUE : Color.DARKGRAY,
 				btn.hoverProperty()));
 		btn.effectProperty()

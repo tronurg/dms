@@ -17,6 +17,7 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 

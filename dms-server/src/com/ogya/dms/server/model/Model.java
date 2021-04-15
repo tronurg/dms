@@ -559,7 +559,11 @@ public class Model {
 		remoteUsers
 				.forEach((uuid, remoteUser) -> connectedRemoteIps.addAll(remoteUser.dmsServer.localRemoteIps.values()));
 
-		Set<InetAddress> unconnectedRemoteIps = new HashSet<InetAddress>(remoteIps);
+		Set<InetAddress> unconnectedRemoteIps = new HashSet<InetAddress>();
+
+		synchronized (remoteIps) {
+			unconnectedRemoteIps.addAll(remoteIps);
+		}
 
 		unconnectedRemoteIps.removeAll(connectedRemoteIps);
 

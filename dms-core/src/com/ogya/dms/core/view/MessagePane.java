@@ -25,7 +25,9 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
-import com.ogya.dms.core.view.RecordButton.RecordListener;
+import com.ogya.dms.core.view.component.DmsMediaPlayer;
+import com.ogya.dms.core.view.component.RecordButton;
+import com.ogya.dms.core.view.component.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
@@ -67,6 +69,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
+import javafx.scene.effect.Glow;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -377,11 +380,11 @@ class MessagePane extends BorderPane {
 			backBtn.fire();
 			listeners.forEach(listener -> listener.archiveMessagesRequested(selectedIds));
 		});
-		final Effect starShadow = new DropShadow();
+		final Effect dropShadow = new DropShadow();
 		starBtn.effectProperty()
 				.bind(Bindings.createObjectBinding(
 						() -> !selectedBalloons.isEmpty() && selectedBalloons.stream()
-								.allMatch(balloon -> balloon.messageInfo.archivedProperty.get()) ? starShadow : null,
+								.allMatch(balloon -> balloon.messageInfo.archivedProperty.get()) ? dropShadow : null,
 						selectedBalloons));
 		starBtn.disableProperty().bind(Bindings.isEmpty(selectedBalloons));
 
@@ -392,9 +395,9 @@ class MessagePane extends BorderPane {
 		deleteBtn.visibleProperty().bind(selectionModeProperty);
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 		deleteBtn.setOnAction(e -> deleteModeProperty.set(!deleteModeProperty.get()));
-		final Effect dropShadow = new DropShadow();
-		deleteBtn.effectProperty().bind(
-				Bindings.createObjectBinding(() -> deleteModeProperty.get() ? dropShadow : null, deleteModeProperty));
+		final Effect glow = new Glow();
+		deleteBtn.effectProperty()
+				.bind(Bindings.createObjectBinding(() -> deleteModeProperty.get() ? glow : null, deleteModeProperty));
 		deleteBtn.disableProperty()
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
@@ -410,9 +413,9 @@ class MessagePane extends BorderPane {
 				.bind(Bindings.createDoubleBinding(() -> clearBtn.isHover() || clearModeProperty.get() ? 1.0 : 0.5,
 						clearBtn.hoverProperty(), clearModeProperty));
 		clearBtn.setOnAction(e -> clearModeProperty.set(!clearModeProperty.get()));
-		final Effect dropShadow = new DropShadow();
-		clearBtn.effectProperty().bind(
-				Bindings.createObjectBinding(() -> clearModeProperty.get() ? dropShadow : null, clearModeProperty));
+		final Effect glow = new Glow();
+		clearBtn.effectProperty()
+				.bind(Bindings.createObjectBinding(() -> clearModeProperty.get() ? glow : null, clearModeProperty));
 
 		backBtn.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> clearModeProperty.set(false));
 		nameLabel.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> clearModeProperty.set(false));
@@ -1284,7 +1287,7 @@ class MessagePane extends BorderPane {
 			if (messageInfo.fwdCount == null)
 				return new Region();
 
-			Node fwdGraph = ViewFactory.newForwardGraph(0.5, Color.GRAY);
+			Node fwdGraph = ViewFactory.newForwardGraph(0.5, Color.DARKGRAY);
 
 			if (messageInfo.fwdCount > 1)
 				Tooltip.install(fwdGraph,

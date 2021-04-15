@@ -11,12 +11,12 @@ import java.util.stream.Collectors;
 
 import javax.swing.UIManager;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -26,7 +26,6 @@ import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
@@ -34,7 +33,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	private final double gap = ViewFactory.getGap();
 
-	private final TextField searchTextField = new TextField();
+	private final SearchField searchField = new SearchField(false);
 
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(entities) {
@@ -74,25 +73,15 @@ public class ActiveContactsPane extends BorderPane {
 
 	private void init() {
 
-		initSearchTextField();
-
 		entities.setPadding(new Insets(2 * gap));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
-		setTop(searchTextField);
+		setTop(searchField);
 		setCenter(scrollPane);
 
 		setPadding(Insets.EMPTY);
-
-	}
-
-	private void initSearchTextField() {
-
-		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
-		searchTextField.setPromptText(CommonMethods.translate("FIND"));
-		searchTextField.setFocusTraversable(false);
 
 	}
 
@@ -162,9 +151,9 @@ public class ActiveContactsPane extends BorderPane {
 			contactCard = fContactCard;
 
 			fContactCard.visibleProperty().bind(fContactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchTextField.getText().toLowerCase();
+				String searchContactStr = searchField.getText().toLowerCase();
 				return searchContactStr.isEmpty() || fContactCard.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty(), fContactCard.nameProperty())));
+			}, searchField.textProperty(), fContactCard.nameProperty())));
 
 			fContactCard.managedProperty().bind(fContactCard.visibleProperty());
 

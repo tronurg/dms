@@ -2514,7 +2514,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 						Message outgoingMessage = new Message(message.getContent(), message.getUpdateType(),
 								message.getAttachmentType(), null, message.getMessageCode(), MessageStatus.FRESH,
-								contact, model.getIdentity(), group, null);
+								group == null ? contact : group.getOwner(), model.getIdentity(), group, null);
 
 						outgoingMessage.setLocal(true);
 

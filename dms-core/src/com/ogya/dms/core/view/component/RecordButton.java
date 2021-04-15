@@ -1,4 +1,4 @@
-package com.ogya.dms.core.view;
+package com.ogya.dms.core.view.component;
 
 import java.util.ArrayList;
 import java.util.Collections;

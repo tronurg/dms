@@ -34,7 +34,7 @@ public class HiddenEntitiesPane extends BorderPane {
 	private final Button backBtn;
 	private final Label headingLabel = new Label(CommonMethods.translate("HIDDEN_CONVERSATIONS"));
 
-	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase();
+	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase(false);
 
 	HiddenEntitiesPane(BooleanProperty unreadProperty) {
 

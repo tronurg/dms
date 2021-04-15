@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -24,7 +24,6 @@ import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -34,7 +33,7 @@ public class ForwardSelectionPane extends GridPane {
 	private final double gap = ViewFactory.getGap();
 
 	private final Button backBtn;
-	private final TextField searchTextField = new TextField();
+	private final SearchField searchField = new SearchField(true);
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(entities) {
 		@Override
@@ -80,12 +79,11 @@ public class ForwardSelectionPane extends GridPane {
 	private void init() {
 
 		initBackBtn();
-		initSearchTextField();
 		initEntities();
 		initSendBtn();
 
 		add(backBtn, 0, 0);
-		add(searchTextField, 0, 1);
+		add(searchField, 0, 1);
 		add(scrollPane, 0, 2);
 		add(sendBtn, 0, 2);
 
@@ -106,14 +104,6 @@ public class ForwardSelectionPane extends GridPane {
 	private void initBackBtn() {
 
 		GridPane.setMargin(backBtn, new Insets(gap));
-
-	}
-
-	private void initSearchTextField() {
-
-		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
-		searchTextField.setPromptText(CommonMethods.translate("FIND"));
-		searchTextField.setFocusTraversable(false);
 
 	}
 
@@ -195,6 +185,7 @@ public class ForwardSelectionPane extends GridPane {
 
 	void resetSelection() {
 
+		searchField.reset();
 		sendBtn.setDisable(true);
 		entityIdCards.forEach((id, card) -> card.selectedProperty().set(false));
 
@@ -210,9 +201,10 @@ public class ForwardSelectionPane extends GridPane {
 			entityCard = fEntityCard;
 
 			fEntityCard.visibleProperty().bind(fEntityCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchTextField.getText().toLowerCase();
+				String searchContactStr = searchField.getText().toLowerCase();
 				return searchContactStr.isEmpty() || fEntityCard.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty(), fEntityCard.nameProperty())));
+			}, searchField.textProperty(), fEntityCard.nameProperty()))
+					.and(searchField.filterOnlineProperty().not().or(fEntityCard.onlineProperty())));
 
 			fEntityCard.managedProperty().bind(fEntityCard.visibleProperty());
 

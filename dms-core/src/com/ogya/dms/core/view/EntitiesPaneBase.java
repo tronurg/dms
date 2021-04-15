@@ -17,6 +17,7 @@ import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
@@ -37,10 +38,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
-import javafx.scene.control.TextField;
 import javafx.scene.effect.ColorAdjust;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
+import javafx.scene.effect.Glow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -60,7 +60,7 @@ class EntitiesPaneBase extends BorderPane {
 
 	private final double viewFactor = ViewFactory.getViewFactor();
 
-	private final TextField searchTextField = new TextField();
+	private final SearchField searchField;
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new ScrollPane(entities) {
 		@Override
@@ -99,17 +99,17 @@ class EntitiesPaneBase extends BorderPane {
 
 	private final ObjectProperty<EntityId> entityToBeRemoved = new SimpleObjectProperty<EntityId>();
 
-	EntitiesPaneBase() {
+	EntitiesPaneBase(boolean allowFilter) {
 
 		super();
+
+		searchField = new SearchField(allowFilter);
 
 		init();
 
 	}
 
 	private void init() {
-
-		initSearchTextField();
 
 		entities.setPadding(new Insets(2 * gap));
 
@@ -125,7 +125,7 @@ class EntitiesPaneBase extends BorderPane {
 
 		initRemoveEntityBtn();
 
-		setTop(searchTextField);
+		setTop(searchField);
 		setCenter(scrollPane);
 		setBottom(removeEntityBtn);
 
@@ -134,14 +134,6 @@ class EntitiesPaneBase extends BorderPane {
 	void addListener(IEntitiesPane listener) {
 
 		listeners.add(listener);
-
-	}
-
-	private void initSearchTextField() {
-
-		searchTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
-		searchTextField.setPromptText(CommonMethods.translate("FIND"));
-		searchTextField.setFocusTraversable(false);
 
 	}
 
@@ -235,9 +227,10 @@ class EntitiesPaneBase extends BorderPane {
 			entityPane.managedProperty().bind(entityPane.visibleProperty());
 
 			entityPane.visibleProperty().bind(entityPane.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchTextField.getText().toLowerCase();
+				String searchContactStr = searchField.getText().toLowerCase();
 				return searchContactStr.isEmpty() || entityPane.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchTextField.textProperty(), entityPane.nameProperty())));
+			}, searchField.textProperty(), entityPane.nameProperty()))
+					.and(searchField.filterOnlineProperty().not().or(entityPane.onlineProperty())));
 
 			entityPane.setOnMouseClicked(e -> {
 				EventTarget clickedTarget = e.getTarget();
@@ -373,11 +366,11 @@ class EntitiesPaneBase extends BorderPane {
 
 		private void initDeleteBtn() {
 
-			final Effect dropShadow = new DropShadow();
+			final Effect glow = new Glow();
 			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
 			deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> {
 				if (Objects.equals(entityToBeRemoved.get(), entityId))
-					return dropShadow;
+					return glow;
 				if (deleteBtn.isHover())
 					return null;
 				return colorAdjust;

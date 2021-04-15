@@ -1,4 +1,4 @@
-package com.ogya.dms.core.view;
+package com.ogya.dms.core.view.component;
 
 import java.util.Arrays;
 import java.util.function.UnaryOperator;

@@ -12,7 +12,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
+import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -32,8 +34,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
+import javafx.scene.effect.Glow;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -68,7 +70,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	};
 	private final VBox addedContactsPane = new VBox();
 	private final VBox notAddedContactsPane = new VBox();
-	private final TextField searchContactTextField = new TextField();
+	private final SearchField searchField = new SearchField(true);
 
 	private final Button addUpdateGroupBtn = new Button();
 
@@ -129,7 +131,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		getContactGroup(contact.getId()).updateContact(contact.getName(), contact.getStatus().getStatusColor(),
+		getContactGroup(contact.getId()).updateContact(contact.getName(), contact.getStatus(),
 				!Objects.equals(contact.getViewStatus(), ViewStatus.DELETED));
 
 	}
@@ -148,7 +150,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	void resetContent(Dgroup group, boolean isNewGroup) {
 
-		searchContactTextField.setText("");
+		searchField.reset();
 		groupNameTextField.setText(group == null ? "" : group.getName());
 		selectedIds.clear();
 		if (group != null) {
@@ -156,7 +158,7 @@ public class AddUpdateGroupPane extends BorderPane {
 				Long id = contact.getId();
 				// initialize if not exists
 				if (!idContactGroups.containsKey(id))
-					getContactGroup(id).updateContact(contact.getName(), Color.BLACK, false);
+					getContactGroup(id).updateContact(contact.getName(), Availability.OFFLINE, false);
 				selectedIds.add(id);
 			});
 		}
@@ -216,10 +218,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initDeleteBtn() {
 
-		final Effect shadow = new DropShadow();
-
-		deleteBtn.effectProperty()
-				.bind(Bindings.createObjectBinding(() -> deleteMode.get() ? shadow : null, deleteMode));
+		final Effect glow = new Glow();
+		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deleteMode.get() ? glow : null, deleteMode));
 
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 		deleteBtn.visibleProperty().bind(updateMode);
@@ -232,11 +232,10 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		initAddedContactsPane();
 		initNotAddedContactsPane();
-		initSearchContactTextField();
 
 		BorderPane notAddedContactsBorderPane = new BorderPane();
 		notAddedContactsBorderPane.setPadding(Insets.EMPTY);
-		notAddedContactsBorderPane.setTop(searchContactTextField);
+		notAddedContactsBorderPane.setTop(searchField);
 		notAddedContactsBorderPane.setCenter(notAddedContactsPane);
 
 		TitledPane addedContactsTitledPane = new TitledPane(CommonMethods.translate("ADDED_CONTACTS"),
@@ -263,14 +262,6 @@ public class AddUpdateGroupPane extends BorderPane {
 	private void initNotAddedContactsPane() {
 
 		notAddedContactsPane.setPadding(Insets.EMPTY);
-
-	}
-
-	private void initSearchContactTextField() {
-
-		searchContactTextField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
-		searchContactTextField.setPromptText(CommonMethods.translate("FIND"));
-		searchContactTextField.setFocusTraversable(false);
 
 	}
 
@@ -451,6 +442,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		private final AddContactBox addContactBox;
 		private final RemoveContactBox removeContactBox;
 
+		private final BooleanProperty onlineProperty = new SimpleBooleanProperty(false);
 		private final BooleanProperty activeProperty = new SimpleBooleanProperty(false);
 
 		private ContactGroup(Long id) {
@@ -471,11 +463,13 @@ public class AddUpdateGroupPane extends BorderPane {
 			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedIds.contains(id),
 					selectedIds);
 			BooleanBinding searchContactBinding = Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchContactTextField.getText().toLowerCase();
+				String searchContactStr = searchField.getText().toLowerCase();
 				return searchContactStr.isEmpty() || addContactBox.getName().toLowerCase().startsWith(searchContactStr);
-			}, searchContactTextField.textProperty(), addContactBox.nameProperty());
+			}, searchField.textProperty(), addContactBox.nameProperty());
+			BooleanBinding filterOnlineProperty = searchField.filterOnlineProperty().not().or(onlineProperty);
 
-			addContactBox.visibleProperty().bind(activeProperty.and(searchContactBinding).and(addContactBinding.not()));
+			addContactBox.visibleProperty().bind(
+					activeProperty.and(searchContactBinding).and(addContactBinding.not()).and(filterOnlineProperty));
 			removeContactBox.visibleProperty().bind(addContactBinding);
 
 			addContactBox.setOnAction(e -> {
@@ -494,14 +488,15 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		}
 
-		private void updateContact(String name, Color statusColor, boolean active) {
+		private void updateContact(String name, Availability status, boolean active) {
 
+			onlineProperty.set(!Objects.equals(status, Availability.OFFLINE));
 			activeProperty.set(active);
 
 			boolean toBeSorted = !Objects.equals(addContactBox.getName(), name);
 
-			addContactBox.updateContact(name, statusColor);
-			removeContactBox.updateContact(name, statusColor);
+			addContactBox.updateContact(name, status.getStatusColor());
+			removeContactBox.updateContact(name, status.getStatusColor());
 
 			if (toBeSorted)
 				FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);

@@ -18,7 +18,7 @@ class EntitiesPane extends BorderPane {
 	private final double gap = ViewFactory.getGap();
 
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
-	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase();
+	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase(true);
 
 	EntitiesPane() {
 
