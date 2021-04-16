@@ -1,5 +1,6 @@
 package com.ogya.dms.core.view;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -7,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.swing.UIManager;
 
@@ -23,6 +23,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableSet;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
@@ -62,6 +63,8 @@ public class ActiveContactsPane extends BorderPane {
 	};
 
 	private final ObjectProperty<Predicate<ContactHandle>> contactFilterProperty = new SimpleObjectProperty<Predicate<ContactHandle>>();
+
+	private final ObservableSet<Long> selectedIds = FXCollections.observableSet();
 
 	ActiveContactsPane() {
 
@@ -110,8 +113,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	public List<Long> getSelectedEntityIds() {
 
-		return idContactCards.entrySet().stream().filter(entry -> entry.getValue().selectedProperty().get())
-				.map(entry -> entry.getKey()).collect(Collectors.toList());
+		return new ArrayList<Long>(selectedIds);
 
 	}
 
@@ -123,7 +125,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	public void resetSelection() {
 
-		idContactCards.forEach((id, card) -> card.selectedProperty().set(false));
+		selectedIds.clear();
 
 	}
 
@@ -147,7 +149,7 @@ public class ActiveContactsPane extends BorderPane {
 
 		if (contactCard == null) {
 
-			final ContactCard fContactCard = new ContactCard();
+			final ContactCard fContactCard = new ContactCard(id);
 			contactCard = fContactCard;
 
 			fContactCard.visibleProperty().bind(fContactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
@@ -157,8 +159,12 @@ public class ActiveContactsPane extends BorderPane {
 
 			fContactCard.managedProperty().bind(fContactCard.visibleProperty());
 
-			fContactCard.setOnMouseClicked(
-					e -> fContactCard.selectedProperty().set(!fContactCard.selectedProperty().get()));
+			fContactCard.setOnMouseClicked(e -> {
+				if (fContactCard.selectProperty().get())
+					selectedIds.remove(id);
+				else
+					selectedIds.add(id);
+			});
 
 			idContactCards.put(id, fContactCard);
 
@@ -174,11 +180,15 @@ public class ActiveContactsPane extends BorderPane {
 
 	private final class ContactCard extends SelectableEntityPane {
 
+		private final Long id;
+
 		private final ObjectProperty<Contact> contactProperty = new SimpleObjectProperty<Contact>();
 
-		private ContactCard() {
+		private ContactCard(Long id) {
 
 			super();
+
+			this.id = id;
 
 			init();
 
@@ -200,9 +210,14 @@ public class ActiveContactsPane extends BorderPane {
 				if (filter != null)
 					active = active && filter.test(new ContactHandleImpl(contact));
 
+				if (!active)
+					selectedIds.remove(id);
+
 				return active;
 
 			}, contactProperty, contactFilterProperty));
+
+			selectProperty().bind(Bindings.createBooleanBinding(() -> selectedIds.contains(id), selectedIds));
 
 		}
 

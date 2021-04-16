@@ -17,6 +17,8 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -65,6 +67,8 @@ public class ForwardSelectionPane extends GridPane {
 		}
 
 	};
+
+	private final ObjectProperty<EntityId> selectedEntityIdProperty = new SimpleObjectProperty<EntityId>();
 
 	ForwardSelectionPane(BooleanProperty unreadProperty) {
 
@@ -124,6 +128,8 @@ public class ForwardSelectionPane extends GridPane {
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
 
+		sendBtn.disableProperty().bind(selectedEntityIdProperty.isNull());
+
 	}
 
 	void updateEntity(EntityBase entity) {
@@ -137,8 +143,11 @@ public class ForwardSelectionPane extends GridPane {
 
 		EntityCard entityCard = getEntityCard(entityId);
 
-		entityCard.activeProperty().set(Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT)
-				&& !(entityId.isGroup() && Objects.equals(entity.getStatus(), Availability.OFFLINE)));
+		boolean active = Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT)
+				&& !(entityId.isGroup() && Objects.equals(entity.getStatus(), Availability.OFFLINE));
+		if (!active && Objects.equals(selectedEntityIdProperty.get(), entityId))
+			selectedEntityIdProperty.set(null);
+		entityCard.activeProperty().set(active);
 		entityCard.updateEntity(entity);
 
 	}
@@ -170,24 +179,14 @@ public class ForwardSelectionPane extends GridPane {
 
 	EntityId getSelectedEntityId() {
 
-		try {
-
-			return entityIdCards.entrySet().stream().filter(entry -> entry.getValue().selectedProperty().get())
-					.findAny().get().getKey();
-
-		} catch (Exception e) {
-
-		}
-
-		return null;
+		return selectedEntityIdProperty.get();
 
 	}
 
 	void resetSelection() {
 
 		searchField.reset();
-		sendBtn.setDisable(true);
-		entityIdCards.forEach((id, card) -> card.selectedProperty().set(false));
+		selectedEntityIdProperty.set(null);
 
 	}
 
@@ -210,11 +209,11 @@ public class ForwardSelectionPane extends GridPane {
 
 			fEntityCard.setOnMouseClicked(e -> {
 
-				boolean selected = !fEntityCard.selectedProperty().get();
-				entityIdCards.values().forEach(card -> card.selectedProperty().set(false));
-				fEntityCard.selectedProperty().set(selected);
-
-				sendBtn.setDisable(!selected);
+				EntityId selectedEntityId = selectedEntityIdProperty.get();
+				if (Objects.equals(selectedEntityId, entityId))
+					selectedEntityIdProperty.set(null);
+				else
+					selectedEntityIdProperty.set(entityId);
 
 			});
 
@@ -241,6 +240,14 @@ public class ForwardSelectionPane extends GridPane {
 			super();
 
 			this.entityId = entityId;
+
+			init();
+
+		}
+
+		private void init() {
+
+			selectProperty().bind(selectedEntityIdProperty.isEqualTo(entityId).and(activeProperty()));
 
 		}
 

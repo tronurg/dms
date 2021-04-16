@@ -88,6 +88,8 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private final ObjectProperty<Predicate<GroupHandle>> groupFilterProperty = new SimpleObjectProperty<Predicate<GroupHandle>>();
 
+	private final ObjectProperty<Long> selectedIdProperty = new SimpleObjectProperty<Long>();
+
 	ActiveGroupsPane() {
 
 		super();
@@ -148,16 +150,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	public Long getSelectedId() {
 
-		try {
-
-			return idGroupCards.entrySet().stream().filter(entry -> entry.getValue().selectedProperty().get()).findAny()
-					.get().getKey();
-
-		} catch (Exception e) {
-
-		}
-
-		return null;
+		return selectedIdProperty.get();
 
 	}
 
@@ -169,7 +162,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	public void resetSelection() {
 
-		idGroupCards.forEach((id, card) -> card.selectedProperty().set(false));
+		selectedIdProperty.set(null);
 
 	}
 
@@ -193,7 +186,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		if (groupCard == null) {
 
-			final GroupCard fGroupCard = new GroupCard();
+			final GroupCard fGroupCard = new GroupCard(id);
 			groupCard = fGroupCard;
 
 			fGroupCard.visibleProperty().bind(fGroupCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
@@ -205,9 +198,11 @@ public class ActiveGroupsPane extends BorderPane {
 
 			fGroupCard.setOnMouseClicked(e -> {
 
-				boolean selected = !fGroupCard.selectedProperty().get();
-				idGroupCards.values().forEach(card -> card.selectedProperty().set(false));
-				fGroupCard.selectedProperty().set(selected);
+				Long selectedId = selectedIdProperty.get();
+				if (Objects.equals(selectedId, id))
+					selectedIdProperty.set(null);
+				else
+					selectedIdProperty.set(id);
 
 			});
 
@@ -225,13 +220,17 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private final class GroupCard extends SelectableEntityPane {
 
+		private final Long id;
+
 		private final VBox memberCards = new VBox();
 
 		private final ObjectProperty<Dgroup> groupProperty = new SimpleObjectProperty<Dgroup>();
 
-		private GroupCard() {
+		private GroupCard(Long id) {
 
 			super();
+
+			this.id = id;
 
 			init();
 
@@ -253,9 +252,14 @@ public class ActiveGroupsPane extends BorderPane {
 				if (filter != null)
 					active = active && filter.test(new GroupHandleImpl(group));
 
+				if (!active && Objects.equals(selectedIdProperty.get(), id))
+					selectedIdProperty.set(null);
+
 				return active;
 
 			}, groupProperty, groupFilterProperty));
+
+			selectProperty().bind(selectedIdProperty.isEqualTo(id));
 
 			initMemberCards();
 
@@ -266,7 +270,7 @@ public class ActiveGroupsPane extends BorderPane {
 		private void initMemberCards() {
 
 			memberCards.setPadding(new Insets(0.0, 0.0, 15.0 * viewFactor, 0.0));
-			memberCards.visibleProperty().bind(selectedProperty());
+			memberCards.visibleProperty().bind(selectProperty());
 			memberCards.managedProperty().bind(memberCards.visibleProperty());
 
 			memberCards.addEventFilter(MouseEvent.ANY, e -> e.consume());

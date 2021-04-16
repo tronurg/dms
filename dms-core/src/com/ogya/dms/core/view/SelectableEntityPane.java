@@ -11,7 +11,7 @@ class SelectableEntityPane extends EntityPaneBase {
 
 	private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
-	private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
+	private final BooleanProperty selectProperty = new SimpleBooleanProperty(false);
 
 	SelectableEntityPane() {
 
@@ -23,24 +23,17 @@ class SelectableEntityPane extends EntityPaneBase {
 
 	private void init() {
 
-		activeProperty().addListener((e0, e1, e2) -> {
-
-			if (!e2)
-				selectedProperty.set(false);
-
-		});
-
 		selectionBtn.setMouseTransparent(true);
-		selectionBtn.opacityProperty()
-				.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
+		selectionBtn.opacityProperty().bind(Bindings.createDoubleBinding(
+				() -> selectProperty.and(activeProperty()).get() ? 1.0 : 0.2, selectProperty, activeProperty()));
 
 		addRightNode(selectionBtn);
 
 	}
 
-	final BooleanProperty selectedProperty() {
+	final BooleanProperty selectProperty() {
 
-		return selectedProperty;
+		return selectProperty;
 
 	}
 

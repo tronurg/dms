@@ -615,6 +615,7 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void recordButtonReleased() {
+				referenceMessageProperty.set(null);
 				listeners.forEach(listener -> listener.recordButtonReleased());
 			}
 
