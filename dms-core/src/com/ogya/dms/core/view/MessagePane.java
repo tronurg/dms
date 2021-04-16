@@ -49,6 +49,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -234,6 +235,15 @@ class MessagePane extends BorderPane {
 	}
 
 	private void init() {
+
+		selectedBalloons.addListener(new SetChangeListener<MessageBalloon>() {
+
+			@Override
+			public void onChanged(Change<? extends MessageBalloon> change) {
+				deleteModeProperty.set(false);
+			}
+
+		});
 
 		initTopPane();
 		initCenterPane();
@@ -1090,7 +1100,6 @@ class MessagePane extends BorderPane {
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.localDateTime));
 
 			selectedProperty.addListener((e0, e1, e2) -> {
-				deleteModeProperty.set(false);
 				if (e2)
 					selectedBalloons.add(this);
 				else
