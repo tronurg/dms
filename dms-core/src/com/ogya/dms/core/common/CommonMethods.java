@@ -457,7 +457,7 @@ public class CommonMethods {
 		int min = (int) minD;
 		int sec = (int) ((minD - min) * 60);
 
-		return String.format("%d\u00B0%d'%d\"", deg, min, sec);
+		return String.format("%02d\u00B0%02d'%02d\"", deg, min, sec);
 
 	}
 
