@@ -3286,7 +3286,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public <T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode) {
+	public <T> ListHandle createListHandle(List<T> list, Integer listCode) {
 
 		return new ListHandleImpl(listCode, DmsPackingFactory.pack(list));
 

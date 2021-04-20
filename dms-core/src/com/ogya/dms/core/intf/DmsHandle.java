@@ -75,7 +75,7 @@ public interface DmsHandle {
 
 	ObjectHandle createObjectHandle(Object object, Integer objectCode);
 
-	<T> ListHandle createListHandle(List<T> list, Class<T> elementType, Integer listCode);
+	<T> ListHandle createListHandle(List<T> list, Integer listCode);
 
 	MessageRules createMessageRules();
 
