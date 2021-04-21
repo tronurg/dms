@@ -123,6 +123,8 @@ public class ActiveGroupsPane extends BorderPane {
 
 		getGroupCard(id).updateGroup(group);
 
+		FXCollections.sort(entities.getChildren(), entitiesSorter);
+
 	}
 
 	private void removeGroup(Long id) {
@@ -209,8 +211,6 @@ public class ActiveGroupsPane extends BorderPane {
 			idGroupCards.put(id, fGroupCard);
 
 			entities.getChildren().add(fGroupCard);
-
-			FXCollections.sort(entities.getChildren(), entitiesSorter);
 
 		}
 

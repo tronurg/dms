@@ -99,6 +99,8 @@ public class ActiveContactsPane extends BorderPane {
 
 		getContactCard(id).updateContact(contact);
 
+		FXCollections.sort(entities.getChildren(), entitiesSorter);
+
 	}
 
 	private void removeContact(Long id) {
@@ -169,8 +171,6 @@ public class ActiveContactsPane extends BorderPane {
 			idContactCards.put(id, fContactCard);
 
 			entities.getChildren().add(fContactCard);
-
-			FXCollections.sort(entities.getChildren(), entitiesSorter);
 
 		}
 
