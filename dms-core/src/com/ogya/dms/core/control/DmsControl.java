@@ -927,36 +927,68 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private List<Message> archiveMessages(List<Message> messages) throws Exception {
+	private void archiveMessages(List<Message> messages) throws Exception {
 
-		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED)))
-			return dbManager.addUpdateMessages(messages.stream()
-					.peek(message -> message.setViewStatus(ViewStatus.DEFAULT)).collect(Collectors.toList()));
+		final List<Long> deletedMessageIds = new ArrayList<Long>();
 
-		return dbManager.addUpdateMessages(
-				messages.stream().filter(message -> Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT))
-						.peek(message -> message.setViewStatus(ViewStatus.ARCHIVED)).collect(Collectors.toList()));
+		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))) {
+
+			messages.forEach(message -> {
+
+				if (Objects.equals(message.getEntity().getViewStatus(), ViewStatus.DELETED)) {
+					preDeleteMessage(message);
+					deletedMessageIds.add(message.getId());
+				} else {
+					message.setViewStatus(ViewStatus.DEFAULT);
+				}
+
+			});
+
+		} else {
+
+			messages.removeIf(message -> !Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT));
+
+			messages.forEach(message -> message.setViewStatus(ViewStatus.ARCHIVED));
+
+		}
+
+		List<Message> newMessages = dbManager.addUpdateMessages(messages);
+		model.registerMessages(newMessages);
+
+		newMessages.forEach(message -> {
+			updateMessageInPane(message);
+			if (message.getId() < model.getMinArchivedMessageId())
+				return;
+			Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message));
+		});
+
+		if (!deletedMessageIds.isEmpty())
+			listenerTaskQueue.execute(() -> dmsGuiListeners
+					.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds.toArray(new Long[0]))));
 
 	}
 
 	private Long[] deleteMessages(List<Message> messages) throws Exception {
 
-		List<Message> cancellableMessages = messages.stream()
-				.filter(message -> Objects.equals(message.getMessageStatus(), MessageStatus.FRESH) && !message.isDone())
-				.collect(Collectors.toList());
+		messages.forEach(message -> preDeleteMessage(message));
 
-		List<Message> newMessages = dbManager.addUpdateMessages(messages.stream().peek(message -> {
-			message.setDone(true);
-			message.setMessageStatus(MessageStatus.READ);
-			message.setViewStatus(ViewStatus.DELETED);
-		}).collect(Collectors.toList()));
+		List<Message> newMessages = dbManager.addUpdateMessages(messages);
 		model.registerMessages(newMessages);
-
-		cancellableMessages.forEach(message -> dispatchCancellation(message));
 
 		newMessages.forEach(message -> updateMessageInPane(message));
 
 		return newMessages.stream().map(message -> message.getId()).toArray(Long[]::new);
+
+	}
+
+	private void preDeleteMessage(Message message) {
+
+		if (Objects.equals(message.getMessageStatus(), MessageStatus.FRESH) && !message.isDone())
+			dispatchCancellation(message);
+
+		message.setDone(true);
+		message.setMessageStatus(MessageStatus.READ);
+		message.setViewStatus(ViewStatus.DELETED);
 
 	}
 
@@ -2578,17 +2610,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				List<Message> messages = dbManager.getMessagesById(messageIds);
-
-				List<Message> newMessages = archiveMessages(messages);
-				model.registerMessages(newMessages);
-
-				newMessages.forEach(message -> {
-					updateMessageInPane(message);
-					if (message.getId() < model.getMinArchivedMessageId())
-						return;
-					Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message));
-				});
+				archiveMessages(dbManager.getMessagesById(messageIds));
 
 			} catch (Exception e) {
 
