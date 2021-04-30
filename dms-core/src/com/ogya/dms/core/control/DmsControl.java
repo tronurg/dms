@@ -3250,18 +3250,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public List<ContactHandle> getContactHandles(Predicate<ContactHandle> filter) {
+	public List<ContactHandle> getContactHandles(final Predicate<ContactHandle> filter) {
 
-		return model.getContacts().values().stream().map(contact -> new ContactHandleImpl(contact))
-				.filter(contactHandle -> filter.test(contactHandle)).collect(Collectors.toList());
+		List<ContactHandle> contactHandles = new ArrayList<ContactHandle>();
+
+		model.getContacts().forEach((id, contact) -> {
+			ContactHandle contactHandle = new ContactHandleImpl(contact);
+			if (filter.test(contactHandle))
+				contactHandles.add(contactHandle);
+		});
+
+		return contactHandles;
 
 	}
 
 	@Override
-	public List<GroupHandle> getGroupHandles(Predicate<GroupHandle> filter) {
+	public List<GroupHandle> getGroupHandles(final Predicate<GroupHandle> filter) {
 
-		return model.getGroups().values().stream().map(group -> new GroupHandleImpl(group))
-				.filter(groupHandle -> filter.test(groupHandle)).collect(Collectors.toList());
+		List<GroupHandle> groupHandles = new ArrayList<GroupHandle>();
+
+		model.getGroups().forEach((id, group) -> {
+			GroupHandle groupHandle = new GroupHandleImpl(group);
+			if (filter.test(groupHandle))
+				groupHandles.add(groupHandle);
+		});
+
+		return groupHandles;
 
 	}
 

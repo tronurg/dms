@@ -197,8 +197,10 @@ public class Model {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(ip))
-				.forEach(entry -> ids.add(entry.getKey()));
+		idContacts.forEach((id, contact) -> {
+			if (contact.getLocalRemoteServerIps().containsValue(ip))
+				ids.add(id);
+		});
 
 		return ids;
 
@@ -218,8 +220,10 @@ public class Model {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(ip)
-				&& entry.getValue().getName().equals(name)).forEach(entry -> ids.add(entry.getKey()));
+		idContacts.forEach((id, contact) -> {
+			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getName(), name))
+				ids.add(id);
+		});
 
 		return ids;
 
@@ -239,8 +243,10 @@ public class Model {
 
 		List<Long> ids = new ArrayList<Long>();
 
-		idContacts.entrySet().stream().filter(entry -> entry.getValue().getLocalRemoteServerIps().containsValue(ip)
-				&& entry.getValue().getSecretId().equals(secretId)).forEach(entry -> ids.add(entry.getKey()));
+		idContacts.forEach((id, contact) -> {
+			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getSecretId(), secretId))
+				ids.add(id);
+		});
 
 		return ids;
 

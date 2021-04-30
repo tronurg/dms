@@ -154,10 +154,12 @@ public class Model {
 
 			case CANCEL: {
 
-				sendStatuses.stream()
-						.filter(sendStatus -> Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
-								&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid))
-						.forEach(sendStatus -> sendStatus.status.set(false));
+				synchronized (sendStatuses) {
+					sendStatuses.stream()
+							.filter(sendStatus -> Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+									&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid))
+							.forEach(sendStatus -> sendStatus.status.set(false));
+				}
 
 				break;
 
@@ -506,8 +508,10 @@ public class Model {
 		if (user == null)
 			return;
 
-		sendStatuses.stream().filter(sendStatus -> Objects.equals(uuid, sendStatus.senderUuid))
-				.forEach(sendStatus -> sendStatus.status.set(false));
+		synchronized (sendStatuses) {
+			sendStatuses.stream().filter(sendStatus -> Objects.equals(uuid, sendStatus.senderUuid))
+					.forEach(sendStatus -> sendStatus.status.set(false));
+		}
 
 		mappedUsers.remove(user.mapId);
 
