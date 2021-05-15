@@ -232,15 +232,27 @@ public class ViewFactory {
 
 	}
 
-	public static Button newAttachBtn() {
+	public static Button newAttachBtnTransparent() {
+
+		return newAttachBtn(0.85, Color.TRANSPARENT, Color.GRAY);
+
+	}
+
+	public static Button newAttachBtnGreen() {
+
+		return newAttachBtn(1.0, Color.GREEN, Color.ANTIQUEWHITE);
+
+	}
+
+	private static Button newAttachBtn(double scaleFactor, Color background, Color foreground) {
 
 		double viewFactor = getViewFactor();
 
 		Button btn = new Button();
 
 		Circle circle = new Circle(16.0 * viewFactor);
-		circle.setFill(Color.TRANSPARENT);
-		Group group = new Group(circle, newAttachGraph(0.85, Color.GRAY));
+		circle.setFill(background);
+		Group group = new Group(circle, newAttachGraph(scaleFactor, foreground));
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);

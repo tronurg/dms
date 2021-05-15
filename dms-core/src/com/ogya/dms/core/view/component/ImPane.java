@@ -22,7 +22,7 @@ import javafx.scene.layout.Priority;
 public class ImPane extends HBox {
 
 	private final TextArea messageArea = new TextArea();
-	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
+	private final Button showFoldersBtn = ViewFactory.newAttachBtnTransparent();
 	private final Button reportBtn = ViewFactory.newReportBtn();
 
 	private final List<ImListener> listeners = Collections.synchronizedList(new ArrayList<ImListener>());

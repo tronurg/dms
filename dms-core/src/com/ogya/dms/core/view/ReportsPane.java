@@ -38,7 +38,7 @@ public class ReportsPane extends GridPane {
 	private final ComboBox<String> reportsComboBox = new ComboBox<String>();
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
-	private final Button sendBtn = ViewFactory.newSendBtn();
+	private final Button attachBtn = ViewFactory.newAttachBtnGreen();
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 
@@ -80,12 +80,12 @@ public class ReportsPane extends GridPane {
 		initReportsComboBox();
 		initCancelBtn();
 		initReportPaneHolder();
-		initSendBtn();
+		initAttachBtn();
 
 		add(reportsComboBox, 0, 0);
 		add(cancelBtn, 0, 0);
 		add(reportPaneHolder, 0, 1);
-		add(sendBtn, 0, 1);
+		add(attachBtn, 0, 1);
 
 	}
 
@@ -133,17 +133,17 @@ public class ReportsPane extends GridPane {
 
 	}
 
-	private void initSendBtn() {
+	private void initAttachBtn() {
 
-		GridPane.setMargin(sendBtn, new Insets(2 * gap));
-		GridPane.setHalignment(sendBtn, HPos.RIGHT);
-		GridPane.setValignment(sendBtn, VPos.BOTTOM);
+		GridPane.setMargin(attachBtn, new Insets(2 * gap));
+		GridPane.setHalignment(attachBtn, HPos.RIGHT);
+		GridPane.setValignment(attachBtn, VPos.BOTTOM);
 
-		sendBtn.opacityProperty()
-				.bind(Bindings.createDoubleBinding(() -> sendBtn.isHover() ? 1.0 : 0.5, sendBtn.hoverProperty()));
-		sendBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
+		attachBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> attachBtn.isHover() ? 1.0 : 0.5, attachBtn.hoverProperty()));
+		attachBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
-		sendBtn.setOnAction(e -> {
+		attachBtn.setOnAction(e -> {
 			final ReportPane selectedReportPane = reportPanes
 					.get(reportsComboBox.getSelectionModel().getSelectedIndex());
 			reportListeners.forEach(listener -> listener.sendReportClicked(selectedReportPane.reportId,
