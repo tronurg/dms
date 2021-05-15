@@ -27,6 +27,7 @@ import javafx.collections.ObservableSet;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -49,6 +50,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Popup;
+import javafx.stage.PopupWindow.AnchorLocation;
 
 public class AddUpdateGroupPane extends BorderPane {
 
@@ -68,18 +71,19 @@ public class AddUpdateGroupPane extends BorderPane {
 		public void requestFocus() {
 		}
 	};
+	private final Popup deleteGroupPopup = new Popup();
 	private final VBox addedContactsPane = new VBox();
 	private final VBox notAddedContactsPane = new VBox();
 	private final SearchField searchField = new SearchField(true);
 
 	private final Button addUpdateGroupBtn = new Button();
+	private final Button deleteGroupBtn = new Button(CommonMethods.translate("DELETE_GROUP"));
 
 	private final Map<Long, ContactGroup> idContactGroups = Collections
 			.synchronizedMap(new HashMap<Long, ContactGroup>());
 	private final ObservableSet<Long> selectedIds = FXCollections.observableSet();
 
 	private final BooleanProperty updateMode = new SimpleBooleanProperty();
-	private final BooleanProperty deleteMode = new SimpleBooleanProperty();
 
 	private final AtomicReference<Runnable> addUpdateGroupActionRef = new AtomicReference<Runnable>();
 	private final AtomicReference<Runnable> deleteGroupActionRef = new AtomicReference<Runnable>();
@@ -163,7 +167,6 @@ public class AddUpdateGroupPane extends BorderPane {
 			});
 		}
 
-		deleteMode.set(false);
 		updateMode.set(!isNewGroup);
 
 	}
@@ -200,34 +203,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	private void initGroupNameTextField() {
-
-		groupNameTextField.getStyleClass().add("black-label");
-
-		HBox.setHgrow(groupNameTextField, Priority.ALWAYS);
-
-		groupNameTextField.setTextFormatter(
-				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
-
-		groupNameTextField.setPadding(Insets.EMPTY);
-		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
-		groupNameTextField.setFocusTraversable(false);
-		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-
-	}
-
-	private void initDeleteBtn() {
-
-		final Effect glow = new Glow();
-		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deleteMode.get() ? glow : null, deleteMode));
-
-		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
-		deleteBtn.visibleProperty().bind(updateMode);
-
-		deleteBtn.setOnAction(e -> deleteMode.set(!deleteMode.get()));
-
-	}
-
 	private void initScrollableContent() {
 
 		initAddedContactsPane();
@@ -253,6 +228,67 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
+	private void initAddUpdateGroupBtn() {
+
+		addUpdateGroupBtn.setStyle("-fx-background-color: green;");
+		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
+
+		addUpdateGroupBtn.textProperty()
+				.bind(Bindings.createStringBinding(() -> updateMode.get() ? CommonMethods.translate("UPDATE_GROUP")
+						: CommonMethods.translate("CREATE_GROUP"), updateMode));
+
+		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		addUpdateGroupBtn.setMnemonicParsing(false);
+		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
+
+		addUpdateGroupBtn.disableProperty().bind(Bindings.isEmpty(selectedIds)
+				.or(Bindings.createBooleanBinding(() -> getGroupName().isEmpty(), groupNameTextField.textProperty())));
+
+		addUpdateGroupBtn.setOnAction(e -> {
+
+			Runnable addUpdateGroupAction = addUpdateGroupActionRef.get();
+
+			if (addUpdateGroupAction != null)
+				addUpdateGroupAction.run();
+
+		});
+
+	}
+
+	private void initDeleteBtn() {
+
+		initDeleteGroupPopup();
+
+		final Effect glow = new Glow();
+		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deleteGroupPopup.isShowing() ? glow : null,
+				deleteGroupPopup.showingProperty()));
+
+		deleteBtn.visibleProperty().bind(updateMode);
+		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
+
+		deleteBtn.setOnAction(e -> {
+			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
+			deleteGroupPopup.show(deleteBtn, point.getX(), point.getY());
+		});
+
+	}
+
+	private void initGroupNameTextField() {
+
+		groupNameTextField.getStyleClass().add("black-label");
+
+		HBox.setHgrow(groupNameTextField, Priority.ALWAYS);
+
+		groupNameTextField.setTextFormatter(
+				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
+
+		groupNameTextField.setPadding(Insets.EMPTY);
+		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
+		groupNameTextField.setFocusTraversable(false);
+		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+
+	}
+
 	private void initAddedContactsPane() {
 
 		addedContactsPane.setPadding(Insets.EMPTY);
@@ -265,52 +301,33 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	private void initAddUpdateGroupBtn() {
+	private void initDeleteGroupPopup() {
 
-		final Background deleteBackgroud = new Background(
-				new BackgroundFill(Color.RED, CornerRadii.EMPTY, Insets.EMPTY));
-		final Background nonDeleteBackgroud = new Background(
-				new BackgroundFill(Color.GREEN, CornerRadii.EMPTY, Insets.EMPTY));
+		deleteGroupPopup.setAutoHide(true);
+		deleteGroupPopup.setAnchorLocation(AnchorLocation.WINDOW_TOP_RIGHT);
 
-		addUpdateGroupBtn.backgroundProperty().bind(Bindings
-				.createObjectBinding(() -> deleteMode.get() ? deleteBackgroud : nonDeleteBackgroud, deleteMode));
-		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
+		initDeleteGroupBtn();
 
-		addUpdateGroupBtn.textProperty().bind(Bindings.createStringBinding(() -> {
+		deleteGroupPopup.getContent().add(deleteGroupBtn);
 
-			if (updateMode.get())
-				return deleteMode.get() ? CommonMethods.translate("DELETE_GROUP")
-						: CommonMethods.translate("UPDATE_GROUP");
-			return CommonMethods.translate("CREATE_GROUP");
+	}
 
-		}, updateMode, deleteMode));
+	private void initDeleteGroupBtn() {
 
-		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		deleteGroupBtn.setStyle("-fx-background-color: red;");
+		deleteGroupBtn.setTextFill(Color.ANTIQUEWHITE);
 
-		addUpdateGroupBtn.setMnemonicParsing(false);
+		deleteGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		deleteGroupBtn.setMnemonicParsing(false);
 
-		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
+		deleteGroupBtn.setOnAction(e -> {
 
-		addUpdateGroupBtn.disableProperty().bind(deleteMode.not().and(Bindings.isEmpty(selectedIds)
-				.or(Bindings.createBooleanBinding(() -> getGroupName().isEmpty(), groupNameTextField.textProperty()))));
+			deleteGroupPopup.hide();
 
-		addUpdateGroupBtn.setOnAction(e -> {
+			Runnable deleteGroupAction = deleteGroupActionRef.get();
 
-			if (deleteMode.get()) {
-
-				Runnable deleteGroupAction = deleteGroupActionRef.get();
-
-				if (deleteGroupAction != null)
-					deleteGroupAction.run();
-
-			} else {
-
-				Runnable addUpdateGroupAction = addUpdateGroupActionRef.get();
-
-				if (addUpdateGroupAction != null)
-					addUpdateGroupAction.run();
-
-			}
+			if (deleteGroupAction != null)
+				deleteGroupAction.run();
 
 		});
 

@@ -32,6 +32,7 @@ import javafx.event.EventTarget;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -42,7 +43,6 @@ import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -53,6 +53,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.Popup;
+import javafx.stage.PopupWindow.AnchorLocation;
 
 class EntitiesPaneBase extends BorderPane {
 
@@ -67,6 +69,7 @@ class EntitiesPaneBase extends BorderPane {
 		public void requestFocus() {
 		}
 	};
+	private final Popup removeEntityPopup = new Popup();
 	private final Button removeEntityBtn = new Button(CommonMethods.translate("REMOVE_COMPLETELY"));
 
 	private final Map<EntityId, EntityPane> entityIdPane = Collections
@@ -123,11 +126,10 @@ class EntitiesPaneBase extends BorderPane {
 			}
 		});
 
-		initRemoveEntityBtn();
-
 		setTop(searchField);
 		setCenter(scrollPane);
-		setBottom(removeEntityBtn);
+
+		initRemoveEntityPopup();
 
 	}
 
@@ -137,20 +139,29 @@ class EntitiesPaneBase extends BorderPane {
 
 	}
 
+	private void initRemoveEntityPopup() {
+
+		removeEntityPopup.setAutoHide(true);
+		removeEntityPopup.setAnchorLocation(AnchorLocation.WINDOW_TOP_RIGHT);
+
+		removeEntityPopup.setOnHidden(e -> entityToBeRemoved.set(null));
+
+		initRemoveEntityBtn();
+
+		removeEntityPopup.getContent().add(removeEntityBtn);
+
+	}
+
 	private void initRemoveEntityBtn() {
 
 		removeEntityBtn.setStyle("-fx-background-color: red;");
 		removeEntityBtn.setTextFill(Color.ANTIQUEWHITE);
 		removeEntityBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
 		removeEntityBtn.setMnemonicParsing(false);
-		removeEntityBtn.setMaxWidth(Double.MAX_VALUE);
-		removeEntityBtn.setMaxHeight(Double.MAX_VALUE);
-		removeEntityBtn.visibleProperty().bind(entityToBeRemoved.isNotNull());
-		removeEntityBtn.managedProperty().bind(removeEntityBtn.visibleProperty());
 
 		removeEntityBtn.setOnAction(e -> {
 			EntityId entityId = entityToBeRemoved.get();
-			entityToBeRemoved.set(null);
+			removeEntityPopup.hide();
 			listeners.forEach(listener -> listener.removeEntityRequested(entityId));
 		});
 
@@ -212,12 +223,6 @@ class EntitiesPaneBase extends BorderPane {
 
 	}
 
-	void resetDeleteMode() {
-
-		entityToBeRemoved.set(null);
-
-	}
-
 	private EntityPane getEntityPane(final EntityId entityId) {
 
 		if (!entityIdPane.containsKey(entityId)) {
@@ -239,7 +244,6 @@ class EntitiesPaneBase extends BorderPane {
 				if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.getClickCount() == 2
 						&& e.isStillSincePress()))
 					return;
-				entityToBeRemoved.set(null);
 				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 			});
 
@@ -381,15 +385,10 @@ class EntitiesPaneBase extends BorderPane {
 			deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 
 			deleteBtn.setOnAction(e -> {
-				EntityId entityId = entityToBeRemoved.get();
-				if (Objects.equals(entityId, this.entityId))
-					entityToBeRemoved.set(null);
-				else
-					entityToBeRemoved.set(this.entityId);
+				entityToBeRemoved.set(entityId);
+				Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
+				removeEntityPopup.show(deleteBtn, point.getX(), point.getY());
 			});
-
-			visibleBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> entityToBeRemoved.set(null));
-			invisibleBtn.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> entityToBeRemoved.set(null));
 
 		}
 

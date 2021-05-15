@@ -138,15 +138,16 @@ class MessagePane extends BorderPane {
 		}
 	};
 
+	private final Popup deleteSelectedPopup = new Popup();
+	private final Popup clearConversationPopup = new Popup();
+	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
+	private final Button clearConversationBtn = new Button(CommonMethods.translate("CLEAR_CONVERSATION"));
+
 	private final HBox referencePane = new HBox();
 	private final Button closeReferenceBtn = ViewFactory.newCancelBtn();
 	private final HBox attachmentArea = new HBox(gap);
 	private final ImPane imPane = new ImPane();
 	private final StackPane btnPane = new StackPane();
-	private final Popup deletePopup = new Popup();
-	private final Popup clearPopup = new Popup();
-	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
-	private final Button clearConversationBtn = new Button(CommonMethods.translate("CLEAR_CONVERSATION"));
 
 	private final Label attachmentLbl = new Label();
 	private final Button removeAttachmentBtn = ViewFactory.newRemoveBtn(0.65);
@@ -354,17 +355,17 @@ class MessagePane extends BorderPane {
 
 	private void initDeleteBtn() {
 
-		initDeletePopup();
+		initDeleteSelectedPopup();
 
 		deleteBtn.visibleProperty().bind(selectionModeProperty);
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 		deleteBtn.setOnAction(e -> {
 			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
-			deletePopup.show(deleteBtn, point.getX(), point.getY());
+			deleteSelectedPopup.show(deleteBtn, point.getX(), point.getY());
 		});
 		final Effect glow = new Glow();
-		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deletePopup.isShowing() ? glow : null,
-				deletePopup.showingProperty()));
+		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(
+				() -> deleteSelectedPopup.isShowing() ? glow : null, deleteSelectedPopup.showingProperty()));
 		deleteBtn.disableProperty()
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
@@ -374,21 +375,22 @@ class MessagePane extends BorderPane {
 
 	private void initClearBtn() {
 
-		initClearPopup();
+		initClearConversationPopup();
 
-		clearBtn.visibleProperty()
-				.bind(topPane.hoverProperty().or(clearPopup.showingProperty()).and(selectionModeProperty.not()));
+		clearBtn.visibleProperty().bind(
+				topPane.hoverProperty().or(clearConversationPopup.showingProperty()).and(selectionModeProperty.not()));
 		clearBtn.managedProperty().bind(clearBtn.visibleProperty());
 		clearBtn.opacityProperty()
-				.bind(Bindings.createDoubleBinding(() -> clearBtn.isHover() || clearPopup.isShowing() ? 1.0 : 0.5,
-						clearBtn.hoverProperty(), clearPopup.showingProperty()));
+				.bind(Bindings.createDoubleBinding(
+						() -> clearBtn.isHover() || clearConversationPopup.isShowing() ? 1.0 : 0.5,
+						clearBtn.hoverProperty(), clearConversationPopup.showingProperty()));
 		clearBtn.setOnAction(e -> {
 			Point2D point = clearBtn.localToScreen(clearBtn.getWidth(), clearBtn.getHeight() + gap);
-			clearPopup.show(clearBtn, point.getX(), point.getY());
+			clearConversationPopup.show(clearBtn, point.getX(), point.getY());
 		});
 		final Effect glow = new Glow();
-		clearBtn.effectProperty().bind(
-				Bindings.createObjectBinding(() -> clearPopup.isShowing() ? glow : null, clearPopup.showingProperty()));
+		clearBtn.effectProperty().bind(Bindings.createObjectBinding(
+				() -> clearConversationPopup.isShowing() ? glow : null, clearConversationPopup.showingProperty()));
 
 	}
 
@@ -468,54 +470,25 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initDeletePopup() {
+	private void initDeleteSelectedPopup() {
 
-		deletePopup.setAutoHide(true);
-		deletePopup.setAnchorLocation(AnchorLocation.WINDOW_TOP_RIGHT);
+		deleteSelectedPopup.setAutoHide(true);
+		deleteSelectedPopup.setAnchorLocation(AnchorLocation.WINDOW_TOP_RIGHT);
 
 		initDeleteSelectedBtn();
 
-		deletePopup.getContent().add(deleteSelectedBtn);
+		deleteSelectedPopup.getContent().add(deleteSelectedBtn);
 
 	}
 
-	private void initClearPopup() {
+	private void initClearConversationPopup() {
 
-		clearPopup.setAutoHide(true);
-		clearPopup.setAnchorLocation(AnchorLocation.WINDOW_TOP_RIGHT);
+		clearConversationPopup.setAutoHide(true);
+		clearConversationPopup.setAnchorLocation(AnchorLocation.WINDOW_TOP_RIGHT);
 
 		initClearConversationBtn();
 
-		clearPopup.getContent().add(clearConversationBtn);
-
-	}
-
-	private void initDeleteSelectedBtn() {
-
-		deleteSelectedBtn.setStyle("-fx-background-color: red;");
-		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
-		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-		deleteSelectedBtn.setMnemonicParsing(false);
-		deleteSelectedBtn.setOnAction(e -> {
-			deletePopup.hide();
-			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId).sorted()
-					.toArray(Long[]::new);
-			backBtn.fire();
-			listeners.forEach(listener -> listener.deleteMessagesRequested(selectedIds));
-		});
-
-	}
-
-	private void initClearConversationBtn() {
-
-		clearConversationBtn.setStyle("-fx-background-color: red;");
-		clearConversationBtn.setTextFill(Color.ANTIQUEWHITE);
-		clearConversationBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-		clearConversationBtn.setMnemonicParsing(false);
-		clearConversationBtn.setOnAction(e -> {
-			clearPopup.hide();
-			listeners.forEach(listener -> listener.clearConversationRequested());
-		});
+		clearConversationPopup.getContent().add(clearConversationBtn);
 
 	}
 
@@ -577,6 +550,35 @@ class MessagePane extends BorderPane {
 				listeners.forEach(listener -> listener.recordButtonReleased());
 			}
 
+		});
+
+	}
+
+	private void initDeleteSelectedBtn() {
+
+		deleteSelectedBtn.setStyle("-fx-background-color: red;");
+		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
+		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		deleteSelectedBtn.setMnemonicParsing(false);
+		deleteSelectedBtn.setOnAction(e -> {
+			deleteSelectedPopup.hide();
+			Long[] selectedIds = selectedBalloons.stream().map(balloon -> balloon.messageInfo.messageId).sorted()
+					.toArray(Long[]::new);
+			backBtn.fire();
+			listeners.forEach(listener -> listener.deleteMessagesRequested(selectedIds));
+		});
+
+	}
+
+	private void initClearConversationBtn() {
+
+		clearConversationBtn.setStyle("-fx-background-color: red;");
+		clearConversationBtn.setTextFill(Color.ANTIQUEWHITE);
+		clearConversationBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		clearConversationBtn.setMnemonicParsing(false);
+		clearConversationBtn.setOnAction(e -> {
+			clearConversationPopup.hide();
+			listeners.forEach(listener -> listener.clearConversationRequested());
 		});
 
 	}
