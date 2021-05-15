@@ -26,13 +26,14 @@ import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
+import com.ogya.dms.core.view.component.ImPane;
+import com.ogya.dms.core.view.component.ImPane.ImListener;
 import com.ogya.dms.core.view.component.RecordButton;
 import com.ogya.dms.core.view.component.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
 import javafx.animation.AnimationTimer;
-import javafx.animation.Interpolator;
 import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -64,15 +65,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.InnerShadow;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -141,7 +139,7 @@ class MessagePane extends BorderPane {
 	private final HBox referencePane = new HBox();
 	private final Button closeReferenceBtn = ViewFactory.newCancelBtn();
 	private final HBox attachmentArea = new HBox(gap);
-	private final TextArea messageArea = new TextArea();
+	private final ImPane imPane = new ImPane();
 	private final StackPane btnPane = new StackPane();
 	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
 	private final Button clearConversationBtn = new Button(CommonMethods.translate("CLEAR_CONVERSATION"));
@@ -149,42 +147,8 @@ class MessagePane extends BorderPane {
 	private final Label attachmentLbl = new Label();
 	private final Button removeAttachmentBtn = ViewFactory.newRemoveBtn(0.65);
 
-	private final Button reportBtn = ViewFactory.newReportBtn();
-	private final Button showFoldersBtn = ViewFactory.newAttachBtn();
 	private final Button sendBtn = ViewFactory.newSendBtn();
 	private final RecordButton recordBtn = new RecordButton();
-
-	private final Transition btnAnimation = new Transition() {
-
-		private final Interpolator interpolator = Interpolator.EASE_BOTH;
-
-		{
-			setCycleDuration(Duration.millis(100.0));
-		}
-
-		private double showFoldersBtnStart;
-		private double showFoldersBtnEnd;
-		private double reportBtnStart;
-		private double reportBtnEnd;
-		private int position = 0;
-
-		@Override
-		protected void interpolate(double arg0) {
-			showFoldersBtn.setTranslateY(interpolator.interpolate(showFoldersBtnStart, showFoldersBtnEnd, arg0));
-			reportBtn.setTranslateY(interpolator.interpolate(reportBtnStart, reportBtnEnd, arg0));
-		}
-
-		@Override
-		public void play() {
-			showFoldersBtnStart = -position * (gap + showFoldersBtn.getHeight());
-			reportBtnStart = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
-			position = (position + 1) % 2;
-			showFoldersBtnEnd = -position * (gap + showFoldersBtn.getHeight());
-			reportBtnEnd = -position * (2 * gap + reportBtn.getHeight() + showFoldersBtn.getHeight());
-			super.play();
-		}
-
-	};
 
 	private final BooleanProperty clearModeProperty = new SimpleBooleanProperty(false);
 	private final BooleanProperty deleteModeProperty = new SimpleBooleanProperty(false);
@@ -308,7 +272,7 @@ class MessagePane extends BorderPane {
 		initReferencePane();
 		initCloseReferenceBtn();
 		initAttachmentArea();
-		initMessageArea();
+		initImPane();
 		initBtnPane();
 		initDeleteSelectedBtn();
 		initClearConversationBtn();
@@ -316,7 +280,7 @@ class MessagePane extends BorderPane {
 		bottomPane.add(referencePane, 0, 0);
 		bottomPane.add(closeReferenceBtn, 0, 0);
 		bottomPane.add(attachmentArea, 0, 1);
-		bottomPane.add(messageArea, 0, 2);
+		bottomPane.add(imPane, 0, 2);
 		bottomPane.add(btnPane, 1, 2);
 		bottomPane.add(deleteSelectedBtn, 0, 2, 2, 1);
 		bottomPane.add(clearConversationBtn, 0, 2, 2, 1);
@@ -472,25 +436,29 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initMessageArea() {
+	private void initImPane() {
 
-		GridPane.setHgrow(messageArea, Priority.ALWAYS);
-		messageArea.setPrefRowCount(1);
-		messageArea.setWrapText(true);
-		messageArea.setTextFormatter(
-				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
-		messageArea.disableProperty().bind(recordBtn.pressedProperty());
-		messageArea.setOnKeyPressed(e -> {
-			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
-				if (e.isShiftDown()) {
-					messageArea.appendText(System.lineSeparator());
-				} else {
-					sendBtn.fire();
-					e.consume();
-				}
+		imPane.disableProperty().bind(recordBtn.pressedProperty());
+		imPane.visibleProperty().bind(activeProperty);
+
+		imPane.addImListener(new ImListener() {
+
+			@Override
+			public void sendFired() {
+				sendBtn.fire();
 			}
+
+			@Override
+			public void showFoldersClicked() {
+				listeners.forEach(listener -> listener.showFoldersClicked());
+			}
+
+			@Override
+			public void reportClicked() {
+				listeners.forEach(listener -> listener.reportClicked());
+			}
+
 		});
-		messageArea.visibleProperty().bind(activeProperty);
 
 	}
 
@@ -498,12 +466,10 @@ class MessagePane extends BorderPane {
 
 		btnPane.visibleProperty().bind(activeProperty);
 
-		initReportBtn();
-		initShowFoldersBtn();
 		initSendBtn();
 		initRecordBtn();
 
-		btnPane.getChildren().addAll(reportBtn, showFoldersBtn, sendBtn, recordBtn);
+		btnPane.getChildren().addAll(sendBtn, recordBtn);
 
 	}
 
@@ -563,36 +529,12 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initReportBtn() {
-
-		reportBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				btnAnimation.play();
-		});
-		reportBtn.setOnAction(e -> listeners.forEach(listener -> listener.reportClicked()));
-
-	}
-
-	private void initShowFoldersBtn() {
-
-		showFoldersBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.PRIMARY))
-				btnAnimation.play();
-		});
-		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
-
-	}
-
 	private void initSendBtn() {
 
-		sendBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
-				btnAnimation.play();
-		});
 		sendBtn.setOnAction(e -> {
-			String messageAreaText = messageArea.getText().trim();
+			String messageAreaText = imPane.getMessage().trim();
 			final String mesajTxt = messageAreaText.isEmpty() ? null : messageAreaText;
-			messageArea.setText("");
+			imPane.setMessage("");
 			final FileBuilder fileBuilder = attachmentProperty.get();
 			attachmentProperty.set(null);
 			if (mesajTxt == null && fileBuilder == null)
@@ -606,11 +548,8 @@ class MessagePane extends BorderPane {
 
 	private void initRecordBtn() {
 
-		recordBtn.visibleProperty().bind(messageArea.textProperty().isEmpty().and(attachmentProperty.isNull()));
-		recordBtn.setOnMouseClicked(e -> {
-			if (Objects.equals(e.getButton(), MouseButton.SECONDARY))
-				btnAnimation.play();
-		});
+		recordBtn.visibleProperty().bind(imPane.messageProperty().isEmpty().and(attachmentProperty.isNull()));
+
 		recordBtn.addRecordListener(new RecordListener() {
 
 			@Override
@@ -625,7 +564,6 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void recordButtonReleased() {
-				referenceMessageProperty.set(null);
 				listeners.forEach(listener -> listener.recordButtonReleased());
 			}
 
@@ -854,6 +792,7 @@ class MessagePane extends BorderPane {
 
 	void recordingStopped() {
 
+		referenceMessageProperty.set(null);
 		recordBtn.stopAnimation();
 
 	}

@@ -194,9 +194,9 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
 //			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
-			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 //			JComponent mcPanel = csh.getContactSelectionPanel(contact -> Objects.equals(contact.getSecretId(), "sid"));
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {

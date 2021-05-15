@@ -23,7 +23,7 @@
 	-fx-text-fill: black;
 }
 .link-label:hover {
-	-fx-text-fill: dodgerblue
+	-fx-text-fill: dodgerblue;
 }
 .progress-bar .bar {
 	-fx-background-insets: 1 1 2 1;
@@ -62,4 +62,22 @@
 .attachment-area {
 	-fx-border-color: gray;
 	-fx-border-radius: 0.4em;
+}
+.message-area {
+	-fx-background-color: transparent;
+}
+.message-area .scroll-pane {
+	-fx-background-color: transparent;
+}
+.message-area .scroll-pane .viewport {
+	-fx-background-color: transparent;
+}
+.message-area .scroll-pane .content {
+	-fx-background-color: transparent;
+}
+.im-box {
+	-fx-background-color: whitesmoke;
+	-fx-background-radius: 1.0em;
+	-fx-border-color: gray;
+	-fx-border-radius: 1.0em;
 }

@@ -239,8 +239,8 @@ public class ViewFactory {
 		Button btn = new Button();
 
 		Circle circle = new Circle(16.0 * viewFactor);
-		circle.setFill(Color.GREEN);
-		Group group = new Group(circle, newAttachGraph(1.0, Color.ANTIQUEWHITE));
+		circle.setFill(Color.TRANSPARENT);
+		Group group = new Group(circle, newAttachGraph(0.85, Color.GRAY));
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
@@ -282,20 +282,20 @@ public class ViewFactory {
 		Button btn = new Button();
 
 		Circle circle = new Circle(16.0 * viewFactor);
-		circle.setFill(Color.GREEN);
+		circle.setFill(Color.TRANSPARENT);
 		Rectangle rectangle = new Rectangle(-6.0 * viewFactor, -8.0 * viewFactor, 12.0 * viewFactor, 16.0 * viewFactor);
 		rectangle.setStrokeWidth(2.0 * viewFactor);
-		rectangle.setStroke(Color.ANTIQUEWHITE);
+		rectangle.setStroke(Color.GRAY);
 		rectangle.setFill(Color.TRANSPARENT);
 		Line line1 = new Line(-2.0 * viewFactor, -4.0 * viewFactor, 2.0 * viewFactor, -4.0 * viewFactor);
 		line1.setStrokeWidth(2.0 * viewFactor);
-		line1.setStroke(Color.ANTIQUEWHITE);
+		line1.setStroke(Color.GRAY);
 		Line line2 = new Line(-2.0 * viewFactor, 0.0, 2.0 * viewFactor, 0.0);
 		line2.setStrokeWidth(2.0 * viewFactor);
-		line2.setStroke(Color.ANTIQUEWHITE);
+		line2.setStroke(Color.GRAY);
 		Line line3 = new Line(-2.0 * viewFactor, 4.0 * viewFactor, 2.0 * viewFactor, 4.0 * viewFactor);
 		line3.setStrokeWidth(2.0 * viewFactor);
-		line3.setStroke(Color.ANTIQUEWHITE);
+		line3.setStroke(Color.GRAY);
 		Group group = new Group(circle, rectangle, line1, line2, line3);
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);

@@ -17,7 +17,6 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
@@ -166,8 +165,6 @@ public class DmsMediaPlayer extends GridPane {
 	}
 
 	private void initProgressBar() {
-
-		GridPane.setHgrow(progressBar, Priority.ALWAYS);
 
 		if (mediaPlayer == null) {
 			progressBar.getStyleClass().add("dummy-player");
