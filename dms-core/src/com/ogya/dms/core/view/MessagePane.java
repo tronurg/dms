@@ -69,7 +69,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
-import javafx.scene.effect.Glow;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -363,9 +362,6 @@ class MessagePane extends BorderPane {
 			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
 			deleteSelectedPopup.show(deleteBtn, point.getX(), point.getY());
 		});
-		final Effect glow = new Glow();
-		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(
-				() -> deleteSelectedPopup.isShowing() ? glow : null, deleteSelectedPopup.showingProperty()));
 		deleteBtn.disableProperty()
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
@@ -388,9 +384,6 @@ class MessagePane extends BorderPane {
 			Point2D point = clearBtn.localToScreen(clearBtn.getWidth(), clearBtn.getHeight() + gap);
 			clearConversationPopup.show(clearBtn, point.getX(), point.getY());
 		});
-		final Effect glow = new Glow();
-		clearBtn.effectProperty().bind(Bindings.createObjectBinding(
-				() -> clearConversationPopup.isShowing() ? glow : null, clearConversationPopup.showingProperty()));
 
 	}
 

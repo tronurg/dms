@@ -35,8 +35,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
-import javafx.scene.effect.Effect;
-import javafx.scene.effect.Glow;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -176,7 +174,6 @@ public class AddUpdateGroupPane extends BorderPane {
 		initTopPane();
 		initScrollableContent();
 		initAddUpdateGroupBtn();
-		initDeleteBtn();
 
 		scrollPane.setFitToWidth(true);
 
@@ -198,6 +195,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		initGroupNameTextField();
+		initDeleteBtn();
 
 		topPane.getChildren().addAll(backBtn, groupNameTextField, deleteBtn);
 
@@ -255,24 +253,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	}
 
-	private void initDeleteBtn() {
-
-		initDeleteGroupPopup();
-
-		final Effect glow = new Glow();
-		deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deleteGroupPopup.isShowing() ? glow : null,
-				deleteGroupPopup.showingProperty()));
-
-		deleteBtn.visibleProperty().bind(updateMode);
-		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
-
-		deleteBtn.setOnAction(e -> {
-			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
-			deleteGroupPopup.show(deleteBtn, point.getX(), point.getY());
-		});
-
-	}
-
 	private void initGroupNameTextField() {
 
 		groupNameTextField.getStyleClass().add("black-label");
@@ -286,6 +266,20 @@ public class AddUpdateGroupPane extends BorderPane {
 		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
 		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+
+	}
+
+	private void initDeleteBtn() {
+
+		initDeleteGroupPopup();
+
+		deleteBtn.visibleProperty().bind(updateMode);
+		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
+
+		deleteBtn.setOnAction(e -> {
+			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
+			deleteGroupPopup.show(deleteBtn, point.getX(), point.getY());
+		});
 
 	}
 

@@ -41,7 +41,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.Effect;
-import javafx.scene.effect.Glow;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -370,15 +369,9 @@ class EntitiesPaneBase extends BorderPane {
 
 		private void initDeleteBtn() {
 
-			final Effect glow = new Glow();
 			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
-			deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> {
-				if (Objects.equals(entityToBeRemoved.get(), entityId))
-					return glow;
-				if (deleteBtn.isHover())
-					return null;
-				return colorAdjust;
-			}, entityToBeRemoved, deleteBtn.hoverProperty()));
+			deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deleteBtn.isHover() ? null : colorAdjust,
+					deleteBtn.hoverProperty()));
 
 			deleteBtn.visibleProperty().bind(entityToBeRemoved.isEqualTo(entityId)
 					.or(hiddenProperty.and(hoverProperty()).and(unreadMessagesLbl.visibleProperty().not())));
