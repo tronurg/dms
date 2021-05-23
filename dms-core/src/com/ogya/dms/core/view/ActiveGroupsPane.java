@@ -36,8 +36,8 @@ import javafx.scene.text.FontWeight;
 
 public class ActiveGroupsPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
-	private final double viewFactor = ViewFactory.getViewFactor();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final SearchField searchField = new SearchField(false);
 
@@ -100,7 +100,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private void init() {
 
-		entities.setPadding(new Insets(2 * gap));
+		entities.setPadding(new Insets(2 * GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
@@ -269,7 +269,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private void initMemberCards() {
 
-			memberCards.setPadding(new Insets(0.0, 0.0, 15.0 * viewFactor, 0.0));
+			memberCards.setPadding(new Insets(0.0, 0.0, 15.0 * VIEW_FACTOR, 0.0));
 			memberCards.visibleProperty().bind(selectProperty());
 			memberCards.managedProperty().bind(memberCards.visibleProperty());
 
@@ -326,7 +326,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private final ObjectProperty<Color> statusColorProperty;
 
-		private final Circle statusCircle = new Circle(7.0 * viewFactor);
+		private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
 
 		private MemberCard(String name, ObjectProperty<Color> statusColorProperty) {
 
@@ -340,8 +340,8 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private void init() {
 
-			setGraphicTextGap(gap);
-			setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			setGraphicTextGap(GAP);
+			setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 			setGraphic(statusCircle);
 
 			statusCircle.fillProperty().bind(statusColorProperty);

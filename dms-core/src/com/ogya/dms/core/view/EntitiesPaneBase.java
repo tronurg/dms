@@ -57,9 +57,8 @@ import javafx.stage.PopupWindow.AnchorLocation;
 
 class EntitiesPaneBase extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
-
-	private final double viewFactor = ViewFactory.getViewFactor();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final SearchField searchField;
 	private final VBox entities = new VBox();
@@ -113,7 +112,7 @@ class EntitiesPaneBase extends BorderPane {
 
 	private void init() {
 
-		entities.setPadding(new Insets(2 * gap));
+		entities.setPadding(new Insets(2 * GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
@@ -155,7 +154,7 @@ class EntitiesPaneBase extends BorderPane {
 
 		removeEntityBtn.setStyle("-fx-background-color: red;");
 		removeEntityBtn.setTextFill(Color.ANTIQUEWHITE);
-		removeEntityBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		removeEntityBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		removeEntityBtn.setMnemonicParsing(false);
 
 		removeEntityBtn.setOnAction(e -> {
@@ -308,7 +307,7 @@ class EntitiesPaneBase extends BorderPane {
 			initDeleteBtn();
 			initUnreadMessagesLbl();
 
-			HBox btnBox = new HBox(2 * gap);
+			HBox btnBox = new HBox(2 * GAP);
 			btnBox.setAlignment(Pos.CENTER);
 			btnBox.getChildren().addAll(visibleBtn, invisibleBtn, deleteBtn, unreadMessagesLbl);
 
@@ -370,8 +369,10 @@ class EntitiesPaneBase extends BorderPane {
 		private void initDeleteBtn() {
 
 			final Effect colorAdjust = new ColorAdjust(0.0, -1.0, -0.5, 0.0);
-			deleteBtn.effectProperty().bind(Bindings.createObjectBinding(() -> deleteBtn.isHover() ? null : colorAdjust,
-					deleteBtn.hoverProperty()));
+			deleteBtn.effectProperty()
+					.bind(Bindings.createObjectBinding(
+							() -> deleteBtn.isHover() || removeEntityPopup.isShowing() ? null : colorAdjust,
+							deleteBtn.hoverProperty(), removeEntityPopup.showingProperty()));
 
 			deleteBtn.visibleProperty().bind(entityToBeRemoved.isEqualTo(entityId)
 					.or(hiddenProperty.and(hoverProperty()).and(unreadMessagesLbl.visibleProperty().not())));
@@ -379,7 +380,7 @@ class EntitiesPaneBase extends BorderPane {
 
 			deleteBtn.setOnAction(e -> {
 				entityToBeRemoved.set(entityId);
-				Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
+				Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + GAP);
 				removeEntityPopup.show(deleteBtn, point.getX(), point.getY());
 			});
 

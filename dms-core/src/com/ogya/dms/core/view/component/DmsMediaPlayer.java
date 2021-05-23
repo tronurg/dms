@@ -26,7 +26,8 @@ import javafx.util.Duration;
 
 public class DmsMediaPlayer extends GridPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private MediaPlayer mediaPlayer;
 
@@ -61,7 +62,7 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void init() {
 
-		setHgap(2 * gap);
+		setHgap(2 * GAP);
 
 		initBtn();
 		initProgressBar();
@@ -81,16 +82,15 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initEmpty(String path) {
 
-		setHgap(gap);
-
-		double viewFactor = ViewFactory.getViewFactor();
+		setHgap(GAP);
 
 		Button btn = new Button();
 		Polygon triangle = new Polygon();
 		triangle.setFill(Color.GRAY);
-		triangle.getPoints().addAll(new Double[] { 0.0 * viewFactor, 0.0, 8.0 * viewFactor, 8.0 * viewFactor,
-				8.0 * viewFactor, -8.0 * viewFactor });
-		Rectangle rectangle = new Rectangle(0.0 * viewFactor, -3.0 * viewFactor, 8.0 * viewFactor, 6.0 * viewFactor);
+		triangle.getPoints().addAll(new Double[] { 0.0 * VIEW_FACTOR, 0.0, 8.0 * VIEW_FACTOR, 8.0 * VIEW_FACTOR,
+				8.0 * VIEW_FACTOR, -8.0 * VIEW_FACTOR });
+		Rectangle rectangle = new Rectangle(0.0 * VIEW_FACTOR, -3.0 * VIEW_FACTOR, 8.0 * VIEW_FACTOR,
+				6.0 * VIEW_FACTOR);
 		rectangle.setFill(Color.GRAY);
 		Group group = new Group(triangle, rectangle);
 		btn.setGraphic(group);
@@ -130,7 +130,7 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initBtn() {
 
-		double viewFactor = ViewFactory.getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 		if (mediaPlayer == null)
 			viewFactor *= 0.8;
 

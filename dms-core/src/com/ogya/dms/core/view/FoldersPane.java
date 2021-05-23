@@ -45,11 +45,10 @@ import javafx.scene.text.FontWeight;
 
 public class FoldersPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final HBox topPane = new HBox(2 * gap);
+	private final HBox topPane = new HBox(2 * GAP);
 	private final StackPane centerPane = new StackPane();
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
@@ -96,15 +95,15 @@ public class FoldersPane extends BorderPane {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
 
-		topPane.setPadding(new Insets(gap));
-		centerPane.setPadding(new Insets(gap));
+		topPane.setPadding(new Insets(GAP));
+		centerPane.setPadding(new Insets(GAP));
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		scrollPane.setFitToWidth(true);
 
 		nameLabel.getStyleClass().add("black-label");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
 
 		topPane.getChildren().addAll(backBtn, nameLabel);
 
@@ -282,8 +281,8 @@ public class FoldersPane extends BorderPane {
 			setMaxWidth(Double.MAX_VALUE);
 
 			setAlignment(Pos.CENTER_LEFT);
-			setPadding(new Insets(gap));
-			setGraphicTextGap(gap);
+			setPadding(new Insets(GAP));
+			setGraphicTextGap(GAP);
 			setFocusTraversable(false);
 
 		}

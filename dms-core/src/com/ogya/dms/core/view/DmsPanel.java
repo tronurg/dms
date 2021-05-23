@@ -40,7 +40,7 @@ import javafx.scene.layout.StackPane;
 
 public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane, IStarredMessagesPane, IMessagePane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
 
 	private final BooleanProperty unreadProperty = new SimpleBooleanProperty();
 	private final ObservableSet<EntityId> unreadEntityIds = FXCollections.observableSet();
@@ -127,7 +127,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		unreadProperty.bind(Bindings.isNotEmpty(unreadEntityIds));
 
-		BorderPane.setMargin(identityPane, new Insets(2 * gap));
+		BorderPane.setMargin(identityPane, new Insets(2 * GAP));
 
 		registerListeners();
 

@@ -47,13 +47,12 @@ import javafx.util.Duration;
 
 class IdentityPane extends GridPane {
 
-	private final double gap = ViewFactory.getGap();
-
-	private final double unitSize = 30.0 * ViewFactory.getViewFactor();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double UNIT_SIZE = 30.0 * ViewFactory.VIEW_FACTOR;
 
 	private final StackPane profilePicture = new StackPane();
-	private final Circle statusCircle = new Circle(unitSize);
-	private final Circle profileRound = new Circle(unitSize * 0.8);
+	private final Circle statusCircle = new Circle(UNIT_SIZE);
+	private final Circle profileRound = new Circle(UNIT_SIZE * 0.8);
 	private final Label profileLbl = new Label();
 	private final Button availableBtn = newStatusBtn(Availability.AVAILABLE.getStatusColor());
 	private final Button awayBtn = newStatusBtn(Availability.AWAY.getStatusColor());
@@ -85,7 +84,7 @@ class IdentityPane extends GridPane {
 		initCommentTextField();
 		initCoordinatesLbl();
 
-		setHgap(gap);
+		setHgap(GAP);
 		setValignment(profilePicture, VPos.TOP);
 		setFillHeight(profilePicture, false);
 		setHgrow(commentTextField, Priority.ALWAYS);
@@ -231,7 +230,7 @@ class IdentityPane extends GridPane {
 
 	private void initStatusCircle() {
 
-		statusCircle.setStrokeWidth(unitSize * 0.2);
+		statusCircle.setStrokeWidth(UNIT_SIZE * 0.2);
 		statusCircle.setFill(Color.TRANSPARENT);
 		statusCircle.strokeProperty()
 				.bind(Bindings.createObjectBinding(
@@ -252,7 +251,7 @@ class IdentityPane extends GridPane {
 		profileLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 		profileLbl.setStyle("-fx-text-fill: #404040;");
-		profileLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize));
+		profileLbl.setFont(Font.font(null, FontWeight.BOLD, UNIT_SIZE));
 
 	}
 
@@ -260,7 +259,7 @@ class IdentityPane extends GridPane {
 
 		nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		nameLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
+		nameLbl.setFont(Font.font(null, FontWeight.BOLD, UNIT_SIZE * 0.8));
 
 	}
 
@@ -319,7 +318,7 @@ class IdentityPane extends GridPane {
 		});
 
 		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
-				BorderStrokeStyle.SOLID, new CornerRadii(unitSize * 15.0), BorderWidths.DEFAULT) }));
+				BorderStrokeStyle.SOLID, new CornerRadii(UNIT_SIZE * 15.0), BorderWidths.DEFAULT) }));
 
 	}
 
@@ -333,14 +332,14 @@ class IdentityPane extends GridPane {
 	private Button newStatusBtn(Color color) {
 
 		final Button btn = new Button();
-		final Circle circle = new Circle(unitSize * 0.2);
+		final Circle circle = new Circle(UNIT_SIZE * 0.2);
 		circle.setFill(color);
 		btn.setGraphic(circle);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.setVisible(false);
 
-		btn.setTranslateX(unitSize * 1.5);
+		btn.setTranslateX(UNIT_SIZE * 1.5);
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 

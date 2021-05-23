@@ -53,11 +53,10 @@ import javafx.stage.PopupWindow.AnchorLocation;
 
 public class AddUpdateGroupPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final HBox topPane = new HBox(gap);
+	private final HBox topPane = new HBox(GAP);
 
 	private final Button backBtn;
 	private final TextField groupNameTextField = new TextField();
@@ -191,7 +190,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	private void initTopPane() {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(gap));
+		topPane.setPadding(new Insets(GAP));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		initGroupNameTextField();
@@ -235,7 +234,7 @@ public class AddUpdateGroupPane extends BorderPane {
 				.bind(Bindings.createStringBinding(() -> updateMode.get() ? CommonMethods.translate("UPDATE_GROUP")
 						: CommonMethods.translate("CREATE_GROUP"), updateMode));
 
-		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		addUpdateGroupBtn.setMnemonicParsing(false);
 		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
@@ -265,7 +264,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		groupNameTextField.setPadding(Insets.EMPTY);
 		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
-		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 
 	}
 
@@ -277,7 +276,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 
 		deleteBtn.setOnAction(e -> {
-			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
+			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + GAP);
 			deleteGroupPopup.show(deleteBtn, point.getX(), point.getY());
 		});
 
@@ -311,7 +310,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		deleteGroupBtn.setStyle("-fx-background-color: red;");
 		deleteGroupBtn.setTextFill(Color.ANTIQUEWHITE);
 
-		deleteGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		deleteGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		deleteGroupBtn.setMnemonicParsing(false);
 
 		deleteGroupBtn.setOnAction(e -> {
@@ -343,7 +342,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	private abstract class AddRemoveContactBox extends HBox {
 
 		protected Button addRemoveBtn;
-		private final Circle addRemoveStatusCircle = new Circle(7.0 * viewFactor);
+		private final Circle addRemoveStatusCircle = new Circle(7.0 * VIEW_FACTOR);
 
 		private AddRemoveContactBox() {
 
@@ -369,7 +368,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		private void initCircle() {
 
-			HBox.setMargin(addRemoveStatusCircle, new Insets(gap, 3 * gap, gap, gap));
+			HBox.setMargin(addRemoveStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
 
 		}
 
@@ -416,8 +415,8 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-			addRemoveBtn.setPadding(new Insets(gap));
+			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
 
@@ -439,8 +438,8 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
-			addRemoveBtn.setPadding(new Insets(gap));
+			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
 

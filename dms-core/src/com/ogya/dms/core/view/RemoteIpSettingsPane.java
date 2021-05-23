@@ -27,22 +27,21 @@ import javafx.scene.text.FontWeight;
 
 public class RemoteIpSettingsPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final HBox topPane = new HBox(2 * gap);
+	private final HBox topPane = new HBox(2 * GAP);
 	private final VBox centerPane = new VBox();
 
 	private final Button backBtn;
 	private final Label headingLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 
-	private final HBox addIpPane = new HBox(2 * gap);
+	private final HBox addIpPane = new HBox(2 * GAP);
 
 	private final IpField ipField = new IpField();
 	private final Button addIpButton = ViewFactory.newAddBtn();
 
-	private final VBox scrollableContent = new VBox(gap);
+	private final VBox scrollableContent = new VBox(GAP);
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
 		@Override
 		public void requestFocus() {
@@ -114,10 +113,10 @@ public class RemoteIpSettingsPane extends BorderPane {
 			if (ip.isEmpty())
 				continue;
 
-			HBox ipField = new HBox(gap);
+			HBox ipField = new HBox(GAP);
 
 			Label ipLabel = new Label(ip);
-			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 
 			Button removeIpButton = ViewFactory.newRemoveBtn(1.0);
 
@@ -149,7 +148,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 		initHeadingLabel();
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(gap));
+		topPane.setPadding(new Insets(GAP));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		topPane.getChildren().addAll(backBtn, headingLabel);
@@ -168,7 +167,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private void initHeadingLabel() {
 
 		headingLabel.getStyleClass().add("black-label");
-		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
 
 	}
 
@@ -177,7 +176,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 		initIpField();
 		initAddIpButton();
 
-		addIpPane.setPadding(new Insets(2 * gap));
+		addIpPane.setPadding(new Insets(2 * GAP));
 
 		addIpPane.getChildren().addAll(ipField, addIpButton);
 
@@ -194,13 +193,13 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
-		scrollableContent.setPadding(new Insets(2 * gap));
+		scrollableContent.setPadding(new Insets(2 * GAP));
 
 	}
 
 	private void initIpField() {
 
-		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0 * viewFactor));
+		ipField.setFont(Font.font(null, FontWeight.BOLD, 16.0 * VIEW_FACTOR));
 
 	}
 

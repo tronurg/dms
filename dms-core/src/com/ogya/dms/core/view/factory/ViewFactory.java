@@ -32,35 +32,11 @@ import javafx.scene.text.FontWeight;
 
 public class ViewFactory {
 
-	private static double gap = 0.0;
-
-	private static double viewFactor = 0.0;
+	private static final double EM = Font.getDefault().getSize();
+	public static final double GAP = EM / 3.0;
+	public static final double VIEW_FACTOR = EM / 15.0;
 
 	private static final Map<String, Color> colorMap = Collections.synchronizedMap(new HashMap<String, Color>());
-
-	public static double getGap() {
-
-		if (gap == 0.0) {
-
-			gap = Font.getDefault().getSize() / 3.0;
-
-		}
-
-		return gap;
-
-	}
-
-	public static double getViewFactor() {
-
-		if (viewFactor == 0.0) {
-
-			viewFactor = Font.getDefault().getSize() / 15.0;
-
-		}
-
-		return viewFactor;
-
-	}
 
 	public static Color getColorForUuid(String uuid) {
 
@@ -97,7 +73,7 @@ public class ViewFactory {
 
 	public static Button newBackBtn(BooleanProperty highlightProperty) {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -124,7 +100,7 @@ public class ViewFactory {
 
 	public static Button newSendBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -145,7 +121,7 @@ public class ViewFactory {
 
 	public static Button newAddBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -176,7 +152,7 @@ public class ViewFactory {
 
 	public static Button newRemoveBtn(double scaleFactor) {
 
-		double viewFactor = scaleFactor * getViewFactor();
+		double viewFactor = scaleFactor * VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -202,7 +178,7 @@ public class ViewFactory {
 
 	public static Button newDeleteBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -246,7 +222,7 @@ public class ViewFactory {
 
 	private static Button newAttachBtn(double scaleFactor, Color background, Color foreground) {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -269,7 +245,7 @@ public class ViewFactory {
 
 	private static Node newAttachGraph(double scaleFactor, Color color) {
 
-		double viewFactor = scaleFactor * getViewFactor();
+		double viewFactor = scaleFactor * VIEW_FACTOR;
 
 		Rectangle rectangle = new Rectangle(-12.0 * viewFactor, -5.0 * viewFactor, 24.0 * viewFactor,
 				10.0 * viewFactor);
@@ -289,7 +265,7 @@ public class ViewFactory {
 
 	public static Button newReportBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -319,7 +295,7 @@ public class ViewFactory {
 
 	public static Button newInfoBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button("i");
 		btn.setTextFill(Color.WHITE);
@@ -342,7 +318,7 @@ public class ViewFactory {
 
 	public static Button newCancelBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -366,7 +342,7 @@ public class ViewFactory {
 
 	public static Button newSettingsBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -385,7 +361,7 @@ public class ViewFactory {
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
-		final Effect dropShadow = new DropShadow(getGap(), Color.DODGERBLUE);
+		final Effect dropShadow = new DropShadow(GAP, Color.DODGERBLUE);
 		colorProperty.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.DODGERBLUE : Color.DARKGRAY,
 				btn.hoverProperty()));
 		btn.effectProperty()
@@ -397,7 +373,7 @@ public class ViewFactory {
 
 	public static Button newSelectionBtn() {
 
-		double viewFactor = getViewFactor();
+		double viewFactor = VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -435,7 +411,7 @@ public class ViewFactory {
 
 	public static Node newStarGraph(double scaleFactor) {
 
-		double viewFactor = scaleFactor * getViewFactor();
+		double viewFactor = scaleFactor * VIEW_FACTOR;
 
 		Polygon star = new Polygon();
 		star.setFill(Color.YELLOW);
@@ -452,7 +428,7 @@ public class ViewFactory {
 
 	public static Button newForwardBtn() {
 
-		double viewFactor = 0.75 * getViewFactor();
+		double viewFactor = 0.75 * VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -469,7 +445,7 @@ public class ViewFactory {
 
 	public static Button newGoToRefBtn() {
 
-		double viewFactor = 0.75 * getViewFactor();
+		double viewFactor = 0.75 * VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -489,7 +465,7 @@ public class ViewFactory {
 
 	public static Node newForwardGraph(double scaleFactor, Color color) {
 
-		double viewFactor = scaleFactor * getViewFactor();
+		double viewFactor = scaleFactor * VIEW_FACTOR;
 
 		Polygon arrowHead = new Polygon();
 		arrowHead.getPoints()
@@ -508,7 +484,7 @@ public class ViewFactory {
 
 	public static Button newVisibleBtn(double scaleFactor) {
 
-		double viewFactor = scaleFactor * getViewFactor();
+		double viewFactor = scaleFactor * VIEW_FACTOR;
 
 		Button btn = new Button();
 
@@ -522,7 +498,7 @@ public class ViewFactory {
 
 	public static Button newInvisibleBtn(double scaleFactor) {
 
-		double viewFactor = scaleFactor * getViewFactor();
+		double viewFactor = scaleFactor * VIEW_FACTOR;
 
 		Button btn = new Button();
 

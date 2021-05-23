@@ -32,7 +32,7 @@ import javafx.scene.layout.VBox;
 
 public class ActiveContactsPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
 
 	private final SearchField searchField = new SearchField(false);
 
@@ -76,7 +76,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	private void init() {
 
-		entities.setPadding(new Insets(2 * gap));
+		entities.setPadding(new Insets(2 * GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);

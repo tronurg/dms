@@ -32,7 +32,7 @@ import javafx.scene.layout.VBox;
 
 public class ForwardSelectionPane extends GridPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
 
 	private final Button backBtn;
 	private final SearchField searchField = new SearchField(true);
@@ -107,13 +107,13 @@ public class ForwardSelectionPane extends GridPane {
 
 	private void initBackBtn() {
 
-		GridPane.setMargin(backBtn, new Insets(gap));
+		GridPane.setMargin(backBtn, new Insets(GAP));
 
 	}
 
 	private void initEntities() {
 
-		entities.setPadding(new Insets(2 * gap));
+		entities.setPadding(new Insets(2 * GAP));
 
 		GridPane.setHgrow(scrollPane, Priority.ALWAYS);
 		GridPane.setVgrow(scrollPane, Priority.ALWAYS);
@@ -124,7 +124,7 @@ public class ForwardSelectionPane extends GridPane {
 
 	private void initSendBtn() {
 
-		GridPane.setMargin(sendBtn, new Insets(2 * gap));
+		GridPane.setMargin(sendBtn, new Insets(2 * GAP));
 		GridPane.setHalignment(sendBtn, HPos.RIGHT);
 		GridPane.setValignment(sendBtn, VPos.BOTTOM);
 

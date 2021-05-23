@@ -100,30 +100,29 @@ class MessagePane extends BorderPane {
 	private static final DateTimeFormatter HOUR_MIN = DateTimeFormatter.ofPattern("HH:mm");
 	private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
-	private final double gap = ViewFactory.getGap();
-	private final double smallGap = 2.0 * gap / 5.0;
-
-	private final double viewFactor = ViewFactory.getViewFactor();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final EntityId entityId;
 
 	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(10.0 * viewFactor), BorderWidths.DEFAULT));
+			new CornerRadii(10.0 * VIEW_FACTOR), BorderWidths.DEFAULT));
 	private final Border dateBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(gap), BorderWidths.DEFAULT, Insets.EMPTY));
+			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
 	private final Background incomingBackground = new Background(
-			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
+			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 	private final Background outgoingBackground = new Background(
-			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * viewFactor), Insets.EMPTY));
+			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 	private final Background dateBackground = new Background(
-			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(gap), Insets.EMPTY));
+			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
 
-	private final HBox topPane = new HBox(2 * gap);
-	private final VBox centerPane = new VBox(2 * gap);
+	private final HBox topPane = new HBox(2 * GAP);
+	private final VBox centerPane = new VBox(2 * GAP);
 	private final GridPane bottomPane = new GridPane();
 
 	private final Button backBtn;
-	private final Circle statusCircle = new Circle(7.0 * viewFactor);
+	private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
 	private final Label nameLabel = new Label();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button forwardBtn = ViewFactory.newForwardBtn();
@@ -144,7 +143,7 @@ class MessagePane extends BorderPane {
 
 	private final HBox referencePane = new HBox();
 	private final Button closeReferenceBtn = ViewFactory.newCancelBtn();
-	private final HBox attachmentArea = new HBox(gap);
+	private final HBox attachmentArea = new HBox(GAP);
 	private final ImPane imPane = new ImPane();
 	private final StackPane btnPane = new StackPane();
 
@@ -156,7 +155,7 @@ class MessagePane extends BorderPane {
 
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
-	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * viewFactor);
+	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * VIEW_FACTOR);
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
@@ -215,7 +214,7 @@ class MessagePane extends BorderPane {
 	private void initTopPane() {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(gap));
+		topPane.setPadding(new Insets(GAP));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		initBackBtn();
@@ -233,7 +232,7 @@ class MessagePane extends BorderPane {
 
 	private void initCenterPane() {
 
-		centerPane.setPadding(new Insets(gap));
+		centerPane.setPadding(new Insets(GAP));
 		centerPane.heightProperty().addListener((e0, e1, e2) -> {
 			if (autoScroll.get())
 				scrollPaneToBottom();
@@ -257,9 +256,9 @@ class MessagePane extends BorderPane {
 
 	private void initBottomPane() {
 
-		bottomPane.setPadding(new Insets(gap));
-		bottomPane.setHgap(gap);
-		bottomPane.setVgap(gap);
+		bottomPane.setPadding(new Insets(GAP));
+		bottomPane.setHgap(GAP);
+		bottomPane.setVgap(GAP);
 		bottomPane.managedProperty().bind(activeProperty);
 
 		initReferencePane();
@@ -293,7 +292,7 @@ class MessagePane extends BorderPane {
 	private void initNameLbl() {
 
 		nameLabel.getStyleClass().add("black-label");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
 		nameLabel.setOnMouseClicked(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
@@ -359,7 +358,7 @@ class MessagePane extends BorderPane {
 		deleteBtn.visibleProperty().bind(selectionModeProperty);
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 		deleteBtn.setOnAction(e -> {
-			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + gap);
+			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + GAP);
 			deleteSelectedPopup.show(deleteBtn, point.getX(), point.getY());
 		});
 		deleteBtn.disableProperty()
@@ -381,7 +380,7 @@ class MessagePane extends BorderPane {
 						() -> clearBtn.isHover() || clearConversationPopup.isShowing() ? 1.0 : 0.5,
 						clearBtn.hoverProperty(), clearConversationPopup.showingProperty()));
 		clearBtn.setOnAction(e -> {
-			Point2D point = clearBtn.localToScreen(clearBtn.getWidth(), clearBtn.getHeight() + gap);
+			Point2D point = clearBtn.localToScreen(clearBtn.getWidth(), clearBtn.getHeight() + GAP);
 			clearConversationPopup.show(clearBtn, point.getX(), point.getY());
 		});
 
@@ -402,7 +401,7 @@ class MessagePane extends BorderPane {
 
 	private void initCloseReferenceBtn() {
 
-		GridPane.setMargin(closeReferenceBtn, new Insets(gap));
+		GridPane.setMargin(closeReferenceBtn, new Insets(GAP));
 		GridPane.setHalignment(closeReferenceBtn, HPos.RIGHT);
 		GridPane.setValignment(closeReferenceBtn, VPos.TOP);
 		closeReferenceBtn.setOnAction(e -> referenceMessageProperty.set(null));
@@ -415,7 +414,7 @@ class MessagePane extends BorderPane {
 
 		attachmentArea.getStyleClass().add("attachment-area");
 		attachmentArea.setAlignment(Pos.CENTER);
-		attachmentArea.setPadding(new Insets(gap));
+		attachmentArea.setPadding(new Insets(GAP));
 		attachmentArea.visibleProperty().bind(Bindings.isNotNull(attachmentProperty));
 		attachmentArea.managedProperty().bind(attachmentArea.visibleProperty());
 
@@ -551,7 +550,7 @@ class MessagePane extends BorderPane {
 
 		deleteSelectedBtn.setStyle("-fx-background-color: red;");
 		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
-		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		deleteSelectedBtn.setMnemonicParsing(false);
 		deleteSelectedBtn.setOnAction(e -> {
 			deleteSelectedPopup.hide();
@@ -567,7 +566,7 @@ class MessagePane extends BorderPane {
 
 		clearConversationBtn.setStyle("-fx-background-color: red;");
 		clearConversationBtn.setTextFill(Color.ANTIQUEWHITE);
-		clearConversationBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		clearConversationBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		clearConversationBtn.setMnemonicParsing(false);
 		clearConversationBtn.setOnAction(e -> {
 			clearConversationPopup.hide();
@@ -759,7 +758,7 @@ class MessagePane extends BorderPane {
 
 		}
 
-		scrollPane(messageBalloon, smallGap);
+		scrollPane(messageBalloon, SMALL_GAP);
 
 		messageBalloon.blink();
 
@@ -809,7 +808,7 @@ class MessagePane extends BorderPane {
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
 		referenceBalloon.getStyleClass().add("reference-balloon");
 
-		final InnerShadow shadow = new InnerShadow(2 * gap, Color.DARKGRAY);
+		final InnerShadow shadow = new InnerShadow(2 * GAP, Color.DARKGRAY);
 		referenceBalloon.setEffect(shadow);
 
 		final Long messageId = messageInfo.messageId;
@@ -844,8 +843,8 @@ class MessagePane extends BorderPane {
 
 	private Node newReferenceBalloon(MessageInfo messageInfo) {
 
-		VBox referenceBalloon = new VBox(smallGap);
-		referenceBalloon.setPadding(new Insets(gap));
+		VBox referenceBalloon = new VBox(SMALL_GAP);
+		referenceBalloon.setPadding(new Insets(GAP));
 
 		Label nameLabel = new Label(messageInfo.senderName);
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
@@ -859,7 +858,7 @@ class MessagePane extends BorderPane {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
 
-				VBox.setMargin(dummyPlayer, new Insets(0.0, 0.0, 0.0, gap));
+				VBox.setMargin(dummyPlayer, new Insets(0.0, 0.0, 0.0, GAP));
 
 				referenceBalloon.getChildren().add(dummyPlayer);
 
@@ -870,7 +869,7 @@ class MessagePane extends BorderPane {
 				attachmentLabel.getStyleClass().add("dim-label");
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
-				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, gap));
+				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
 
 				referenceBalloon.getChildren().add(attachmentLabel);
 
@@ -896,7 +895,7 @@ class MessagePane extends BorderPane {
 			contentLbl.setFont(Font.font(contentLbl.getFont().getSize() * 0.8));
 			contentLbl.setWrapText(true);
 
-			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, gap));
+			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
 
 			referenceBalloon.getChildren().add(contentLbl);
 
@@ -1018,17 +1017,17 @@ class MessagePane extends BorderPane {
 
 	private class MessageBalloon extends GridPane {
 
-		private final double radius = 3.0 * viewFactor;
+		private final double radius = 3.0 * VIEW_FACTOR;
 
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final HBox statusPane = new HBox(gap);
+		private final HBox statusPane = new HBox(GAP);
 		private final Label timeLbl;
 		private final Node starGraph = ViewFactory.newStarGraph(0.65);
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
-		private final InnerShadow shadow = new InnerShadow(3 * gap, Color.TRANSPARENT);
+		private final InnerShadow shadow = new InnerShadow(3 * GAP, Color.TRANSPARENT);
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
@@ -1094,7 +1093,7 @@ class MessagePane extends BorderPane {
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			GridPane.setMargin(referenceBalloon, new Insets(0, 0, gap, 0));
+			GridPane.setMargin(referenceBalloon, new Insets(0, 0, GAP, 0));
 			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
 
 			messagePane.add(referenceBalloon, 0, 1);
@@ -1123,7 +1122,7 @@ class MessagePane extends BorderPane {
 
 		private void initSelectionBtn() {
 
-			GridPane.setMargin(selectionBtn, new Insets(0, gap, 0, 0));
+			GridPane.setMargin(selectionBtn, new Insets(0, GAP, 0, 0));
 
 			selectionBtn.visibleProperty().bind(selectionModeProperty);
 			selectionBtn.managedProperty().bind(selectionBtn.visibleProperty());
@@ -1146,7 +1145,7 @@ class MessagePane extends BorderPane {
 
 			messagePane.setStyle("-fx-min-width: 6em;");
 			messagePane.setBorder(messagePaneBorder);
-			messagePane.setPadding(new Insets(gap));
+			messagePane.setPadding(new Insets(GAP));
 			messagePane.setEffect(shadow);
 
 			if (messageInfo.attachment != null)
@@ -1164,7 +1163,7 @@ class MessagePane extends BorderPane {
 		private Node getInfoBtn() {
 
 			Button infoBtn = ViewFactory.newInfoBtn();
-			GridPane.setMargin(infoBtn, new Insets(0, 0, 0, gap));
+			GridPane.setMargin(infoBtn, new Insets(0, 0, 0, GAP));
 
 			infoBtn.visibleProperty().bind(selectionModeProperty.not());
 			infoBtn.managedProperty().bind(infoBtn.visibleProperty());
@@ -1253,7 +1252,7 @@ class MessagePane extends BorderPane {
 
 		private void initTimeLbl() {
 
-			timeLbl.setFont(Font.font(11.25 * viewFactor));
+			timeLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
@@ -1263,7 +1262,7 @@ class MessagePane extends BorderPane {
 			Label progressLbl = new Label();
 
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
-			progressLbl.setFont(Font.font(11.25 * viewFactor));
+			progressLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.FRESH));
@@ -1311,7 +1310,7 @@ class MessagePane extends BorderPane {
 
 		private MessageGroup(MessageInfo messageInfo) {
 
-			super(smallGap);
+			super(SMALL_GAP);
 
 			this.ownerId = messageInfo.ownerId;
 
@@ -1326,7 +1325,7 @@ class MessagePane extends BorderPane {
 
 		private void initNameLbl(Color nameColor) {
 
-			nameLbl.setPadding(new Insets(0.0, 0.0, gap, 0.0));
+			nameLbl.setPadding(new Insets(0.0, 0.0, GAP, 0.0));
 			nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
 			nameLbl.setTextFill(nameColor);
 
@@ -1390,7 +1389,7 @@ class MessagePane extends BorderPane {
 		private final LocalDate day;
 
 		private final Label dateLabel;
-		private final VBox messageGroupBox = new VBox(gap);
+		private final VBox messageGroupBox = new VBox(GAP);
 
 		private final List<MessageGroup> messageGroups = Collections.synchronizedList(new ArrayList<MessageGroup>());
 
@@ -1409,13 +1408,13 @@ class MessagePane extends BorderPane {
 		private void init() {
 
 			// init dateLabel
-			dateLabel.setPadding(new Insets(0.0, gap, 0.0, gap));
+			dateLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
 			dateLabel.setFont(Font.font(null, FontWeight.BOLD, dateLabel.getFont().getSize()));
 			dateLabel.setTextFill(Color.GRAY);
 			dateLabel.setBorder(dateBorder);
 			dateLabel.setBackground(dateBackground);
 			BorderPane.setAlignment(dateLabel, Pos.CENTER);
-			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, gap, 0.0));
+			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, GAP, 0.0));
 
 			setTop(dateLabel);
 			setCenter(messageGroupBox);
@@ -1499,7 +1498,7 @@ class MessagePane extends BorderPane {
 			outer.setFill(Color.LIGHTSKYBLUE);
 			inner.setFill(Color.DEEPSKYBLUE);
 			getChildren().addAll(outer, inner);
-			setTranslateX(-2.0 * (radius + gap));
+			setTranslateX(-2.0 * (radius + GAP));
 		}
 
 	}

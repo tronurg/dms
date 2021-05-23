@@ -18,7 +18,7 @@ import javafx.scene.layout.Priority;
 
 public class SearchField extends HBox {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
 
 	private final boolean allowFilter;
 
@@ -62,7 +62,7 @@ public class SearchField extends HBox {
 	private Button getVisibleBtn() {
 
 		final Button visibleBtn = ViewFactory.newVisibleBtn(0.65);
-		HBox.setMargin(visibleBtn, new Insets(gap));
+		HBox.setMargin(visibleBtn, new Insets(GAP));
 
 		final Effect glow = new Glow();
 		visibleBtn.effectProperty().bind(

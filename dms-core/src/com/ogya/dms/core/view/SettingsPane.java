@@ -24,15 +24,14 @@ import javafx.scene.text.FontWeight;
 
 public class SettingsPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final HBox topPane = new HBox(2 * gap);
+	private final HBox topPane = new HBox(2 * GAP);
 
 	private final Button backBtn;
 
-	private final VBox scrollableContent = new VBox(gap);
+	private final VBox scrollableContent = new VBox(GAP);
 	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
 		@Override
 		public void requestFocus() {
@@ -79,7 +78,7 @@ public class SettingsPane extends BorderPane {
 	private void initTopPane() {
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(gap));
+		topPane.setPadding(new Insets(GAP));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		topPane.getChildren().addAll(backBtn);
@@ -88,12 +87,12 @@ public class SettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
-		scrollableContent.setPadding(new Insets(3 * gap));
+		scrollableContent.setPadding(new Insets(3 * GAP));
 
 		// STARRED_MESSAGES
 		Label starredMessagesLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
 		starredMessagesLbl.getStyleClass().add("link-label");
-		starredMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		starredMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		starredMessagesLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null)
@@ -105,7 +104,7 @@ public class SettingsPane extends BorderPane {
 		// HIDDEN_CONVERSATIONS
 		Label hiddenConversationsLbl = new Label(CommonMethods.translate("HIDDEN_CONVERSATIONS"));
 		hiddenConversationsLbl.getStyleClass().add("link-label");
-		hiddenConversationsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		hiddenConversationsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		hiddenConversationsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null)
@@ -117,7 +116,7 @@ public class SettingsPane extends BorderPane {
 		// EDIT_REMOTE_IPS
 		Label editRemoteIpsLbl = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
 		editRemoteIpsLbl.getStyleClass().add("link-label");
-		editRemoteIpsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+		editRemoteIpsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		editRemoteIpsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null)

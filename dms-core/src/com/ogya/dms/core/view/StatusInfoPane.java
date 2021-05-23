@@ -29,12 +29,11 @@ import javafx.scene.text.FontWeight;
 
 public class StatusInfoPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final HBox topPane = new HBox(2 * gap);
-	private final VBox centerPane = new VBox(2 * gap);
+	private final HBox topPane = new HBox(2 * GAP);
+	private final VBox centerPane = new VBox(2 * GAP);
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
@@ -57,8 +56,8 @@ public class StatusInfoPane extends BorderPane {
 
 	private void init() {
 
-		topPane.setPadding(new Insets(gap));
-		centerPane.setPadding(new Insets(2 * gap, 4 * gap, 2 * gap, 2 * gap));
+		topPane.setPadding(new Insets(GAP));
+		centerPane.setPadding(new Insets(2 * GAP, 4 * GAP, 2 * GAP, 2 * GAP));
 
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
@@ -138,9 +137,9 @@ public class StatusInfoPane extends BorderPane {
 
 	private final class Card extends HBox {
 
-		private final double radius = 3.0 * viewFactor;
+		private final double radius = 3.0 * VIEW_FACTOR;
 
-		private final Circle statusCircle = new Circle(7.0 * viewFactor);
+		private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
 		private final Label nameLbl = new Label();
 		private final Label progressLbl = new Label();
 		private final Group infoGrp = new Group();
@@ -149,7 +148,7 @@ public class StatusInfoPane extends BorderPane {
 
 		private Card() {
 
-			super(gap);
+			super(GAP);
 
 			init();
 
@@ -202,8 +201,8 @@ public class StatusInfoPane extends BorderPane {
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 
 			nameLbl.setGraphic(statusCircle);
-			nameLbl.setGraphicTextGap(2 * gap);
-			nameLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * viewFactor));
+			nameLbl.setGraphicTextGap(2 * GAP);
+			nameLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
 
 		}
@@ -211,7 +210,7 @@ public class StatusInfoPane extends BorderPane {
 		private void initProgressLbl() {
 
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
-			progressLbl.setFont(Font.font(11.25 * viewFactor));
+			progressLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());

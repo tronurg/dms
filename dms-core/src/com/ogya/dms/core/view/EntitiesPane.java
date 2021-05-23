@@ -15,7 +15,7 @@ import javafx.scene.layout.BorderPane;
 
 class EntitiesPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
 
 	private final Button createGroupBtn = ViewFactory.newAddBtn();
 	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase(true);
@@ -44,7 +44,7 @@ class EntitiesPane extends BorderPane {
 		createGroupBtn.getStyleClass().add("dim-label");
 		createGroupBtn.setMnemonicParsing(false);
 		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
-		createGroupBtn.setPadding(new Insets(2 * gap));
+		createGroupBtn.setPadding(new Insets(2 * GAP));
 
 	}
 

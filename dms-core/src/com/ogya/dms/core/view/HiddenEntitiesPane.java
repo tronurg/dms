@@ -25,11 +25,10 @@ import javafx.scene.text.FontWeight;
 
 public class HiddenEntitiesPane extends BorderPane {
 
-	private final double gap = ViewFactory.getGap();
+	private static final double GAP = ViewFactory.GAP;
+	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final double viewFactor = ViewFactory.getViewFactor();
-
-	private final HBox topPane = new HBox(2 * gap);
+	private final HBox topPane = new HBox(2 * GAP);
 	private final Button backBtn;
 	private final Label headingLabel = new Label(CommonMethods.translate("HIDDEN_CONVERSATIONS"));
 
@@ -61,7 +60,7 @@ public class HiddenEntitiesPane extends BorderPane {
 		initHeadingLabel();
 
 		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(gap));
+		topPane.setPadding(new Insets(GAP));
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		topPane.getChildren().addAll(backBtn, headingLabel);
@@ -71,7 +70,7 @@ public class HiddenEntitiesPane extends BorderPane {
 	private void initHeadingLabel() {
 
 		headingLabel.getStyleClass().add("black-label");
-		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * viewFactor));
+		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
 
 	}
 

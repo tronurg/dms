@@ -31,11 +31,11 @@ import javafx.scene.text.FontWeight;
 
 class EntityPaneBase extends GridPane {
 
-	private final double unitSize = 24.0 * ViewFactory.getViewFactor();
+	private static final double UNIT_SIZE = 24.0 * ViewFactory.VIEW_FACTOR;
 
 	private final Group profilePicture = new Group();
-	private final Circle statusCircle = new Circle(unitSize);
-	private final Circle profileRound = new Circle(unitSize * 0.8);
+	private final Circle statusCircle = new Circle(UNIT_SIZE);
+	private final Circle profileRound = new Circle(UNIT_SIZE * 0.8);
 	private final Label initialLbl = new Label();
 	private final Label groupSign = new Label("G");
 
@@ -56,7 +56,7 @@ class EntityPaneBase extends GridPane {
 
 	private final void init() {
 
-		setHgap(ViewFactory.getGap());
+		setHgap(ViewFactory.GAP);
 
 		initProfilePicture();
 		initNameLbl();
@@ -90,7 +90,7 @@ class EntityPaneBase extends GridPane {
 
 	private void initStatusCircle() {
 
-		statusCircle.setStrokeWidth(unitSize * 0.2);
+		statusCircle.setStrokeWidth(UNIT_SIZE * 0.2);
 		statusCircle.setFill(Color.TRANSPARENT);
 
 	}
@@ -106,7 +106,7 @@ class EntityPaneBase extends GridPane {
 		initialLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 		initialLbl.setStyle("-fx-text-fill: #404040;");
-		initialLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize));
+		initialLbl.setFont(Font.font(null, FontWeight.BOLD, UNIT_SIZE));
 
 		initialLbl.translateXProperty().bind(
 				Bindings.createDoubleBinding(() -> -initialLbl.widthProperty().get() / 2, initialLbl.widthProperty()));
@@ -120,15 +120,15 @@ class EntityPaneBase extends GridPane {
 		groupSign.setVisible(false);
 		groupSign.setTextFill(Color.WHITE);
 		groupSign.setContentDisplay(ContentDisplay.CENTER);
-		groupSign.setFont(Font.font(null, FontWeight.EXTRA_BOLD, unitSize * 0.5));
+		groupSign.setFont(Font.font(null, FontWeight.EXTRA_BOLD, UNIT_SIZE * 0.5));
 
-		Circle circle = new Circle(unitSize * 0.3);
+		Circle circle = new Circle(UNIT_SIZE * 0.3);
 		circle.setFill(Color.TOMATO);
 
 		groupSign.setGraphic(circle);
 
-		groupSign.setTranslateX(unitSize * 0.5);
-		groupSign.setTranslateY(unitSize * 0.5);
+		groupSign.setTranslateX(UNIT_SIZE * 0.5);
+		groupSign.setTranslateY(UNIT_SIZE * 0.5);
 
 	}
 
@@ -136,7 +136,7 @@ class EntityPaneBase extends GridPane {
 
 		nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
-		nameLbl.setFont(Font.font(null, FontWeight.BOLD, unitSize * 0.8));
+		nameLbl.setFont(Font.font(null, FontWeight.BOLD, UNIT_SIZE * 0.8));
 
 		nameLbl.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String name = nameLbl.getText();
