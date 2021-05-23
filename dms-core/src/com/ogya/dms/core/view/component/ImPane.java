@@ -13,8 +13,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.effect.ColorAdjust;
-import javafx.scene.effect.Effect;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -23,7 +21,7 @@ public class ImPane extends HBox {
 
 	private final TextArea messageArea = new TextArea();
 	private final Button showFoldersBtn = ViewFactory.newAttachBtnTransparent();
-	private final Button reportBtn = ViewFactory.newReportBtn();
+	private final Button reportBtn = ViewFactory.newReportBtnTransparent();
 
 	private final List<ImListener> listeners = Collections.synchronizedList(new ArrayList<ImListener>());
 
@@ -74,10 +72,8 @@ public class ImPane extends HBox {
 
 	private void initShowFoldersBtn() {
 
-		final Effect colorAdjust = new ColorAdjust(-0.9, 1.0, 0.25, 0.0);
-
-		showFoldersBtn.effectProperty().bind(Bindings.createObjectBinding(
-				() -> showFoldersBtn.isHover() ? colorAdjust : null, showFoldersBtn.hoverProperty()));
+		showFoldersBtn.opacityProperty().bind(Bindings.createObjectBinding(() -> showFoldersBtn.isHover() ? 1.0 : 0.5,
+				showFoldersBtn.hoverProperty()));
 
 		showFoldersBtn.setOnAction(e -> listeners.forEach(listener -> listener.showFoldersClicked()));
 
@@ -85,10 +81,8 @@ public class ImPane extends HBox {
 
 	private void initReportBtn() {
 
-		final Effect colorAdjust = new ColorAdjust(-0.9, 1.0, 0.25, 0.0);
-
-		reportBtn.effectProperty().bind(Bindings.createObjectBinding(() -> reportBtn.isHover() ? colorAdjust : null,
-				reportBtn.hoverProperty()));
+		reportBtn.opacityProperty()
+				.bind(Bindings.createObjectBinding(() -> reportBtn.isHover() ? 1.0 : 0.5, reportBtn.hoverProperty()));
 
 		reportBtn.setOnAction(e -> listeners.forEach(listener -> listener.reportClicked()));
 

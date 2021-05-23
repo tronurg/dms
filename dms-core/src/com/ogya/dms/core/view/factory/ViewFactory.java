@@ -73,15 +73,13 @@ public class ViewFactory {
 
 	public static Button newBackBtn(BooleanProperty highlightProperty) {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Circle circle = new Circle(16.0 * viewFactor);
+		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.DODGERBLUE);
 		Polygon triangle = new Polygon();
-		triangle.getPoints().addAll(new Double[] { -13.0 * viewFactor, 0.0, 7.0 * viewFactor, 10.5 * viewFactor,
-				7.0 * viewFactor, -10.5 * viewFactor });
+		triangle.getPoints().addAll(new Double[] { -13.0 * VIEW_FACTOR, 0.0, 7.0 * VIEW_FACTOR, 10.5 * VIEW_FACTOR,
+				7.0 * VIEW_FACTOR, -10.5 * VIEW_FACTOR });
 		triangle.setFill(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
@@ -100,15 +98,13 @@ public class ViewFactory {
 
 	public static Button newSendBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Circle circle = new Circle(16.0 * viewFactor);
+		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.GREEN);
 		Polygon triangle = new Polygon();
-		triangle.getPoints().addAll(new Double[] { -7.0 * viewFactor, -10.5 * viewFactor, 13.0 * viewFactor, 0.0,
-				-7.0 * viewFactor, 10.5 * viewFactor });
+		triangle.getPoints().addAll(new Double[] { -7.0 * VIEW_FACTOR, -10.5 * VIEW_FACTOR, 13.0 * VIEW_FACTOR, 0.0,
+				-7.0 * VIEW_FACTOR, 10.5 * VIEW_FACTOR });
 		triangle.setFill(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
@@ -121,19 +117,17 @@ public class ViewFactory {
 
 	public static Button newAddBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Circle circle = new Circle(10.0 * viewFactor);
-		circle.setStrokeWidth(3.0 * viewFactor);
+		Circle circle = new Circle(10.0 * VIEW_FACTOR);
+		circle.setStrokeWidth(3.0 * VIEW_FACTOR);
 		circle.setFill(Color.TRANSPARENT);
-		Line line1 = new Line(0.0, 5.0 * viewFactor, 0.0, -5.0 * viewFactor);
+		Line line1 = new Line(0.0, 5.0 * VIEW_FACTOR, 0.0, -5.0 * VIEW_FACTOR);
 		line1.setStrokeLineCap(StrokeLineCap.ROUND);
 		line1.setStrokeWidth(3.0);
-		Line line2 = new Line(-5.0 * viewFactor, 0.0, 5.0 * viewFactor, 0.0);
+		Line line2 = new Line(-5.0 * VIEW_FACTOR, 0.0, 5.0 * VIEW_FACTOR, 0.0);
 		line2.setStrokeLineCap(StrokeLineCap.ROUND);
-		line2.setStrokeWidth(3.0 * viewFactor);
+		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
@@ -178,26 +172,24 @@ public class ViewFactory {
 
 	public static Button newDeleteBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Rectangle rectangle = new Rectangle(12.0 * viewFactor, 20.0 * viewFactor);
-		rectangle.setArcWidth(4.0 * viewFactor);
-		rectangle.setArcHeight(4.0 * viewFactor);
-		rectangle.setStrokeWidth(2.0 * viewFactor);
+		Rectangle rectangle = new Rectangle(12.0 * VIEW_FACTOR, 20.0 * VIEW_FACTOR);
+		rectangle.setArcWidth(4.0 * VIEW_FACTOR);
+		rectangle.setArcHeight(4.0 * VIEW_FACTOR);
+		rectangle.setStrokeWidth(2.0 * VIEW_FACTOR);
 		rectangle.setStroke(Color.RED);
 		rectangle.setFill(Color.TRANSPARENT);
-		Line line1 = new Line(0.0, 4.0 * viewFactor, 12.0 * viewFactor, 4.0 * viewFactor);
-		line1.setStrokeWidth(2.0 * viewFactor);
+		Line line1 = new Line(0.0, 4.0 * VIEW_FACTOR, 12.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR);
+		line1.setStrokeWidth(2.0 * VIEW_FACTOR);
 		line1.setStroke(Color.RED);
-		Line line2 = new Line(4.0 * viewFactor, 7.0 * viewFactor, 4.0 * viewFactor, 17.0 * viewFactor);
+		Line line2 = new Line(4.0 * VIEW_FACTOR, 7.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR, 17.0 * VIEW_FACTOR);
 		line2.setStrokeLineCap(StrokeLineCap.ROUND);
-		line2.setStrokeWidth(2.0 * viewFactor);
+		line2.setStrokeWidth(2.0 * VIEW_FACTOR);
 		line2.setStroke(Color.RED);
-		Line line3 = new Line(8.0 * viewFactor, 7.0 * viewFactor, 8.0 * viewFactor, 17.0 * viewFactor);
+		Line line3 = new Line(8.0 * VIEW_FACTOR, 7.0 * VIEW_FACTOR, 8.0 * VIEW_FACTOR, 17.0 * VIEW_FACTOR);
 		line3.setStrokeLineCap(StrokeLineCap.ROUND);
-		line3.setStrokeWidth(2.0 * viewFactor);
+		line3.setStrokeWidth(2.0 * VIEW_FACTOR);
 		line3.setStroke(Color.RED);
 		Group group = new Group(rectangle, line1, line2, line3);
 		btn.setGraphic(group);
@@ -210,7 +202,29 @@ public class ViewFactory {
 
 	public static Button newAttachBtnTransparent() {
 
-		return newAttachBtn(0.85, Color.TRANSPARENT, Color.GRAY);
+		double viewFactor = 0.85 * VIEW_FACTOR;
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(16.0 * VIEW_FACTOR);
+		circle.setFill(Color.TRANSPARENT);
+		Rectangle rectangle = new Rectangle(-12.0 * viewFactor, -5.0 * viewFactor, 24.0 * viewFactor,
+				10.0 * viewFactor);
+		rectangle.getStyleClass().add("ghost-shape");
+		rectangle.setArcWidth(6.0 * viewFactor);
+		rectangle.setArcHeight(6.0 * viewFactor);
+		rectangle.setStrokeWidth(2.0 * VIEW_FACTOR);
+		rectangle.setRotate(-45.0);
+		rectangle.setFill(Color.TRANSPARENT);
+		Line line = new Line(-6.0 * viewFactor, 6.0 * viewFactor, 3.0 * viewFactor, -3.0 * viewFactor);
+		line.getStyleClass().add("ghost-shape");
+		line.setStrokeWidth(2.0 * VIEW_FACTOR);
+		Group group = new Group(circle, rectangle, line);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
 
 	}
 
@@ -222,11 +236,9 @@ public class ViewFactory {
 
 	private static Button newAttachBtn(double scaleFactor, Color background, Color foreground) {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Circle circle = new Circle(16.0 * viewFactor);
+		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(background);
 		Group group = new Group(circle, newAttachGraph(scaleFactor, foreground));
 		btn.setGraphic(group);
@@ -263,27 +275,26 @@ public class ViewFactory {
 
 	}
 
-	public static Button newReportBtn() {
-
-		double viewFactor = VIEW_FACTOR;
+	public static Button newReportBtnTransparent() {
 
 		Button btn = new Button();
 
-		Circle circle = new Circle(16.0 * viewFactor);
+		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.TRANSPARENT);
-		Rectangle rectangle = new Rectangle(-6.0 * viewFactor, -8.0 * viewFactor, 12.0 * viewFactor, 16.0 * viewFactor);
-		rectangle.setStrokeWidth(2.0 * viewFactor);
-		rectangle.setStroke(Color.GRAY);
+		Rectangle rectangle = new Rectangle(-6.0 * VIEW_FACTOR, -8.0 * VIEW_FACTOR, 12.0 * VIEW_FACTOR,
+				16.0 * VIEW_FACTOR);
+		rectangle.getStyleClass().add("ghost-shape");
+		rectangle.setStrokeWidth(2.0 * VIEW_FACTOR);
 		rectangle.setFill(Color.TRANSPARENT);
-		Line line1 = new Line(-2.0 * viewFactor, -4.0 * viewFactor, 2.0 * viewFactor, -4.0 * viewFactor);
-		line1.setStrokeWidth(2.0 * viewFactor);
-		line1.setStroke(Color.GRAY);
-		Line line2 = new Line(-2.0 * viewFactor, 0.0, 2.0 * viewFactor, 0.0);
-		line2.setStrokeWidth(2.0 * viewFactor);
-		line2.setStroke(Color.GRAY);
-		Line line3 = new Line(-2.0 * viewFactor, 4.0 * viewFactor, 2.0 * viewFactor, 4.0 * viewFactor);
-		line3.setStrokeWidth(2.0 * viewFactor);
-		line3.setStroke(Color.GRAY);
+		Line line1 = new Line(-2.0 * VIEW_FACTOR, -4.0 * VIEW_FACTOR, 2.0 * VIEW_FACTOR, -4.0 * VIEW_FACTOR);
+		line1.getStyleClass().add("ghost-shape");
+		line1.setStrokeWidth(2.0 * VIEW_FACTOR);
+		Line line2 = new Line(-2.0 * VIEW_FACTOR, 0.0, 2.0 * VIEW_FACTOR, 0.0);
+		line2.getStyleClass().add("ghost-shape");
+		line2.setStrokeWidth(2.0 * VIEW_FACTOR);
+		Line line3 = new Line(-2.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR, 2.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR);
+		line3.getStyleClass().add("ghost-shape");
+		line3.setStrokeWidth(2.0 * VIEW_FACTOR);
 		Group group = new Group(circle, rectangle, line1, line2, line3);
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
@@ -295,14 +306,12 @@ public class ViewFactory {
 
 	public static Button newInfoBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button("i");
 		btn.setTextFill(Color.WHITE);
 		btn.setContentDisplay(ContentDisplay.CENTER);
-		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 * viewFactor));
+		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 * VIEW_FACTOR));
 
-		Circle circle = new Circle(12.0 * viewFactor);
+		Circle circle = new Circle(12.0 * VIEW_FACTOR);
 		btn.setGraphic(circle);
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
@@ -318,18 +327,16 @@ public class ViewFactory {
 
 	public static Button newCancelBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Circle circle = new Circle(10.0 * viewFactor);
+		Circle circle = new Circle(10.0 * VIEW_FACTOR);
 		circle.setFill(Color.RED);
-		Line line1 = new Line(-4.0 * viewFactor, -4.0 * viewFactor, 4.0 * viewFactor, 4.0 * viewFactor);
-		line1.setStrokeWidth(3.0 * viewFactor);
+		Line line1 = new Line(-4.0 * VIEW_FACTOR, -4.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR);
+		line1.setStrokeWidth(3.0 * VIEW_FACTOR);
 		line1.setStroke(Color.WHITE);
-		Line line2 = new Line(-4.0 * viewFactor, 4.0 * viewFactor, 4.0 * viewFactor, -4.0 * viewFactor);
+		Line line2 = new Line(-4.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR, 4.0 * VIEW_FACTOR, -4.0 * VIEW_FACTOR);
 		line2.setStrokeLineCap(StrokeLineCap.ROUND);
-		line2.setStrokeWidth(3.0 * viewFactor);
+		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		line2.setStroke(Color.WHITE);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
@@ -342,20 +349,18 @@ public class ViewFactory {
 
 	public static Button newSettingsBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
 		ObjectProperty<Color> colorProperty = new SimpleObjectProperty<Color>();
 
-		Circle circle = new Circle(12.0 * viewFactor, Color.TRANSPARENT);
+		Circle circle = new Circle(12.0 * VIEW_FACTOR, Color.TRANSPARENT);
 		circle.strokeProperty().bind(colorProperty);
-		circle.setStrokeWidth(2.0 * viewFactor);
-		Circle point0 = new Circle(-6.0 * viewFactor, 0.0, 2.0 * viewFactor);
+		circle.setStrokeWidth(2.0 * VIEW_FACTOR);
+		Circle point0 = new Circle(-6.0 * VIEW_FACTOR, 0.0, 2.0 * VIEW_FACTOR);
 		point0.fillProperty().bind(colorProperty);
-		Circle point1 = new Circle(2.0 * viewFactor);
+		Circle point1 = new Circle(2.0 * VIEW_FACTOR);
 		point1.fillProperty().bind(colorProperty);
-		Circle point2 = new Circle(6.0 * viewFactor, 0.0, 2.0 * viewFactor);
+		Circle point2 = new Circle(6.0 * VIEW_FACTOR, 0.0, 2.0 * VIEW_FACTOR);
 		point2.fillProperty().bind(colorProperty);
 		Group group = new Group(circle, point0, point1, point2);
 		btn.setGraphic(group);
@@ -373,20 +378,18 @@ public class ViewFactory {
 
 	public static Button newSelectionBtn() {
 
-		double viewFactor = VIEW_FACTOR;
-
 		Button btn = new Button();
 
-		Circle circle = new Circle(12.0 * viewFactor);
-		circle.setStrokeWidth(3.0 * viewFactor);
+		Circle circle = new Circle(12.0 * VIEW_FACTOR);
+		circle.setStrokeWidth(3.0 * VIEW_FACTOR);
 		circle.setFill(Color.GREEN);
-		Line line1 = new Line(-6.0 * viewFactor, 0.0, -2.0 * viewFactor, 6.0 * viewFactor);
+		Line line1 = new Line(-6.0 * VIEW_FACTOR, 0.0, -2.0 * VIEW_FACTOR, 6.0 * VIEW_FACTOR);
 		line1.setStrokeLineCap(StrokeLineCap.ROUND);
-		line1.setStrokeWidth(3.0 * viewFactor);
+		line1.setStrokeWidth(3.0 * VIEW_FACTOR);
 		line1.setStroke(Color.WHITE);
-		Line line2 = new Line(-2.0 * viewFactor, 6.0 * viewFactor, 6.0 * viewFactor, -6.0 * viewFactor);
+		Line line2 = new Line(-2.0 * VIEW_FACTOR, 6.0 * VIEW_FACTOR, 6.0 * VIEW_FACTOR, -6.0 * VIEW_FACTOR);
 		line2.setStrokeLineCap(StrokeLineCap.ROUND);
-		line2.setStrokeWidth(3.0 * viewFactor);
+		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		line2.setStroke(Color.WHITE);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);

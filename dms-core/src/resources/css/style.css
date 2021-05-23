@@ -65,6 +65,7 @@
 }
 .message-area {
 	-fx-background-color: transparent;
+	-fx-text-fill: -text-fill;
 }
 .message-area .scroll-pane {
 	-fx-background-color: transparent;
@@ -76,8 +77,11 @@
 	-fx-background-color: transparent;
 }
 .im-box {
-	-fx-background-color: whitesmoke;
+	-fx-background-color: rgba(255,255,255,0.1);
 	-fx-background-radius: 1.0em;
-	-fx-border-color: gray;
+	-fx-border-color: -text-fill;
 	-fx-border-radius: 1.0em;
+}
+.ghost-shape {
+	-fx-stroke: -text-fill;
 }
