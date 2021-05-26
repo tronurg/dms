@@ -340,6 +340,7 @@ public class Model {
 				unreadMessages.put(entityId, unreadMessagesOfEntity);
 			}
 
+			unreadMessagesOfEntity.remove(message);
 			unreadMessagesOfEntity.add(message);
 
 		}

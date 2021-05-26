@@ -119,6 +119,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 			if (e2 == null) {
 				listeners.forEach(listener -> listener.messagePaneClosed());
 			} else {
+				e2.focusOnMessageArea();
 				EntityId entityId = e2.getEntityId();
 				unreadEntityIds.remove(entityId);
 				listeners.forEach(listener -> listener.messagePaneOpened(entityId));

@@ -6,20 +6,33 @@ import java.util.List;
 import java.util.Objects;
 
 import com.ogya.dms.core.view.factory.ViewFactory;
+import com.sun.javafx.scene.control.skin.TextAreaSkin;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.StringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Bounds;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.text.Text;
 
 public class ImPane extends HBox {
 
-	private final TextArea messageArea = new TextArea();
+	private final TextArea messageArea = new TextArea() {
+		@Override
+		public Orientation getContentBias() {
+			return Orientation.HORIZONTAL;
+		}
+	};
 	private final Button showFoldersBtn = ViewFactory.newAttachBtnTransparent();
 	private final Button reportBtn = ViewFactory.newReportBtnTransparent();
 
@@ -37,7 +50,7 @@ public class ImPane extends HBox {
 
 		getStyleClass().add("im-box");
 
-		setAlignment(Pos.CENTER);
+		setAlignment(Pos.BOTTOM_CENTER);
 
 		initMessageArea();
 		initShowFoldersBtn();
@@ -51,8 +64,33 @@ public class ImPane extends HBox {
 
 		messageArea.getStyleClass().add("message-area");
 
+		messageArea.setSkin(new TextAreaSkin(messageArea));
+
+		ScrollPane messageAreaScrollPane = (ScrollPane) messageArea.lookup(".scroll-pane");
+		messageAreaScrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
+
+		Text messageAreaText = (Text) messageAreaScrollPane.getContent().lookup(".text");
+		messageAreaText.boundsInLocalProperty().addListener(new ChangeListener<Bounds>() {
+
+			@Override
+			public void changed(ObservableValue<? extends Bounds> observable, Bounds oldValue, Bounds newValue) {
+
+				double height = newValue.getHeight();
+				double singleLineHeight = messageAreaText.getFont().getSize();
+
+				if (height > 3 * singleLineHeight) {
+					messageArea.setPrefRowCount(3);
+				} else if (height > 2 * singleLineHeight) {
+					messageArea.setPrefRowCount(2);
+				} else {
+					messageArea.setPrefRowCount(1);
+				}
+
+			}
+
+		});
+
 		HBox.setHgrow(messageArea, Priority.ALWAYS);
-		messageArea.setPrefRowCount(1);
 		messageArea.setWrapText(true);
 		messageArea.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
@@ -109,6 +147,12 @@ public class ImPane extends HBox {
 	public final void setMessage(String message) {
 
 		messageArea.setText(message);
+
+	}
+
+	public final void focusOnMessageArea() {
+
+		messageArea.requestFocus();
 
 	}
 

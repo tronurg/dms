@@ -453,6 +453,9 @@ class MessagePane extends BorderPane {
 
 	private void initBtnPane() {
 
+		GridPane.setFillHeight(btnPane, false);
+		GridPane.setValignment(btnPane, VPos.BOTTOM);
+
 		btnPane.visibleProperty().bind(activeProperty);
 
 		initSendBtn();
@@ -801,6 +804,21 @@ class MessagePane extends BorderPane {
 
 	}
 
+	void goToMessage(Long messageId) {
+
+		if (messageBalloons.containsKey(messageId))
+			scrollPaneToMessage(messageId);
+		else
+			listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
+
+	}
+
+	void focusOnMessageArea() {
+
+		imPane.focusOnMessageArea();
+
+	}
+
 	private Node getReferenceBalloon(Message message) {
 
 		MessageInfo messageInfo = new MessageInfo(message);
@@ -902,15 +920,6 @@ class MessagePane extends BorderPane {
 		}
 
 		return referenceBalloon;
-
-	}
-
-	void goToMessage(Long messageId) {
-
-		if (messageBalloons.containsKey(messageId))
-			scrollPaneToMessage(messageId);
-		else
-			listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
 
 	}
 
