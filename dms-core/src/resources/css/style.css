@@ -85,3 +85,12 @@
 .ghost-shape {
 	-fx-stroke: -text-fill;
 }
+.file-button:hover {
+	-fx-background-color: deepskyblue;
+}
+.file-button .label {
+	-fx-text-fill: -text-fill;
+}
+.file-button:hover .label {
+	-fx-text-fill: black;
+}

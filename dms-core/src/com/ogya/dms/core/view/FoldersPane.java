@@ -30,6 +30,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -37,6 +38,8 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -57,11 +60,13 @@ public class FoldersPane extends BorderPane {
 		}
 	};
 	private final Button backBtn;
-	private final Label nameLabel = new Label(CommonMethods.translate("FILE_EXPLORER"));
+	private final Label headingLbl = new Label(CommonMethods.translate("FILE_EXPLORER"));
+	private final Button cancelBtn = ViewFactory.newCancelBtn();
 
 	private final Map<Path, FolderView> folderViews = Collections.synchronizedMap(new HashMap<Path, FolderView>());
 
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
+	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
 	private final Map<WatchKey, Path> watchKeys = Collections.synchronizedMap(new HashMap<WatchKey, Path>());
 
@@ -83,7 +88,7 @@ public class FoldersPane extends BorderPane {
 		watchThread.setDaemon(true);
 		watchThread.start();
 
-		FolderView mainFolderView = newFolderView(mainPath, false);
+		FolderView mainFolderView = newFolderView(mainPath);
 		folderViews.put(mainPath, mainFolderView);
 		centerPane.getChildren().add(mainFolderView);
 
@@ -93,22 +98,74 @@ public class FoldersPane extends BorderPane {
 
 	private void init() {
 
-		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-
-		topPane.setPadding(new Insets(GAP));
-		centerPane.setPadding(new Insets(GAP));
-
-		topPane.setAlignment(Pos.CENTER_LEFT);
-
-		scrollPane.setFitToWidth(true);
-
-		nameLabel.getStyleClass().add("black-label");
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
-
-		topPane.getChildren().addAll(backBtn, nameLabel);
+		initTopPane();
+		initScrollPane();
 
 		setTop(topPane);
 		setCenter(scrollPane);
+
+	}
+
+	private void initTopPane() {
+
+		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+		topPane.setPadding(new Insets(GAP));
+		topPane.setAlignment(Pos.CENTER_LEFT);
+
+		initBackBtn();
+		initHeadingLbl();
+		initCancelBtn();
+
+		topPane.getChildren().addAll(backBtn, headingLbl, cancelBtn);
+
+	}
+
+	private void initScrollPane() {
+
+		scrollPane.setFitToWidth(true);
+
+		centerPane.setPadding(new Insets(GAP));
+
+	}
+
+	private void initBackBtn() {
+
+		backBtn.setOnAction(e -> {
+
+			if (centerPane.getChildren().size() > 1) {
+				backInFolders();
+				return;
+			}
+
+			Runnable backAction = backActionRef.get();
+			if (backAction != null) {
+				backAction.run();
+			}
+
+		});
+
+	}
+
+	private void initHeadingLbl() {
+
+		headingLbl.getStyleClass().add("black-label");
+		HBox.setHgrow(headingLbl, Priority.ALWAYS);
+		headingLbl.setMaxWidth(Double.MAX_VALUE);
+		headingLbl.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
+
+	}
+
+	private void initCancelBtn() {
+
+		cancelBtn.setOnAction(e -> {
+
+			Runnable backAction = backActionRef.get();
+
+			if (backAction != null) {
+				backAction.run();
+			}
+
+		});
 
 	}
 
@@ -118,16 +175,16 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	void setOnBackAction(final Runnable runnable) {
+	void setOnBackAction(final Runnable backAction) {
 
-		backBtn.setOnAction(e -> runnable.run());
+		backActionRef.set(backAction);
 
 	}
 
 	void reset() {
 
 		while (centerPane.getChildren().size() > 1)
-			back();
+			backInFolders();
 
 	}
 
@@ -135,7 +192,7 @@ public class FoldersPane extends BorderPane {
 
 		if (!folderViews.containsKey(subFolder)) {
 
-			FolderView folderView = newFolderView(subFolder, true);
+			FolderView folderView = newFolderView(subFolder);
 
 			folderViews.put(subFolder, folderView);
 
@@ -145,16 +202,14 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private FolderView newFolderView(Path folder, boolean isBackActionEnabled) {
+	private FolderView newFolderView(Path folder) {
 
 		registerFolder(folder);
 
-		FolderView folderView = new FolderView(folder, isBackActionEnabled);
+		FolderView folderView = new FolderView(folder);
 
 		folderView.setOnFolderSelectedAction(this::folderSelected);
 		folderView.setOnFileSelectedAction(this::fileSelected);
-		if (isBackActionEnabled)
-			folderView.setOnBackAction(this::back);
 
 		return folderView;
 
@@ -196,7 +251,7 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private void back() {
+	private void backInFolders() {
 
 		int size = centerPane.getChildren().size();
 
@@ -272,18 +327,28 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private class CustomButton extends Button {
+	private class FileButton extends Button {
 
-		private CustomButton(String arg0, ImageView arg1) {
+		private FileButton(ImageView icon, String name, String size) {
 
-			super(arg0, arg1);
+			super();
+
+			getStyleClass().add("file-button");
 
 			setMaxWidth(Double.MAX_VALUE);
-
-			setAlignment(Pos.CENTER_LEFT);
 			setPadding(new Insets(GAP));
-			setGraphicTextGap(GAP);
 			setFocusTraversable(false);
+
+			HBox hBox = new HBox(GAP);
+			Label nameLbl = new Label(name);
+			Label sizeLbl = new Label(size);
+			hBox.setAlignment(Pos.CENTER_LEFT);
+			HBox.setHgrow(nameLbl, Priority.ALWAYS);
+			nameLbl.setMaxWidth(Double.MAX_VALUE);
+			sizeLbl.setMinWidth(Region.USE_PREF_SIZE);
+			sizeLbl.setOpacity(0.5);
+			hBox.getChildren().addAll(icon, nameLbl, sizeLbl);
+			setGraphic(hBox);
 
 		}
 
@@ -295,18 +360,15 @@ public class FoldersPane extends BorderPane {
 		private static final String FILE_ICO_PATH = "/resources/icon/file.png";
 
 		private final Path mainFolder;
-		private final boolean isBackActionEnabled;
 
 		private final AtomicReference<Consumer<Path>> folderSelectedActionRef = new AtomicReference<Consumer<Path>>();
 		private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
-		private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
-		FolderView(Path mainFolder, boolean isBackActionEnabled) {
+		FolderView(Path mainFolder) {
 
 			super();
 
 			this.mainFolder = mainFolder;
-			this.isBackActionEnabled = isBackActionEnabled;
 
 			managedProperty().bind(visibleProperty());
 
@@ -341,28 +403,11 @@ public class FoldersPane extends BorderPane {
 
 			}
 
-			if (isBackActionEnabled) {
-
-				CustomButton backButton = new CustomButton("...",
-						new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))));
-
-				backButton.setOnAction(e -> {
-
-					Runnable backAction = backActionRef.get();
-
-					if (backAction != null)
-						backAction.run();
-
-				});
-
-				getChildren().add(backButton);
-
-			}
-
 			folders.forEach(path -> {
 
-				CustomButton cButton = new CustomButton(path.getFileName().toString(),
-						new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))));
+				FileButton cButton = new FileButton(
+						new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))),
+						path.getFileName().toString(), null);
 
 				cButton.setOnAction(e -> {
 
@@ -379,8 +424,13 @@ public class FoldersPane extends BorderPane {
 
 			files.forEach(path -> {
 
-				CustomButton cButton = new CustomButton(path.getFileName().toString(),
-						new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))));
+				String fileName = path.getFileName().toString();
+
+				FileButton cButton = new FileButton(
+						new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), fileName,
+						getFileSizeStr(path));
+
+				cButton.setTooltip(new Tooltip(fileName));
 
 				cButton.setOnAction(e -> {
 
@@ -409,9 +459,38 @@ public class FoldersPane extends BorderPane {
 
 		}
 
-		void setOnBackAction(Runnable backAction) {
+		private String getFileSizeStr(Path path) {
 
-			backActionRef.set(backAction);
+			try {
+
+				double sizeInB = Files.size(path);
+				double sizeInKB = sizeInB / 1024;
+
+				if (sizeInKB < 1) {
+					return String.format("%.2f B", sizeInB);
+				}
+
+				double sizeInMB = sizeInKB / 1024;
+
+				if (sizeInMB < 1) {
+					return String.format("%.2f KB", sizeInKB);
+				}
+
+				double sizeInGB = sizeInMB / 1024;
+
+				if (sizeInGB < 1) {
+					return String.format("%.2f MB", sizeInMB);
+				}
+
+				return String.format("%.2f GB", sizeInGB);
+
+			} catch (IOException e) {
+
+				e.printStackTrace();
+
+			}
+
+			return null;
 
 		}
 
