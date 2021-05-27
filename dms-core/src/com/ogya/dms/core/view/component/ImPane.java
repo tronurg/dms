@@ -78,12 +78,12 @@ public class ImPane extends HBox {
 				double height = newValue.getHeight();
 				double singleLineHeight = messageAreaText.getFont().getSize();
 
-				if (height > 3 * singleLineHeight) {
-					messageArea.setPrefRowCount(3);
-				} else if (height > 2 * singleLineHeight) {
+				if (height < 2 * singleLineHeight) {
+					messageArea.setPrefRowCount(1);
+				} else if (height < 3 * singleLineHeight) {
 					messageArea.setPrefRowCount(2);
 				} else {
-					messageArea.setPrefRowCount(1);
+					messageArea.setPrefRowCount(3);
 				}
 
 			}
