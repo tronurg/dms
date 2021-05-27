@@ -463,22 +463,22 @@ public class FoldersPane extends BorderPane {
 
 			try {
 
-				double sizeInB = Files.size(path);
-				double sizeInKB = sizeInB / 1024;
+				long sizeInB = Files.size(path);
+				double sizeInKB = (double) sizeInB / 1024;
 
-				if (sizeInKB < 1) {
-					return String.format("%.2f B", sizeInB);
+				if (sizeInKB < 1.0) {
+					return String.format("%d B", sizeInB);
 				}
 
 				double sizeInMB = sizeInKB / 1024;
 
-				if (sizeInMB < 1) {
+				if (sizeInMB < 1.0) {
 					return String.format("%.2f KB", sizeInKB);
 				}
 
 				double sizeInGB = sizeInMB / 1024;
 
-				if (sizeInGB < 1) {
+				if (sizeInGB < 1.0) {
 					return String.format("%.2f MB", sizeInMB);
 				}
 
