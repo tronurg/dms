@@ -21,18 +21,24 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.RoutingBinderRef;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.database.converters.AttachmentTypeConverter;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
 import com.ogya.dms.core.database.converters.UpdateTypeConverter;
 import com.ogya.dms.core.database.converters.ViewStatusConverter;
+import com.ogya.dms.core.database.search.MessageRoutingBinder;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
+@Indexed(routingBinder = @RoutingBinderRef(type = MessageRoutingBinder.class))
 @Table(name = "message")
 public class Message {
 
@@ -47,6 +53,7 @@ public class Message {
 	private Long messageRefId;
 
 	@Column(name = "content", updatable = false, length = Integer.MAX_VALUE)
+	@FullTextField
 	@JsonProperty("c")
 	private String content;
 

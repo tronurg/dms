@@ -36,11 +36,14 @@ public class DbManager {
 		if (name.length() > 40)
 			throw new Exception("Name too long, cannot exceed 40 characters.");
 
+		String dbPath = CommonConstants.DB_PATH + File.separator + dbName;
+
 		factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
-				.setProperty("hibernate.connection.url",
-						"jdbc:h2:split:24:" + CommonConstants.DB_PATH + File.separator + dbName)
+				.setProperty("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
 				.setProperty("hibernate.connection.username", dbName)
-				.setProperty("hibernate.connection.password", dbPassword).addAnnotatedClass(Contact.class)
+				.setProperty("hibernate.connection.password", dbPassword)
+				.setProperty("hibernate.search.backend.directory.root", dbPath)
+				.setProperty("hibernate.search.backend.lucene_version", "LUCENE_8_7_0").addAnnotatedClass(Contact.class)
 				.addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class).addAnnotatedClass(Message.class)
 				.addAnnotatedClass(StatusReport.class).buildSessionFactory();
 
