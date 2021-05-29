@@ -24,6 +24,7 @@ import javax.persistence.Transient;
 import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.RoutingBinderRef;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -120,6 +121,7 @@ public class Message {
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
+	@IndexedEmbedded(includePaths = { "id" })
 	@JsonIgnore
 	private Contact contact;
 
@@ -130,6 +132,7 @@ public class Message {
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", updatable = false)
+	@IndexedEmbedded(includePaths = { "id" })
 	@JsonIgnore
 	private Dgroup dgroup;
 

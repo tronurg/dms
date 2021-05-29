@@ -17,6 +17,9 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ogya.dms.core.database.converters.AvailabilityConverter;
 import com.ogya.dms.core.database.converters.ViewStatusConverter;
@@ -24,12 +27,14 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
+@Indexed
 @Table(name = "contact")
 public class Contact extends EntityBase {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "entity_gen")
 	@SequenceGenerator(name = "entity_gen", sequenceName = "entity_seq", initialValue = 1, allocationSize = 1)
+	@GenericField
 	private Long id;
 
 	@Column(name = "uuid", unique = true, nullable = false, updatable = false)
