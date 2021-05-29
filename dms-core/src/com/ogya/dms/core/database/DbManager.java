@@ -12,6 +12,8 @@ import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.query.Query;
+import org.hibernate.search.mapper.orm.Search;
+import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Contact;
@@ -753,6 +755,42 @@ public class DbManager {
 		session.close();
 
 		return dbMessages;
+
+	}
+
+	public List<Message> searchInPrivateConversation(Long contactId, String fulltext) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		SearchSession searchSession = Search.session(session);
+
+		List<Message> hits = searchSession.search(Message.class)
+				.where(f -> f.bool()
+						.must(f.simpleQueryString().field("content").matching(String.format("\"%s\"", fulltext)))
+						.must(f.match().field("contact.id").matching(contactId)).mustNot(f.exists().field("dgroup")))
+				.fetchAllHits();
+
+		session.close();
+
+		return hits;
+
+	}
+
+	public List<Message> searchInGroupConversation(Long groupId, String fulltext) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		SearchSession searchSession = Search.session(session);
+
+		List<Message> hits = searchSession.search(Message.class)
+				.where(f -> f.bool()
+						.must(f.simpleQueryString().field("content").matching(String.format("\"%s\"", fulltext)))
+						.must(f.match().field("dgroup.id").matching(groupId)))
+				.fetchAllHits();
+
+		session.close();
+
+		return hits;
 
 	}
 
