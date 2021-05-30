@@ -21,10 +21,12 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.RoutingBinderRef;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -122,6 +124,7 @@ public class Message {
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
 	@IndexedEmbedded(includePaths = { "id" })
+	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.NO)
 	@JsonIgnore
 	private Contact contact;
 
@@ -133,6 +136,7 @@ public class Message {
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", updatable = false)
 	@IndexedEmbedded(includePaths = { "id" })
+	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.NO)
 	@JsonIgnore
 	private Dgroup dgroup;
 

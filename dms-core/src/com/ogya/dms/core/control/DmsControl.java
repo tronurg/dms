@@ -3019,6 +3019,37 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void searchRequested(final String fulltext) {
+
+		taskQueue.execute(() -> {
+
+			EntityId entityId = model.getOpenEntityId();
+			if (entityId == null)
+				return;
+
+			final Long id = entityId.getId();
+
+			try {
+
+				if (entityId.isGroup()) {
+					List<Message> hits = dbManager.searchInGroupConversation(id, fulltext);
+					Platform.runLater(() -> dmsPanel.showSearchResults(hits));
+				} else {
+					List<Message> hits = dbManager.searchInPrivateConversation(id, fulltext);
+					Platform.runLater(() -> dmsPanel.showSearchResults(hits));
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public JComponent getDmsPanel() {
 
 		return dmsPanelSwing;

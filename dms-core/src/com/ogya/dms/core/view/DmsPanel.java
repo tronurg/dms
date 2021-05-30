@@ -524,6 +524,14 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
+	public void showSearchResults(List<Message> hits) {
+
+		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
+		if (messagePaneOnScreen != null)
+			messagePaneOnScreen.showSearchResults(hits);
+
+	}
+
 	@Override
 	public void commentUpdateRequested(final String comment) {
 
@@ -663,6 +671,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void recordButtonReleased() {
 
 		listeners.forEach(listener -> listener.recordButtonReleased());
+
+	}
+
+	@Override
+	public void searchRequested(final String fulltext) {
+
+		listeners.forEach(listener -> listener.searchRequested(fulltext));
 
 	}
 

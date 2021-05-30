@@ -180,6 +180,7 @@ class MessagePane extends BorderPane {
 	private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
+	private final BooleanProperty searchModeProperty = new SimpleBooleanProperty(false);
 
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
@@ -816,6 +817,12 @@ class MessagePane extends BorderPane {
 	void focusOnMessageArea() {
 
 		imPane.focusOnMessageArea();
+
+	}
+
+	void showSearchResults(List<Message> hits) {
+
+		// TODO
 
 	}
 
@@ -1613,5 +1620,7 @@ interface IMessagePane {
 	void recordEventTriggered(Long refMessageId);
 
 	void recordButtonReleased();
+
+	void searchRequested(String fulltext);
 
 }

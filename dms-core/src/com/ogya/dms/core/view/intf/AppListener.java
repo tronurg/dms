@@ -65,4 +65,6 @@ public interface AppListener {
 
 	void moreArchivedMessagesRequested(Long minMessageId);
 
+	void searchRequested(String fulltext);
+
 }
