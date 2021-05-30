@@ -94,3 +94,9 @@
 .file-button:hover .label {
 	-fx-text-fill: black;
 }
+.search-field {
+	-fx-border-color: black;
+	-fx-border-width: 0 0 1 0;
+	-fx-font-weight: bold;
+	-fx-text-fill: black;
+}

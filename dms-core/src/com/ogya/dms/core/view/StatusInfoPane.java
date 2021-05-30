@@ -199,11 +199,10 @@ public class StatusInfoPane extends BorderPane {
 		private void initNameLbl() {
 
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
-
+			nameLbl.setMaxWidth(Double.MAX_VALUE);
 			nameLbl.setGraphic(statusCircle);
 			nameLbl.setGraphicTextGap(2 * GAP);
 			nameLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
-			nameLbl.setMaxWidth(Double.MAX_VALUE);
 
 		}
 

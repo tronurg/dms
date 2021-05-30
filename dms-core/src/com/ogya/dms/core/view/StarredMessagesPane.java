@@ -203,10 +203,9 @@ class StarredMessagesPane extends BorderPane {
 	private void initTitleLbl() {
 
 		HBox.setHgrow(titleLbl, Priority.ALWAYS);
-
+		titleLbl.setMaxWidth(Double.MAX_VALUE);
 		titleLbl.getStyleClass().add("black-label");
 		titleLbl.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
-		titleLbl.setMaxWidth(Double.MAX_VALUE);
 
 	}
 
@@ -614,11 +613,10 @@ class StarredMessagesPane extends BorderPane {
 		private void initNameLbl() {
 
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
-
+			nameLbl.setMaxWidth(Double.MAX_VALUE);
 			nameLbl.setText(messageInfo.senderName + " \u00BB " + messageInfo.receiverName);
 			nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
 			nameLbl.setTextFill(messageInfo.nameColor);
-			nameLbl.setMaxWidth(Double.MAX_VALUE);
 
 		}
 
@@ -638,10 +636,9 @@ class StarredMessagesPane extends BorderPane {
 		private void initTimeLbl() {
 
 			HBox.setHgrow(timeLbl, Priority.ALWAYS);
-
+			timeLbl.setMaxWidth(Double.MAX_VALUE);
 			timeLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
 			timeLbl.setTextFill(Color.DIMGRAY);
-			timeLbl.setMaxWidth(Double.MAX_VALUE);
 
 		}
 

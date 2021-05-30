@@ -65,11 +65,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -124,11 +126,13 @@ class MessagePane extends BorderPane {
 	private final Button backBtn;
 	private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
 	private final Label nameLabel = new Label();
+	private final TextField searchTextField = new TextField();
+	private final Button searchBtn = ViewFactory.newSearchBtn();
+	private final Button clearBtn = ViewFactory.newDeleteBtn();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button forwardBtn = ViewFactory.newForwardBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
-	private final Button clearBtn = ViewFactory.newDeleteBtn();
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
 		@Override
@@ -219,15 +223,17 @@ class MessagePane extends BorderPane {
 		topPane.setAlignment(Pos.CENTER_LEFT);
 
 		initBackBtn();
-		initNameLbl();
+		initNameLabel();
+		initSearchTextField();
+		initSearchBtn();
+		initClearBtn();
 		initSelectAllBtn();
 		initForwardBtn();
 		initStarBtn();
 		initDeleteBtn();
-		initClearBtn();
 
-		topPane.getChildren().addAll(backBtn, statusCircle, nameLabel, getSpace(), selectAllBtn, forwardBtn, starBtn,
-				deleteBtn, clearBtn);
+		topPane.getChildren().addAll(backBtn, nameLabel, searchTextField, searchBtn, clearBtn, selectAllBtn, forwardBtn,
+				starBtn, deleteBtn);
 
 	}
 
@@ -283,6 +289,9 @@ class MessagePane extends BorderPane {
 				messageBalloons.values().stream().filter(messageBalloon -> messageBalloon.selectedProperty.get())
 						.forEach(messageBalloon -> messageBalloon.selectedProperty.set(false));
 				selectionModeProperty.set(false);
+			} else if (searchModeProperty.get()) {
+				searchModeProperty.set(false);
+				searchTextField.clear();
 			} else {
 				listeners.forEach(listener -> listener.hideMessagePaneClicked());
 			}
@@ -290,16 +299,73 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initNameLbl() {
+	private void initNameLabel() {
 
 		nameLabel.getStyleClass().add("black-label");
+		HBox.setHgrow(nameLabel, Priority.ALWAYS);
+		nameLabel.setMaxWidth(Double.MAX_VALUE);
+		nameLabel.setGraphic(statusCircle);
+		nameLabel.setGraphicTextGap(2 * GAP);
 		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
+		nameLabel.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
+		nameLabel.managedProperty().bind(nameLabel.visibleProperty());
 		nameLabel.setOnMouseClicked(e -> {
 			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
 				return;
 			if (editableProperty.get())
 				listeners.forEach(listener -> listener.showAddUpdateGroupClicked());
+		});
+
+	}
+
+	private void initSearchTextField() {
+
+		searchTextField.getStyleClass().add("search-field");
+		HBox.setHgrow(searchTextField, Priority.ALWAYS);
+		searchTextField.setMaxWidth(Double.MAX_VALUE);
+		searchTextField.visibleProperty().bind(searchModeProperty.and(selectionModeProperty.not()));
+		searchTextField.managedProperty().bind(searchTextField.visibleProperty());
+		searchTextField.setOnKeyPressed(e -> {
+			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
+				String fulltext = searchTextField.textProperty().getValueSafe().trim();
+				if (fulltext.isEmpty())
+					return;
+				listeners.forEach(listener -> listener.searchRequested(fulltext));
+			}
+		});
+
+	}
+
+	private void initSearchBtn() {
+
+		searchBtn.visibleProperty()
+				.bind(topPane.hoverProperty().and(searchModeProperty.or(selectionModeProperty).not()));
+		searchBtn.managedProperty().bind(searchBtn.visibleProperty());
+		searchBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> searchBtn.isHover() || searchModeProperty.get() ? 1.0 : 0.5,
+						searchBtn.hoverProperty(), searchModeProperty));
+		searchBtn.setOnAction(e -> {
+			searchModeProperty.set(true);
+			searchTextField.requestFocus();
+		});
+
+	}
+
+	private void initClearBtn() {
+
+		initClearConversationPopup();
+
+		clearBtn.visibleProperty().bind(topPane.hoverProperty().or(clearConversationPopup.showingProperty())
+				.and(searchModeProperty.or(selectionModeProperty).not()));
+		clearBtn.managedProperty().bind(clearBtn.visibleProperty());
+		clearBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(
+						() -> clearBtn.isHover() || clearConversationPopup.isShowing() ? 1.0 : 0.5,
+						clearBtn.hoverProperty(), clearConversationPopup.showingProperty()));
+		clearBtn.setOnAction(e -> {
+			Point2D point = clearBtn.localToScreen(clearBtn.getWidth(), clearBtn.getHeight() + GAP);
+			clearConversationPopup.show(clearBtn, point.getX(), point.getY());
 		});
 
 	}
@@ -366,24 +432,6 @@ class MessagePane extends BorderPane {
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
 						selectedBalloons));
-
-	}
-
-	private void initClearBtn() {
-
-		initClearConversationPopup();
-
-		clearBtn.visibleProperty().bind(
-				topPane.hoverProperty().or(clearConversationPopup.showingProperty()).and(selectionModeProperty.not()));
-		clearBtn.managedProperty().bind(clearBtn.visibleProperty());
-		clearBtn.opacityProperty()
-				.bind(Bindings.createDoubleBinding(
-						() -> clearBtn.isHover() || clearConversationPopup.isShowing() ? 1.0 : 0.5,
-						clearBtn.hoverProperty(), clearConversationPopup.showingProperty()));
-		clearBtn.setOnAction(e -> {
-			Point2D point = clearBtn.localToScreen(clearBtn.getWidth(), clearBtn.getHeight() + GAP);
-			clearConversationPopup.show(clearBtn, point.getX(), point.getY());
-		});
 
 	}
 
@@ -490,8 +538,8 @@ class MessagePane extends BorderPane {
 
 	private void initAttachmentLbl() {
 
-		HBox.setHgrow(attachmentLbl, Priority.ALWAYS);
 		attachmentLbl.getStyleClass().add("dim-label");
+		HBox.setHgrow(attachmentLbl, Priority.ALWAYS);
 		attachmentLbl.setMaxWidth(Double.MAX_VALUE);
 		attachmentLbl.setGraphic(ViewFactory.newAttachGraph(0.5));
 		attachmentLbl.textProperty()
@@ -576,15 +624,6 @@ class MessagePane extends BorderPane {
 			clearConversationPopup.hide();
 			listeners.forEach(listener -> listener.clearConversationRequested());
 		});
-
-	}
-
-	private Node getSpace() {
-
-		Region space = new Region();
-		HBox.setHgrow(space, Priority.ALWAYS);
-
-		return space;
 
 	}
 
@@ -823,6 +862,9 @@ class MessagePane extends BorderPane {
 	void showSearchResults(List<Message> hits) {
 
 		// TODO
+
+		System.out.println(hits.size());
+		hits.forEach(hit -> System.out.println(hit.getContent()));
 
 	}
 
@@ -1309,6 +1351,15 @@ class MessagePane extends BorderPane {
 					() -> messageInfo.statusProperty.get().getTransmittedColor(), messageInfo.statusProperty));
 
 			return infoGrp;
+
+		}
+
+		private Node getSpace() {
+
+			Region space = new Region();
+			HBox.setHgrow(space, Priority.ALWAYS);
+
+			return space;
 
 		}
 

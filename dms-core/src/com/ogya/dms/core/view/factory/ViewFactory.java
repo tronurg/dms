@@ -541,4 +541,24 @@ public class ViewFactory {
 
 	}
 
+	public static Button newSearchBtn() {
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(7.0 * VIEW_FACTOR);
+		circle.setFill(Color.TRANSPARENT);
+		circle.setStroke(Color.WHITE);
+		circle.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Line line = new Line(5.0 * VIEW_FACTOR, 5.0 * VIEW_FACTOR, 11.5 * VIEW_FACTOR, 11.5 * VIEW_FACTOR);
+		line.setStroke(Color.WHITE);
+		line.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Group group = new Group(circle, line);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
 }
