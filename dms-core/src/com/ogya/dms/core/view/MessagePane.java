@@ -28,6 +28,8 @@ import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.component.ImPane;
 import com.ogya.dms.core.view.component.ImPane.ImListener;
+import com.ogya.dms.core.view.component.ImSearchField;
+import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.component.RecordButton;
 import com.ogya.dms.core.view.component.RecordButton.RecordListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -45,6 +47,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
@@ -65,13 +68,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
-import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -126,7 +127,7 @@ class MessagePane extends BorderPane {
 	private final Button backBtn;
 	private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
 	private final Label nameLabel = new Label();
-	private final TextField searchTextField = new TextField();
+	private final ImSearchField imSearchField = new ImSearchField();
 	private final Button searchBtn = ViewFactory.newSearchBtn();
 	private final Button clearBtn = ViewFactory.newDeleteBtn();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
@@ -158,6 +159,9 @@ class MessagePane extends BorderPane {
 	private final RecordButton recordBtn = new RecordButton();
 
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
+
+	private final ObservableList<Message> searchHits = FXCollections.observableArrayList();
+	private final IntegerProperty searchHitIndex = new SimpleIntegerProperty(-1);
 
 	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * VIEW_FACTOR);
 
@@ -224,7 +228,7 @@ class MessagePane extends BorderPane {
 
 		initBackBtn();
 		initNameLabel();
-		initSearchTextField();
+		initImSearchField();
 		initSearchBtn();
 		initClearBtn();
 		initSelectAllBtn();
@@ -232,7 +236,7 @@ class MessagePane extends BorderPane {
 		initStarBtn();
 		initDeleteBtn();
 
-		topPane.getChildren().addAll(backBtn, nameLabel, searchTextField, searchBtn, clearBtn, selectAllBtn, forwardBtn,
+		topPane.getChildren().addAll(backBtn, nameLabel, imSearchField, searchBtn, clearBtn, selectAllBtn, forwardBtn,
 				starBtn, deleteBtn);
 
 	}
@@ -291,7 +295,7 @@ class MessagePane extends BorderPane {
 				selectionModeProperty.set(false);
 			} else if (searchModeProperty.get()) {
 				searchModeProperty.set(false);
-				searchTextField.clear();
+				imSearchField.clear();
 			} else {
 				listeners.forEach(listener -> listener.hideMessagePaneClicked());
 			}
@@ -319,20 +323,51 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initSearchTextField() {
+	private void initImSearchField() {
 
-		searchTextField.getStyleClass().add("search-field");
-		HBox.setHgrow(searchTextField, Priority.ALWAYS);
-		searchTextField.setMaxWidth(Double.MAX_VALUE);
-		searchTextField.visibleProperty().bind(searchModeProperty.and(selectionModeProperty.not()));
-		searchTextField.managedProperty().bind(searchTextField.visibleProperty());
-		searchTextField.setOnKeyPressed(e -> {
-			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
-				String fulltext = searchTextField.textProperty().getValueSafe().trim();
-				if (fulltext.isEmpty())
-					return;
+		HBox.setHgrow(imSearchField, Priority.ALWAYS);
+		imSearchField.setMaxWidth(Double.MAX_VALUE);
+		imSearchField.visibleProperty().bind(searchModeProperty.and(selectionModeProperty.not()));
+		imSearchField.managedProperty().bind(imSearchField.visibleProperty());
+
+		imSearchField.upDisableProperty().bind(searchHitIndex.lessThanOrEqualTo(0));
+		imSearchField.downDisableProperty()
+				.bind(searchHitIndex.lessThan(0).or(searchHitIndex.isEqualTo(Bindings.size(searchHits).subtract(1))));
+
+		imSearchField.textProperty().addListener(new ChangeListener<String>() {
+
+			@Override
+			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
+				imSearchField.setTextFieldStyle(null);
+				searchHits.clear();
+				searchHitIndex.set(-1);
+			}
+
+		});
+
+		imSearchField.addImSearchListener(new ImSearchListener() {
+
+			@Override
+			public void searchRequested(String fulltext) {
 				listeners.forEach(listener -> listener.searchRequested(fulltext));
 			}
+
+			@Override
+			public void upRequested() {
+				if (searchHitIndex.get() == 0)
+					return;
+				searchHitIndex.set(searchHitIndex.get() - 1);
+				goToMessage(searchHits.get(searchHitIndex.get()).getId());
+			}
+
+			@Override
+			public void downRequested() {
+				if (searchHitIndex.get() == searchHits.size() - 1)
+					return;
+				searchHitIndex.set(searchHitIndex.get() + 1);
+				goToMessage(searchHits.get(searchHitIndex.get()).getId());
+			}
+
 		});
 
 	}
@@ -347,7 +382,7 @@ class MessagePane extends BorderPane {
 						searchBtn.hoverProperty(), searchModeProperty));
 		searchBtn.setOnAction(e -> {
 			searchModeProperty.set(true);
-			searchTextField.requestFocus();
+			imSearchField.requestFocus();
 		});
 
 	}
@@ -861,10 +896,17 @@ class MessagePane extends BorderPane {
 
 	void showSearchResults(List<Message> hits) {
 
-		// TODO
+		searchHits.clear();
+		searchHits.addAll(hits);
+		searchHitIndex.set(searchHits.size() - 1);
 
-		System.out.println(hits.size());
-		hits.forEach(hit -> System.out.println(hit.getContent()));
+		if (searchHits.isEmpty()) {
+			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
+		} else {
+			imSearchField.setTextFieldStyle(null);
+		}
+
+		goToMessage(searchHits.get(searchHitIndex.get()).getId());
 
 	}
 

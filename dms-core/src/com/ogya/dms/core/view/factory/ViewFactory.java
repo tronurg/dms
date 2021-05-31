@@ -561,4 +561,42 @@ public class ViewFactory {
 
 	}
 
+	public static Button newUpBtn() {
+
+		Button btn = new Button();
+
+		Line line1 = new Line(-5.0 * VIEW_FACTOR, 0.0, 0.0, -5.0 * VIEW_FACTOR);
+		line1.setStroke(Color.WHITE);
+		line1.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Line line2 = new Line(0.0, -5.0 * VIEW_FACTOR, 5.0 * VIEW_FACTOR, 0.0);
+		line2.setStroke(Color.WHITE);
+		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Group group = new Group(line1, line2);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
+	public static Button newDownBtn() {
+
+		Button btn = new Button();
+
+		Line line1 = new Line(-5.0 * VIEW_FACTOR, -5.0, 0.0, 0.0);
+		line1.setStroke(Color.WHITE);
+		line1.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Line line2 = new Line(0.0, 0.0, 5.0 * VIEW_FACTOR, -5.0 * VIEW_FACTOR);
+		line2.setStroke(Color.WHITE);
+		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Group group = new Group(line1, line2);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
 }
