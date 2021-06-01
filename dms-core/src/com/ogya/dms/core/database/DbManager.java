@@ -765,8 +765,7 @@ public class DbManager {
 		SearchSession searchSession = Search.session(session);
 
 		List<Message> hits = searchSession.search(Message.class)
-				.where(f -> f.bool()
-						.must(f.simpleQueryString().field("content").matching(String.format("\"%s\"", fulltext)))
+				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
 						.must(f.match().field("contact.id").matching(contactId)).mustNot(f.exists().field("dgroup")))
 				.fetchAllHits();
 
@@ -783,8 +782,7 @@ public class DbManager {
 		SearchSession searchSession = Search.session(session);
 
 		List<Message> hits = searchSession.search(Message.class)
-				.where(f -> f.bool()
-						.must(f.simpleQueryString().field("content").matching(String.format("\"%s\"", fulltext)))
+				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
 						.must(f.match().field("dgroup.id").matching(groupId)))
 				.fetchAllHits();
 

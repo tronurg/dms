@@ -896,6 +896,9 @@ class MessagePane extends BorderPane {
 
 	void showSearchResults(List<Message> hits) {
 
+		if (!searchModeProperty.get())
+			return;
+
 		searchHits.clear();
 		searchHits.addAll(hits);
 		searchHitIndex.set(searchHits.size() - 1);
@@ -904,9 +907,8 @@ class MessagePane extends BorderPane {
 			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
 		} else {
 			imSearchField.setTextFieldStyle(null);
+			goToMessage(searchHits.get(searchHitIndex.get()).getId());
 		}
-
-		goToMessage(searchHits.get(searchHitIndex.get()).getId());
 
 	}
 
