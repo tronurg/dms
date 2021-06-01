@@ -1,5 +1,6 @@
 package com.ogya.dms.core.view;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -14,6 +15,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -61,6 +64,12 @@ public class RemoteIpSettingsPane extends BorderPane {
 	}
 
 	private void init() {
+
+		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (!Objects.equals(e.getCode(), KeyCode.ENTER))
+				return;
+			addIpButton.fire();
+		});
 
 		initTopPane();
 		initCenterPane();
