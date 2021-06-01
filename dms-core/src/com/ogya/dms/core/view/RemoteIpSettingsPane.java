@@ -96,6 +96,12 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	}
 
+	void focusOnIpField() {
+
+		ipField.focusOnIpField();
+
+	}
+
 	void clearAll() {
 
 		clearIpField();
@@ -119,6 +125,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 			ipLabel.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 
 			Button removeIpButton = ViewFactory.newRemoveBtn(1.0);
+			removeIpButton.setFocusTraversable(false);
 
 			removeIpButton.setOnAction(e -> {
 
@@ -205,6 +212,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initAddIpButton() {
 
+		addIpButton.setFocusTraversable(false);
 		addIpButton.setMaxHeight(Double.MAX_VALUE);
 		addIpButton.disableProperty().bind(ipField.validProperty().not());
 

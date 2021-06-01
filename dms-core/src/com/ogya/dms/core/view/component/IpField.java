@@ -267,6 +267,12 @@ public class IpField extends HBox {
 
 	}
 
+	public void focusOnIpField() {
+
+		ipFields[0].requestFocus();
+
+	}
+
 	public BooleanProperty validProperty() {
 
 		return validProperty;

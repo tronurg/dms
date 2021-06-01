@@ -71,17 +71,23 @@ public class ImSearchField extends HBox {
 
 	private void initUpBtn() {
 
+		upBtn.setFocusTraversable(false);
+
 		upBtn.setOnAction(e -> listeners.forEach(listener -> listener.upRequested()));
 
 	}
 
 	private void initDownBtn() {
 
+		downBtn.setFocusTraversable(false);
+
 		downBtn.setOnAction(e -> listeners.forEach(listener -> listener.downRequested()));
 
 	}
 
 	private void initSearchBtn() {
+
+		searchBtn.setFocusTraversable(false);
 
 		searchBtn.setOnAction(e -> {
 			String fulltext = searchTextField.textProperty().getValueSafe().trim();

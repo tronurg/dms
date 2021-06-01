@@ -84,8 +84,8 @@ public class RecordButton extends Button {
 		KeyFrame key1 = new KeyFrame(Duration.millis(1000.0), e -> {
 			if (isPressed())
 				listeners.forEach(listener -> listener.recordEventTriggered());
-		}, new KeyValue(recordArc.radiusXProperty(), 15.9 * VIEW_FACTOR),
-				new KeyValue(recordArc.radiusYProperty(), 15.9 * VIEW_FACTOR),
+		}, new KeyValue(recordArc.radiusXProperty(), 16.0 * VIEW_FACTOR),
+				new KeyValue(recordArc.radiusYProperty(), 16.0 * VIEW_FACTOR),
 				new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), new KeyValue(recordArc.lengthProperty(), 0.0));

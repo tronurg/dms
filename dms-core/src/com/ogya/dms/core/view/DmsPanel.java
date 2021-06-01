@@ -484,6 +484,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 			remoteIpSettingsPane.scrollToTop();
 			getChildren().add(remoteIpSettingsPane);
+			remoteIpSettingsPane.focusOnIpField();
 
 			break;
 
@@ -496,6 +497,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		listeners.forEach(listener -> listener.addIpClicked(ip));
 
 		remoteIpSettingsPane.clearIpField();
+		remoteIpSettingsPane.focusOnIpField();
 
 	}
 
