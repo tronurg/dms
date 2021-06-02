@@ -26,7 +26,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.shape.StrokeType;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
@@ -103,8 +102,8 @@ public class ViewFactory {
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.GREEN);
-		circle.setStroke(Color.TRANSPARENT);
-		circle.setStrokeType(StrokeType.OUTSIDE);
+		circle.setStroke(Color.GREEN);
+		circle.setStrokeWidth(2.0);
 		Polygon triangle = new Polygon();
 		triangle.getPoints().addAll(new Double[] { -7.0 * VIEW_FACTOR, -10.5 * VIEW_FACTOR, 13.0 * VIEW_FACTOR, 0.0,
 				-7.0 * VIEW_FACTOR, 10.5 * VIEW_FACTOR });

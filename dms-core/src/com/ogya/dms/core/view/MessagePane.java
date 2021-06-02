@@ -73,6 +73,8 @@ import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -91,6 +93,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
@@ -119,6 +124,14 @@ class MessagePane extends BorderPane {
 			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 	private final Background dateBackground = new Background(
 			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
+	private final Background incomingSearchHitBackground = new Background(new BackgroundFill(
+			new LinearGradient(0.0, 0.0, 1.0, 0.0, true, CycleMethod.NO_CYCLE,
+					new Stop(0, Color.rgb(155, 155, 255, 0.5)), new Stop(1, Color.rgb(155, 155, 255, 0.0))),
+			new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
+	private final Background outgoingSearchHitBackground = new Background(new BackgroundFill(
+			new LinearGradient(0.0, 0.0, 1.0, 0.0, true, CycleMethod.NO_CYCLE,
+					new Stop(0, Color.rgb(155, 155, 255, 0.0)), new Stop(1, Color.rgb(155, 155, 255, 0.5))),
+			new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final VBox centerPane = new VBox(2 * GAP);
@@ -209,6 +222,18 @@ class MessagePane extends BorderPane {
 	}
 
 	private void init() {
+
+		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (!searchModeProperty.get())
+				return;
+			if (Objects.equals(e.getCode(), KeyCode.UP)) {
+				imSearchField.fireSearchUp();
+				e.consume();
+			} else if (Objects.equals(e.getCode(), KeyCode.DOWN)) {
+				imSearchField.fireSearchDown();
+				e.consume();
+			}
+		});
 
 		initTopPane();
 		initCenterPane();
@@ -1055,6 +1080,17 @@ class MessagePane extends BorderPane {
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
 
 		final Long messageId = messageInfo.messageId;
+
+		messageBalloon.backgroundProperty().bind(Bindings.createObjectBinding(() -> {
+			int index = searchHitIndex.get();
+			if (index < 0)
+				return null;
+			if (!(index < searchHits.size()))
+				return null;
+			if (!Objects.equals(messageId, searchHits.get(index).getId()))
+				return null;
+			return messageInfo.isOutgoing ? outgoingSearchHitBackground : incomingSearchHitBackground;
+		}, searchHits, searchHitIndex));
 
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
 

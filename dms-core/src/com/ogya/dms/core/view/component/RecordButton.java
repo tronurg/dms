@@ -21,7 +21,6 @@ import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeType;
 import javafx.util.Duration;
 
 public class RecordButton extends Button {
@@ -53,8 +52,8 @@ public class RecordButton extends Button {
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.GREEN);
-		circle.setStroke(Color.TRANSPARENT);
-		circle.setStrokeType(StrokeType.OUTSIDE);
+		circle.setStroke(Color.GREEN);
+		circle.setStrokeWidth(2.0);
 		final Arc recordArc = new Arc();
 		recordArc.setCenterX(0.0);
 		recordArc.setCenterY(0.0);

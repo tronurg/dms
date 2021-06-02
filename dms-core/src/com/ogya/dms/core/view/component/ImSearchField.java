@@ -13,7 +13,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 
@@ -37,16 +36,6 @@ public class ImSearchField extends HBox {
 	private void init() {
 
 		setAlignment(Pos.CENTER);
-
-		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (Objects.equals(e.getCode(), KeyCode.UP)) {
-				upBtn.fire();
-				e.consume();
-			} else if (Objects.equals(e.getCode(), KeyCode.DOWN)) {
-				downBtn.fire();
-				e.consume();
-			}
-		});
 
 		initSearchTextField();
 		initUpBtn();
@@ -95,6 +84,14 @@ public class ImSearchField extends HBox {
 
 		listeners.add(listener);
 
+	}
+
+	public void fireSearchUp() {
+		upBtn.fire();
+	}
+
+	public void fireSearchDown() {
+		downBtn.fire();
 	}
 
 	public void clear() {
