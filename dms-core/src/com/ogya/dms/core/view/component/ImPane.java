@@ -110,7 +110,6 @@ public class ImPane extends HBox {
 
 	private void initShowFoldersBtn() {
 
-		showFoldersBtn.setFocusTraversable(false);
 		showFoldersBtn.opacityProperty().bind(Bindings.createObjectBinding(() -> showFoldersBtn.isHover() ? 1.0 : 0.5,
 				showFoldersBtn.hoverProperty()));
 
@@ -120,7 +119,6 @@ public class ImPane extends HBox {
 
 	private void initReportBtn() {
 
-		reportBtn.setFocusTraversable(false);
 		reportBtn.opacityProperty()
 				.bind(Bindings.createObjectBinding(() -> reportBtn.isHover() ? 1.0 : 0.5, reportBtn.hoverProperty()));
 

@@ -337,7 +337,6 @@ public class FoldersPane extends BorderPane {
 
 			setMaxWidth(Double.MAX_VALUE);
 			setPadding(new Insets(GAP));
-			setFocusTraversable(false);
 
 			HBox hBox = new HBox(GAP);
 			Label nameLbl = new Label(name);

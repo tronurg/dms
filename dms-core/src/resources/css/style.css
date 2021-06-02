@@ -6,6 +6,7 @@
 }
 .button {
 	-fx-background-color: transparent;
+	-fx-focus-traversable: false;
 }
 .dim-label {
 	-fx-font-weight: bold;

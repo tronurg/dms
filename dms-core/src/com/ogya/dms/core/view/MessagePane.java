@@ -288,8 +288,6 @@ class MessagePane extends BorderPane {
 
 	private void initBackBtn() {
 
-		backBtn.setFocusTraversable(false);
-
 		backBtn.setOnAction(e -> {
 			if (selectionModeProperty.get()) {
 				messageBalloons.values().stream().filter(messageBalloon -> messageBalloon.selectedProperty.get())
@@ -298,7 +296,6 @@ class MessagePane extends BorderPane {
 			} else if (searchModeProperty.get()) {
 				searchModeProperty.set(false);
 				imSearchField.clear();
-				imPane.focusOnMessageArea();
 			} else {
 				listeners.forEach(listener -> listener.hideMessagePaneClicked());
 			}
@@ -596,8 +593,6 @@ class MessagePane extends BorderPane {
 
 	private void initSendBtn() {
 
-		sendBtn.setFocusTraversable(false);
-
 		sendBtn.setOnAction(e -> {
 			String messageAreaText = imPane.getMessage().trim();
 			final String mesajTxt = messageAreaText.isEmpty() ? null : messageAreaText;
@@ -632,7 +627,6 @@ class MessagePane extends BorderPane {
 			@Override
 			public void recordButtonReleased() {
 				listeners.forEach(listener -> listener.recordButtonReleased());
-				imPane.focusOnMessageArea();
 			}
 
 		});

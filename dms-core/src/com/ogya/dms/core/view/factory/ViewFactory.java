@@ -587,7 +587,7 @@ public class ViewFactory {
 
 		Button btn = new Button();
 
-		Line line1 = new Line(-5.0 * VIEW_FACTOR, -5.0, 0.0, 0.0);
+		Line line1 = new Line(-5.0 * VIEW_FACTOR, -5.0 * VIEW_FACTOR, 0.0, 0.0);
 		line1.setStroke(Color.WHITE);
 		line1.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Line line2 = new Line(0.0, 0.0, 5.0 * VIEW_FACTOR, -5.0 * VIEW_FACTOR);
