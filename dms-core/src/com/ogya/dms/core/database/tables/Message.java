@@ -21,9 +21,11 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.hibernate.search.engine.backend.types.Sortable;
 import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
 import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.RoutingBinderRef;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
+import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
 import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
@@ -48,6 +50,7 @@ public class Message {
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "message_gen")
 	@SequenceGenerator(name = "message_gen", sequenceName = "message_seq", initialValue = 1, allocationSize = 1)
+	@GenericField(sortable = Sortable.YES)
 	@JsonProperty("a")
 	private Long id;
 
@@ -118,6 +121,7 @@ public class Message {
 
 	@Column(name = "view_status")
 	@Convert(converter = ViewStatusConverter.class)
+	@GenericField
 	@JsonIgnore
 	private ViewStatus viewStatus;
 
