@@ -792,6 +792,23 @@ public class DbManager {
 
 	}
 
+	public List<Message> searchInArchivedMessages(String fulltext) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		SearchSession searchSession = Search.session(session);
+
+		List<Message> hits = searchSession.search(Message.class)
+				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
+						.must(f.match().field("viewStatus").matching(ViewStatus.ARCHIVED)))
+				.sort(f -> f.field("id").asc()).fetchAllHits();
+
+		session.close();
+
+		return hits;
+
+	}
+
 	private void resolveReferenceOfMessage(Message message, Session session) throws HibernateException {
 
 		Message refMessage = message.getRefMessage();

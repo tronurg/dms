@@ -534,6 +534,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
+	public void showArchiveSearchResults(List<Message> hits) {
+
+		starredMessagesPane.showSearchResults(hits);
+
+	}
+
 	@Override
 	public void commentUpdateRequested(final String comment) {
 
@@ -726,6 +732,20 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		getChildren().add(messagePane);
 
 		messagePane.goToMessage(messageId);
+
+	}
+
+	@Override
+	public void archiveSearchRequested(final String fulltext) {
+
+		listeners.forEach(listener -> listener.archiveSearchRequested(fulltext));
+
+	}
+
+	@Override
+	public void archivedMessagesClaimed(final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
+
+		listeners.forEach(listener -> listener.archivedMessagesClaimed(lastMessageIdExcl, firstMessageIdIncl));
 
 	}
 

@@ -18,14 +18,22 @@ import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
+import com.ogya.dms.core.view.component.ImSearchField;
+import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
 import javafx.animation.AnimationTimer;
+import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import javafx.geometry.Bounds;
@@ -34,6 +42,7 @@ import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -43,6 +52,8 @@ import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
@@ -58,8 +69,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.util.Duration;
 
 class StarredMessagesPane extends BorderPane {
 
@@ -76,6 +91,10 @@ class StarredMessagesPane extends BorderPane {
 			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 	private final Background outgoingBackground = new Background(
 			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
+	private final Background searchHitBackground = new Background(new BackgroundFill(
+			new LinearGradient(0.0, 0.0, 1.0, 0.0, true, CycleMethod.NO_CYCLE,
+					new Stop(0, Color.rgb(155, 155, 255, 0.5)), new Stop(1, Color.rgb(155, 155, 255, 0.0))),
+			new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final VBox centerPaneWithLoadBtn = new VBox(GAP);
@@ -83,6 +102,8 @@ class StarredMessagesPane extends BorderPane {
 
 	private final Button backBtn;
 	private final Label titleLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
+	private final ImSearchField imSearchField = new ImSearchField();
+	private final Button searchBtn = ViewFactory.newSearchBtn();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 
@@ -96,6 +117,9 @@ class StarredMessagesPane extends BorderPane {
 
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
+	private final ObservableList<Message> searchHits = FXCollections.observableArrayList();
+	private final IntegerProperty searchHitIndex = new SimpleIntegerProperty(-1);
+
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
 	private final ObservableMap<Long, MessageBalloon> messageBalloons = FXCollections.observableHashMap();
@@ -106,6 +130,7 @@ class StarredMessagesPane extends BorderPane {
 	private final AtomicLong minMessageId = new AtomicLong(Long.MAX_VALUE);
 
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
+	private final BooleanProperty searchModeProperty = new SimpleBooleanProperty(false);
 
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
@@ -138,6 +163,18 @@ class StarredMessagesPane extends BorderPane {
 
 	private void init() {
 
+		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+			if (!searchModeProperty.get())
+				return;
+			if (Objects.equals(e.getCode(), KeyCode.UP)) {
+				imSearchField.fireSearchUp();
+				e.consume();
+			} else if (Objects.equals(e.getCode(), KeyCode.DOWN)) {
+				imSearchField.fireSearchDown();
+				e.consume();
+			}
+		});
+
 		initTopPane();
 		initCenterPaneWithLoadBtn();
 
@@ -154,10 +191,12 @@ class StarredMessagesPane extends BorderPane {
 
 		initBackBtn();
 		initTitleLbl();
+		initImSearchField();
+		initSearchBtn();
 		initSelectAllBtn();
 		initStarBtn();
 
-		topPane.getChildren().addAll(backBtn, titleLbl, selectAllBtn, starBtn);
+		topPane.getChildren().addAll(backBtn, titleLbl, imSearchField, searchBtn, selectAllBtn, starBtn);
 
 	}
 
@@ -190,6 +229,9 @@ class StarredMessagesPane extends BorderPane {
 				messageBalloons.values().stream().filter(messageBalloon -> messageBalloon.selectedProperty.get())
 						.forEach(messageBalloon -> messageBalloon.selectedProperty.set(false));
 				selectionModeProperty.set(false);
+			} else if (searchModeProperty.get()) {
+				searchModeProperty.set(false);
+				imSearchField.clear();
 			} else {
 				Runnable backAction = backActionRef.get();
 				if (backAction == null)
@@ -206,6 +248,72 @@ class StarredMessagesPane extends BorderPane {
 		titleLbl.setMaxWidth(Double.MAX_VALUE);
 		titleLbl.getStyleClass().add("black-label");
 		titleLbl.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
+		titleLbl.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
+		titleLbl.managedProperty().bind(titleLbl.visibleProperty());
+
+	}
+
+	private void initImSearchField() {
+
+		HBox.setHgrow(imSearchField, Priority.ALWAYS);
+		imSearchField.setMaxWidth(Double.MAX_VALUE);
+		imSearchField.visibleProperty().bind(searchModeProperty.and(selectionModeProperty.not()));
+		imSearchField.managedProperty().bind(imSearchField.visibleProperty());
+
+		imSearchField.upDisableProperty()
+				.bind(searchHitIndex.lessThan(0).or(searchHitIndex.isEqualTo(Bindings.size(searchHits).subtract(1))));
+		imSearchField.downDisableProperty().bind(searchHitIndex.lessThanOrEqualTo(0));
+
+		imSearchField.textProperty().addListener(new ChangeListener<String>() {
+
+			@Override
+			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
+				imSearchField.setTextFieldStyle(null);
+				searchHits.clear();
+				searchHitIndex.set(-1);
+			}
+
+		});
+
+		imSearchField.addImSearchListener(new ImSearchListener() {
+
+			@Override
+			public void searchRequested(String fulltext) {
+				listeners.forEach(listener -> listener.archiveSearchRequested(fulltext));
+			}
+
+			@Override
+			public void upRequested() {
+				if (searchHitIndex.get() == searchHits.size() - 1)
+					return;
+				searchHitIndex.set(searchHitIndex.get() + 1);
+				goToMessage(searchHits.get(searchHitIndex.get()).getId());
+			}
+
+			@Override
+			public void downRequested() {
+				if (searchHitIndex.get() == 0)
+					return;
+				searchHitIndex.set(searchHitIndex.get() - 1);
+				goToMessage(searchHits.get(searchHitIndex.get()).getId());
+			}
+
+		});
+
+	}
+
+	private void initSearchBtn() {
+
+		searchBtn.visibleProperty()
+				.bind(topPane.hoverProperty().and(searchModeProperty.or(selectionModeProperty).not()));
+		searchBtn.managedProperty().bind(searchBtn.visibleProperty());
+		searchBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> searchBtn.isHover() || searchModeProperty.get() ? 1.0 : 0.5,
+						searchBtn.hoverProperty(), searchModeProperty));
+		searchBtn.setOnAction(e -> {
+			searchModeProperty.set(true);
+			imSearchField.requestFocus();
+		});
 
 	}
 
@@ -305,9 +413,49 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
+	void scrollPaneToMessage(Long messageId) {
+
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
+
+		if (messageBalloon == null)
+			return;
+
+		scrollPane(messageBalloon, SMALL_GAP);
+
+		messageBalloon.blink();
+
+	}
+
 	void allMessagesLoaded() {
 
 		loadBtn.setVisible(false);
+
+	}
+
+	void goToMessage(Long messageId) {
+
+		if (messageBalloons.containsKey(messageId))
+			scrollPaneToMessage(messageId);
+		else
+			listeners.forEach(listener -> listener.archivedMessagesClaimed(minMessageId.get(), messageId));
+
+	}
+
+	void showSearchResults(List<Message> hits) {
+
+		if (!searchModeProperty.get())
+			return;
+
+		searchHits.clear();
+		searchHits.addAll(hits);
+		searchHitIndex.set(searchHits.size() - 1);
+
+		if (searchHits.isEmpty()) {
+			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
+		} else {
+			imSearchField.setTextFieldStyle(null);
+			goToMessage(searchHits.get(searchHitIndex.get()).getId());
+		}
 
 	}
 
@@ -389,6 +537,29 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
+	private void scrollPane(Node nodeToScrollTo, double bias) {
+
+		Parent parent = getParent();
+		if (parent == null)
+			return;
+
+		parent.applyCss();
+		parent.layout();
+
+		Double centerPaneHeight = centerPane.getHeight();
+		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
+
+		if (centerPaneHeight < scrollPaneViewportHeight)
+			return;
+
+		Double scrollY = centerPane.sceneToLocal(nodeToScrollTo.localToScene(0.0, 0.0)).getY() - bias;
+
+		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
+
+		scrollPane.setVvalue(scrollPane.getVmax() * ratioY);
+
+	}
+
 	private MessageBalloon newMessageBalloon(Message message) {
 
 		MessageInfo messageInfo = new MessageInfo(message);
@@ -397,6 +568,19 @@ class StarredMessagesPane extends BorderPane {
 
 		if (message.getRefMessage() != null)
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
+
+		final Long messageId = messageInfo.messageId;
+
+		messageBalloon.backgroundProperty().bind(Bindings.createObjectBinding(() -> {
+			int index = searchHitIndex.get();
+			if (index < 0)
+				return null;
+			if (!(index < searchHits.size()))
+				return null;
+			if (!Objects.equals(messageId, searchHits.get(index).getId()))
+				return null;
+			return searchHitBackground;
+		}, searchHits, searchHitIndex));
 
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
 
@@ -455,6 +639,8 @@ class StarredMessagesPane extends BorderPane {
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
 
+		private final InnerShadow shadow = new InnerShadow(3 * GAP, Color.TRANSPARENT);
+
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
 		private MessageBalloon(MessageInfo messageInfo) {
@@ -495,6 +681,26 @@ class StarredMessagesPane extends BorderPane {
 			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
 
 			messagePane.add(referenceBalloon, 0, 1);
+
+		}
+
+		void blink() {
+
+			if (!Objects.equals(shadow.getColor(), Color.TRANSPARENT))
+				return;
+
+			new Transition() {
+
+				{
+					setCycleDuration(Duration.millis(1000.0));
+				}
+
+				@Override
+				protected void interpolate(double arg0) {
+					shadow.setColor(Color.MEDIUMBLUE.interpolate(Color.TRANSPARENT, arg0));
+				}
+
+			}.play();
 
 		}
 
@@ -711,5 +917,9 @@ interface IStarredMessagesPane {
 	void archiveMessagesRequested(Long[] messageIds);
 
 	void goToMessageClicked(EntityId entityId, Long messageId);
+
+	void archiveSearchRequested(String fulltext);
+
+	void archivedMessagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
 
 }

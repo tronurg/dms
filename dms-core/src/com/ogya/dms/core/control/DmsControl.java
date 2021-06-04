@@ -3050,6 +3050,46 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void archiveSearchRequested(final String fulltext) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				List<Message> hits = dbManager.searchInArchivedMessages(fulltext);
+				Platform.runLater(() -> dmsPanel.showArchiveSearchResults(hits));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void archivedMessagesClaimed(final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
+		// TODO Auto-generated method stub
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				System.out.println("ok");
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public JComponent getDmsPanel() {
 
 		return dmsPanelSwing;

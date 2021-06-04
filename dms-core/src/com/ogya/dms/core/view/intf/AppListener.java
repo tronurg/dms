@@ -67,4 +67,8 @@ public interface AppListener {
 
 	void searchRequested(String fulltext);
 
+	void archiveSearchRequested(String fulltext);
+
+	void archivedMessagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
+
 }
