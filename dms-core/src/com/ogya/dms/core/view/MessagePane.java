@@ -189,6 +189,7 @@ class MessagePane extends BorderPane {
 	private final Set<Long> referencedMessageIds = Collections.synchronizedSet(new HashSet<Long>());
 
 	private final AtomicBoolean autoScroll = new AtomicBoolean(true);
+	private final AtomicBoolean scrollNodeToBottom = new AtomicBoolean(false);
 
 	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
@@ -381,6 +382,7 @@ class MessagePane extends BorderPane {
 			public void upRequested() {
 				if (searchHitIndex.get() == 0)
 					return;
+				scrollNodeToBottom.set(true);
 				searchHitIndex.set(searchHitIndex.get() - 1);
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
 			}
@@ -1050,13 +1052,21 @@ class MessagePane extends BorderPane {
 		parent.applyCss();
 		parent.layout();
 
+		Bounds nodeBoundsInScene = nodeToScrollTo.localToScene(nodeToScrollTo.getLayoutBounds());
+
+		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene))
+			return;
+
 		Double centerPaneHeight = centerPane.getHeight();
 		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
 
 		if (centerPaneHeight < scrollPaneViewportHeight)
 			return;
 
-		Double scrollY = centerPane.sceneToLocal(nodeToScrollTo.localToScene(0.0, 0.0)).getY() - bias;
+		Double scrollY = centerPane.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
+		if (scrollNodeToBottom.getAndSet(false)) {
+			scrollY = scrollY - scrollPaneViewportHeight + nodeBoundsInScene.getHeight() + 2.0 * bias;
+		}
 
 		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
 

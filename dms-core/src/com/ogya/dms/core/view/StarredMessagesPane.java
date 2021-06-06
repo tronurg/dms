@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -123,6 +124,8 @@ class StarredMessagesPane extends BorderPane {
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
 	private final ObservableMap<Long, MessageBalloon> messageBalloons = FXCollections.observableHashMap();
+
+	private final AtomicBoolean scrollNodeToBottom = new AtomicBoolean(false);
 
 	private final List<IStarredMessagesPane> listeners = Collections
 			.synchronizedList(new ArrayList<IStarredMessagesPane>());
@@ -286,6 +289,7 @@ class StarredMessagesPane extends BorderPane {
 			public void upRequested() {
 				if (searchHitIndex.get() == searchHits.size() - 1)
 					return;
+				scrollNodeToBottom.set(true);
 				searchHitIndex.set(searchHitIndex.get() + 1);
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
 			}
@@ -420,7 +424,7 @@ class StarredMessagesPane extends BorderPane {
 		if (messageBalloon == null)
 			return;
 
-		scrollPane(messageBalloon, SMALL_GAP);
+		scrollPane(messageBalloon, GAP);
 
 		messageBalloon.blink();
 
@@ -432,7 +436,7 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
-	void goToMessage(Long messageId) {
+	private void goToMessage(Long messageId) {
 
 		if (messageBalloons.containsKey(messageId))
 			scrollPaneToMessage(messageId);
@@ -546,15 +550,23 @@ class StarredMessagesPane extends BorderPane {
 		parent.applyCss();
 		parent.layout();
 
-		Double centerPaneHeight = centerPane.getHeight();
-		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
+		Bounds nodeBoundsInScene = nodeToScrollTo.localToScene(nodeToScrollTo.getLayoutBounds());
 
-		if (centerPaneHeight < scrollPaneViewportHeight)
+		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene))
 			return;
 
-		Double scrollY = centerPane.sceneToLocal(nodeToScrollTo.localToScene(0.0, 0.0)).getY() - bias;
+		Double centerPaneWithLoadBtnHeight = centerPaneWithLoadBtn.getHeight();
+		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
 
-		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
+		if (centerPaneWithLoadBtnHeight < scrollPaneViewportHeight)
+			return;
+
+		Double scrollY = centerPaneWithLoadBtn.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
+		if (scrollNodeToBottom.getAndSet(false)) {
+			scrollY = scrollY - scrollPaneViewportHeight + nodeBoundsInScene.getHeight() + 2.0 * bias;
+		}
+
+		Double ratioY = Math.min(1.0, scrollY / (centerPaneWithLoadBtnHeight - scrollPaneViewportHeight));
 
 		scrollPane.setVvalue(scrollPane.getVmax() * ratioY);
 

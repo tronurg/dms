@@ -337,7 +337,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void archivedMessagesLoaded(List<Message> loadedArchivedMessages) {
 
-		if (loadedArchivedMessages.size() < MIN_MESSAGES_PER_PAGE) {
+		if (loadedArchivedMessages.isEmpty() || loadedArchivedMessages.size() % MIN_MESSAGES_PER_PAGE != 0) {
 			Platform.runLater(() -> dmsPanel.allArchivedMessagesLoaded());
 			model.setMinArchivedMessageId(-1L);
 		} else {
@@ -3071,13 +3071,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	@Override
 	public void archivedMessagesClaimed(final Long lastMessageIdExcl, final Long firstMessageIdIncl) {
-		// TODO Auto-generated method stub
 
 		taskQueue.execute(() -> {
 
 			try {
 
-				System.out.println("ok");
+				long bottomMessageId = lastMessageIdExcl;
+
+				List<Message> lastMessagesBetweenIds = new ArrayList<Message>();
+
+				while (firstMessageIdIncl < bottomMessageId) {
+
+					List<Message> lastMessagesBeforeId = dbManager.getLastArchivedMessagesBeforeId(bottomMessageId,
+							MIN_MESSAGES_PER_PAGE);
+
+					if (lastMessagesBeforeId.isEmpty())
+						break;
+
+					lastMessagesBetweenIds.addAll(lastMessagesBeforeId);
+
+					bottomMessageId = lastMessagesBeforeId.get(lastMessagesBeforeId.size() - 1).getId();
+
+				}
+
+				archivedMessagesLoaded(lastMessagesBetweenIds);
+
+				Platform.runLater(() -> dmsPanel.scrollArchivePaneToMessage(firstMessageIdIncl));
 
 			} catch (Exception e) {
 

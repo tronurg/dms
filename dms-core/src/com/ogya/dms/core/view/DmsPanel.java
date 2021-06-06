@@ -401,6 +401,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 	}
 
+	public void scrollArchivePaneToMessage(Long messageId) {
+
+		starredMessagesPane.scrollPaneToMessage(messageId);
+
+	}
+
 	private void fileSelected(final Path path) {
 
 		getChildren().remove(foldersPane);
