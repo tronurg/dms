@@ -543,6 +543,8 @@ class StarredMessagesPane extends BorderPane {
 
 	private void scrollPane(Node nodeToScrollTo, double bias) {
 
+		boolean scrollToBottom = scrollNodeToBottom.getAndSet(false);
+
 		Parent parent = getParent();
 		if (parent == null)
 			return;
@@ -562,7 +564,7 @@ class StarredMessagesPane extends BorderPane {
 			return;
 
 		Double scrollY = centerPaneWithLoadBtn.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
-		if (scrollNodeToBottom.getAndSet(false)) {
+		if (scrollToBottom) {
 			scrollY = scrollY - scrollPaneViewportHeight + nodeBoundsInScene.getHeight() + 2.0 * bias;
 		}
 
@@ -733,11 +735,10 @@ class StarredMessagesPane extends BorderPane {
 			GridPane.setFillWidth(messagePane, false);
 
 			messagePane.setStyle("-fx-min-width: 6em;");
-
 			messagePane.setBorder(messagePaneBorder);
 			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
-
 			messagePane.setPadding(new Insets(GAP));
+			messagePane.setEffect(shadow);
 
 			if (messageInfo.attachment != null)
 				messagePane.add(getAttachmentArea(), 0, 2);

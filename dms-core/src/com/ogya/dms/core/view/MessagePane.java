@@ -1045,6 +1045,8 @@ class MessagePane extends BorderPane {
 
 	private void scrollPane(Node nodeToScrollTo, double bias) {
 
+		boolean scrollToBottom = scrollNodeToBottom.getAndSet(false);
+
 		Parent parent = getParent();
 		if (parent == null)
 			return;
@@ -1064,7 +1066,7 @@ class MessagePane extends BorderPane {
 			return;
 
 		Double scrollY = centerPane.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
-		if (scrollNodeToBottom.getAndSet(false)) {
+		if (scrollToBottom) {
 			scrollY = scrollY - scrollPaneViewportHeight + nodeBoundsInScene.getHeight() + 2.0 * bias;
 		}
 
