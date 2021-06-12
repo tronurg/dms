@@ -71,4 +71,6 @@ public interface AppListener {
 
 	void archivedMessagesClaimed(Long lastMessageIdExcl, Long firstMessageIdIncl);
 
+	void searchInAllMessagesClaimed(String fulltext);
+
 }

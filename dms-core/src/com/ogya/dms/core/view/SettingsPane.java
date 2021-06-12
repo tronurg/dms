@@ -89,6 +89,18 @@ public class SettingsPane extends BorderPane {
 
 		scrollableContent.setPadding(new Insets(3 * GAP));
 
+		// SEARCH_IN_ALL_MESSAGES
+		Label searchInAllMessagesLbl = new Label(CommonMethods.translate("SEARCH_IN_ALL_MESSAGES"));
+		searchInAllMessagesLbl.getStyleClass().add("link-label");
+		searchInAllMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+		searchInAllMessagesLbl.setOnMouseClicked(e -> {
+			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
+			if (settingsClickedAction != null)
+				settingsClickedAction.accept(Settings.SEARCH_IN_ALL_MESSAGES);
+		});
+
+		scrollableContent.getChildren().add(searchInAllMessagesLbl);
+
 		// STARRED_MESSAGES
 		Label starredMessagesLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
 		starredMessagesLbl.getStyleClass().add("link-label");
@@ -131,6 +143,6 @@ public class SettingsPane extends BorderPane {
 
 enum Settings {
 
-	STARRED_MESSAGES, HIDDEN_CONVERSATIONS, EDIT_REMOTE_IPS
+	SEARCH_IN_ALL_MESSAGES, STARRED_MESSAGES, HIDDEN_CONVERSATIONS, EDIT_REMOTE_IPS
 
 }

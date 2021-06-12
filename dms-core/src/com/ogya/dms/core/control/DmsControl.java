@@ -3109,6 +3109,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void searchInAllMessagesClaimed(String fulltext) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				List<Message> hits = dbManager.searchInAllMessages(fulltext);
+				Platform.runLater(() -> dmsPanel.showSearchInAllMessagesResults(hits));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public JComponent getDmsPanel() {
 
 		return dmsPanelSwing;

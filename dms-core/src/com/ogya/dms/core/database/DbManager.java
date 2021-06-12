@@ -809,6 +809,22 @@ public class DbManager {
 
 	}
 
+	public List<Message> searchInAllMessages(String fulltext) throws HibernateException {
+
+		Session session = factory.openSession();
+
+		SearchSession searchSession = Search.session(session);
+
+		List<Message> hits = searchSession.search(Message.class)
+				.where(f -> f.phrase().field("content").matching(fulltext)).sort(f -> f.field("id").desc())
+				.fetchAllHits();
+
+		session.close();
+
+		return hits;
+
+	}
+
 	private void resolveReferenceOfMessage(Message message, Session session) throws HibernateException {
 
 		Message refMessage = message.getRefMessage();

@@ -38,7 +38,8 @@ import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 
-public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane, IStarredMessagesPane, IMessagePane {
+public class DmsPanel extends StackPane
+		implements IIdentityPane, IEntitiesPane, ISearchInAllMessagesPane, IStarredMessagesPane, IMessagePane {
 
 	private static final double GAP = ViewFactory.GAP;
 
@@ -54,6 +55,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane(unreadProperty);
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane(unreadProperty);
 	private final SettingsPane settingsPane = new SettingsPane(unreadProperty);
+	private final SearchInAllMessagesPane searchInAllMessagesPane = new SearchInAllMessagesPane(unreadProperty);
 	private final StarredMessagesPane starredMessagesPane = new StarredMessagesPane(unreadProperty);
 	private final HiddenEntitiesPane hiddenEntitiesPane = new HiddenEntitiesPane(unreadProperty);
 	private final RemoteIpSettingsPane remoteIpSettingsPane = new RemoteIpSettingsPane(unreadProperty);
@@ -162,6 +164,10 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 		// Settings Pane
 		settingsPane.setOnBackAction(() -> getChildren().remove(settingsPane));
 		settingsPane.setOnSettingClickedAction(this::settingClicked);
+
+		// Search In All Messages Pane
+		searchInAllMessagesPane.addListener(this);
+		searchInAllMessagesPane.setOnBackAction(() -> getChildren().remove(searchInAllMessagesPane));
 
 		// Starred Messages Pane
 		starredMessagesPane.addListener(this);
@@ -294,6 +300,7 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	private void addUpdateMessage(EntityId entityId, Message message) {
 
 		getMessagePane(entityId).addUpdateMessage(message);
+		searchInAllMessagesPane.updateMessage(message);
 		entitiesPane.updateMessageStatus(entityId, message);
 		hiddenEntitiesPane.updateMessageStatus(entityId, message);
 		fwdSelectionPane.updateMessageStatus(entityId, message);
@@ -472,6 +479,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 
 		switch (setting) {
 
+		case SEARCH_IN_ALL_MESSAGES:
+
+			getChildren().add(searchInAllMessagesPane);
+			searchInAllMessagesPane.focusOnSearchField();
+
+			break;
+
 		case STARRED_MESSAGES:
 
 			starredMessagesPane.scrollToTop();
@@ -543,6 +557,12 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void showArchiveSearchResults(List<Message> hits) {
 
 		starredMessagesPane.showSearchResults(hits);
+
+	}
+
+	public void showSearchInAllMessagesResults(List<Message> hits) {
+
+		searchInAllMessagesPane.showSearchResults(hits);
 
 	}
 
@@ -720,6 +740,13 @@ public class DmsPanel extends StackPane implements IIdentityPane, IEntitiesPane,
 	public void removeEntityRequested(EntityId entityId) {
 
 		listeners.forEach(listener -> listener.removeEntityRequested(entityId));
+
+	}
+
+	@Override
+	public void searchInAllMessagesRequested(final String fulltext) {
+
+		listeners.forEach(listener -> listener.searchInAllMessagesClaimed(fulltext));
 
 	}
 

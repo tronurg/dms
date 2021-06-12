@@ -60,12 +60,14 @@ public class ImSearchField extends HBox {
 
 	private void initUpBtn() {
 
+		upBtn.managedProperty().bind(upBtn.visibleProperty());
 		upBtn.setOnAction(e -> listeners.forEach(listener -> listener.upRequested()));
 
 	}
 
 	private void initDownBtn() {
 
+		downBtn.managedProperty().bind(downBtn.visibleProperty());
 		downBtn.setOnAction(e -> listeners.forEach(listener -> listener.downRequested()));
 
 	}
@@ -112,6 +114,11 @@ public class ImSearchField extends HBox {
 
 	public final StringProperty textProperty() {
 		return searchTextField.textProperty();
+	}
+
+	public void setNavigationDisabled(boolean disabled) {
+		upBtn.setVisible(!disabled);
+		downBtn.setVisible(!disabled);
 	}
 
 	@Override
