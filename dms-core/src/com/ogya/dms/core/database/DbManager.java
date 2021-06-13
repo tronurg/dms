@@ -767,7 +767,7 @@ public class DbManager {
 		List<Message> hits = searchSession.search(Message.class)
 				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
 						.must(f.match().field("contact.id").matching(contactId)).mustNot(f.exists().field("dgroup")))
-				.sort(f -> f.field("id").asc()).fetchAllHits();
+				.sort(f -> f.field("id").desc()).fetchAllHits();
 
 		session.close();
 
@@ -784,7 +784,7 @@ public class DbManager {
 		List<Message> hits = searchSession.search(Message.class)
 				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
 						.must(f.match().field("dgroup.id").matching(groupId)))
-				.sort(f -> f.field("id").asc()).fetchAllHits();
+				.sort(f -> f.field("id").desc()).fetchAllHits();
 
 		session.close();
 
@@ -801,7 +801,7 @@ public class DbManager {
 		List<Message> hits = searchSession.search(Message.class)
 				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
 						.must(f.match().field("viewStatus").matching(ViewStatus.ARCHIVED)))
-				.sort(f -> f.field("id").asc()).fetchAllHits();
+				.sort(f -> f.field("id").desc()).fetchAllHits();
 
 		session.close();
 

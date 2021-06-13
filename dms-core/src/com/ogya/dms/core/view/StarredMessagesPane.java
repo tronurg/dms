@@ -263,9 +263,9 @@ class StarredMessagesPane extends BorderPane {
 		imSearchField.visibleProperty().bind(searchModeProperty.and(selectionModeProperty.not()));
 		imSearchField.managedProperty().bind(imSearchField.visibleProperty());
 
-		imSearchField.upDisableProperty()
+		imSearchField.upDisableProperty().bind(searchHitIndex.lessThanOrEqualTo(0));
+		imSearchField.downDisableProperty()
 				.bind(searchHitIndex.lessThan(0).or(searchHitIndex.isEqualTo(Bindings.size(searchHits).subtract(1))));
-		imSearchField.downDisableProperty().bind(searchHitIndex.lessThanOrEqualTo(0));
 
 		imSearchField.textProperty().addListener(new ChangeListener<String>() {
 
@@ -287,18 +287,18 @@ class StarredMessagesPane extends BorderPane {
 
 			@Override
 			public void upRequested() {
-				if (searchHitIndex.get() == searchHits.size() - 1)
+				if (searchHitIndex.get() == 0)
 					return;
 				scrollNodeToBottom.set(true);
-				searchHitIndex.set(searchHitIndex.get() + 1);
+				searchHitIndex.set(searchHitIndex.get() - 1);
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
 			}
 
 			@Override
 			public void downRequested() {
-				if (searchHitIndex.get() == 0)
+				if (searchHitIndex.get() == searchHits.size() - 1)
 					return;
-				searchHitIndex.set(searchHitIndex.get() - 1);
+				searchHitIndex.set(searchHitIndex.get() + 1);
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
 			}
 
@@ -452,13 +452,13 @@ class StarredMessagesPane extends BorderPane {
 
 		searchHits.clear();
 		searchHits.addAll(hits);
-		searchHitIndex.set(searchHits.size() - 1);
+		searchHitIndex.set(0);
 
 		if (searchHits.isEmpty()) {
 			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
 		} else {
 			imSearchField.setTextFieldStyle(null);
-			goToMessage(searchHits.get(searchHitIndex.get()).getId());
+			goToMessage(searchHits.get(0).getId());
 		}
 
 	}
