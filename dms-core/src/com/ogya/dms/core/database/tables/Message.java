@@ -59,7 +59,7 @@ public class Message {
 	private Long messageRefId;
 
 	@Column(name = "content", updatable = false, length = Integer.MAX_VALUE)
-	@FullTextField
+	@FullTextField(analyzer = "messageContentAnalyzer")
 	@JsonProperty("c")
 	private String content;
 

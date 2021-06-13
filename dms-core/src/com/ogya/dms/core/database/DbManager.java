@@ -16,6 +16,7 @@ import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import com.ogya.dms.core.common.CommonConstants;
+import com.ogya.dms.core.database.search.DmsAnalysisConfigurer;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.ContactRef;
 import com.ogya.dms.core.database.tables.Dgroup;
@@ -45,9 +46,11 @@ public class DbManager {
 				.setProperty("hibernate.connection.username", dbName)
 				.setProperty("hibernate.connection.password", dbPassword)
 				.setProperty("hibernate.search.backend.directory.root", dbPath)
-				.setProperty("hibernate.search.backend.lucene_version", "LUCENE_8_7_0").addAnnotatedClass(Contact.class)
-				.addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class).addAnnotatedClass(Message.class)
-				.addAnnotatedClass(StatusReport.class).buildSessionFactory();
+				.setProperty("hibernate.search.backend.lucene_version", "LUCENE_8_7_0")
+				.setProperty("hibernate.search.backend.analysis.configurer",
+						"class:" + DmsAnalysisConfigurer.class.getName())
+				.addAnnotatedClass(Contact.class).addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class)
+				.addAnnotatedClass(Message.class).addAnnotatedClass(StatusReport.class).buildSessionFactory();
 
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
 
