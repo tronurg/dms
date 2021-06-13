@@ -765,7 +765,7 @@ public class DbManager {
 		SearchSession searchSession = Search.session(session);
 
 		List<Message> hits = searchSession.search(Message.class)
-				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
+				.where(f -> f.bool().must(f.simpleQueryString().field("content").matching(fulltext.trim() + "*"))
 						.must(f.match().field("contact.id").matching(contactId)).mustNot(f.exists().field("dgroup")))
 				.sort(f -> f.field("id").desc()).fetchAllHits();
 
@@ -782,7 +782,7 @@ public class DbManager {
 		SearchSession searchSession = Search.session(session);
 
 		List<Message> hits = searchSession.search(Message.class)
-				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
+				.where(f -> f.bool().must(f.simpleQueryString().field("content").matching(fulltext.trim() + "*"))
 						.must(f.match().field("dgroup.id").matching(groupId)))
 				.sort(f -> f.field("id").desc()).fetchAllHits();
 
@@ -799,7 +799,7 @@ public class DbManager {
 		SearchSession searchSession = Search.session(session);
 
 		List<Message> hits = searchSession.search(Message.class)
-				.where(f -> f.bool().must(f.phrase().field("content").matching(fulltext))
+				.where(f -> f.bool().must(f.simpleQueryString().field("content").matching(fulltext.trim() + "*"))
 						.must(f.match().field("viewStatus").matching(ViewStatus.ARCHIVED)))
 				.sort(f -> f.field("id").desc()).fetchAllHits();
 
@@ -816,8 +816,8 @@ public class DbManager {
 		SearchSession searchSession = Search.session(session);
 
 		List<Message> hits = searchSession.search(Message.class)
-				.where(f -> f.phrase().field("content").matching(fulltext)).sort(f -> f.field("id").desc())
-				.fetchAllHits();
+				.where(f -> f.simpleQueryString().field("content").matching(fulltext.trim() + "*"))
+				.sort(f -> f.field("id").desc()).fetchAllHits();
 
 		session.close();
 
