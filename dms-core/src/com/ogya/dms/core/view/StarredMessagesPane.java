@@ -70,9 +70,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
@@ -92,10 +89,8 @@ class StarredMessagesPane extends BorderPane {
 			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 	private final Background outgoingBackground = new Background(
 			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
-	private final Background searchHitBackground = new Background(new BackgroundFill(
-			new LinearGradient(0.0, 0.0, 1.0, 0.0, true, CycleMethod.NO_CYCLE,
-					new Stop(0, Color.rgb(155, 155, 255, 0.5)), new Stop(1, Color.rgb(155, 155, 255, 0.0))),
-			new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
+	private final Background searchHitBackground = new Background(
+			new BackgroundFill(Color.rgb(155, 155, 255, 0.5), new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final VBox centerPaneWithLoadBtn = new VBox(GAP);
@@ -119,7 +114,7 @@ class StarredMessagesPane extends BorderPane {
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
 	private final ObservableList<Message> searchHits = FXCollections.observableArrayList();
-	private final IntegerProperty searchHitIndex = new SimpleIntegerProperty(-1);
+	private final IntegerProperty searchHitIndex = new SimpleIntegerProperty(0);
 
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
@@ -205,7 +200,7 @@ class StarredMessagesPane extends BorderPane {
 
 	private void initCenterPaneWithLoadBtn() {
 
-		centerPaneWithLoadBtn.setPadding(new Insets(GAP));
+		centerPaneWithLoadBtn.setPadding(new Insets(GAP, 0, GAP, GAP));
 		centerPaneWithLoadBtn.setAlignment(Pos.CENTER);
 
 		scrollPane.getStyleClass().add("edge-to-edge");
@@ -263,9 +258,9 @@ class StarredMessagesPane extends BorderPane {
 		imSearchField.visibleProperty().bind(searchModeProperty.and(selectionModeProperty.not()));
 		imSearchField.managedProperty().bind(imSearchField.visibleProperty());
 
-		imSearchField.upDisableProperty().bind(searchHitIndex.lessThanOrEqualTo(0));
+		imSearchField.upDisableProperty().bind(Bindings.isEmpty(searchHits).or(searchHitIndex.isEqualTo(0)));
 		imSearchField.downDisableProperty()
-				.bind(searchHitIndex.lessThan(0).or(searchHitIndex.isEqualTo(Bindings.size(searchHits).subtract(1))));
+				.bind(Bindings.isEmpty(searchHits).or(searchHitIndex.isEqualTo(Bindings.size(searchHits).subtract(1))));
 
 		imSearchField.textProperty().addListener(new ChangeListener<String>() {
 
@@ -273,7 +268,7 @@ class StarredMessagesPane extends BorderPane {
 			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
 				imSearchField.setTextFieldStyle(null);
 				searchHits.clear();
-				searchHitIndex.set(-1);
+				searchHitIndex.set(0);
 			}
 
 		});
@@ -287,7 +282,7 @@ class StarredMessagesPane extends BorderPane {
 
 			@Override
 			public void upRequested() {
-				if (searchHitIndex.get() == 0)
+				if (searchHits.isEmpty() || searchHitIndex.get() == 0)
 					return;
 				scrollNodeToBottom.set(true);
 				searchHitIndex.set(searchHitIndex.get() - 1);
@@ -296,7 +291,7 @@ class StarredMessagesPane extends BorderPane {
 
 			@Override
 			public void downRequested() {
-				if (searchHitIndex.get() == searchHits.size() - 1)
+				if (searchHits.isEmpty() || searchHitIndex.get() == searchHits.size() - 1)
 					return;
 				searchHitIndex.set(searchHitIndex.get() + 1);
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
@@ -401,8 +396,11 @@ class StarredMessagesPane extends BorderPane {
 
 	private void updateMessage(Message message) {
 
-		if (!Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
-			deleteMessage(message);
+		if (Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
+			return;
+
+		deleteMessage(message);
+		removeSearchHit(message);
 
 	}
 
@@ -414,6 +412,20 @@ class StarredMessagesPane extends BorderPane {
 
 		if (messageBalloon != null)
 			centerPane.getChildren().remove(messageBalloon);
+
+	}
+
+	private void removeSearchHit(Message message) {
+
+		for (int i = 0; i < searchHits.size(); ++i) {
+			Long hitId = searchHits.get(i).getId();
+			if (!Objects.equals(hitId, message.getId()))
+				continue;
+			searchHits.remove(i);
+			if (!(searchHitIndex.get() < i))
+				searchHitIndex.set(searchHitIndex.get() - 1);
+			break;
+		}
 
 	}
 
@@ -458,7 +470,7 @@ class StarredMessagesPane extends BorderPane {
 			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
 		} else {
 			imSearchField.setTextFieldStyle(null);
-			goToMessage(searchHits.get(0).getId());
+			goToMessage(searchHits.get(searchHitIndex.get()).getId());
 		}
 
 	}
@@ -782,7 +794,7 @@ class StarredMessagesPane extends BorderPane {
 
 		private void initGoToRefBtn() {
 
-			GridPane.setMargin(goToRefBtn, new Insets(0, 0, 0, GAP));
+			GridPane.setMargin(goToRefBtn, new Insets(GAP));
 
 			goToRefBtn.visibleProperty().bind(selectionModeProperty.not());
 			goToRefBtn.managedProperty().bind(goToRefBtn.visibleProperty());
