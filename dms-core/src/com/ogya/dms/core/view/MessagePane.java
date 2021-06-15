@@ -260,7 +260,7 @@ class MessagePane extends BorderPane {
 
 	private void initCenterPane() {
 
-		centerPane.setPadding(new Insets(GAP, 0, GAP, GAP));
+		centerPane.setPadding(new Insets(GAP));
 		centerPane.heightProperty().addListener((e0, e1, e2) -> {
 			if (autoScroll.get())
 				scrollPaneToBottom();
@@ -1319,7 +1319,7 @@ class MessagePane extends BorderPane {
 		private Node getInfoBtn() {
 
 			Button infoBtn = ViewFactory.newInfoBtn();
-			GridPane.setMargin(infoBtn, new Insets(GAP));
+			GridPane.setMargin(infoBtn, new Insets(0, 0, 0, GAP));
 
 			infoBtn.visibleProperty().bind(selectionModeProperty.not());
 			infoBtn.managedProperty().bind(infoBtn.visibleProperty());

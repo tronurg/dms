@@ -200,7 +200,7 @@ class StarredMessagesPane extends BorderPane {
 
 	private void initCenterPaneWithLoadBtn() {
 
-		centerPaneWithLoadBtn.setPadding(new Insets(GAP, 0, GAP, GAP));
+		centerPaneWithLoadBtn.setPadding(new Insets(GAP));
 		centerPaneWithLoadBtn.setAlignment(Pos.CENTER);
 
 		scrollPane.getStyleClass().add("edge-to-edge");
@@ -794,7 +794,7 @@ class StarredMessagesPane extends BorderPane {
 
 		private void initGoToRefBtn() {
 
-			GridPane.setMargin(goToRefBtn, new Insets(GAP));
+			GridPane.setMargin(goToRefBtn, new Insets(0, 0, 0, GAP));
 
 			goToRefBtn.visibleProperty().bind(selectionModeProperty.not());
 			goToRefBtn.managedProperty().bind(goToRefBtn.visibleProperty());
