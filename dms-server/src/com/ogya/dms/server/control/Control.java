@@ -89,7 +89,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
-	public void publishDmsUuid() {
+	private void publishDmsUuid() {
 
 		while (!Thread.currentThread().isInterrupted()) {
 
