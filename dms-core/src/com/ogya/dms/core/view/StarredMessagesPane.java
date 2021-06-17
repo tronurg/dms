@@ -282,18 +282,30 @@ class StarredMessagesPane extends BorderPane {
 
 			@Override
 			public void upRequested() {
-				if (searchHits.isEmpty() || searchHitIndex.get() == 0)
+				int hitIndex = searchHitIndex.get();
+				if (searchHits.isEmpty() || hitIndex == 0)
 					return;
 				scrollNodeToBottom.set(true);
-				searchHitIndex.set(searchHitIndex.get() - 1);
+				if (hitIndex < 0) {
+					hitIndex = -(hitIndex + 1) - 1;
+				} else {
+					hitIndex -= 1;
+				}
+				searchHitIndex.set(Math.max(0, Math.min(searchHits.size() - 1, hitIndex)));
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
 			}
 
 			@Override
 			public void downRequested() {
-				if (searchHits.isEmpty() || searchHitIndex.get() == searchHits.size() - 1)
+				int hitIndex = searchHitIndex.get();
+				if (searchHits.isEmpty() || hitIndex == searchHits.size() - 1)
 					return;
-				searchHitIndex.set(searchHitIndex.get() + 1);
+				if (hitIndex < 0) {
+					hitIndex = -(hitIndex + 1);
+				} else {
+					hitIndex += 1;
+				}
+				searchHitIndex.set(Math.max(0, Math.min(searchHits.size() - 1, hitIndex)));
 				goToMessage(searchHits.get(searchHitIndex.get()).getId());
 			}
 
@@ -422,8 +434,11 @@ class StarredMessagesPane extends BorderPane {
 			if (!Objects.equals(hitId, message.getId()))
 				continue;
 			searchHits.remove(i);
-			if (!(searchHitIndex.get() < i))
+			if (searchHitIndex.get() == i) {
+				searchHitIndex.set(-searchHitIndex.get() - 1);
+			} else if (searchHitIndex.get() > i) {
 				searchHitIndex.set(searchHitIndex.get() - 1);
+			}
 			break;
 		}
 
