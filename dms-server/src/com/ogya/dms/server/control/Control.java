@@ -98,8 +98,6 @@ public class Control implements TcpManagerListener, ModelListener {
 				if (model.isLive())
 					multicastManager.send(DMS_UUID, model.getUnconnectedRemoteIps());
 
-				tcpManager.testAllConnections();
-
 				try {
 
 					publishSyncObj.wait(beaconIntervalMs);
@@ -289,9 +287,10 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps) {
+	public void serverConnectionsUpdated(final String dmsUuid, final Map<InetAddress, InetAddress> localRemoteIps,
+			final boolean beaconsRequested) {
 
-		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, localRemoteIps));
+		taskQueue.execute(() -> model.serverConnectionsUpdated(dmsUuid, localRemoteIps, beaconsRequested));
 
 	}
 

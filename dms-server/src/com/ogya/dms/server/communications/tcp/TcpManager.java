@@ -13,14 +13,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.structures.MessagePojo;
@@ -28,6 +25,7 @@ import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
+import com.ogya.dms.server.communications.tcp.net.TcpConnection;
 import com.ogya.dms.server.communications.tcp.net.TcpServer;
 import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
@@ -54,6 +52,21 @@ public class TcpManager implements TcpServerListener {
 			.synchronizedList(new ArrayList<TcpManagerListener>());
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+
+	private final Comparator<Connection> connectionSorter = new Comparator<Connection>() {
+
+		@Override
+		public int compare(Connection arg0, Connection arg1) {
+			if (Objects.equals(arg0, arg1))
+				return 0;
+			int pingTime0 = arg0.getPingTime();
+			int pingTime1 = arg1.getPingTime();
+			if (pingTime0 == pingTime1)
+				return Integer.compare(arg0.order, arg1.order);
+			return Integer.compare(pingTime0, pingTime1);
+		}
+
+	};
 
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, TcpManagerListener listener) {
 
@@ -83,10 +96,7 @@ public class TcpManager implements TcpServerListener {
 
 			if (!connections.containsKey(address)) {
 
-				Connection connection = new Connection(address, this::messageReceivedFromConnection);
-				connection.dmsServer = dmsServer;
-
-				connections.put(address, connection);
+				connections.put(address, null);
 
 				if (Objects.equals(connectionType, TcpConnectionType.CLIENT)) {
 
@@ -103,6 +113,10 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
+									Connection connection = connections.get(address);
+									if (connection == null)
+										return;
+
 									connection.messageFactory.inFeed(message);
 
 								});
@@ -110,15 +124,17 @@ public class TcpManager implements TcpServerListener {
 							}
 
 							@Override
-							public void connected() {
+							public void connected(final TcpConnection tcpConnection) {
 
 								taskQueue.execute(() -> {
 
-									connection.localAddress = tcpClient.getLocalAddress();
-									connection.sendFunction = tcpClient::sendMessage;
+									Connection connection = new Connection(tcpConnection, -1,
+											TcpManager.this::messageReceivedFromConnection);
+									connection.dmsServer = dmsServer;
+
 									dmsServer.connections.add(connection);
 
-									serverConnectionsUpdated(dmsServer);
+									serverConnectionsUpdated(dmsServer, true);
 
 								});
 
@@ -140,10 +156,14 @@ public class TcpManager implements TcpServerListener {
 
 								taskQueue.execute(() -> {
 
-									connections.remove(address).messageFactory.deleteResources();
-									dmsServer.connections.remove(connection);
+									Connection connection = connections.remove(address);
+									if (connection == null)
+										return;
 
-									serverConnectionsUpdated(dmsServer);
+									connection.messageFactory.deleteResources();
+									if (dmsServer.connections.remove(connection)) {
+										serverConnectionsUpdated(dmsServer, false);
+									}
 
 								});
 
@@ -172,7 +192,7 @@ public class TcpManager implements TcpServerListener {
 				connection.dmsServer = dmsServer;
 				dmsServer.connections.add(connection);
 
-				serverConnectionsUpdated(dmsServer);
+				serverConnectionsUpdated(dmsServer, true);
 
 				while (!connection.waitingMessages.isEmpty()) {
 
@@ -209,33 +229,6 @@ public class TcpManager implements TcpServerListener {
 
 			dmsServers.forEach(
 					(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo, new AtomicBoolean(true), null));
-
-		});
-
-	}
-
-	public void testAllConnections() {
-
-		taskQueue.execute(() -> {
-
-			dmsServers.forEach((dmsUuid, dmsServer) -> {
-
-				dmsServer.taskQueue.execute(() -> {
-
-					synchronized (dmsServer.connections) {
-
-						for (Connection connection : dmsServer.connections) {
-
-							if (connection.sendFunction != null)
-								connection.sendFunction.apply(new byte[0]);
-
-						}
-
-					}
-
-				});
-
-			});
 
 		});
 
@@ -286,6 +279,8 @@ public class TcpManager implements TcpServerListener {
 
 			synchronized (dmsServer.connections) {
 
+				Collections.sort(dmsServer.connections, connectionSorter);
+
 				for (Connection connection : dmsServer.connections) {
 
 					health.set(sendStatus.get() && (messagePojo.useTimeout == null
@@ -295,10 +290,7 @@ public class TcpManager implements TcpServerListener {
 						break;
 
 					if (!(messagePojo.useLocalAddress == null
-							|| messagePojo.useLocalAddress.equals(connection.localAddress)))
-						continue;
-
-					if (connection.sendFunction == null)
+							|| messagePojo.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())))
 						continue;
 
 					sent.set(true); // Hypothesis
@@ -310,7 +302,7 @@ public class TcpManager implements TcpServerListener {
 						if (!sent.get())
 							return;
 
-						sent.set(connection.sendFunction.apply(data));
+						sent.set(connection.tcpConnection.sendMessage(data));
 
 						health.set(sendStatus.get()
 								&& (messagePojo.useTimeout == null
@@ -353,14 +345,15 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void serverConnectionsUpdated(DmsServer dmsServer) {
+	private void serverConnectionsUpdated(DmsServer dmsServer, boolean beaconsRequested) {
 
 		Map<InetAddress, InetAddress> localRemoteIps = new HashMap<InetAddress, InetAddress>();
 
-		dmsServer.connections
-				.forEach(connection -> localRemoteIps.put(connection.localAddress, connection.remoteAddress));
+		dmsServer.connections.forEach(connection -> localRemoteIps.put(connection.tcpConnection.getLocalAddress(),
+				connection.tcpConnection.getRemoteAddress()));
 
-		listeners.forEach(listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, localRemoteIps));
+		listeners.forEach(
+				listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, localRemoteIps, beaconsRequested));
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
@@ -376,13 +369,9 @@ public class TcpManager implements TcpServerListener {
 		DmsServer dmsServer = connection.dmsServer;
 
 		if (dmsServer == null) {
-
 			connection.waitingMessages.offer(messagePojo);
-
 		} else {
-
 			messageReceivedToListeners(messagePojo, dmsServer.dmsUuid);
-
 		}
 
 	}
@@ -441,15 +430,8 @@ public class TcpManager implements TcpServerListener {
 
 			DmsServer dmsServer = connection.dmsServer;
 
-			if (dmsServer == null)
-				return;
-
-			if (dmsServer.connections.contains(connection)) {
-
-				dmsServer.connections.remove(connection);
-
-				serverConnectionsUpdated(dmsServer);
-
+			if (dmsServer != null && dmsServer.connections.remove(connection)) {
+				serverConnectionsUpdated(dmsServer, false);
 			}
 
 		});
@@ -457,40 +439,27 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	@Override
-	public void connected(final int id) {
+	public void connected(final int id, final TcpConnection tcpConnection) {
 
 		taskQueue.execute(() -> {
 
-			InetAddress address = tcpServer.getRemoteAddress(id);
+			InetAddress address = tcpConnection.getRemoteAddress();
 
 			serverIdAddress.put(id, address);
 
-			connections.putIfAbsent(address, new Connection(address, this::messageReceivedFromConnection));
-
 			Connection connection = connections.get(address);
+			DmsServer dmsServer = null;
 
-			if (!(connection.id < 0)) {
-				tcpServer.disconnect(connection.id);
+			if (connection != null) {
+				dmsServer = connection.dmsServer;
+				connection.tcpConnection.close();
 				connection.messageFactory.deleteResources();
-				connection.messageFactory.reset();
+			}
+			if (dmsServer != null && dmsServer.connections.remove(connection)) {
+				serverConnectionsUpdated(dmsServer, false);
 			}
 
-			connection.localAddress = tcpServer.getLocalAddress(id);
-			connection.id = id;
-
-			connection.sendFunction = message -> tcpServer.sendMessage(id, message);
-
-			DmsServer dmsServer = connection.dmsServer;
-
-			if (dmsServer != null) {
-				// connection alinan bir uuid ile olusturulmus
-				// connectionsi guncelleyip kontrol et
-
-				dmsServer.connections.add(connection);
-
-				serverConnectionsUpdated(dmsServer);
-
-			}
+			connections.put(address, new Connection(tcpConnection, id, this::messageReceivedFromConnection));
 
 		});
 
@@ -527,41 +496,29 @@ public class TcpManager implements TcpServerListener {
 
 		private final int order;
 
-		private final InetAddress remoteAddress;
-		private InetAddress localAddress;
-
-		private int id = -1;
+		private final TcpConnection tcpConnection;
+		private final int id;
 
 		private final Queue<MessagePojo> waitingMessages = new ArrayDeque<MessagePojo>();
 
 		private DmsServer dmsServer;
 
-		private Function<byte[], Boolean> sendFunction;
-
-		private Connection(InetAddress remoteAddress, BiConsumer<MessagePojo, Connection> messageConsumer) {
+		private Connection(TcpConnection tcpConnection, int id, BiConsumer<MessagePojo, Connection> messageConsumer) {
 			this.messageFactory = new DmsMessageFactory(messagePojo -> messageConsumer.accept(messagePojo, this));
-			order = ORDER.getAndIncrement();
-			this.remoteAddress = remoteAddress;
+			this.order = ORDER.getAndIncrement();
+			this.tcpConnection = tcpConnection;
+			this.id = id;
 		}
 
 		private int getPingTime() {
-			int pingTime = 1000;
-			try {
-				long startTimeNanos = System.nanoTime();
-				remoteAddress.isReachable(pingTime);
-				long endTimeNanos = System.nanoTime();
-				pingTime = (int) (endTimeNanos - startTimeNanos);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return pingTime;
+			return tcpConnection.getMinPingTime();
 		}
 
 		@Override
 		public boolean equals(Object obj) {
 			if (obj == null || !(obj instanceof Connection))
 				return false;
-			return Objects.equals(((Connection) obj).remoteAddress, remoteAddress);
+			return Objects.equals(((Connection) obj).order, order);
 		}
 
 	}
@@ -570,34 +527,16 @@ public class TcpManager implements TcpServerListener {
 
 		private final String dmsUuid;
 
-		private final Set<Connection> connections = Collections
-				.synchronizedSortedSet(new TreeSet<Connection>(new Comparator<Connection>() {
-
-					@Override
-					public int compare(Connection arg0, Connection arg1) {
-						if (Objects.equals(arg0, arg1))
-							return 0;
-						int pingTime0 = arg0.getPingTime();
-						int pingTime1 = arg1.getPingTime();
-						if (pingTime0 == pingTime1)
-							return (int) Math.signum(arg0.order - arg1.order);
-						return (int) Math.signum(pingTime0 - pingTime1);
-					}
-
-				}));
+		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
 
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 		private DmsServer(String dmsUuid) {
-
 			this.dmsUuid = dmsUuid;
-
 		}
 
 		private void close() {
-
 			taskQueue.shutdown();
-
 		}
 
 	}

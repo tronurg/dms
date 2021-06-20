@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.ogya.dms.server.common.DmsSecurity;
 
@@ -21,7 +21,7 @@ public final class TcpClient implements Runnable {
 
 	private final List<TcpClientListener> listeners = Collections.synchronizedList(new ArrayList<TcpClientListener>());
 
-	private final AtomicReference<TcpConnection> tcpConnectionRef = new AtomicReference<TcpConnection>(null);
+	private final AtomicBoolean connected = new AtomicBoolean(false);
 
 	private final ExecutorService taskQueue = Executors.newSingleThreadExecutor(new ThreadFactory() {
 
@@ -61,92 +61,16 @@ public final class TcpClient implements Runnable {
 
 	public void connect() {
 
-		if (isConnected())
+		if (connected.get())
 			return;
 
 		new Thread(this).start();
 
 	}
 
-	public boolean isConnected() {
+	private void connectedToListeners(final TcpConnection tcpConnection) {
 
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		return tcpConnection != null && tcpConnection.isConnected();
-
-	}
-
-	public boolean sendMessage(byte[] message) {
-
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		if (tcpConnection == null)
-			return false;
-
-		return tcpConnection.sendMessage(message);
-
-	}
-
-	public InetAddress getRemoteAddress() {
-
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		if (tcpConnection == null)
-			return null;
-
-		return tcpConnection.getRemoteAddress();
-
-	}
-
-	public int getRemotePort() {
-
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		if (tcpConnection == null)
-			return 0;
-
-		return tcpConnection.getRemotePort();
-
-	}
-
-	public InetAddress getLocalAddress() {
-
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		if (tcpConnection == null)
-			return null;
-
-		return tcpConnection.getLocalAddress();
-
-	}
-
-	public int getLocalPort() {
-
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		if (tcpConnection == null)
-			return 0;
-
-		return tcpConnection.getLocalPort();
-
-	}
-
-	public void disconnect() {
-
-		TcpConnection tcpConnection = tcpConnectionRef.get();
-
-		if (tcpConnection == null)
-			return;
-
-		tcpConnection.close();
-
-		tcpConnectionRef.set(null);
-
-	}
-
-	private void connectedToListeners() {
-
-		taskQueue.execute(() -> listeners.forEach(listener -> listener.connected()));
+		taskQueue.execute(() -> listeners.forEach(listener -> listener.connected(tcpConnection)));
 
 	}
 
@@ -176,13 +100,13 @@ public final class TcpClient implements Runnable {
 			socket.setKeepAlive(false);
 
 			TcpConnection tcpConnection = new TcpConnection(socket, this::messageReceivedToListeners);
-			tcpConnectionRef.set(tcpConnection);
+			connected.set(true);
 
-			connectedToListeners();
+			connectedToListeners(tcpConnection);
 
 			tcpConnection.listen();
 
-			tcpConnectionRef.set(null);
+			connected.set(false);
 
 			disconnectedToListeners();
 

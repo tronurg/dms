@@ -469,35 +469,26 @@ public class Model {
 
 	}
 
-	public void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps) {
+	public void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps,
+			boolean beaconsRequested) {
 
 		if (localRemoteIps.isEmpty()) {
-
 			remoteServerDisconnected(dmsUuid);
-
 			return;
-
 		}
 
-		remoteServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
-
 		DmsServer dmsServer = remoteServers.get(dmsUuid);
-
-		// This block is commented out upon a half-open connection error. See below.
-//		if (dmsServer.addresses.isEmpty()) {
-//			// Connection just established with the server
-//
-//			sendAllBeaconsToRemoteServer(dmsUuid);
-//
-//		}
+		if (dmsServer == null) {
+			dmsServer = new DmsServer(dmsUuid);
+			remoteServers.put(dmsUuid, dmsServer);
+		}
 
 		dmsServer.localRemoteIps.clear();
 		dmsServer.localRemoteIps.putAll(localRemoteIps);
 
 		// This block is added upon a half-open connection error.
-		sendAllBeaconsToRemoteServer(dmsUuid);
-
-		dmsServer.mappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
+		if (beaconsRequested)
+			sendAllBeaconsToRemoteServer(dmsUuid);
 
 	}
 

@@ -7,7 +7,8 @@ import com.ogya.dms.commons.structures.MessagePojo;
 
 public interface TcpManagerListener {
 
-	void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps);
+	void serverConnectionsUpdated(String dmsUuid, Map<InetAddress, InetAddress> localRemoteIps,
+			boolean beaconsRequested);
 
 	void messageReceivedFromRemoteServer(MessagePojo messagePojo, String dmsUuid);
 
