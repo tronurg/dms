@@ -131,6 +131,7 @@ public class TcpManager implements TcpServerListener {
 									Connection connection = new Connection(tcpConnection, -1,
 											TcpManager.this::messageReceivedFromConnection);
 									connection.dmsServer = dmsServer;
+									connections.put(address, connection);
 
 									dmsServer.connections.add(connection);
 
