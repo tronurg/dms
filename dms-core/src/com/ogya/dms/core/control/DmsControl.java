@@ -365,28 +365,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final Long id = contact.getId();
 
-		if (Objects.equals(contact.getStatus(), Availability.OFFLINE))
-			return;
-
-		contact.setStatus(Availability.OFFLINE);
-
-		try {
-
-			final Contact newContact = dbManager.addUpdateContact(contact);
-
-			model.addUpdateContact(newContact);
-
-			Platform.runLater(() -> dmsPanel.updateContact(newContact));
-
-			listenerTaskQueue.execute(
-					() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
-
 		try {
 
 			dbManager.getAllActiveGroupsOfContact(id).forEach(group -> {
@@ -414,6 +392,30 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				}
 
 			});
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+		if (Objects.equals(contact.getStatus(), Availability.OFFLINE))
+			return;
+
+		contact.setStatus(Availability.OFFLINE);
+
+		try {
+
+			final Contact newContact = dbManager.addUpdateContact(contact);
+
+			newContact.setLocalRemoteServerIps(null);
+
+			model.addUpdateContact(newContact);
+
+			Platform.runLater(() -> dmsPanel.updateContact(newContact));
+
+			listenerTaskQueue.execute(
+					() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
 		} catch (Exception e) {
 
@@ -1094,7 +1096,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
-				newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
+				if (Objects.equals(newContact.getStatus(), Availability.OFFLINE))
+					newContact.setLocalRemoteServerIps(null);
+				else
+					newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
+
+				boolean connectionsUpdated = !Objects.equals(model.getLocalRemoteServerIps(userUuid),
+						newContact.getLocalRemoteServerIps());
 
 				model.addUpdateContact(newContact);
 
@@ -1112,7 +1120,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					contactDisconnected(newContact);
 
-				} else if (!wasOnline && isOnline) {
+				} else if (isOnline && connectionsUpdated) {
 					// If the contact has just been online, send all things waiting for it, adjust
 					// its groups' availability.
 

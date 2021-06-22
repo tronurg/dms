@@ -177,6 +177,17 @@ public class Model {
 
 	}
 
+	public Map<InetAddress, InetAddress> getLocalRemoteServerIps(String uuid) {
+
+		Contact contact = uuidContacts.get(uuid);
+
+		if (contact == null)
+			return null;
+
+		return contact.getLocalRemoteServerIps();
+
+	}
+
 	public Map<Long, Contact> getContacts() {
 
 		return idContacts;

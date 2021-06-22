@@ -490,6 +490,8 @@ public class Model {
 		if (beaconsRequested)
 			sendAllBeaconsToRemoteServer(dmsUuid);
 
+		dmsServer.mappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
+
 	}
 
 	public void localUuidDisconnected(String uuid) {
