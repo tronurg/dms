@@ -97,8 +97,6 @@ public final class TcpClient implements Runnable {
 
 		try (Socket socket = DmsSecurity.newSecureSocket(serverIp, serverPort, localIp, localPort)) {
 
-			socket.setKeepAlive(false);
-
 			TcpConnection tcpConnection = new TcpConnection(socket, this::messageReceivedToListeners);
 			connected.set(true);
 

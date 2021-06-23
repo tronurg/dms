@@ -7,12 +7,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Queue;
 import java.util.function.Consumer;
 
-import org.shortpasta.icmp2.IcmpPingResponse;
 import org.shortpasta.icmp2.IcmpPingUtil;
 
 import com.github.luben.zstd.ZstdInputStream;
@@ -26,9 +22,10 @@ public final class TcpConnection {
 
 	private final DataOutputStream messageOutputStream;
 
-	private final Queue<Integer> lastPingTimes = new ArrayDeque<Integer>();
-
 	TcpConnection(Socket socket, Consumer<byte[]> messageConsumer) throws Exception {
+
+		socket.setKeepAlive(false);
+		socket.setSoLinger(true, 0);
 
 		this.socket = socket;
 		this.messageConsumer = messageConsumer;
@@ -36,54 +33,33 @@ public final class TcpConnection {
 		messageOutputStream = new DataOutputStream(
 				new BufferedOutputStream(new ZstdOutputStream(socket.getOutputStream())));
 
-		for (int i = 0; i < 4 && isConnected(); ++i) {
-			ping();
-		}
 		new Thread(this::checkAlive).start();
-
-	}
-
-	private boolean isConnected() {
-
-		return !socket.isClosed();
 
 	}
 
 	void checkAlive() {
 
-		while (isConnected()) {
-			ping();
-			if (!isConnected())
+		boolean success;
+
+		while (!socket.isClosed()) {
+
+			success = false;
+			for (int i = 0; i < 4 && !success; ++i) {
+				success = IcmpPingUtil.executePingRequest(socket.getInetAddress().getHostAddress(), 32, 1000)
+						.getSuccessFlag();
+			}
+
+			if (!success) {
+				close();
 				break;
+			}
+
 			try {
-				Thread.sleep(CommonConstants.CONN_TIMEOUT_MS);
+				Thread.sleep(CommonConstants.BEACON_INTERVAL_MS);
 			} catch (InterruptedException e) {
 
 			}
-		}
 
-	}
-
-	void ping() {
-
-		int pingTime = -1;
-
-		for (int i = 0; i < 4 && pingTime < 0; ++i) {
-			IcmpPingResponse pingResponse = IcmpPingUtil.executePingRequest(socket.getInetAddress().getHostAddress(),
-					32, 1000);
-			if (pingResponse.getSuccessFlag())
-				pingTime = pingResponse.getRtt();
-		}
-
-		if (pingTime < 0) {
-			close();
-			return;
-		}
-
-		synchronized (lastPingTimes) {
-			lastPingTimes.offer(pingTime);
-			if (lastPingTimes.size() > 4)
-				lastPingTimes.remove();
 		}
 
 	}
@@ -114,16 +90,6 @@ public final class TcpConnection {
 
 	}
 
-	public int getMinPingTime() {
-
-		synchronized (lastPingTimes) {
-			if (lastPingTimes.isEmpty())
-				return Integer.MAX_VALUE;
-			return Collections.min(lastPingTimes);
-		}
-
-	}
-
 	public synchronized boolean sendMessage(byte[] message) {
 
 		if (socket.isClosed())
@@ -142,8 +108,6 @@ public final class TcpConnection {
 		} catch (Exception e) {
 
 		}
-
-		close();
 
 		return false;
 

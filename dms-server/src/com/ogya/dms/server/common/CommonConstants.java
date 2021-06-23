@@ -1,5 +1,8 @@
 package com.ogya.dms.server.common;
 
+import java.net.InetAddress;
+import java.util.List;
+
 public class CommonConstants {
 
 	public static final int INTERCOM_PORT = CommonMethods.getIntercomPort();
@@ -9,6 +12,7 @@ public class CommonConstants {
 	public static final int SERVER_PORT = CommonMethods.getServerPort();
 	public static final int CLIENT_PORT_FROM = CommonMethods.getClientPortFrom();
 	public static final int CLIENT_PORT_TO = CommonMethods.getClientPortTo();
+	public static final List<InetAddress> PREFERRED_IPS = CommonMethods.getPreferredIps();
 
 	public static final int CONN_TIMEOUT_MS = 5000;
 

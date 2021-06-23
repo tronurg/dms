@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,6 +24,7 @@ import java.util.function.Consumer;
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -52,21 +55,6 @@ public class TcpManager implements TcpServerListener {
 			.synchronizedList(new ArrayList<TcpManagerListener>());
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
-
-	private final Comparator<Connection> connectionSorter = new Comparator<Connection>() {
-
-		@Override
-		public int compare(Connection arg0, Connection arg1) {
-			if (Objects.equals(arg0, arg1))
-				return 0;
-			int pingTime0 = arg0.getPingTime();
-			int pingTime1 = arg1.getPingTime();
-			if (pingTime0 == pingTime1)
-				return Integer.compare(arg0.order, arg1.order);
-			return Integer.compare(pingTime0, pingTime1);
-		}
-
-	};
 
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, TcpManagerListener listener) {
 
@@ -279,8 +267,6 @@ public class TcpManager implements TcpServerListener {
 			final AtomicBoolean sent = new AtomicBoolean(false);
 
 			synchronized (dmsServer.connections) {
-
-				Collections.sort(dmsServer.connections, connectionSorter);
 
 				for (Connection connection : dmsServer.connections) {
 
@@ -511,10 +497,6 @@ public class TcpManager implements TcpServerListener {
 			this.id = id;
 		}
 
-		private int getPingTime() {
-			return tcpConnection.getMinPingTime();
-		}
-
 		@Override
 		public boolean equals(Object obj) {
 			if (obj == null || !(obj instanceof Connection))
@@ -528,7 +510,21 @@ public class TcpManager implements TcpServerListener {
 
 		private final String dmsUuid;
 
-		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
+		private final Set<Connection> connections = Collections
+				.synchronizedSortedSet(new TreeSet<Connection>(new Comparator<Connection>() {
+
+					@Override
+					public int compare(Connection arg0, Connection arg1) {
+						if (Objects.equals(arg0, arg1))
+							return 0;
+						int priority0 = CommonMethods.getLocalAddressPriority(arg0.tcpConnection.getLocalAddress());
+						int priority1 = CommonMethods.getLocalAddressPriority(arg1.tcpConnection.getLocalAddress());
+						if (priority0 == priority1)
+							return Integer.compare(arg0.order, arg1.order);
+						return Integer.compare(priority0, priority1);
+					}
+
+				}));
 
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 

@@ -138,8 +138,6 @@ public final class TcpServer implements Runnable {
 
 		try (Socket socket = serverSocketRef.get().accept()) {
 
-			socket.setKeepAlive(false);
-
 			int id = idRef.getAndIncrement();
 
 			TcpConnection tcpConnection = new TcpConnection(socket, message -> messageReceivedToListeners(id, message));

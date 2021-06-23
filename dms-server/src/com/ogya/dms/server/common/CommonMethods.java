@@ -2,8 +2,12 @@ package com.ogya.dms.server.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -13,12 +17,24 @@ import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class CommonMethods {
 
 	private static Document confDoc;
+
+	public static int getLocalAddressPriority(InetAddress localAddress) {
+
+		int priority = CommonConstants.PREFERRED_IPS.indexOf(localAddress);
+
+		if (priority < 0)
+			priority = CommonConstants.PREFERRED_IPS.size();
+
+		return priority;
+
+	}
 
 	static int getIntercomPort() {
 
@@ -153,6 +169,32 @@ public class CommonMethods {
 		}
 
 		return clientPortTo;
+
+	}
+
+	static List<InetAddress> getPreferredIps() {
+
+		List<InetAddress> preferredIps = new ArrayList<InetAddress>();
+
+		try {
+
+			NodeList nodeList = (NodeList) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/PREFERRED_IPS/IP")
+					.evaluate(getConfDoc(), XPathConstants.NODESET);
+
+			for (int i = 0; i < nodeList.getLength(); ++i) {
+				Node node = nodeList.item(i);
+				try {
+					preferredIps.add(InetAddress.getByName(node.getTextContent()));
+				} catch (UnknownHostException e) {
+
+				}
+			}
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return preferredIps;
 
 	}
 
