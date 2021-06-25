@@ -47,6 +47,7 @@ public class Model {
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
 
 	private final Set<InetAddress> remoteIps = Collections.synchronizedSet(new LinkedHashSet<InetAddress>());
+	private final Set<InetAddress> remoteAddresses = new HashSet<InetAddress>();
 
 	public Model(ModelListener listener) {
 
@@ -551,21 +552,11 @@ public class Model {
 
 	}
 
-	public Set<InetAddress> getUnconnectedRemoteIps() {
+	public Set<InetAddress> getRemoteAddresses() {
 
-		Set<InetAddress> connectedRemoteIps = new HashSet<InetAddress>();
-
-		remoteServers.forEach((dmsUuid, dmsServer) -> connectedRemoteIps.addAll(dmsServer.localRemoteIps.values()));
-
-		Set<InetAddress> unconnectedRemoteIps = new HashSet<InetAddress>();
-
-		synchronized (remoteIps) {
-			unconnectedRemoteIps.addAll(remoteIps);
-		}
-
-		unconnectedRemoteIps.removeAll(connectedRemoteIps);
-
-		return unconnectedRemoteIps;
+		remoteAddresses.clear();
+		remoteIps.forEach(remoteIp -> remoteAddresses.add(remoteIp));
+		return remoteAddresses;
 
 	}
 

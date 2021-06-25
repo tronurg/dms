@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,13 +95,14 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			synchronized (publishSyncObj) {
 
-				if (model.isLive())
-					multicastManager.send(DMS_UUID, model.getUnconnectedRemoteIps());
+				if (model.isLive()) {
+					Set<InetAddress> remoteAddresses = model.getRemoteAddresses();
+					remoteAddresses.removeAll(tcpManager.getConnectedAddresses());
+					multicastManager.send(DMS_UUID, remoteAddresses);
+				}
 
 				try {
-
 					publishSyncObj.wait(beaconIntervalMs);
-
 				} catch (InterruptedException e) {
 
 				}

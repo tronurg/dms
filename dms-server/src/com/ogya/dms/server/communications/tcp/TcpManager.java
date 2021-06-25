@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -49,6 +50,7 @@ public class TcpManager implements TcpServerListener {
 	private final Map<String, DmsServer> dmsServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 	private final Map<InetAddress, Connection> connections = Collections
 			.synchronizedMap(new HashMap<InetAddress, Connection>());
+	private final Set<InetAddress> connectedAddresses = new HashSet<InetAddress>();
 
 	private final List<TcpManagerListener> listeners = Collections
 			.synchronizedList(new ArrayList<TcpManagerListener>());
@@ -84,10 +86,6 @@ public class TcpManager implements TcpServerListener {
 
 				int port = claimPort();
 
-				dmsServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
-
-				final DmsServer dmsServer = dmsServers.get(dmsUuid);
-
 				connections.put(address, null);
 
 				TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
@@ -118,11 +116,15 @@ public class TcpManager implements TcpServerListener {
 
 							Connection connection = new Connection(tcpConnection, -1,
 									TcpManager.this::messageReceivedFromConnection);
-							connection.dmsServer = dmsServer;
 							connections.put(address, connection);
 
+							DmsServer dmsServer = dmsServers.get(dmsUuid);
+							if (dmsServer == null) {
+								dmsServer = new DmsServer(dmsUuid);
+								dmsServers.put(dmsUuid, dmsServer);
+							}
+							connection.dmsServer = dmsServer;
 							dmsServer.connections.add(connection);
-
 							serverConnectionsUpdated(dmsServer, true);
 
 						});
@@ -150,6 +152,11 @@ public class TcpManager implements TcpServerListener {
 								return;
 
 							connection.messageFactory.deleteResources();
+
+							DmsServer dmsServer = dmsServers.get(dmsUuid);
+							if (dmsServer == null)
+								return;
+
 							if (dmsServer.connections.remove(connection)) {
 								serverConnectionsUpdated(dmsServer, false);
 							}
@@ -195,6 +202,18 @@ public class TcpManager implements TcpServerListener {
 					(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo, new AtomicBoolean(true), null));
 
 		});
+
+	}
+
+	public Set<InetAddress> getConnectedAddresses() {
+
+		connectedAddresses.clear();
+		connections.forEach((address, connection) -> {
+			if (connection == null)
+				return;
+			connectedAddresses.add(address);
+		});
+		return connectedAddresses;
 
 	}
 
@@ -319,9 +338,7 @@ public class TcpManager implements TcpServerListener {
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
-
 			dmsServers.remove(dmsServer.dmsUuid).close();
-
 		}
 
 	}
