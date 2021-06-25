@@ -2,8 +2,11 @@ package com.ogya.dms.server.common;
 
 import java.net.InetAddress;
 import java.util.List;
+import java.util.UUID;
 
 public class CommonConstants {
+
+	public static final String DMS_UUID = UUID.randomUUID().toString();
 
 	public static final int INTERCOM_PORT = CommonMethods.getIntercomPort();
 	public static final String MULTICAST_IP = CommonMethods.getMulticastIp();

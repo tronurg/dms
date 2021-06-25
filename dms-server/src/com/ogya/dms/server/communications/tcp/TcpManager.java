@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,9 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,116 +77,92 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			dmsServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
+			if (connections.containsKey(address) || Objects.equals(connectionType, TcpConnectionType.SERVER))
+				return;
 
-			final DmsServer dmsServer = dmsServers.get(dmsUuid);
+			try {
 
-			if (!connections.containsKey(address)) {
+				int port = claimPort();
+
+				dmsServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
+
+				final DmsServer dmsServer = dmsServers.get(dmsUuid);
 
 				connections.put(address, null);
 
-				if (Objects.equals(connectionType, TcpConnectionType.CLIENT)) {
+				TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
 
-					try {
+				tcpClient.addListener(new TcpClientListener() {
 
-						int port = claimPort();
+					@Override
+					public void messageReceived(byte[] message) {
 
-						TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
+						taskQueue.execute(() -> {
 
-						tcpClient.addListener(new TcpClientListener() {
+							Connection connection = connections.get(address);
+							if (connection == null)
+								return;
 
-							@Override
-							public void messageReceived(byte[] message) {
+							connection.messageFactory.inFeed(message);
 
-								taskQueue.execute(() -> {
+						});
 
-									Connection connection = connections.get(address);
-									if (connection == null)
-										return;
+					}
 
-									connection.messageFactory.inFeed(message);
+					@Override
+					public void connected(final TcpConnection tcpConnection) {
 
-								});
+						taskQueue.execute(() -> {
 
-							}
+							tcpConnection.sendMessage(CommonConstants.DMS_UUID.getBytes());
 
-							@Override
-							public void connected(final TcpConnection tcpConnection) {
+							Connection connection = new Connection(tcpConnection, -1,
+									TcpManager.this::messageReceivedFromConnection);
+							connection.dmsServer = dmsServer;
+							connections.put(address, connection);
 
-								taskQueue.execute(() -> {
+							dmsServer.connections.add(connection);
 
-									Connection connection = new Connection(tcpConnection, -1,
-											TcpManager.this::messageReceivedFromConnection);
-									connection.dmsServer = dmsServer;
-									connections.put(address, connection);
+							serverConnectionsUpdated(dmsServer, true);
 
-									dmsServer.connections.add(connection);
+						});
 
-									serverConnectionsUpdated(dmsServer, true);
+					}
 
-								});
+					@Override
+					public void couldNotConnect() {
 
-							}
+						taskQueue.execute(() -> {
 
-							@Override
-							public void couldNotConnect() {
+							connections.remove(address);
 
-								taskQueue.execute(() -> {
+						});
 
-									connections.remove(address);
+					}
 
-								});
+					@Override
+					public void disconnected() {
 
-							}
+						taskQueue.execute(() -> {
 
-							@Override
-							public void disconnected() {
+							Connection connection = connections.remove(address);
+							if (connection == null)
+								return;
 
-								taskQueue.execute(() -> {
-
-									Connection connection = connections.remove(address);
-									if (connection == null)
-										return;
-
-									connection.messageFactory.deleteResources();
-									if (dmsServer.connections.remove(connection)) {
-										serverConnectionsUpdated(dmsServer, false);
-									}
-
-								});
-
+							connection.messageFactory.deleteResources();
+							if (dmsServer.connections.remove(connection)) {
+								serverConnectionsUpdated(dmsServer, false);
 							}
 
 						});
 
-						tcpClient.connect();
-
-					} catch (NoAvailablePortException e) {
-
-						connections.remove(address);
-
 					}
 
-				}
+				});
 
-			}
+				tcpClient.connect();
 
-			final Connection connection = connections.get(address);
-
-			if (connection != null && connection.dmsServer == null) {
-				// Connection sunucu tarafindan olusturulmus
-				// Iliskiler guncellenecek
-
-				connection.dmsServer = dmsServer;
-				dmsServer.connections.add(connection);
-
-				serverConnectionsUpdated(dmsServer, true);
-
-				while (!connection.waitingMessages.isEmpty()) {
-
-					messageReceivedToListeners(connection.waitingMessages.poll(), dmsUuid);
-
-				}
+			} catch (NoAvailablePortException e) {
 
 			}
 
@@ -355,11 +330,10 @@ public class TcpManager implements TcpServerListener {
 
 		DmsServer dmsServer = connection.dmsServer;
 
-		if (dmsServer == null) {
-			connection.waitingMessages.offer(messagePojo);
-		} else {
-			messageReceivedToListeners(messagePojo, dmsServer.dmsUuid);
-		}
+		if (dmsServer == null)
+			return;
+
+		messageReceivedToListeners(messagePojo, dmsServer.dmsUuid);
 
 	}
 
@@ -469,7 +443,23 @@ public class TcpManager implements TcpServerListener {
 			if (connection == null)
 				return;
 
-			connection.messageFactory.inFeed(message);
+			if (connection.dmsServer == null) {
+				try {
+					String dmsUuid = UUID.fromString(new String(message)).toString();
+					DmsServer dmsServer = dmsServers.get(dmsUuid);
+					if (dmsServer == null) {
+						dmsServer = new DmsServer(dmsUuid);
+						dmsServers.put(dmsUuid, dmsServer);
+					}
+					connection.dmsServer = dmsServer;
+					dmsServer.connections.add(connection);
+					serverConnectionsUpdated(dmsServer, true);
+				} catch (Exception e) {
+
+				}
+			} else {
+				connection.messageFactory.inFeed(message);
+			}
 
 		});
 
@@ -485,8 +475,6 @@ public class TcpManager implements TcpServerListener {
 
 		private final TcpConnection tcpConnection;
 		private final int id;
-
-		private final Queue<MessagePojo> waitingMessages = new ArrayDeque<MessagePojo>();
 
 		private DmsServer dmsServer;
 

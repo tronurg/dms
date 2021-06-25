@@ -128,9 +128,7 @@ public final class TcpConnection {
 	public void close() {
 
 		try {
-
-			socket.close();
-
+			socket.shutdownInput();
 		} catch (IOException e) {
 
 		}

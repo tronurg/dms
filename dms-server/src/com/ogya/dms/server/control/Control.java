@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,7 +34,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private static final int CHUNK_SIZE = 8192;
 
-	private static final String DMS_UUID = UUID.randomUUID().toString();
+	private static final String DMS_UUID = CommonConstants.DMS_UUID;
 
 	private static Control instance;
 

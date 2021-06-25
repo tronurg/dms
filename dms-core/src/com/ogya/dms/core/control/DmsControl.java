@@ -1089,43 +1089,40 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (userUuid == null)
 					return;
 
-				boolean wasOnline = model.isContactOnline(userUuid);
-
 				Contact incomingContact = new Contact(beacon.uuid, beacon.name, beacon.comment,
 						Availability.of(beacon.status), beacon.lattitude, beacon.longitude, beacon.secretId);
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
-				if (Objects.equals(newContact.getStatus(), Availability.OFFLINE))
+				boolean wasOnline = model.isContactOnline(userUuid);
+				boolean isOffline = Objects.equals(newContact.getStatus(), Availability.OFFLINE);
+				boolean connectionsUpdated = !Objects.equals(model.getLocalRemoteServerIps(userUuid),
+						newContact.getLocalRemoteServerIps());
+
+				if (isOffline)
 					newContact.setLocalRemoteServerIps(null);
 				else
 					newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
 
-				boolean connectionsUpdated = !Objects.equals(model.getLocalRemoteServerIps(userUuid),
-						newContact.getLocalRemoteServerIps());
-
 				model.addUpdateContact(newContact);
-
-				Long contactId = newContact.getId();
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
 				listenerTaskQueue.execute(() -> dmsListeners
 						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
-				boolean isOnline = model.isContactOnline(userUuid);
-
-				if (wasOnline && !isOnline) {
+				if (wasOnline && isOffline) {
 					// Contact has just been made offline through api.
 
 					contactDisconnected(newContact);
 
-				} else if (isOnline && connectionsUpdated) {
+				} else if (!isOffline && connectionsUpdated) {
 					// If the contact has just been online, send all things waiting for it, adjust
 					// its groups' availability.
 
 					taskQueue.execute(() -> {
 
+						Long contactId = newContact.getId();
 						List<Long> messageIds = new ArrayList<Long>();
 
 						// START WITH PRIVATE MESSAGES

@@ -526,10 +526,12 @@ public class Model {
 
 	private void remoteServerDisconnected(String dmsUuid) {
 
-		if (!remoteServers.containsKey(dmsUuid))
+		DmsServer dmsServer = remoteServers.remove(dmsUuid);
+
+		if (dmsServer == null)
 			return;
 
-		remoteServers.remove(dmsUuid).mappedUsers.forEach((mapId, user) -> remoteUserDisconnected(user));
+		dmsServer.mappedUsers.forEach((mapId, user) -> remoteUserDisconnected(user));
 
 	}
 
@@ -553,8 +555,7 @@ public class Model {
 
 		Set<InetAddress> connectedRemoteIps = new HashSet<InetAddress>();
 
-		remoteUsers
-				.forEach((uuid, remoteUser) -> connectedRemoteIps.addAll(remoteUser.dmsServer.localRemoteIps.values()));
+		remoteServers.forEach((dmsUuid, dmsServer) -> connectedRemoteIps.addAll(dmsServer.localRemoteIps.values()));
 
 		Set<InetAddress> unconnectedRemoteIps = new HashSet<InetAddress>();
 
