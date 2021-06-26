@@ -177,14 +177,21 @@ public class Model {
 
 	}
 
-	public Map<InetAddress, InetAddress> getLocalRemoteServerIps(String uuid) {
+	public boolean shouldCheckMessages(Contact newContact) {
 
-		Contact contact = uuidContacts.get(uuid);
+		if (newContact == null)
+			return false;
 
-		if (contact == null)
-			return null;
+		Contact contact = uuidContacts.get(newContact.getUuid());
 
-		return contact.getLocalRemoteServerIps();
+		if (contact == null || Objects.equals(contact.getLocalRemoteServerIps(), newContact.getLocalRemoteServerIps()))
+			return false;
+
+		if (!contact.getLocalRemoteServerIps().isEmpty()
+				&& contact.getLocalRemoteServerIps().size() < newContact.getLocalRemoteServerIps().size())
+			return false;
+
+		return true;
 
 	}
 

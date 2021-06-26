@@ -1096,8 +1096,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				boolean wasOnline = model.isContactOnline(userUuid);
 				boolean isOffline = Objects.equals(newContact.getStatus(), Availability.OFFLINE);
-				boolean connectionsUpdated = !Objects.equals(model.getLocalRemoteServerIps(userUuid),
-						newContact.getLocalRemoteServerIps());
+				boolean shouldCheckMessages = !isOffline && model.shouldCheckMessages(newContact);
 
 				if (isOffline)
 					newContact.setLocalRemoteServerIps(null);
@@ -1113,150 +1112,151 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (wasOnline && isOffline) {
 					// Contact has just been made offline through api.
-
 					contactDisconnected(newContact);
+				}
 
-				} else if (!isOffline && connectionsUpdated) {
-					// If the contact has just been online, send all things waiting for it, adjust
-					// its groups' availability.
+				final Long contactId = newContact.getId();
 
-					taskQueue.execute(() -> {
+				if (!(wasOnline || isOffline)) {
+					// Contact has just been online
+					// MODIFY GROUP STATUSES
+					try {
 
-						Long contactId = newContact.getId();
-						List<Long> messageIds = new ArrayList<Long>();
+						for (Dgroup group : dbManager.getAllActiveGroupsOfContact(contactId)) {
 
-						// START WITH PRIVATE MESSAGES
-						try {
+							group.setStatus(Availability.LIMITED);
 
-							for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(contactId)) {
+							try {
 
-								switch (waitingMessage.getMessageStatus()) {
+								final Dgroup newGroup = dbManager.addUpdateGroup(group);
 
-								case FRESH:
+								model.addUpdateGroup(newGroup);
 
-									sendPrivateMessage(waitingMessage);
+								Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-									break;
+								listenerTaskQueue.execute(() -> dmsListeners
+										.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
 
-								case SENT:
-								case RECEIVED:
+							} catch (Exception e) {
 
-									messageIds.add(waitingMessage.getId());
-
-									break;
-
-								default:
-
-									break;
-
-								}
+								e.printStackTrace();
 
 							}
-
-						} catch (Exception e) {
-
-							e.printStackTrace();
 
 						}
 
-						// SEND WAITING GROUP MESSAGES
-						try {
+					} catch (Exception e) {
 
-							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToContact(contactId)) {
+						e.printStackTrace();
 
-								waitingMessage.getStatusReports().stream()
-										.filter(statusReport -> Objects.equals(statusReport.getContactId(), contactId))
-										.forEach(statusReport -> {
+					}
+				}
 
-											switch (statusReport.getMessageStatus()) {
+				if (!shouldCheckMessages)
+					return;
 
-											case FRESH:
+				taskQueue.execute(() -> {
 
-												sendGroupMessage(waitingMessage, userUuid);
+					List<Long> messageIds = new ArrayList<Long>();
 
-												break;
+					// CHECK PRIVATE MESSAGES
+					try {
 
-											case SENT:
-											case RECEIVED:
+						for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(contactId)) {
 
-												messageIds.add(waitingMessage.getId());
+							switch (waitingMessage.getMessageStatus()) {
 
-												break;
+							case FRESH:
 
-											default:
+								sendPrivateMessage(waitingMessage);
 
-												break;
+								break;
 
-											}
+							case SENT:
+							case RECEIVED:
 
-										});
+								messageIds.add(waitingMessage.getId());
+
+								break;
+
+							default:
+
+								break;
 
 							}
 
-						} catch (Exception e) {
+						}
 
-							e.printStackTrace();
+					} catch (Exception e) {
+
+						e.printStackTrace();
+
+					}
+
+					// CHECK GROUP MESSAGES
+					try {
+
+						for (Message waitingMessage : dbManager.getGroupMessagesWaitingToContact(contactId)) {
+
+							waitingMessage.getStatusReports().stream()
+									.filter(statusReport -> Objects.equals(statusReport.getContactId(), contactId))
+									.forEach(statusReport -> {
+
+										switch (statusReport.getMessageStatus()) {
+
+										case FRESH:
+
+											sendGroupMessage(waitingMessage, userUuid);
+
+											break;
+
+										case SENT:
+										case RECEIVED:
+
+											messageIds.add(waitingMessage.getId());
+
+											break;
+
+										default:
+
+											break;
+
+										}
+
+									});
+
+						}
+
+					} catch (Exception e) {
+
+						e.printStackTrace();
+
+					}
+
+					if (!messageIds.isEmpty())
+						dmsClient.claimMessageStatus(messageIds.toArray(new Long[0]), userUuid);
+
+					// CHECK STATUS REPORTS
+					try {
+
+						messageIds.clear();
+
+						for (Message waitingMessage : dbManager.getGroupMessagesWaitingToItsGroup(contactId)) {
+
+							messageIds.add(waitingMessage.getId());
 
 						}
 
 						if (!messageIds.isEmpty())
-							dmsClient.claimMessageStatus(messageIds.toArray(new Long[0]), userUuid);
+							dmsClient.claimStatusReport(messageIds.toArray(new Long[0]), userUuid);
 
-						// CLAIM WAITING STATUS REPORTS
-						try {
+					} catch (Exception e) {
 
-							messageIds.clear();
+						e.printStackTrace();
 
-							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToItsGroup(contactId)) {
+					}
 
-								messageIds.add(waitingMessage.getId());
-
-							}
-
-							if (!messageIds.isEmpty())
-								dmsClient.claimStatusReport(messageIds.toArray(new Long[0]), userUuid);
-
-						} catch (Exception e) {
-
-							e.printStackTrace();
-
-						}
-
-						// MODIFY GROUP STATUS
-						try {
-
-							for (Dgroup group : dbManager.getAllActiveGroupsOfContact(contactId)) {
-
-								group.setStatus(Availability.LIMITED);
-
-								try {
-
-									final Dgroup newGroup = dbManager.addUpdateGroup(group);
-
-									model.addUpdateGroup(newGroup);
-
-									Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
-
-									listenerTaskQueue.execute(() -> dmsListeners
-											.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
-
-								} catch (Exception e) {
-
-									e.printStackTrace();
-
-								}
-
-							}
-
-						} catch (Exception e) {
-
-							e.printStackTrace();
-
-						}
-
-					});
-
-				}
+				});
 
 			} catch (Exception e) {
 
