@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,6 +36,8 @@ import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
 
 public class TcpManager implements TcpServerListener {
+
+	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
 	private static final int CHUNK_SIZE = 1024;
 
@@ -112,7 +116,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							tcpConnection.sendMessage(CommonConstants.DMS_UUID.getBytes());
+							tcpConnection.sendMessage(CommonConstants.DMS_UUID.getBytes(CHARSET));
 
 							Connection connection = new Connection(tcpConnection, -1,
 									TcpManager.this::messageReceivedFromConnection);
@@ -462,7 +466,7 @@ public class TcpManager implements TcpServerListener {
 
 			if (connection.dmsServer == null) {
 				try {
-					String dmsUuid = UUID.fromString(new String(message)).toString();
+					String dmsUuid = UUID.fromString(new String(message, CHARSET)).toString();
 					DmsServer dmsServer = dmsServers.get(dmsUuid);
 					if (dmsServer == null) {
 						dmsServer = new DmsServer(dmsUuid);
