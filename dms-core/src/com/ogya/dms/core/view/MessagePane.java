@@ -125,7 +125,7 @@ class MessagePane extends BorderPane {
 			new BackgroundFill(Color.rgb(155, 155, 255, 0.5), new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * GAP);
-	private final VBox centerPane = new VBox(2 * GAP);
+	private final StackPane centerPane = new StackPane();
 	private final GridPane bottomPane = new GridPane();
 
 	private final Button backBtn;
@@ -139,11 +139,13 @@ class MessagePane extends BorderPane {
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
-	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
+	private final VBox messagesPane = new VBox(2 * GAP);
+	private final ScrollPane scrollPane = new ScrollPane(messagesPane) {
 		@Override
 		public void requestFocus() {
 		}
 	};
+	private final Button scrollToUnreadBtn = ViewFactory.newScrollToUnreadBtn();
 
 	private final Popup deleteSelectedPopup = new Popup();
 	private final Popup clearConversationPopup = new Popup();
@@ -173,6 +175,7 @@ class MessagePane extends BorderPane {
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
 	private final ObjectProperty<Long> referenceMessageProperty = new SimpleObjectProperty<Long>(null);
 	private final ObjectProperty<FileBuilder> attachmentProperty = new SimpleObjectProperty<FileBuilder>(null);
+	private final ObjectProperty<Long> firstUnreadMessageIdProperty = new SimpleObjectProperty<Long>(null);
 
 	private final List<DayBox> dayBoxes = Collections.synchronizedList(new ArrayList<DayBox>());
 
@@ -232,7 +235,7 @@ class MessagePane extends BorderPane {
 		initBottomPane();
 
 		setTop(topPane);
-		setCenter(scrollPane);
+		setCenter(centerPane);
 		setBottom(bottomPane);
 
 	}
@@ -260,25 +263,10 @@ class MessagePane extends BorderPane {
 
 	private void initCenterPane() {
 
-		centerPane.setPadding(new Insets(GAP));
-		centerPane.heightProperty().addListener((e0, e1, e2) -> {
-			if (autoScroll.get())
-				scrollPaneToBottom();
-		});
+		initScrollPane();
+		initScrollToUnreadBtn();
 
-		scrollPane.getStyleClass().add("edge-to-edge");
-		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
-		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
-		scrollPane.setFitToWidth(true);
-		scrollPane.setSkin(new ScrollPaneSkin(scrollPane) {
-			@Override
-			public void onTraverse(Node arg0, Bounds arg1) {
-
-			}
-		});
-		scrollPane.vvalueProperty()
-				.addListener((e0, e1, e2) -> autoScroll.set(e1.doubleValue() == scrollPane.getVmax()));
-		scrollPane.vvalueProperty().addListener(scrollListener);
+		centerPane.getChildren().addAll(scrollPane, scrollToUnreadBtn);
 
 	}
 
@@ -497,6 +485,47 @@ class MessagePane extends BorderPane {
 				.bind(Bindings.createBooleanBinding(
 						() -> selectedBalloons.stream().allMatch(balloon -> balloon.messageInfo.archivedProperty.get()),
 						selectedBalloons));
+
+	}
+
+	private void initScrollPane() {
+
+		messagesPane.setPadding(new Insets(GAP));
+		messagesPane.heightProperty().addListener((e0, e1, e2) -> {
+			if (autoScroll.get())
+				scrollPaneToBottom();
+		});
+
+		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
+		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
+		scrollPane.setFitToWidth(true);
+		scrollPane.setSkin(new ScrollPaneSkin(scrollPane) {
+			@Override
+			public void onTraverse(Node arg0, Bounds arg1) {
+
+			}
+		});
+		scrollPane.vvalueProperty()
+				.addListener((e0, e1, e2) -> autoScroll.set(e1.doubleValue() == scrollPane.getVmax()));
+		scrollPane.vvalueProperty().addListener(scrollListener);
+
+	}
+
+	private void initScrollToUnreadBtn() {
+
+		StackPane.setAlignment(scrollToUnreadBtn, Pos.BOTTOM_RIGHT);
+		StackPane.setMargin(scrollToUnreadBtn, new Insets(GAP, 4 * GAP, GAP, 4 * GAP));
+
+		scrollToUnreadBtn.visibleProperty().bind(firstUnreadMessageIdProperty.isNotNull());
+		scrollToUnreadBtn.managedProperty().bind(scrollToUnreadBtn.visibleProperty());
+
+		scrollToUnreadBtn.setOnAction(e -> {
+			Long firstUnreadMessageId = firstUnreadMessageIdProperty.get();
+			if (firstUnreadMessageId == null)
+				return;
+			scrollPaneToMessage(firstUnreadMessageId);
+		});
 
 	}
 
@@ -759,7 +788,7 @@ class MessagePane extends BorderPane {
 				DayBox dayBox = new DayBox(messageDay);
 				dayBox.addMessageBalloonToBottom(messageBalloon);
 				dayBoxes.add(dayBox);
-				centerPane.getChildren().add(dayBox);
+				messagesPane.getChildren().add(dayBox);
 
 			} else {
 
@@ -777,7 +806,7 @@ class MessagePane extends BorderPane {
 				DayBox dayBox = new DayBox(messageDay);
 				dayBox.addMessageBalloonToTop(messageBalloon);
 				dayBoxes.add(0, dayBox);
-				centerPane.getChildren().add(0, dayBox);
+				messagesPane.getChildren().add(0, dayBox);
 
 			} else {
 
@@ -834,7 +863,7 @@ class MessagePane extends BorderPane {
 			return;
 
 		dayBoxes.remove(dayBox);
-		centerPane.getChildren().remove(dayBox);
+		messagesPane.getChildren().remove(dayBox);
 
 	}
 
@@ -1080,18 +1109,18 @@ class MessagePane extends BorderPane {
 		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene))
 			return;
 
-		Double centerPaneHeight = centerPane.getHeight();
+		Double messagesPaneHeight = messagesPane.getHeight();
 		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
 
-		if (centerPaneHeight < scrollPaneViewportHeight)
+		if (messagesPaneHeight < scrollPaneViewportHeight)
 			return;
 
-		Double scrollY = centerPane.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
+		Double scrollY = messagesPane.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
 		if (scrollToBottom) {
 			scrollY = scrollY - scrollPaneViewportHeight + nodeBoundsInScene.getHeight() + 2.0 * bias;
 		}
 
-		Double ratioY = Math.min(1.0, scrollY / (centerPaneHeight - scrollPaneViewportHeight));
+		Double ratioY = Math.min(1.0, scrollY / (messagesPaneHeight - scrollPaneViewportHeight));
 
 		scrollPane.setVvalue(scrollPane.getVmax() * ratioY);
 

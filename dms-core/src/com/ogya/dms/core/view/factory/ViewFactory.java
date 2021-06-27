@@ -601,4 +601,26 @@ public class ViewFactory {
 
 	}
 
+	public static Button newScrollToUnreadBtn() {
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(12.0 * VIEW_FACTOR);
+		circle.setFill(Color.RED);
+		Line line1 = new Line(-5.0 * VIEW_FACTOR, -2.0 * VIEW_FACTOR, 0.0, 3.0 * VIEW_FACTOR);
+		line1.setStroke(Color.WHITE);
+		line1.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Line line2 = new Line(0.0, 3.0 * VIEW_FACTOR, 5.0 * VIEW_FACTOR, -2.0 * VIEW_FACTOR);
+		line2.setStroke(Color.WHITE);
+		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Group group = new Group(circle, line1, line2);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+		btn.setStyle("-fx-effect: dropshadow(gaussian, -text-fill, 1em, 0, 0, 0);");
+
+		return btn;
+
+	}
+
 }
