@@ -184,6 +184,7 @@ class MessagePane extends BorderPane {
 
 	private final AtomicBoolean autoScroll = new AtomicBoolean(true);
 	private final AtomicBoolean scrollNodeToBottom = new AtomicBoolean(false);
+	private final AtomicReference<Long> lastIncomingMessageId = new AtomicReference<Long>(null);
 
 	private final AtomicReference<SimpleEntry<Node, Double>> savedNodeY = new AtomicReference<SimpleEntry<Node, Double>>(
 			null);
@@ -494,6 +495,8 @@ class MessagePane extends BorderPane {
 		messagesPane.heightProperty().addListener((e0, e1, e2) -> {
 			if (autoScroll.get())
 				scrollPaneToBottom();
+			else if (firstUnreadMessageIdProperty.get() == null)
+				firstUnreadMessageIdProperty.set(lastIncomingMessageId.get());
 		});
 
 		scrollPane.getStyleClass().add("edge-to-edge");
@@ -506,8 +509,16 @@ class MessagePane extends BorderPane {
 
 			}
 		});
-		scrollPane.vvalueProperty()
-				.addListener((e0, e1, e2) -> autoScroll.set(e1.doubleValue() == scrollPane.getVmax()));
+		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
+			autoScroll.set(e1.doubleValue() == scrollPane.getVmax() || e2.doubleValue() == scrollPane.getVmax());
+			MessageBalloon firstUnreadMessageBalloon = messageBalloons.get(firstUnreadMessageIdProperty.get());
+			if (firstUnreadMessageBalloon == null)
+				return;
+			Bounds nodeBoundsInScene = firstUnreadMessageBalloon
+					.localToScene(firstUnreadMessageBalloon.getLayoutBounds());
+			if (nodeBoundsInScene.getMinY() < scrollPane.localToScene(scrollPane.getLayoutBounds()).getMaxY())
+				firstUnreadMessageIdProperty.set(null);
+		});
 		scrollPane.vvalueProperty().addListener(scrollListener);
 
 	}
@@ -518,7 +529,6 @@ class MessagePane extends BorderPane {
 		StackPane.setMargin(scrollToUnreadBtn, new Insets(GAP, 4 * GAP, GAP, 4 * GAP));
 
 		scrollToUnreadBtn.visibleProperty().bind(firstUnreadMessageIdProperty.isNotNull());
-		scrollToUnreadBtn.managedProperty().bind(scrollToUnreadBtn.visibleProperty());
 
 		scrollToUnreadBtn.setOnAction(e -> {
 			Long firstUnreadMessageId = firstUnreadMessageIdProperty.get();
@@ -783,6 +793,9 @@ class MessagePane extends BorderPane {
 
 		if (maxMessageId.get() == messageId) {
 
+			if (!messageInfo.isOutgoing)
+				lastIncomingMessageId.set(messageId);
+
 			if (dayBoxes.isEmpty() || !Objects.equals(dayBoxes.get(dayBoxes.size() - 1).day, messageDay)) {
 
 				DayBox dayBox = new DayBox(messageDay);
@@ -844,6 +857,10 @@ class MessagePane extends BorderPane {
 
 		if (Objects.equals(referenceMessageProperty.get(), messageId))
 			referenceMessageProperty.set(null);
+		if (Objects.equals(lastIncomingMessageId.get(), messageId))
+			lastIncomingMessageId.set(null);
+		if (Objects.equals(firstUnreadMessageIdProperty.get(), messageId))
+			firstUnreadMessageIdProperty.set(null);
 
 		referencedMessageIds.remove(messageId);
 
