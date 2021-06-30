@@ -73,6 +73,9 @@ public final class TcpConnection {
 
 				int messageLength = messageInputStream.readInt();
 
+				if (messageLength < 0)
+					continue;
+
 				byte[] message = new byte[messageLength];
 
 				int receivedLength = messageInputStream.read(message);
