@@ -1096,12 +1096,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				boolean wasOnline = model.isContactOnline(userUuid);
 				boolean isOffline = Objects.equals(newContact.getStatus(), Availability.OFFLINE);
-				boolean shouldCheckMessages = !isOffline && model.shouldCheckMessages(newContact);
 
 				if (isOffline)
 					newContact.setLocalRemoteServerIps(null);
 				else
 					newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
+
+				boolean shouldCheckMessages = !isOffline && model.shouldCheckMessages(newContact);
 
 				model.addUpdateContact(newContact);
 

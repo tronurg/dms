@@ -9,8 +9,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.function.Consumer;
 
-import org.shortpasta.icmp2.IcmpPingUtil;
-
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 import com.ogya.dms.server.common.CommonConstants;
@@ -37,28 +35,30 @@ public final class TcpConnection {
 
 	}
 
-	void checkAlive() {
-
-		boolean success;
+	private void checkAlive() {
 
 		while (!socket.isClosed()) {
 
-			success = false;
-			for (int i = 0; i < 4 && !success; ++i) {
-				success = IcmpPingUtil.executePingRequest(socket.getInetAddress().getHostAddress(), 32, 1000)
-						.getSuccessFlag();
-			}
-
-			if (!success) {
-				close();
-				break;
-			}
+			sendHeartbeat();
 
 			try {
 				Thread.sleep(CommonConstants.BEACON_INTERVAL_MS);
 			} catch (InterruptedException e) {
 
 			}
+
+		}
+
+	}
+
+	private synchronized void sendHeartbeat() {
+
+		try {
+
+			messageOutputStream.writeInt(-1);
+			messageOutputStream.flush();
+
+		} catch (Exception e) {
 
 		}
 
@@ -101,9 +101,7 @@ public final class TcpConnection {
 		try {
 
 			messageOutputStream.writeInt(message.length);
-
 			messageOutputStream.write(message);
-
 			messageOutputStream.flush();
 
 			return true;
@@ -131,7 +129,7 @@ public final class TcpConnection {
 	public void close() {
 
 		try {
-			socket.shutdownInput();
+			socket.close();
 		} catch (IOException e) {
 
 		}
