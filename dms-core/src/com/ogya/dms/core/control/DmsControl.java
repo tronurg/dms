@@ -1469,7 +1469,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					addMessageToPane(newMessage, true);
 
-					if (!model.isEntityOpen(newMessage.getEntity().getEntityId())) {
+					if (model.isAudioOn() && !model.isEntityOpen(newMessage.getEntity().getEntityId())) {
 						if (newMessage.getEntity().getEntityId().isGroup())
 							soundPlayer.playTriTone();
 						else
@@ -3678,6 +3678,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 		};
+
+	}
+
+	@Override
+	public void switchAudio(boolean on) {
+
+		model.setAudioOn(on);
 
 	}
 

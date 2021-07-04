@@ -32,6 +32,7 @@ public class Model {
 	private final String localUuid;
 
 	private final AtomicBoolean isServerConnected = new AtomicBoolean(false);
+	private final AtomicBoolean audioOn = new AtomicBoolean(true);
 
 	private final Queue<Runnable> serverTaskQueue = new ConcurrentLinkedQueue<Runnable>();
 
@@ -45,11 +46,8 @@ public class Model {
 			.synchronizedMap(new HashMap<EntityId, Set<Message>>());
 
 	private final AtomicReference<EntityId> openEntityId = new AtomicReference<EntityId>();
-
 	private final AtomicReference<Dgroup> groupToBeUpdated = new AtomicReference<Dgroup>();
-
 	private final AtomicLong detailedGroupMessageId = new AtomicLong(-1L);
-
 	private final AtomicLong minArchivedMessageId = new AtomicLong(-1L);
 
 	private final Map<Long, Map<Long, Integer>> groupMessageProgresses = Collections
@@ -125,6 +123,18 @@ public class Model {
 	public void setServerConnStatus(boolean connStatus) {
 
 		isServerConnected.set(connStatus);
+
+	}
+
+	public boolean isAudioOn() {
+
+		return audioOn.get();
+
+	}
+
+	public void setAudioOn(boolean on) {
+
+		audioOn.set(on);
 
 	}
 

@@ -103,4 +103,6 @@ public interface DmsHandle {
 
 	void clearGuiGroupConversation(Long id);
 
+	void switchAudio(boolean on);
+
 }
