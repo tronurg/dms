@@ -104,6 +104,9 @@ public class CommonMethods {
 
 			beaconIntervalMs = Integer.parseInt(node.getTextContent());
 
+			if (beaconIntervalMs < 1000)
+				beaconIntervalMs = 1000;
+
 		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
 				| NumberFormatException e) {
 

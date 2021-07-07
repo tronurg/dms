@@ -22,6 +22,7 @@ public final class TcpConnection {
 
 	TcpConnection(Socket socket, Consumer<byte[]> messageConsumer) throws Exception {
 
+		socket.setSendBufferSize(1);
 		socket.setKeepAlive(false);
 		socket.setSoLinger(true, 0);
 
