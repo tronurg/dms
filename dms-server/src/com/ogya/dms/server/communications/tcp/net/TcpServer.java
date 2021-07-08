@@ -1,6 +1,5 @@
 package com.ogya.dms.server.communications.tcp.net;
 
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -10,15 +9,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
+import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.DmsSecurity;
 
 public final class TcpServer implements Runnable {
 
 	private final int port;
-
-	private final AtomicReference<ServerSocket> serverSocketRef = new AtomicReference<ServerSocket>(null);
 
 	private final AtomicInteger idRef = new AtomicInteger(0);
 
@@ -28,13 +25,9 @@ public final class TcpServer implements Runnable {
 
 		@Override
 		public Thread newThread(Runnable r) {
-
 			Thread thread = new Thread(r);
-
 			thread.setDaemon(true);
-
 			return thread;
-
 		}
 
 	});
@@ -53,65 +46,7 @@ public final class TcpServer implements Runnable {
 
 	public void start() {
 
-		if (isAlive())
-			return;
-
-		try {
-
-			serverSocketRef.set(DmsSecurity.newSecureServerSocket(port));
-
-			serverStartedToListeners();
-
-		} catch (Exception e) {
-
-			serverFailedToListeners();
-
-		}
-
-	}
-
-	public boolean isAlive() {
-
-		ServerSocket serverSocket = serverSocketRef.get();
-
-		return serverSocket != null && !serverSocket.isClosed();
-
-	}
-
-	public void acceptConnection() {
-
 		new Thread(this).start();
-
-	}
-
-	public void close() {
-
-		ServerSocket serverSocket = serverSocketRef.get();
-
-		if (serverSocket == null)
-			return;
-
-		try {
-
-			serverSocket.close();
-
-		} catch (IOException e) {
-
-		}
-
-		serverSocketRef.set(null);
-
-	}
-
-	private void serverStartedToListeners() {
-
-		taskQueue.execute(() -> listeners.forEach(listener -> listener.serverStarted()));
-
-	}
-
-	private void serverFailedToListeners() {
-
-		taskQueue.execute(() -> listeners.forEach(listener -> listener.serverFailed()));
 
 	}
 
@@ -136,21 +71,43 @@ public final class TcpServer implements Runnable {
 	@Override
 	public void run() {
 
-		try (Socket socket = serverSocketRef.get().accept()) {
+		while (!Thread.currentThread().isInterrupted()) {
 
+			try (ServerSocket serverSocket = DmsSecurity.newSecureServerSocket(port)) {
+				acceptConnections(serverSocket);
+			} catch (Exception e) {
+
+			}
+
+			try {
+				Thread.sleep(CommonConstants.CONN_TIMEOUT_MS);
+			} catch (InterruptedException e) {
+
+			}
+
+		}
+
+	}
+
+	private void acceptConnections(ServerSocket serverSocket) throws Exception {
+
+		while (!Thread.currentThread().isInterrupted()) {
+			try (final Socket socket = serverSocket.accept()) {
+				new Thread(() -> connectionEstablished(socket)).start();
+			}
+		}
+
+	}
+
+	private void connectionEstablished(Socket socket) {
+
+		try {
 			int id = idRef.getAndIncrement();
-
 			TcpConnection tcpConnection = new TcpConnection(socket, message -> messageReceivedToListeners(id, message));
-
 			connectedToListeners(id, tcpConnection);
-
 			tcpConnection.listen();
-
 			disconnectedToListeners(id);
-
 		} catch (Exception e) {
-
-			serverFailedToListeners();
 
 		}
 

@@ -286,7 +286,7 @@ public class FoldersPane extends BorderPane {
 		if (watchService == null)
 			return;
 
-		while (true) {
+		while (!Thread.currentThread().isInterrupted()) {
 
 			try {
 

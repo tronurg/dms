@@ -3688,4 +3688,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
+	@Override
+	public boolean isServerConnected() {
+
+		return model.isServerConnected();
+
+	}
+
 }

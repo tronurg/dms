@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
 import com.github.luben.zstd.ZstdInputStream;
@@ -15,10 +16,16 @@ import com.ogya.dms.server.common.CommonConstants;
 
 public final class TcpConnection {
 
+	private static final long HEARTBEAT_MS = (long) CommonConstants.BEACON_INTERVAL_MS;
+	private static final long HEALTH_CONTROL_NS = (long) (2e6 * HEARTBEAT_MS);
+
 	private final Socket socket;
 	private final Consumer<byte[]> messageConsumer;
 
 	private final DataOutputStream messageOutputStream;
+
+	private final AtomicLong lastSuccessfulSendTime = new AtomicLong();
+	private final AtomicLong latencyNs = new AtomicLong();
 
 	TcpConnection(Socket socket, Consumer<byte[]> messageConsumer) throws Exception {
 
@@ -32,6 +39,8 @@ public final class TcpConnection {
 		messageOutputStream = new DataOutputStream(
 				new BufferedOutputStream(new ZstdOutputStream(socket.getOutputStream())));
 
+		sendHeartbeat();
+
 		new Thread(this::checkAlive).start();
 
 	}
@@ -40,11 +49,10 @@ public final class TcpConnection {
 
 		while (!socket.isClosed()) {
 
-			sendHeartbeat();
-
 			try {
-				Thread.sleep(CommonConstants.BEACON_INTERVAL_MS);
-			} catch (InterruptedException e) {
+				Thread.sleep(HEARTBEAT_MS);
+				sendHeartbeat();
+			} catch (Exception e) {
 
 			}
 
@@ -52,16 +60,14 @@ public final class TcpConnection {
 
 	}
 
-	private synchronized void sendHeartbeat() {
+	private synchronized void sendHeartbeat() throws Exception {
 
-		try {
-
-			messageOutputStream.writeInt(-1);
-			messageOutputStream.flush();
-
-		} catch (Exception e) {
-
-		}
+		long startNs = System.nanoTime();
+		messageOutputStream.writeInt(-1);
+		messageOutputStream.flush();
+		long endNs = System.nanoTime();
+		lastSuccessfulSendTime.set(endNs);
+		latencyNs.set(endNs - startNs);
 
 	}
 
@@ -79,10 +85,7 @@ public final class TcpConnection {
 
 				byte[] message = new byte[messageLength];
 
-				int receivedLength = messageInputStream.read(message);
-
-				if (receivedLength != messageLength)
-					break;
+				messageInputStream.readFully(message);
 
 				messageConsumer.accept(message);
 
@@ -104,6 +107,7 @@ public final class TcpConnection {
 			messageOutputStream.writeInt(message.length);
 			messageOutputStream.write(message);
 			messageOutputStream.flush();
+			lastSuccessfulSendTime.set(System.nanoTime());
 
 			return true;
 
@@ -124,6 +128,18 @@ public final class TcpConnection {
 	public InetAddress getLocalAddress() {
 
 		return socket.getLocalAddress();
+
+	}
+
+	public boolean isHealthy() {
+
+		return System.nanoTime() - lastSuccessfulSendTime.get() < HEALTH_CONTROL_NS;
+
+	}
+
+	public long getLatency() {
+
+		return latencyNs.get();
 
 	}
 

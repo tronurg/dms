@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -61,6 +60,29 @@ public class TcpManager implements TcpServerListener {
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
+	private final Comparator<Connection> connectionSorter = new Comparator<Connection>() {
+
+		@Override
+		public int compare(Connection arg0, Connection arg1) {
+			if (Objects.equals(arg0, arg1))
+				return 0;
+			int healthPriority0 = arg0.tcpConnection.isHealthy() ? 0 : 1;
+			int healthPriority1 = arg1.tcpConnection.isHealthy() ? 0 : 1;
+			if (healthPriority0 != healthPriority1)
+				return Integer.compare(healthPriority0, healthPriority1);
+			int connectionPriority0 = arg0.priority;
+			int connectionPriority1 = arg1.priority;
+			if (connectionPriority0 != connectionPriority1)
+				return Integer.compare(connectionPriority0, connectionPriority1);
+			long latency0 = arg0.tcpConnection.getLatency();
+			long latency1 = arg1.tcpConnection.getLatency();
+			if (latency0 != latency1)
+				return Long.compare(latency0, latency1);
+			return Integer.compare(arg0.order, arg1.order);
+		}
+
+	};
+
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, TcpManagerListener listener) {
 
 		this.serverPort = serverPort;
@@ -72,9 +94,7 @@ public class TcpManager implements TcpServerListener {
 		listeners.add(listener);
 
 		tcpServer = new TcpServer(serverPort);
-
 		tcpServer.addListener(this);
-
 		tcpServer.start();
 
 	}
@@ -266,6 +286,8 @@ public class TcpManager implements TcpServerListener {
 
 			synchronized (dmsServer.connections) {
 
+				dmsServer.connections.sort(connectionSorter);
+
 				for (Connection connection : dmsServer.connections) {
 
 					health.set(sendStatus.get() && (messagePojo.useTimeout == null
@@ -365,35 +387,6 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	@Override
-	public void serverStarted() {
-
-		tcpServer.acceptConnection();
-
-	}
-
-	@Override
-	public void serverFailed() {
-
-		new Thread(() -> {
-
-			try {
-
-				Thread.sleep(CommonConstants.CONN_TIMEOUT_MS);
-
-			} catch (InterruptedException e) {
-
-			}
-
-			if (tcpServer.isAlive())
-				tcpServer.acceptConnection();
-			else
-				tcpServer.start();
-
-		}).start();
-
-	}
-
-	@Override
 	public void disconnected(final int id) {
 
 		taskQueue.execute(() -> {
@@ -445,8 +438,6 @@ public class TcpManager implements TcpServerListener {
 
 		});
 
-		tcpServer.acceptConnection();
-
 	}
 
 	@Override
@@ -493,6 +484,7 @@ public class TcpManager implements TcpServerListener {
 		private final DmsMessageFactory messageFactory;
 
 		private final int order;
+		private final int priority;
 
 		private final TcpConnection tcpConnection;
 		private final int id;
@@ -502,6 +494,7 @@ public class TcpManager implements TcpServerListener {
 		private Connection(TcpConnection tcpConnection, int id, BiConsumer<MessagePojo, Connection> messageConsumer) {
 			this.messageFactory = new DmsMessageFactory(messagePojo -> messageConsumer.accept(messagePojo, this));
 			this.order = ORDER.getAndIncrement();
+			this.priority = CommonMethods.getLocalAddressPriority(tcpConnection.getLocalAddress());
 			this.tcpConnection = tcpConnection;
 			this.id = id;
 		}
@@ -519,21 +512,7 @@ public class TcpManager implements TcpServerListener {
 
 		private final String dmsUuid;
 
-		private final Set<Connection> connections = Collections
-				.synchronizedSortedSet(new TreeSet<Connection>(new Comparator<Connection>() {
-
-					@Override
-					public int compare(Connection arg0, Connection arg1) {
-						if (Objects.equals(arg0, arg1))
-							return 0;
-						int priority0 = CommonMethods.getLocalAddressPriority(arg0.tcpConnection.getLocalAddress());
-						int priority1 = CommonMethods.getLocalAddressPriority(arg1.tcpConnection.getLocalAddress());
-						if (priority0 == priority1)
-							return Integer.compare(arg0.order, arg1.order);
-						return Integer.compare(priority0, priority1);
-					}
-
-				}));
+		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
 
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 

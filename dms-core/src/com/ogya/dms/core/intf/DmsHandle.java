@@ -105,4 +105,6 @@ public interface DmsHandle {
 
 	void switchAudio(boolean on);
 
+	boolean isServerConnected();
+
 }

@@ -54,7 +54,6 @@ public class MulticastManager {
 		listeners.add(listener);
 
 		new Thread(this::receive).start();
-
 		new Thread(this::process).start();
 
 	}
@@ -148,7 +147,7 @@ public class MulticastManager {
 
 	private void receive() {
 
-		while (true) {
+		while (!Thread.currentThread().isInterrupted()) {
 
 			try {
 
@@ -178,7 +177,7 @@ public class MulticastManager {
 
 	private void process() {
 
-		while (true) {
+		while (!Thread.currentThread().isInterrupted()) {
 
 			try {
 
