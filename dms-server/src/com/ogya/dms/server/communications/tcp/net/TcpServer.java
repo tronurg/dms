@@ -92,18 +92,18 @@ public final class TcpServer implements Runnable {
 	private void acceptConnections(ServerSocket serverSocket) throws Exception {
 
 		while (!Thread.currentThread().isInterrupted()) {
-			try (final Socket socket = serverSocket.accept()) {
-				new Thread(() -> connectionEstablished(socket)).start();
-			}
+			final Socket socket = serverSocket.accept();
+			new Thread(() -> connectionEstablished(socket)).start();
 		}
 
 	}
 
 	private void connectionEstablished(Socket socket) {
 
-		try {
-			int id = idRef.getAndIncrement();
-			TcpConnection tcpConnection = new TcpConnection(socket, message -> messageReceivedToListeners(id, message));
+		int id = idRef.getAndIncrement();
+
+		try (TcpConnection tcpConnection = new TcpConnection(socket,
+				message -> messageReceivedToListeners(id, message))) {
 			connectedToListeners(id, tcpConnection);
 			tcpConnection.listen();
 			disconnectedToListeners(id);

@@ -14,7 +14,7 @@ import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
 import com.ogya.dms.server.common.CommonConstants;
 
-public final class TcpConnection {
+public final class TcpConnection implements AutoCloseable {
 
 	private static final long HEARTBEAT_MS = (long) CommonConstants.BEACON_INTERVAL_MS;
 	private static final long HEALTH_CONTROL_NS = (long) (2e6 * HEARTBEAT_MS);
@@ -143,6 +143,7 @@ public final class TcpConnection {
 
 	}
 
+	@Override
 	public void close() {
 
 		try {
