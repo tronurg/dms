@@ -1486,7 +1486,7 @@ class MessagePane extends BorderPane {
 			progressLbl.managedProperty().bind(progressLbl.visibleProperty());
 			progressLbl.textProperty().bind(Bindings.createStringBinding(() -> {
 				int progress = messageInfo.progressProperty.get();
-				return progress < 0 ? "" : String.format("%d%%", progress);
+				return progress > 0 ? String.format("%d%%", progress) : "";
 			}, messageInfo.progressProperty));
 
 			return progressLbl;

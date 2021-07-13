@@ -7,6 +7,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 
@@ -25,7 +28,7 @@ public final class TcpConnection implements AutoCloseable {
 	private final DataOutputStream messageOutputStream;
 
 	private final AtomicLong lastSuccessfulSendTime = new AtomicLong();
-	private final AtomicLong latencyNs = new AtomicLong();
+	private final Queue<Long> latencyNsQueue = new ArrayDeque<Long>();
 
 	TcpConnection(Socket socket, Consumer<byte[]> messageConsumer) throws Exception {
 
@@ -39,7 +42,9 @@ public final class TcpConnection implements AutoCloseable {
 		messageOutputStream = new DataOutputStream(
 				new BufferedOutputStream(new ZstdOutputStream(socket.getOutputStream())));
 
-		sendHeartbeat();
+		for (int i = 0; i < 4; ++i) {
+			sendHeartbeat();
+		}
 
 		new Thread(this::checkAlive).start();
 
@@ -67,7 +72,12 @@ public final class TcpConnection implements AutoCloseable {
 		messageOutputStream.flush();
 		long endNs = System.nanoTime();
 		lastSuccessfulSendTime.set(endNs);
-		latencyNs.set(endNs - startNs);
+		synchronized (latencyNsQueue) {
+			latencyNsQueue.offer(endNs - startNs);
+			while (latencyNsQueue.size() > 4) {
+				latencyNsQueue.remove();
+			}
+		}
 
 	}
 
@@ -139,7 +149,11 @@ public final class TcpConnection implements AutoCloseable {
 
 	public long getLatency() {
 
-		return latencyNs.get();
+		synchronized (latencyNsQueue) {
+			if (latencyNsQueue.isEmpty())
+				return Long.MAX_VALUE;
+			return Collections.min(latencyNsQueue);
+		}
 
 	}
 

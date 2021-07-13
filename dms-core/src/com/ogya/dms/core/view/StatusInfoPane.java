@@ -192,7 +192,7 @@ public class StatusInfoPane extends BorderPane {
 
 		void setProgress(int progress) {
 
-			progressLbl.setText(progress < 0 ? "" : String.format("%d%%", progress));
+			progressLbl.setText(progress > 0 ? String.format("%d%%", progress) : "");
 
 		}
 
