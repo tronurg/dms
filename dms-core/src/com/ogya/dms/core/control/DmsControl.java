@@ -399,9 +399,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
-		if (Objects.equals(contact.getStatus(), Availability.OFFLINE))
-			return;
-
 		contact.setStatus(Availability.OFFLINE);
 
 		try {
@@ -1094,15 +1091,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
-				boolean wasOnline = model.isContactOnline(userUuid);
-				boolean isOffline = Objects.equals(newContact.getStatus(), Availability.OFFLINE);
+				newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
 
-				if (isOffline)
-					newContact.setLocalRemoteServerIps(null);
-				else
-					newContact.setLocalRemoteServerIps(beacon.localRemoteServerIps);
-
-				boolean shouldCheckMessages = !isOffline && model.shouldCheckMessages(newContact);
+				boolean wasOffline = !model.isContactOnline(userUuid);
+				boolean shouldCheckMessages = model.shouldCheckMessages(newContact);
 
 				model.addUpdateContact(newContact);
 
@@ -1111,14 +1103,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				listenerTaskQueue.execute(() -> dmsListeners
 						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
-				if (wasOnline && isOffline) {
-					// Contact has just been made offline through api.
-					contactDisconnected(newContact);
-				}
-
 				final Long contactId = newContact.getId();
 
-				if (!(wasOnline || isOffline)) {
+				if (wasOffline) {
 					// Contact has just been online
 					// MODIFY GROUP STATUSES
 					try {
@@ -3170,7 +3157,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void setCoordinates(Double lattitude, Double longitude) {
+	public void setCoordinates(Double lattitude, Double longitude) throws UnsupportedOperationException {
+
+		if (lattitude < -90.0 || lattitude > 90.0 || longitude < -180.0 || longitude > 180.0)
+			throw new UnsupportedOperationException("Invalid coordinates.");
 
 		taskQueue.execute(() -> {
 
@@ -3204,10 +3194,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void setComment(String comment) {
+	public void setComment(String comment) throws UnsupportedOperationException {
 
-		if (comment.length() > 40)
-			comment = comment.substring(0, 40);
+		if (comment != null && comment.length() > 40)
+			throw new UnsupportedOperationException("Comment cannot exceed 40 characters.");
 
 		Platform.runLater(() -> dmsPanel.setCommentEditable(false));
 
@@ -3216,22 +3206,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void setAvailability(Availability availability) {
+	public void setAvailability(Availability availability) throws UnsupportedOperationException {
+
+		switch (availability) {
+		case AVAILABLE:
+		case AWAY:
+		case BUSY:
+			break;
+		default:
+			throw new UnsupportedOperationException("Only AVAILABLE, AWAY and BUSY allowed.");
+		}
 
 		statusUpdateRequested(availability);
 
 	}
 
 	@Override
-	public void setSecretId(String secretId) {
+	public void setSecretId(final String secretId) throws UnsupportedOperationException {
 
-		if (secretId == null)
-			secretId = "";
-
-		if (secretId.length() > 16)
-			secretId = secretId.substring(0, 16);
-
-		final String finalSecretId = secretId;
+		if (secretId != null && secretId.length() > 16)
+			throw new UnsupportedOperationException("Secret ID cannot exceed 16 characters.");
 
 		taskQueue.execute(() -> {
 
@@ -3239,16 +3233,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				if (Objects.equals(finalSecretId, identity.getSecretId()))
+				if (Objects.equals(secretId, identity.getSecretId()))
 					return;
 
-				identity.setSecretId(finalSecretId);
+				identity.setSecretId(secretId);
 
 				dbManager.updateIdentity(identity);
 
-				model.updateSecretId(finalSecretId);
+				model.updateSecretId(secretId);
 
-				sendBeacon(null, null, null, null, null, finalSecretId);
+				sendBeacon(null, null, null, null, null, secretId);
 
 			} catch (Exception e) {
 

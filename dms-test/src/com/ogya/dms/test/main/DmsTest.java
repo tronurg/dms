@@ -63,7 +63,7 @@ public class DmsTest {
 			JComponent mcPanel = dmsHandle.getDmsPanel();
 
 //			dmsHandle.setComment("merhaba");
-			dmsHandle.setCoordinates(30.0, 30.0);
+			dmsHandle.setCoordinates(-30.0, 30.0);
 
 			new Thread(() -> {
 

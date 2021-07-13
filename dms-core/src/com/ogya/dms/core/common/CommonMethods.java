@@ -174,8 +174,8 @@ public class CommonMethods {
 		char eastInitial = east.isEmpty() ? 'E' : east.charAt(0);
 		char westInitial = west.isEmpty() ? 'W' : west.charAt(0);
 
-		return String.format("%s%c, %s%c", convertDoubleToCoordinates(lattitude),
-				lattitude < 0 ? southInitial : northInitial, convertDoubleToCoordinates(longitude),
+		return String.format("%s%c, %s%c", convertDoubleToCoordinates(Math.abs(lattitude)),
+				lattitude < 0 ? southInitial : northInitial, convertDoubleToCoordinates(Math.abs(longitude)),
 				longitude < 0 ? westInitial : eastInitial);
 
 	}

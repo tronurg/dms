@@ -33,13 +33,13 @@ public interface DmsHandle {
 
 	void removeGuiListener(DmsGuiListener guiListener);
 
-	void setCoordinates(Double lattitude, Double longitude);
+	void setCoordinates(Double lattitude, Double longitude) throws UnsupportedOperationException;
 
-	void setComment(String comment);
+	void setComment(String comment) throws UnsupportedOperationException;
 
-	void setAvailability(Availability availability);
+	void setAvailability(Availability availability) throws UnsupportedOperationException;
 
-	void setSecretId(String secretId);
+	void setSecretId(String secretId) throws UnsupportedOperationException;
 
 	void addRemoteIps(InetAddress... remoteIps);
 
