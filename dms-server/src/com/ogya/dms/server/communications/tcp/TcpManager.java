@@ -208,11 +208,12 @@ public class TcpManager implements TcpServerListener {
 
 			DmsServer dmsServer = dmsServers.get(dmsUuid);
 
-			if (dmsServer == null)
-				return;
-
-			sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
-					progressConsumer);
+			if (dmsServer != null) {
+				sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
+						progressConsumer);
+			} else if (progressConsumer != null) {
+				progressConsumer.accept(-1);
+			}
 
 		});
 

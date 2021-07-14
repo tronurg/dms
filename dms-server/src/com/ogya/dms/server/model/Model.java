@@ -155,12 +155,12 @@ public class Model {
 
 			case CANCEL: {
 
-				synchronized (sendStatuses) {
-					sendStatuses.stream()
-							.filter(sendStatus -> Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
-									&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid))
-							.forEach(sendStatus -> sendStatus.status.set(false));
-				}
+				sendStatuses.forEach(sendStatus -> {
+					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
+						sendStatus.status.set(false);
+					}
+				});
 
 				break;
 
@@ -187,10 +187,6 @@ public class Model {
 
 				String[] receiverUuids = messagePojo.receiverUuid.split(";");
 
-				SendStatus sendStatus = new SendStatus(
-						Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId : null,
-						messagePojo.senderUuid);
-
 				List<String> localReceiverUuids = new ArrayList<String>();
 				Map<String, Set<String>> remoteServerReceiverUuids = new HashMap<String, Set<String>>();
 				List<String> unreachableUuids = new ArrayList<String>();
@@ -201,16 +197,12 @@ public class Model {
 
 						localReceiverUuids.add(receiverUuid);
 
-						sendStatus.receiverUuids.add(receiverUuid);
-
 					} else if (remoteUsers.containsKey(receiverUuid)) {
 
 						RemoteUser remoteUser = remoteUsers.get(receiverUuid);
 
 						remoteServerReceiverUuids.putIfAbsent(remoteUser.dmsServer.dmsUuid, new HashSet<String>());
 						remoteServerReceiverUuids.get(remoteUser.dmsServer.dmsUuid).add(receiverUuid);
-
-						sendStatus.receiverUuids.add(receiverUuid);
 
 					} else {
 
@@ -220,11 +212,8 @@ public class Model {
 
 				}
 
-				if (!sendStatus.receiverUuids.isEmpty() && (Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
-						|| Objects.equals(messagePojo.contentType, ContentType.TRANSIENT)))
-					sendStatuses.add(sendStatus);
-
-				if (sendStatus.receiverUuids.isEmpty() && messagePojo.attachment != null) {
+				if (localReceiverUuids.isEmpty() && remoteServerReceiverUuids.isEmpty()
+						&& messagePojo.attachment != null) {
 					try {
 						Files.deleteIfExists(messagePojo.attachment);
 					} catch (Exception e) {
@@ -234,6 +223,13 @@ public class Model {
 
 				if (!localReceiverUuids.isEmpty()) {
 
+					SendStatus sendStatus = new SendStatus(
+							Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId
+									: null,
+							messagePojo.senderUuid);
+					sendStatus.receiverUuids.addAll(localReceiverUuids);
+					sendStatuses.add(sendStatus);
+
 					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
 							messagePojo.contentType, messagePojo.useTrackingId, messagePojo.useTimeout,
 							messagePojo.useLocalAddress);
@@ -241,27 +237,15 @@ public class Model {
 
 					listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
 
-						clean: synchronized (sendStatus) {
-
-							if (!(progress < 0 || progress == 100))
-								break clean;
-
-							sendStatus.receiverUuids.removeAll(localReceiverUuids);
-
-							if (!sendStatus.receiverUuids.isEmpty())
-								break clean;
-
+						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
+							if (messagePojo.attachment != null) {
+								try {
+									Files.deleteIfExists(messagePojo.attachment);
+								} catch (Exception e) {
 
-							if (messagePojo.attachment == null)
-								break clean;
-
-							try {
-								Files.deleteIfExists(messagePojo.attachment);
-							} catch (Exception e) {
-
+								}
 							}
-
 						}
 
 						if (trackedMessage) {
@@ -298,6 +282,13 @@ public class Model {
 
 				remoteServerReceiverUuids.forEach((dmsUuid, uuidList) -> {
 
+					SendStatus sendStatus = new SendStatus(
+							Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId
+									: null,
+							messagePojo.senderUuid);
+					sendStatus.receiverUuids.addAll(uuidList);
+					sendStatuses.add(sendStatus);
+
 					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
 					List<String> receiverMapIdList = new ArrayList<String>();
 					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
@@ -308,27 +299,15 @@ public class Model {
 
 					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus.status, progress -> {
 
-						clean: synchronized (sendStatus) {
-
-							if (!(progress < 0 || progress == 100))
-								break clean;
-
-							sendStatus.receiverUuids.removeAll(uuidList);
-
-							if (!sendStatus.receiverUuids.isEmpty())
-								break clean;
-
+						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
+							if (messagePojo.attachment != null) {
+								try {
+									Files.deleteIfExists(messagePojo.attachment);
+								} catch (Exception e) {
 
-							if (messagePojo.attachment == null)
-								break clean;
-
-							try {
-								Files.deleteIfExists(messagePojo.attachment);
-							} catch (Exception e) {
-
+								}
 							}
-
 						}
 
 						if (trackedMessage) {
@@ -502,19 +481,18 @@ public class Model {
 		if (user == null)
 			return;
 
-		synchronized (sendStatuses) {
-			sendStatuses.stream().filter(sendStatus -> Objects.equals(uuid, sendStatus.senderUuid))
-					.forEach(sendStatus -> sendStatus.status.set(false));
-		}
+		sendStatuses.forEach(sendStatus -> {
+			if (Objects.equals(uuid, sendStatus.senderUuid)
+					|| (sendStatus.receiverUuids.remove(uuid) && sendStatus.receiverUuids.isEmpty())) {
+				sendStatus.status.set(false);
+			}
+		});
 
 		mappedUsers.remove(user.mapId);
 
-		String userUuid = user.beacon.uuid;
+		MessagePojo messagePojo = new MessagePojo(null, uuid, null, ContentType.UUID_DISCONNECTED, null, null, null);
 
-		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null,
-				null);
-
-		localUsers.remove(userUuid).messageFactory.deleteResources();
+		localUsers.remove(uuid).messageFactory.deleteResources();
 
 		listener.sendToLocalUsers(messagePojo, null, null, localUsers.keySet().toArray(new String[0]));
 
@@ -542,6 +520,12 @@ public class Model {
 			return;
 
 		String userUuid = user.beacon.uuid;
+
+		sendStatuses.forEach(sendStatus -> {
+			if (sendStatus.receiverUuids.remove(userUuid) && sendStatus.receiverUuids.isEmpty()) {
+				sendStatus.status.set(false);
+			}
+		});
 
 		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null,
 				null);

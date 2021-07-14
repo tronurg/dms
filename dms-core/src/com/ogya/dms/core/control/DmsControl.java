@@ -3159,7 +3159,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void setCoordinates(Double latitude, Double longitude) throws UnsupportedOperationException {
 
-		if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0)
+		if (latitude != null && (latitude < -90.0 || latitude > 90.0))
+			throw new UnsupportedOperationException("Invalid coordinates.");
+
+		if (longitude != null && (longitude < -180.0 || longitude > 180.0))
 			throw new UnsupportedOperationException("Invalid coordinates.");
 
 		taskQueue.execute(() -> {
