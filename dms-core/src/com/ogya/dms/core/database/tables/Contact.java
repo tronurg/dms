@@ -55,8 +55,8 @@ public class Contact extends EntityBase {
 	@JsonIgnore
 	private ViewStatus viewStatus;
 
-	@Column(name = "lattitude")
-	private Double lattitude;
+	@Column(name = "latitude")
+	private Double latitude;
 
 	@Column(name = "longitude")
 	private Double longitude;
@@ -76,14 +76,14 @@ public class Contact extends EntityBase {
 		this.uuid = uuid;
 	}
 
-	public Contact(String uuid, String name, String comment, Availability status, Double lattitude, Double longitude,
+	public Contact(String uuid, String name, String comment, Availability status, Double latitude, Double longitude,
 			String secretId) {
 		super();
 		this.uuid = uuid;
 		this.name = name;
 		this.comment = comment;
 		this.status = status;
-		this.lattitude = lattitude;
+		this.latitude = latitude;
 		this.longitude = longitude;
 		this.secretId = secretId;
 	}
@@ -136,12 +136,12 @@ public class Contact extends EntityBase {
 		this.viewStatus = viewStatus;
 	}
 
-	public Double getLattitude() {
-		return lattitude;
+	public Double getLatitude() {
+		return latitude;
 	}
 
-	public void setLattitude(Double lattitude) {
-		this.lattitude = lattitude;
+	public void setLatitude(Double latitude) {
+		this.latitude = latitude;
 	}
 
 	public Double getLongitude() {

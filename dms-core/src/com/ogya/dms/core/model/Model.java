@@ -101,9 +101,9 @@ public class Model {
 
 	}
 
-	public void updateCoordinates(Double lattitude, Double longitude) {
+	public void updateCoordinates(Double latitude, Double longitude) {
 
-		identity.setLattitude(lattitude);
+		identity.setLatitude(latitude);
 		identity.setLongitude(longitude);
 
 	}

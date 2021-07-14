@@ -20,7 +20,7 @@ public class Beacon {
 	@JsonProperty("d")
 	public Integer status;
 	@JsonProperty("e")
-	public Double lattitude;
+	public Double latitude;
 	@JsonProperty("f")
 	public Double longitude;
 	@JsonProperty("g")
@@ -39,7 +39,7 @@ public class Beacon {
 
 	}
 
-	public Beacon(String uuid, String name, String comment, Integer status, Double lattitude, Double longitude,
+	public Beacon(String uuid, String name, String comment, Integer status, Double latitude, Double longitude,
 			String secretId) {
 
 		this(uuid);
@@ -47,7 +47,7 @@ public class Beacon {
 		this.name = name;
 		this.comment = comment;
 		this.status = status;
-		this.lattitude = lattitude;
+		this.latitude = latitude;
 		this.longitude = longitude;
 		this.secretId = secretId;
 

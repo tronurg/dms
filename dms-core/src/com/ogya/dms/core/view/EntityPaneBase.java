@@ -183,8 +183,8 @@ class EntityPaneBase extends GridPane {
 			initialLbl.setText(name.substring(0, 1).toUpperCase());
 		nameLbl.setText(name);
 		commentLbl.setText(entity.getComment());
-		coordinatesLbl.setText(entity.getLattitude() == null || entity.getLongitude() == null ? ""
-				: CommonMethods.convertDoubleToCoordinates(entity.getLattitude(), entity.getLongitude()));
+		coordinatesLbl.setText(entity.getLatitude() == null || entity.getLongitude() == null ? ""
+				: CommonMethods.convertDoubleToCoordinates(entity.getLatitude(), entity.getLongitude()));
 		groupSign.setVisible(entity.getEntityId().isGroup());
 
 		if (commentLbl.textProperty().getValueSafe().isEmpty()) {

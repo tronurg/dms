@@ -173,7 +173,7 @@ public class Dgroup extends EntityBase {
 	}
 
 	@Override
-	public Double getLattitude() {
+	public Double getLatitude() {
 		return null;
 	}
 

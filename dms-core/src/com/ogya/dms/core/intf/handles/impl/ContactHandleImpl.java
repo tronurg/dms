@@ -14,7 +14,7 @@ public class ContactHandleImpl implements ContactHandle {
 	private final String uuid;
 	private final String name;
 	private final String comment;
-	private final Double lattitude;
+	private final Double latitude;
 	private final Double longitude;
 	private final Availability availability;
 	private final String secretId;
@@ -26,7 +26,7 @@ public class ContactHandleImpl implements ContactHandle {
 		this.uuid = contact.getUuid();
 		this.name = contact.getName();
 		this.comment = contact.getComment();
-		this.lattitude = contact.getLattitude();
+		this.latitude = contact.getLatitude();
 		this.longitude = contact.getLongitude();
 		this.availability = contact.getStatus();
 		this.secretId = contact.getSecretId();
@@ -63,9 +63,9 @@ public class ContactHandleImpl implements ContactHandle {
 	}
 
 	@Override
-	public Double getLattitude() {
+	public Double getLatitude() {
 
-		return lattitude;
+		return latitude;
 
 	}
 

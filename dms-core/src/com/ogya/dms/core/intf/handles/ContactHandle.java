@@ -15,7 +15,7 @@ public interface ContactHandle {
 
 	String getComment();
 
-	Double getLattitude();
+	Double getLatitude();
 
 	Double getLongitude();
 

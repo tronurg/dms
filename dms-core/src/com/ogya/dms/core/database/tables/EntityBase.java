@@ -15,7 +15,7 @@ public abstract class EntityBase {
 
 	public abstract ViewStatus getViewStatus();
 
-	public abstract Double getLattitude();
+	public abstract Double getLatitude();
 
 	public abstract Double getLongitude();
 

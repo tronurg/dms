@@ -730,8 +730,8 @@ public class Model {
 		if (fromBeacon.status != null)
 			toBeacon.status = fromBeacon.status;
 
-		if (fromBeacon.lattitude != null)
-			toBeacon.lattitude = fromBeacon.lattitude;
+		if (fromBeacon.latitude != null)
+			toBeacon.latitude = fromBeacon.latitude;
 
 		if (fromBeacon.longitude != null)
 			toBeacon.longitude = fromBeacon.longitude;

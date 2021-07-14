@@ -33,7 +33,7 @@ public interface DmsHandle {
 
 	void removeGuiListener(DmsGuiListener guiListener);
 
-	void setCoordinates(Double lattitude, Double longitude) throws UnsupportedOperationException;
+	void setCoordinates(Double latitude, Double longitude) throws UnsupportedOperationException;
 
 	void setComment(String comment) throws UnsupportedOperationException;
 

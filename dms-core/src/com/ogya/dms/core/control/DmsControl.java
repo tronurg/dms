@@ -348,14 +348,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void sendBeacon(String name, String comment, Availability status, Double lattitude, Double longitude,
+	private void sendBeacon(String name, String comment, Availability status, Double latitude, Double longitude,
 			String secretId) {
 
 		if (!model.isServerConnected())
 			return;
 
 		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.index(),
-				lattitude, longitude, secretId);
+				latitude, longitude, secretId);
 
 		dmsClient.sendBeacon(beacon);
 
@@ -1087,7 +1087,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					return;
 
 				Contact incomingContact = new Contact(beacon.uuid, beacon.name, beacon.comment,
-						Availability.of(beacon.status), beacon.lattitude, beacon.longitude, beacon.secretId);
+						Availability.of(beacon.status), beacon.latitude, beacon.longitude, beacon.secretId);
 
 				final Contact newContact = dbManager.addUpdateContact(incomingContact);
 
@@ -1540,7 +1540,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLattitude(),
+				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLatitude(),
 						identity.getLongitude(), identity.getSecretId());
 
 				dmsClient.claimStartInfo();
@@ -3157,9 +3157,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void setCoordinates(Double lattitude, Double longitude) throws UnsupportedOperationException {
+	public void setCoordinates(Double latitude, Double longitude) throws UnsupportedOperationException {
 
-		if (lattitude < -90.0 || lattitude > 90.0 || longitude < -180.0 || longitude > 180.0)
+		if (latitude < -90.0 || latitude > 90.0 || longitude < -180.0 || longitude > 180.0)
 			throw new UnsupportedOperationException("Invalid coordinates.");
 
 		taskQueue.execute(() -> {
@@ -3168,20 +3168,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				if (Objects.equals(lattitude, identity.getLattitude())
+				if (Objects.equals(latitude, identity.getLatitude())
 						&& Objects.equals(longitude, identity.getLongitude()))
 					return;
 
-				identity.setLattitude(lattitude);
+				identity.setLatitude(latitude);
 				identity.setLongitude(longitude);
 
 				Contact newIdentity = dbManager.updateIdentity(identity);
 
-				model.updateCoordinates(lattitude, longitude);
+				model.updateCoordinates(latitude, longitude);
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, null, lattitude, longitude, null);
+				sendBeacon(null, null, null, latitude, longitude, null);
 
 			} catch (Exception e) {
 
