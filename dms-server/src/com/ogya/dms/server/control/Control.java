@@ -33,8 +33,6 @@ import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Control implements TcpManagerListener, ModelListener {
 
-	private static final int CHUNK_SIZE = 8192;
-
 	private static final String DMS_UUID = CommonConstants.DMS_UUID;
 
 	private static Control instance;
@@ -171,7 +169,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					final AtomicInteger progressPercent = new AtomicInteger(-1);
 
-					DmsMessageFactory.outFeed(localMessage.messagePojo, CHUNK_SIZE, health, (data, progress) -> {
+					DmsMessageFactory.outFeed(localMessage.messagePojo, health, (data, progress) -> {
 
 						for (String receiverUuid : localMessage.receiverUuids) {
 

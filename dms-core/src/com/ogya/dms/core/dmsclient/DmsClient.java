@@ -28,8 +28,6 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsClient {
 
-	private static final int CHUNK_SIZE = 8192;
-
 	private final String uuid;
 
 	private final ZContext context = new ZContext();
@@ -224,7 +222,7 @@ public class DmsClient {
 
 					MessagePojo messagePojo = dealerQueue.take();
 
-					DmsMessageFactory.outFeed(messagePojo, CHUNK_SIZE, serverConnected, (data, progress) -> {
+					DmsMessageFactory.outFeed(messagePojo, serverConnected, (data, progress) -> {
 						inprocSocket.send(data);
 						if (progress < 0 && messagePojo.useTrackingId != null
 								&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT))

@@ -38,8 +38,6 @@ public class TcpManager implements TcpServerListener {
 
 	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
-	private static final int CHUNK_SIZE = 1024;
-
 	private final int serverPort;
 	private final int clientPortFrom;
 	private final int clientPortTo;
@@ -305,7 +303,7 @@ public class TcpManager implements TcpServerListener {
 
 					final AtomicInteger progressPercent = new AtomicInteger(-1);
 
-					DmsMessageFactory.outFeedRemote(messagePojo, CHUNK_SIZE, health, (data, progress) -> {
+					DmsMessageFactory.outFeedRemote(messagePojo, health, (data, progress) -> {
 
 						if (!sent.get())
 							return;

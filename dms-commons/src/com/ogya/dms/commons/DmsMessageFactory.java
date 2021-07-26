@@ -17,6 +17,8 @@ import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageFactory {
 
+	private static final int CHUNK_SIZE = 8192;
+
 	private final Consumer<MessagePojo> messageConsumer;
 
 	private boolean inProgress = false;
@@ -143,21 +145,21 @@ public class DmsMessageFactory {
 
 	}
 
-	public static void outFeed(MessagePojo messagePojo, int chunkSize, AtomicBoolean health,
+	public static void outFeed(MessagePojo messagePojo, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
-		outFeed(DmsPackingFactory.pack(messagePojo), messagePojo.attachment, chunkSize, health, dataConsumer);
+		outFeed(DmsPackingFactory.pack(messagePojo), messagePojo.attachment, health, dataConsumer);
 
 	}
 
-	public static void outFeedRemote(MessagePojo messagePojo, int chunkSize, AtomicBoolean health,
+	public static void outFeedRemote(MessagePojo messagePojo, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
-		outFeed(DmsPackingFactory.packRemote(messagePojo), messagePojo.attachment, chunkSize, health, dataConsumer);
+		outFeed(DmsPackingFactory.packRemote(messagePojo), messagePojo.attachment, health, dataConsumer);
 
 	}
 
-	private static void outFeed(byte[] data, Path attachment, int chunkSize, AtomicBoolean health,
+	private static void outFeed(byte[] data, Path attachment, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
 		if (attachment == null) {
@@ -175,7 +177,7 @@ public class DmsMessageFactory {
 
 				dataConsumer.accept(ByteBuffer.allocate(8).putLong(fileSize).array(), 0);
 
-				byte[] buffer = new byte[chunkSize];
+				byte[] buffer = new byte[CHUNK_SIZE];
 
 				int bytesRead;
 				long totalBytesRead = 0;
