@@ -68,8 +68,6 @@ public class FoldersPane extends BorderPane {
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 
-	private final Map<WatchKey, Path> watchKeys = Collections.synchronizedMap(new HashMap<WatchKey, Path>());
-
 	private WatchService watchService;
 
 	FoldersPane(Path mainPath, BooleanProperty unreadProperty) {
@@ -270,8 +268,8 @@ public class FoldersPane extends BorderPane {
 
 		try {
 
-			watchKeys.put(folder.register(watchService, StandardWatchEventKinds.ENTRY_CREATE,
-					StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY), folder);
+			folder.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE,
+					StandardWatchEventKinds.ENTRY_MODIFY);
 
 		} catch (IOException e) {
 
@@ -292,10 +290,7 @@ public class FoldersPane extends BorderPane {
 
 				WatchKey watchKey = watchService.take();
 
-				Path dir = watchKeys.get(watchKey);
-
-				if (dir == null)
-					continue;
+				Path dir = (Path) watchKey.watchable();
 
 				FolderView folderView = folderViews.get(dir);
 
@@ -314,8 +309,7 @@ public class FoldersPane extends BorderPane {
 
 				}
 
-				if (!watchKey.reset())
-					watchKeys.remove(watchKey);
+				watchKey.reset();
 
 			} catch (InterruptedException e) {
 
