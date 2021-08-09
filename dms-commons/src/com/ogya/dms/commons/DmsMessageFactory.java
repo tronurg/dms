@@ -1,14 +1,15 @@
 package com.ogya.dms.commons;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -21,11 +22,7 @@ public class DmsMessageFactory {
 
 	private final Consumer<MessagePojo> messageConsumer;
 
-	private boolean inProgress = false;
-	private boolean error = false;
-	private long remaining = 0;
-	private Path path;
-	private OutputStream outputStream;
+	private final Map<Integer, MessageReceiver> messageReceivers = new HashMap<Integer, MessageReceiver>();
 
 	public DmsMessageFactory(Consumer<MessagePojo> messageConsumer) {
 
@@ -35,113 +32,31 @@ public class DmsMessageFactory {
 
 	public void inFeed(byte[] data) {
 
-		if (data.length == 0) {
+		ByteBuffer dataBuffer = ByteBuffer.wrap(data);
+		int messageNumber = dataBuffer.getInt();
 
-			deleteResources();
-			reset();
-
+		MessageReceiver messageReceiver = messageReceivers.get(messageNumber);
+		if (messageReceiver == null) {
+			messageReceiver = new MessageReceiver(dataBuffer.getLong());
+			messageReceivers.put(messageNumber, messageReceiver);
 			return;
-
 		}
 
-		try {
-
-			if (inProgress) {
-				bodyReceived(data);
-			} else {
-				headerReceived(data);
+		boolean messageReady = messageReceiver.dataReceived(dataBuffer);
+		if (messageReady) {
+			messageReceivers.remove(messageNumber);
+			MessagePojo messagePojo = messageReceiver.getMessagePojo();
+			if (messagePojo != null) {
+				messageConsumer.accept(messagePojo);
 			}
-
-		} catch (IOException e) {
-
-			error = true;
-
-			deleteResources();
-
 		}
 
 	}
 
 	public void deleteResources() {
 
-		if (outputStream != null) {
-			try {
-				outputStream.flush();
-				outputStream.close();
-			} catch (IOException e) {
-
-			}
-		}
-
-		if (path != null) {
-			try {
-				Files.deleteIfExists(path);
-			} catch (IOException e) {
-
-			}
-		}
-
-	}
-
-	public void reset() {
-
-		inProgress = false;
-		error = false;
-		remaining = 0;
-		path = null;
-		outputStream = null;
-
-	}
-
-	private void headerReceived(byte[] data) throws IOException {
-
-		inProgress = true;
-		remaining = ByteBuffer.wrap(data).getLong();
-
-		if (remaining > 0) {
-
-			path = Files.createTempFile("dms", null);
-			outputStream = new BufferedOutputStream(Files.newOutputStream(path));
-
-		}
-
-	}
-
-	private void bodyReceived(byte[] data) throws IOException {
-
-		if (remaining > 0) {
-
-			remaining -= data.length;
-
-			if (error)
-				return;
-
-			outputStream.write(data);
-
-			if (!(remaining > 0)) {
-				outputStream.flush();
-				outputStream.close();
-			}
-
-		} else {
-
-			try {
-
-				MessagePojo messagePojo = DmsPackingFactory.unpack(data, MessagePojo.class);
-				messagePojo.attachment = path;
-
-				if (!error)
-					messageConsumer.accept(messagePojo);
-
-			} catch (Exception e) {
-
-				deleteResources();
-
-			}
-
-			reset();
-
-		}
+		messageReceivers.forEach((messageNumber, messageReceiver) -> messageReceiver.clearResources());
+		messageReceivers.clear();
 
 	}
 
@@ -200,6 +115,108 @@ public class DmsMessageFactory {
 				dataConsumer.accept(new byte[0], -1);
 
 			}
+
+		}
+
+	}
+
+	private final class MessageReceiver {
+
+		private boolean fileError = false;
+		private long remaining = 0;
+		private Path path;
+		private ByteChannel fileChannel;
+		private MessagePojo messagePojo;
+
+		private MessageReceiver(long remaining) {
+			this.remaining = remaining;
+			if (remaining > 0) {
+				try {
+					path = Files.createTempFile("dms", null);
+					fileChannel = Files.newByteChannel(path);
+				} catch (IOException e) {
+					fileError = true;
+					clearResources();
+				}
+			}
+		}
+
+		private void clearResources() {
+
+			if (fileChannel != null) {
+				try {
+					fileChannel.close();
+					fileChannel = null;
+				} catch (IOException e) {
+
+				}
+			}
+
+			if (path != null) {
+				try {
+					Files.deleteIfExists(path);
+					path = null;
+				} catch (IOException e) {
+
+				}
+			}
+
+		}
+
+		private boolean dataReceived(ByteBuffer dataBuffer) {
+
+			int dataLength = dataBuffer.remaining();
+
+			if (dataLength == 0) {
+				clearResources();
+				return true;
+			}
+
+			if (remaining > 0) {
+
+				remaining -= dataLength;
+
+				if (fileError)
+					return false;
+
+				try {
+
+					fileChannel.write(dataBuffer);
+
+					if (!(remaining > 0)) {
+						fileChannel.close();
+					}
+
+				} catch (IOException e) {
+					fileError = true;
+					clearResources();
+				}
+
+				return false;
+
+			}
+
+			try {
+
+				byte[] data = new byte[dataLength];
+				dataBuffer.get(data);
+				MessagePojo messagePojo = DmsPackingFactory.unpack(data, MessagePojo.class);
+				messagePojo.attachment = path;
+
+				if (!fileError)
+					this.messagePojo = messagePojo;
+
+			} catch (Exception e) {
+				clearResources();
+			}
+
+			return true;
+
+		}
+
+		private MessagePojo getMessagePojo() {
+
+			return messagePojo;
 
 		}
 

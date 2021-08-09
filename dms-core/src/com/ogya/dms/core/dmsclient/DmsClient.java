@@ -263,7 +263,6 @@ public class DmsClient {
 					serverConnected.set(false);
 					synchronized (messageFactory) {
 						messageFactory.deleteResources();
-						messageFactory.reset();
 					}
 					serverConnStatusUpdatedToListener();
 					break;
