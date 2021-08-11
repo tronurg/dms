@@ -1,16 +1,14 @@
 package com.ogya.dms.commons;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -19,6 +17,7 @@ import com.ogya.dms.commons.structures.MessagePojo;
 public class DmsMessageFactory {
 
 	private static final int CHUNK_SIZE = 8192;
+	private static final AtomicInteger MESSAGE_COUNTER = new AtomicInteger(0);
 
 	private final Consumer<MessagePojo> messageConsumer;
 
@@ -77,42 +76,49 @@ public class DmsMessageFactory {
 	private static void outFeed(byte[] data, Path attachment, AtomicBoolean health,
 			BiConsumer<byte[], Integer> dataConsumer) {
 
+		final int messageNumber = MESSAGE_COUNTER.getAndIncrement();
+		final int dataLength = data.length;
+
 		if (attachment == null) {
 
-			dataConsumer.accept(ByteBuffer.allocate(8).putLong(0L).array(), 0);
+			dataConsumer.accept(ByteBuffer.allocate(12).putInt(messageNumber).putLong(0L).array(), 0);
 
-			dataConsumer.accept(data, 100);
+			dataConsumer.accept(ByteBuffer.allocate(4 + dataLength).putInt(messageNumber).put(data).array(), 100);
 
 		} else {
 
-			try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(attachment))) {
+			try (ByteChannel fileChannel = Files.newByteChannel(attachment)) {
 
 				long fileSize = Files.size(attachment);
-				double totalBytes = fileSize + data.length;
+				double totalBytes = fileSize + dataLength;
 
-				dataConsumer.accept(ByteBuffer.allocate(8).putLong(fileSize).array(), 0);
+				dataConsumer.accept(ByteBuffer.allocate(12).putInt(messageNumber).putLong(fileSize).array(), 0);
 
-				byte[] buffer = new byte[CHUNK_SIZE];
+				ByteBuffer buffer = ByteBuffer.allocate(CHUNK_SIZE);
 
 				int bytesRead;
 				long totalBytesRead = 0;
 
-				while ((bytesRead = inputStream.read(buffer)) > 0) {
+				while ((bytesRead = fileChannel.read(buffer.putInt(messageNumber))) > 0) {
 
 					if (!health.get())
 						throw new IOException();
 
 					totalBytesRead += bytesRead;
+					buffer.flip();
+					byte[] chunk = new byte[buffer.limit()];
+					buffer.get(chunk);
+					buffer.clear();
 
-					dataConsumer.accept(Arrays.copyOf(buffer, bytesRead), (int) (100 * (totalBytesRead / totalBytes)));
+					dataConsumer.accept(chunk, (int) (100 * (totalBytesRead / totalBytes)));
 
 				}
 
-				dataConsumer.accept(data, 100);
+				dataConsumer.accept(ByteBuffer.allocate(4 + dataLength).putInt(messageNumber).put(data).array(), 100);
 
 			} catch (IOException e) {
 
-				dataConsumer.accept(new byte[0], -1);
+				dataConsumer.accept(ByteBuffer.allocate(4).putInt(messageNumber).array(), -1);
 
 			}
 
