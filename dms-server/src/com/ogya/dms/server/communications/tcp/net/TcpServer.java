@@ -62,9 +62,9 @@ public final class TcpServer implements Runnable {
 
 	}
 
-	private void messageReceivedToListeners(final int id, final byte[] message) {
+	private void messageReceivedToListeners(final int id, final int messageNumber, final byte[] message) {
 
-		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(id, message)));
+		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(id, messageNumber, message)));
 
 	}
 
@@ -103,7 +103,7 @@ public final class TcpServer implements Runnable {
 		int id = idRef.getAndIncrement();
 
 		try (TcpConnection tcpConnection = new TcpConnection(socket,
-				message -> messageReceivedToListeners(id, message))) {
+				(messageNumber, message) -> messageReceivedToListeners(id, messageNumber, message))) {
 			connectedToListeners(id, tcpConnection);
 			tcpConnection.listen();
 			disconnectedToListeners(id);

@@ -70,9 +70,9 @@ public final class TcpClient implements Runnable {
 
 	}
 
-	public void messageReceivedToListeners(final byte[] message) {
+	public void messageReceivedToListeners(final int messageNumber, final byte[] message) {
 
-		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(message)));
+		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(messageNumber, message)));
 
 	}
 

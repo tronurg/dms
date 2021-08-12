@@ -8,6 +8,6 @@ public interface TcpClientListener {
 
 	void disconnected();
 
-	void messageReceived(byte[] message);
+	void messageReceived(int messageNumber, byte[] message);
 
 }

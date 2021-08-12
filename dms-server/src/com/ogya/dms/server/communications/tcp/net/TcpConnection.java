@@ -11,7 +11,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Queue;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
@@ -23,14 +23,14 @@ public final class TcpConnection implements AutoCloseable {
 	private static final long HEALTH_CONTROL_NS = (long) (2e6 * HEARTBEAT_MS);
 
 	private final Socket socket;
-	private final Consumer<byte[]> messageConsumer;
+	private final BiConsumer<Integer, byte[]> messageConsumer;
 
 	private final DataOutputStream messageOutputStream;
 
 	private final AtomicLong lastSuccessfulSendTime = new AtomicLong();
 	private final Queue<Long> latencyNsQueue = new ArrayDeque<Long>();
 
-	TcpConnection(Socket socket, Consumer<byte[]> messageConsumer) throws Exception {
+	TcpConnection(Socket socket, BiConsumer<Integer, byte[]> messageConsumer) throws Exception {
 
 		socket.setSendBufferSize(1);
 		socket.setKeepAlive(false);
@@ -95,9 +95,10 @@ public final class TcpConnection implements AutoCloseable {
 
 				byte[] message = new byte[messageLength];
 
+				int messageNumber = messageInputStream.readInt();
 				messageInputStream.readFully(message);
 
-				messageConsumer.accept(message);
+				messageConsumer.accept(messageNumber, message);
 
 			}
 
@@ -107,7 +108,7 @@ public final class TcpConnection implements AutoCloseable {
 
 	}
 
-	public synchronized boolean sendMessage(byte[] message) {
+	public synchronized boolean sendMessage(int messageNumber, byte[] message) {
 
 		if (socket.isClosed())
 			return false;
@@ -115,6 +116,7 @@ public final class TcpConnection implements AutoCloseable {
 		try {
 
 			messageOutputStream.writeInt(message.length);
+			messageOutputStream.writeInt(messageNumber);
 			messageOutputStream.write(message);
 			messageOutputStream.flush();
 			lastSuccessfulSendTime.set(System.nanoTime());

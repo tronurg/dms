@@ -6,6 +6,6 @@ public interface TcpServerListener {
 
 	void disconnected(int id);
 
-	void messageReceived(int id, byte[] message);
+	void messageReceived(int id, int messageNumber, byte[] message);
 
 }

@@ -95,7 +95,7 @@ public class Model {
 			mappedUsers.put(localUser.mapId, localUser);
 		}
 
-		localUser.messageFactory.inFeed(data);
+		localUser.messageFactory.inFeed(0, data);
 
 	}
 

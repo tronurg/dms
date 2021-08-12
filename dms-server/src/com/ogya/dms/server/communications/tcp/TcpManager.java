@@ -115,7 +115,7 @@ public class TcpManager implements TcpServerListener {
 				tcpClient.addListener(new TcpClientListener() {
 
 					@Override
-					public void messageReceived(byte[] message) {
+					public void messageReceived(int messageNumber, byte[] message) {
 
 						taskQueue.execute(() -> {
 
@@ -123,7 +123,7 @@ public class TcpManager implements TcpServerListener {
 							if (connection == null)
 								return;
 
-							connection.messageFactory.inFeed(message);
+							connection.messageFactory.inFeed(messageNumber, message);
 
 						});
 
@@ -134,7 +134,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							tcpConnection.sendMessage(CommonConstants.DMS_UUID.getBytes(CHARSET));
+							tcpConnection.sendMessage(-1, CommonConstants.DMS_UUID.getBytes(CHARSET));
 
 							Connection connection = new Connection(tcpConnection, -1,
 									TcpManager.this::messageReceivedFromConnection);
@@ -277,10 +277,9 @@ public class TcpManager implements TcpServerListener {
 
 		dmsServer.taskQueue.execute(() -> {
 
+			final int messageNumber = dmsServer.messageCounter.getAndIncrement();
 			final long startTime = System.currentTimeMillis();
-
 			final AtomicBoolean health = new AtomicBoolean(true);
-
 			final AtomicBoolean sent = new AtomicBoolean(false);
 
 			synchronized (dmsServer.connections) {
@@ -308,7 +307,7 @@ public class TcpManager implements TcpServerListener {
 						if (!sent.get())
 							return;
 
-						sent.set(connection.tcpConnection.sendMessage(data));
+						sent.set(connection.tcpConnection.sendMessage(messageNumber, data));
 
 						health.set(sendStatus.get()
 								&& (messagePojo.useTimeout == null
@@ -440,7 +439,7 @@ public class TcpManager implements TcpServerListener {
 	}
 
 	@Override
-	public void messageReceived(final int id, final byte[] message) {
+	public void messageReceived(final int id, final int messageNumber, final byte[] message) {
 
 		taskQueue.execute(() -> {
 
@@ -469,7 +468,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 			} else {
-				connection.messageFactory.inFeed(message);
+				connection.messageFactory.inFeed(messageNumber, message);
 			}
 
 		});
@@ -510,9 +509,8 @@ public class TcpManager implements TcpServerListener {
 	private class DmsServer {
 
 		private final String dmsUuid;
-
+		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 		private DmsServer(String dmsUuid) {
