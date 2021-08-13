@@ -34,9 +34,11 @@ public class DmsMessageFactory {
 	public void inFeed(int messageNumber, byte[] data) {
 
 		MessageReceiver messageReceiver = messageReceivers.get(messageNumber);
-		if (messageReceiver == null && data.length > 0) {
-			messageReceiver = new MessageReceiver(ByteBuffer.wrap(data).getLong());
-			messageReceivers.put(messageNumber, messageReceiver);
+		if (messageReceiver == null) {
+			if (data.length > 0) {
+				messageReceiver = new MessageReceiver(ByteBuffer.wrap(data).getLong());
+				messageReceivers.put(messageNumber, messageReceiver);
+			}
 			return;
 		}
 
