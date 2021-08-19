@@ -14,6 +14,8 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.ogya.dms.commons.DmsMessageFactory;
+import com.ogya.dms.commons.DmsMessageFactory.Chunk;
+import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
@@ -222,13 +224,19 @@ public class DmsClient {
 
 					MessagePojo messagePojo = dealerQueue.take();
 
-					DmsMessageFactory.outFeed(messagePojo, serverConnected, (data, progress) -> {
-						inprocSocket.send(data);
-						if (progress < 0 && messagePojo.useTrackingId != null
+					MessageSender messageSender = DmsMessageFactory.outFeed(messagePojo, serverConnected);
+
+					while (messageSender.hasNext()) {
+
+						Chunk chunk = messageSender.next();
+
+						inprocSocket.send(chunk.data);
+						if (chunk.progress < 0 && messagePojo.useTrackingId != null
 								&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT))
 							progressTransientReceivedToListener(messagePojo.useTrackingId,
-									messagePojo.receiverUuid.split(";"), progress);
-					});
+									messagePojo.receiverUuid.split(";"), chunk.progress);
+
+					}
 
 				} catch (InterruptedException e) {
 

@@ -12,23 +12,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageFactory {
 
-	private static final int CHUNK_SIZE = 8192;
-
 	private final Consumer<MessagePojo> messageConsumer;
 
 	private final Map<Integer, MessageReceiver> messageReceivers = new HashMap<Integer, MessageReceiver>();
 
 	public DmsMessageFactory(Consumer<MessagePojo> messageConsumer) {
-
 		this.messageConsumer = messageConsumer;
-
 	}
 
 	public void inFeed(int messageNumber, byte[] data) {
@@ -54,70 +49,20 @@ public class DmsMessageFactory {
 	}
 
 	public void deleteResources() {
-
 		messageReceivers.forEach((messageNumber, messageReceiver) -> messageReceiver.clearResources());
 		messageReceivers.clear();
-
 	}
 
-	public static void outFeed(MessagePojo messagePojo, AtomicBoolean health,
-			BiConsumer<byte[], Integer> dataConsumer) {
-
-		outFeed(DmsPackingFactory.pack(messagePojo), messagePojo.attachment, health, dataConsumer);
-
+	public static MessageSender outFeed(MessagePojo messagePojo, AtomicBoolean health) {
+		return outFeed(DmsPackingFactory.pack(messagePojo), messagePojo.attachment, health);
 	}
 
-	public static void outFeedRemote(MessagePojo messagePojo, AtomicBoolean health,
-			BiConsumer<byte[], Integer> dataConsumer) {
-
-		outFeed(DmsPackingFactory.packRemote(messagePojo), messagePojo.attachment, health, dataConsumer);
-
+	public static MessageSender outFeedRemote(MessagePojo messagePojo, AtomicBoolean health) {
+		return outFeed(DmsPackingFactory.packRemote(messagePojo), messagePojo.attachment, health);
 	}
 
-	private static void outFeed(byte[] data, Path attachment, AtomicBoolean health,
-			BiConsumer<byte[], Integer> dataConsumer) {
-
-		if (attachment == null) {
-
-			dataConsumer.accept(ByteBuffer.allocate(8).putLong(0L).array(), 0);
-
-			dataConsumer.accept(data, 100);
-
-		} else {
-
-			try (InputStream inputStream = new BufferedInputStream(Files.newInputStream(attachment))) {
-
-				long fileSize = Files.size(attachment);
-				double totalBytes = fileSize + data.length;
-
-				dataConsumer.accept(ByteBuffer.allocate(8).putLong(fileSize).array(), 0);
-
-				byte[] buffer = new byte[CHUNK_SIZE];
-
-				int bytesRead;
-				long totalBytesRead = 0;
-
-				while ((bytesRead = inputStream.read(buffer)) > 0) {
-
-					if (!health.get())
-						throw new IOException();
-
-					totalBytesRead += bytesRead;
-
-					dataConsumer.accept(Arrays.copyOf(buffer, bytesRead), (int) (100 * (totalBytesRead / totalBytes)));
-
-				}
-
-				dataConsumer.accept(data, 100);
-
-			} catch (IOException e) {
-
-				dataConsumer.accept(new byte[0], -1);
-
-			}
-
-		}
-
+	private static MessageSender outFeed(byte[] data, Path attachment, AtomicBoolean health) {
+		return new MessageSender(data, attachment, health);
 	}
 
 	private final class MessageReceiver {
@@ -215,9 +160,99 @@ public class DmsMessageFactory {
 		}
 
 		private MessagePojo getMessagePojo() {
-
 			return messagePojo;
+		}
 
+	}
+
+	public static final class MessageSender {
+
+		private static final int CHUNK_SIZE = 8192;
+
+		private final byte[] data;
+		private final Path attachment;
+		private final AtomicBoolean health;
+		private InputStream inputStream;
+		private byte[] buffer;
+		private long fileSize = 0;
+		private double totalBytes = 0.0;
+		private long totalBytesRead = 0;
+		private boolean started = false;
+		private boolean ended = false;
+
+		private MessageSender(byte[] data, Path attachment, AtomicBoolean health) {
+			this.data = data;
+			this.attachment = attachment;
+			this.health = health;
+			if (attachment != null) {
+				try {
+					inputStream = new BufferedInputStream(Files.newInputStream(attachment));
+					fileSize = Files.size(attachment);
+					totalBytes = fileSize + data.length;
+					buffer = new byte[CHUNK_SIZE];
+				} catch (Exception e) {
+
+				}
+			}
+		}
+
+		public boolean hasNext() {
+			return !ended;
+		}
+
+		public Chunk next() {
+
+			if (ended) {
+				return null;
+			}
+
+			if (!started) {
+				started = true;
+				return new Chunk(ByteBuffer.allocate(8).putLong(fileSize).array(), 0);
+			}
+
+			if (attachment != null) {
+
+				try {
+					if (!health.get())
+						throw new Exception();
+					int bytesRead = inputStream.read(buffer);
+					if (bytesRead > 0) {
+						totalBytesRead += bytesRead;
+						return new Chunk(Arrays.copyOf(buffer, bytesRead), (int) (100 * (totalBytesRead / totalBytes)));
+					}
+				} catch (Exception e) {
+					ended = true;
+				}
+
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+
+				}
+
+				if (ended) {
+					return new Chunk(new byte[0], -1);
+				}
+
+			}
+
+			ended = true;
+
+			return new Chunk(data, 100);
+
+		}
+
+	}
+
+	public static final class Chunk {
+
+		public final byte[] data;
+		public final int progress;
+
+		private Chunk(byte[] data, int progress) {
+			this.data = data;
+			this.progress = progress;
 		}
 
 	}

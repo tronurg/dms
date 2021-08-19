@@ -21,6 +21,8 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
 import com.ogya.dms.commons.DmsMessageFactory;
+import com.ogya.dms.commons.DmsMessageFactory.Chunk;
+import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
@@ -169,7 +171,11 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					final AtomicInteger progressPercent = new AtomicInteger(-1);
 
-					DmsMessageFactory.outFeed(localMessage.messagePojo, health, (data, progress) -> {
+					MessageSender messageSender = DmsMessageFactory.outFeed(localMessage.messagePojo, health);
+
+					while (messageSender.hasNext()) {
+
+						Chunk chunk = messageSender.next();
 
 						for (String receiverUuid : localMessage.receiverUuids) {
 
@@ -179,9 +185,9 @@ public class Control implements TcpManagerListener, ModelListener {
 							try {
 
 								routerSocket.send(receiverUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-								routerSocket.send(data, ZMQ.DONTWAIT);
+								routerSocket.send(chunk.data, ZMQ.DONTWAIT);
 
-								if (progress < 0)
+								if (chunk.progress < 0)
 									successfulUuids.remove(receiverUuid);
 
 							} catch (ZMQException e) {
@@ -199,18 +205,18 @@ public class Control implements TcpManagerListener, ModelListener {
 										|| System.currentTimeMillis() - startTime < localMessage.messagePojo.useTimeout)
 								&& !successfulUuids.isEmpty());
 
-						boolean progressUpdated = progress > progressPercent.get();
+						boolean progressUpdated = chunk.progress > progressPercent.get();
 
 						if (progressUpdated)
-							progressPercent.set(progress);
+							progressPercent.set(chunk.progress);
 
 						if (localMessage.progressConsumer == null)
-							return;
+							continue;
 
 						if (progressUpdated && !successfulUuids.isEmpty())
-							localMessage.progressConsumer.accept(successfulUuids, progress);
+							localMessage.progressConsumer.accept(successfulUuids, chunk.progress);
 
-					});
+					}
 
 					if (localMessage.progressConsumer == null)
 						continue;

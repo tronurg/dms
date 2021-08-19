@@ -23,6 +23,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageFactory;
+import com.ogya.dms.commons.DmsMessageFactory.Chunk;
+import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
@@ -302,12 +304,16 @@ public class TcpManager implements TcpServerListener {
 
 					final AtomicInteger progressPercent = new AtomicInteger(-1);
 
-					DmsMessageFactory.outFeedRemote(messagePojo, health, (data, progress) -> {
+					MessageSender messageSender = DmsMessageFactory.outFeedRemote(messagePojo, health);
+
+					while (messageSender.hasNext()) {
+
+						Chunk chunk = messageSender.next();
 
 						if (!sent.get())
-							return;
+							continue;
 
-						sent.set(connection.tcpConnection.sendMessage(messageNumber, data));
+						sent.set(connection.tcpConnection.sendMessage(messageNumber, chunk.data));
 
 						health.set(sendStatus.get()
 								&& (messagePojo.useTimeout == null
@@ -315,20 +321,20 @@ public class TcpManager implements TcpServerListener {
 								&& sent.get());
 
 						if (!sent.get())
-							return;
+							continue;
 
-						boolean progressUpdated = progress > progressPercent.get();
+						boolean progressUpdated = chunk.progress > progressPercent.get();
 
 						if (progressUpdated)
-							progressPercent.set(progress);
+							progressPercent.set(chunk.progress);
 
 						if (progressConsumer == null)
-							return;
+							continue;
 
 						if (progressUpdated)
-							progressConsumer.accept(progress);
+							progressConsumer.accept(chunk.progress);
 
-					});
+					}
 
 					if (progressPercent.get() < 100)
 						sent.set(false);
