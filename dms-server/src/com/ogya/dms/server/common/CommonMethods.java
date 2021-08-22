@@ -175,6 +175,25 @@ public class CommonMethods {
 
 	}
 
+	static long getSmallFileLimit() {
+
+		long smallFileLimit = 0;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/SMALL_FILE_LIMIT")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			smallFileLimit = Long.parseLong(node.getTextContent());
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return smallFileLimit;
+
+	}
+
 	static List<InetAddress> getPreferredIps() {
 
 		List<InetAddress> preferredIps = new ArrayList<InetAddress>();

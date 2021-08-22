@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -28,6 +29,7 @@ import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
+import com.ogya.dms.server.common.MessageContainer;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -277,6 +279,10 @@ public class TcpManager implements TcpServerListener {
 	private void sendMessageToServer(final DmsServer dmsServer, final MessagePojo messagePojo,
 			final AtomicBoolean sendStatus, final Consumer<Integer> progressConsumer) {
 
+		dmsServer.sendMessage(messagePojo, sendStatus, progressConsumer);
+
+		// TODO: delete below
+
 		dmsServer.taskQueue.execute(() -> {
 
 			final int messageNumber = dmsServer.messageCounter.getAndIncrement();
@@ -368,7 +374,7 @@ public class TcpManager implements TcpServerListener {
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
-			dmsServers.remove(dmsServer.dmsUuid).close();
+			dmsServers.remove(dmsServer.dmsUuid).close(); // TODO
 		}
 
 	}
@@ -518,12 +524,88 @@ public class TcpManager implements TcpServerListener {
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
 		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+		private final Comparator<MessageContainer> messageSorter = new Comparator<MessageContainer>() {
+
+			@Override
+			public int compare(MessageContainer o1, MessageContainer o2) {
+				int result = Boolean.compare(o1.bigFile, o2.bigFile);
+				if (result == 0) {
+					result = Long.compare(o1.checkInTime, o2.checkInTime);
+				}
+				if (result == 0) {
+					result = Integer.compare(o1.messageNumber, o2.messageNumber);
+				}
+				return result;
+			}
+
+		};
+		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
+				11, messageSorter);
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
+			start();
+		}
+
+		private void start() {
+			Thread thread = new Thread(() -> {
+				while (!Thread.currentThread().isInterrupted()) {
+					try {
+						MessageContainer messageContainer = messageQueue.take();
+						// TODO: end condition
+						while (messageContainer.messageSender.hasNext()) {
+							TcpConnection tcpConnection = null;
+							synchronized (connections) {
+								for (Connection connection : connections) {
+									if (messageContainer.useLocalAddress == null || messageContainer.useLocalAddress
+											.equals(connection.tcpConnection.getLocalAddress())) {
+										tcpConnection = connection.tcpConnection;
+										break;
+									}
+								}
+							}
+							if (tcpConnection == null) {
+								messageContainer.messageSender.close();
+								if (messageContainer.progressConsumer != null) {
+									messageContainer.progressConsumer.accept(-1);
+								}
+								break;
+							}
+							messageContainer.checkIn();
+							Chunk chunk = messageContainer.messageSender.next();
+							boolean sent = tcpConnection.sendMessage(messageContainer.messageNumber, chunk.data);
+							if (!sent) {
+								// TODO: if not sent
+							}
+							boolean progressUpdated = chunk.progress > messageContainer.progressPercent.get();
+							if (progressUpdated) {
+								messageContainer.progressPercent.set(chunk.progress);
+								if (messageContainer.progressConsumer != null) {
+									messageContainer.progressConsumer.accept(chunk.progress);
+								}
+							}
+							if (messageContainer.bigFile && messageContainer.messageSender.hasNext()) {
+								messageQueue.put(messageContainer);
+								break;
+							}
+						}
+					} catch (InterruptedException e) {
+
+					}
+				}
+			});
+			thread.setDaemon(true);
+			thread.start();
+		}
+
+		private void sendMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
+				Consumer<Integer> progressConsumer) {
+			messageQueue.put(
+					new MessageContainer(messageCounter.getAndIncrement(), messagePojo, sendStatus, progressConsumer));
 		}
 
 		private void close() {
+			// TODO: delete
 			taskQueue.shutdown();
 		}
 

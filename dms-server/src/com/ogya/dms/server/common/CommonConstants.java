@@ -15,6 +15,7 @@ public class CommonConstants {
 	public static final int SERVER_PORT = CommonMethods.getServerPort();
 	public static final int CLIENT_PORT_FROM = CommonMethods.getClientPortFrom();
 	public static final int CLIENT_PORT_TO = CommonMethods.getClientPortTo();
+	public static final long SMALL_FILE_LIMIT = CommonMethods.getSmallFileLimit();
 	public static final List<InetAddress> PREFERRED_IPS = CommonMethods.getPreferredIps();
 
 	public static final int CONN_TIMEOUT_MS = 5000;

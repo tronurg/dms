@@ -225,11 +225,7 @@ public class DmsMessageFactory {
 					ended = true;
 				}
 
-				try {
-					inputStream.close();
-				} catch (IOException e) {
-
-				}
+				close();
 
 				if (ended) {
 					return new Chunk(new byte[0], -1);
@@ -241,6 +237,20 @@ public class DmsMessageFactory {
 
 			return new Chunk(data, 100);
 
+		}
+
+		public boolean fileSizeGreaterThan(long limitSize) {
+			return fileSize > limitSize;
+		}
+
+		public void close() {
+			if (inputStream != null) {
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+
+				}
+			}
 		}
 
 	}
