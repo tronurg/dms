@@ -26,7 +26,6 @@ import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsMessageFactory.Chunk;
-import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
@@ -62,29 +61,6 @@ public class TcpManager implements TcpServerListener {
 			.synchronizedList(new ArrayList<TcpManagerListener>());
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
-
-	private final Comparator<Connection> connectionSorter = new Comparator<Connection>() {
-
-		@Override
-		public int compare(Connection arg0, Connection arg1) {
-			if (Objects.equals(arg0, arg1))
-				return 0;
-			int healthPriority0 = arg0.tcpConnection.isHealthy() ? 0 : 1;
-			int healthPriority1 = arg1.tcpConnection.isHealthy() ? 0 : 1;
-			if (healthPriority0 != healthPriority1)
-				return Integer.compare(healthPriority0, healthPriority1);
-			int connectionPriority0 = arg0.priority;
-			int connectionPriority1 = arg1.priority;
-			if (connectionPriority0 != connectionPriority1)
-				return Integer.compare(connectionPriority0, connectionPriority1);
-			long latency0 = arg0.tcpConnection.getLatency();
-			long latency1 = arg1.tcpConnection.getLatency();
-			if (latency0 != latency1)
-				return Long.compare(latency0, latency1);
-			return Integer.compare(arg0.order, arg1.order);
-		}
-
-	};
 
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, TcpManagerListener listener) {
 
@@ -212,7 +188,7 @@ public class TcpManager implements TcpServerListener {
 			DmsServer dmsServer = dmsServers.get(dmsUuid);
 
 			if (dmsServer != null) {
-				sendMessageToServer(dmsServer, messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
+				dmsServer.sendMessage(messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
 						progressConsumer);
 			} else if (progressConsumer != null) {
 				progressConsumer.accept(-1);
@@ -226,8 +202,8 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			dmsServers.forEach(
-					(dmsUuid, dmsServer) -> sendMessageToServer(dmsServer, messagePojo, new AtomicBoolean(true), null));
+			dmsServers
+					.forEach((dmsUuid, dmsServer) -> dmsServer.sendMessage(messagePojo, new AtomicBoolean(true), null));
 
 		});
 
@@ -274,92 +250,6 @@ public class TcpManager implements TcpServerListener {
 		nextPort.set(++port > clientPortTo ? clientPortFrom : port);
 
 		return portFound;
-
-	}
-
-	private void sendMessageToServer(final DmsServer dmsServer, final MessagePojo messagePojo,
-			final AtomicBoolean sendStatus, final Consumer<Integer> progressConsumer) {
-
-		dmsServer.sendMessage(messagePojo, sendStatus, progressConsumer);
-
-		// TODO: delete below
-
-		dmsServer.taskQueue.execute(() -> {
-
-			final int messageNumber = dmsServer.messageCounter.getAndIncrement();
-			final long startTime = System.currentTimeMillis();
-			final AtomicBoolean health = new AtomicBoolean(true);
-			final AtomicBoolean sent = new AtomicBoolean(false);
-
-			synchronized (dmsServer.connections) {
-
-				dmsServer.connections.sort(connectionSorter);
-
-				for (Connection connection : dmsServer.connections) {
-
-					health.set(sendStatus.get() && (messagePojo.useTimeout == null
-							|| System.currentTimeMillis() - startTime < messagePojo.useTimeout));
-
-					if (!health.get())
-						break;
-
-					if (!(messagePojo.useLocalAddress == null
-							|| messagePojo.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())))
-						continue;
-
-					sent.set(true); // Hypothesis
-
-					final AtomicInteger progressPercent = new AtomicInteger(-1);
-
-					MessageSender messageSender = DmsMessageFactory.outFeedRemote(messagePojo, health);
-
-					while (messageSender.hasNext()) {
-
-						Chunk chunk = messageSender.next();
-
-						if (!sent.get())
-							continue;
-
-						sent.set(connection.tcpConnection.sendMessage(messageNumber, chunk.data));
-
-						health.set(sendStatus.get()
-								&& (messagePojo.useTimeout == null
-										|| System.currentTimeMillis() - startTime < messagePojo.useTimeout)
-								&& sent.get());
-
-						if (!sent.get())
-							continue;
-
-						boolean progressUpdated = chunk.progress > progressPercent.get();
-
-						if (progressUpdated)
-							progressPercent.set(chunk.progress);
-
-						if (progressConsumer == null)
-							continue;
-
-						if (progressUpdated)
-							progressConsumer.accept(chunk.progress);
-
-					}
-
-					if (progressPercent.get() < 100)
-						sent.set(false);
-
-					if (sent.get())
-						break;
-
-				}
-
-			}
-
-			if (progressConsumer == null)
-				return;
-
-			if (!sent.get())
-				progressConsumer.accept(-1);
-
-		});
 
 	}
 
@@ -519,13 +409,31 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private class DmsServer {
+	private static class DmsServer {
 
-		private final String dmsUuid;
-		private final AtomicInteger messageCounter = new AtomicInteger(0);
-		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-		protected final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
-		private final Comparator<MessageContainer> messageSorter = new Comparator<MessageContainer>() {
+		private static final Comparator<Connection> CONNECTION_SORTER = new Comparator<Connection>() {
+
+			@Override
+			public int compare(Connection arg0, Connection arg1) {
+				if (Objects.equals(arg0, arg1))
+					return 0;
+				int healthPriority0 = arg0.tcpConnection.isHealthy() ? 0 : 1;
+				int healthPriority1 = arg1.tcpConnection.isHealthy() ? 0 : 1;
+				if (healthPriority0 != healthPriority1)
+					return Integer.compare(healthPriority0, healthPriority1);
+				int connectionPriority0 = arg0.priority;
+				int connectionPriority1 = arg1.priority;
+				if (connectionPriority0 != connectionPriority1)
+					return Integer.compare(connectionPriority0, connectionPriority1);
+				long latency0 = arg0.tcpConnection.getLatency();
+				long latency1 = arg1.tcpConnection.getLatency();
+				if (latency0 != latency1)
+					return Long.compare(latency0, latency1);
+				return Integer.compare(arg0.order, arg1.order);
+			}
+
+		};
+		private static final Comparator<MessageContainer> MESSAGE_SORTER = new Comparator<MessageContainer>() {
 
 			@Override
 			public int compare(MessageContainer o1, MessageContainer o2) {
@@ -540,8 +448,13 @@ public class TcpManager implements TcpServerListener {
 			}
 
 		};
+
+		private final String dmsUuid;
+		private final AtomicInteger messageCounter = new AtomicInteger(0);
+		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
+		private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
-				11, messageSorter);
+				11, MESSAGE_SORTER);
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
@@ -602,6 +515,7 @@ public class TcpManager implements TcpServerListener {
 		private void updateSendFunction(MessageContainer messageContainer) {
 			BiFunction<Integer, byte[], Boolean> sendFunction = null;
 			synchronized (connections) {
+				connections.sort(CONNECTION_SORTER);
 				for (Connection connection : connections) {
 					if (messageContainer.useLocalAddress == null
 							|| messageContainer.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())) {
