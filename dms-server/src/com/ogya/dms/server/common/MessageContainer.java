@@ -3,6 +3,7 @@ package com.ogya.dms.server.common;
 import java.net.InetAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageFactory;
@@ -22,6 +23,7 @@ public class MessageContainer {
 	public final AtomicBoolean health = new AtomicBoolean(true);
 	public final AtomicInteger progressPercent = new AtomicInteger(-1);
 	public long checkInTime = startTime;
+	public BiFunction<Integer, byte[], Boolean> sendFunction;
 
 	public MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 			Consumer<Integer> progressConsumer) {
@@ -37,6 +39,11 @@ public class MessageContainer {
 	public void checkIn() {
 		checkInTime = System.currentTimeMillis();
 		health.set(sendStatus.get() && (useTimeout == null || checkInTime - startTime < useTimeout));
+	}
+
+	public void reset() {
+		messageSender.reset();
+		progressPercent.set(-1);
 	}
 
 }

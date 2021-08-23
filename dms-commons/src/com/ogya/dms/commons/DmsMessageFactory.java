@@ -185,15 +185,32 @@ public class DmsMessageFactory {
 			this.attachment = attachment;
 			this.health = health;
 			if (attachment != null) {
-				try {
-					inputStream = new BufferedInputStream(Files.newInputStream(attachment));
-					fileSize = Files.size(attachment);
-					totalBytes = fileSize + data.length;
-					buffer = new byte[CHUNK_SIZE];
-				} catch (Exception e) {
-
-				}
+				initResources();
 			}
+		}
+
+		private void initResources() {
+			try {
+				inputStream = new BufferedInputStream(Files.newInputStream(attachment));
+				fileSize = Files.size(attachment);
+				totalBytes = fileSize + data.length;
+			} catch (Exception e) {
+
+			}
+			if (buffer == null) {
+				buffer = new byte[CHUNK_SIZE];
+			}
+		}
+
+		private void closeResources() {
+			if (inputStream == null)
+				return;
+			try {
+				inputStream.close();
+			} catch (IOException e) {
+
+			}
+			inputStream = null;
 		}
 
 		public boolean hasNext() {
@@ -225,7 +242,7 @@ public class DmsMessageFactory {
 					ended = true;
 				}
 
-				close();
+				closeResources();
 
 				if (ended) {
 					return new Chunk(new byte[0], -1);
@@ -243,14 +260,18 @@ public class DmsMessageFactory {
 			return fileSize > limitSize;
 		}
 
-		public void close() {
-			if (inputStream != null) {
-				try {
-					inputStream.close();
-				} catch (IOException e) {
+		public void reset() {
+			started = false;
+			ended = false;
+			if (attachment == null)
+				return;
+			closeResources();
+			initResources();
+		}
 
-				}
-			}
+		public void close() {
+			closeResources();
+			ended = true;
 		}
 
 	}

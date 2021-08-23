@@ -21,6 +21,7 @@ import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageFactory;
@@ -554,40 +555,32 @@ public class TcpManager implements TcpServerListener {
 						MessageContainer messageContainer = messageQueue.take();
 						// TODO: end condition
 						while (messageContainer.messageSender.hasNext()) {
-							TcpConnection tcpConnection = null;
-							synchronized (connections) {
-								for (Connection connection : connections) {
-									if (messageContainer.useLocalAddress == null || messageContainer.useLocalAddress
-											.equals(connection.tcpConnection.getLocalAddress())) {
-										tcpConnection = connection.tcpConnection;
-										break;
-									}
-								}
-							}
-							if (tcpConnection == null) {
+							if (messageContainer.sendFunction == null) {
 								messageContainer.messageSender.close();
-								if (messageContainer.progressConsumer != null) {
-									messageContainer.progressConsumer.accept(-1);
-								}
 								break;
 							}
 							messageContainer.checkIn();
 							Chunk chunk = messageContainer.messageSender.next();
-							boolean sent = tcpConnection.sendMessage(messageContainer.messageNumber, chunk.data);
-							if (!sent) {
-								// TODO: if not sent
-							}
-							boolean progressUpdated = chunk.progress > messageContainer.progressPercent.get();
-							if (progressUpdated) {
-								messageContainer.progressPercent.set(chunk.progress);
-								if (messageContainer.progressConsumer != null) {
+							boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber,
+									chunk.data);
+							if (sent) {
+								boolean progressUpdated = chunk.progress > messageContainer.progressPercent
+										.getAndSet(chunk.progress);
+								if (progressUpdated && messageContainer.progressConsumer != null) {
 									messageContainer.progressConsumer.accept(chunk.progress);
 								}
+							} else {
+								messageContainer.reset();
+								updateSendFunction(messageContainer);
 							}
 							if (messageContainer.bigFile && messageContainer.messageSender.hasNext()) {
 								messageQueue.put(messageContainer);
 								break;
 							}
+						}
+						if (!messageContainer.messageSender.hasNext() && messageContainer.progressConsumer != null
+								&& messageContainer.progressPercent.get() < 100) {
+							messageContainer.progressConsumer.accept(-1);
 						}
 					} catch (InterruptedException e) {
 
@@ -600,8 +593,24 @@ public class TcpManager implements TcpServerListener {
 
 		private void sendMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
-			messageQueue.put(
-					new MessageContainer(messageCounter.getAndIncrement(), messagePojo, sendStatus, progressConsumer));
+			MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
+					sendStatus, progressConsumer);
+			updateSendFunction(messageContainer);
+			messageQueue.put(messageContainer);
+		}
+
+		private void updateSendFunction(MessageContainer messageContainer) {
+			BiFunction<Integer, byte[], Boolean> sendFunction = null;
+			synchronized (connections) {
+				for (Connection connection : connections) {
+					if (messageContainer.useLocalAddress == null
+							|| messageContainer.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())) {
+						sendFunction = connection.tcpConnection::sendMessage;
+						break;
+					}
+				}
+			}
+			messageContainer.sendFunction = sendFunction;
 		}
 
 		private void close() {
