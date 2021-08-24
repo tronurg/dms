@@ -221,17 +221,21 @@ public class Model {
 					}
 				}
 
+				final AtomicInteger partySize = new AtomicInteger(remoteServerReceiverUuids.size());
+
 				if (!localReceiverUuids.isEmpty()) {
 
-					SendStatus sendStatus = new SendStatus(
+					partySize.incrementAndGet();
+
+					final SendStatus sendStatus = new SendStatus(
 							Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId
 									: null,
 							messagePojo.senderUuid);
 					sendStatus.receiverUuids.addAll(localReceiverUuids);
 					sendStatuses.add(sendStatus);
 
-					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
-							messagePojo.contentType, messagePojo.useTrackingId, messagePojo.useTimeout,
+					final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
+							null, messagePojo.contentType, messagePojo.useTrackingId, messagePojo.useTimeout,
 							messagePojo.useLocalAddress);
 					localMessagePojo.attachment = messagePojo.attachment;
 
@@ -239,7 +243,7 @@ public class Model {
 
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
-							if (messagePojo.attachment != null) {
+							if (partySize.decrementAndGet() == 0 && messagePojo.attachment != null) {
 								try {
 									Files.deleteIfExists(messagePojo.attachment);
 								} catch (Exception e) {
@@ -282,7 +286,7 @@ public class Model {
 
 				remoteServerReceiverUuids.forEach((dmsUuid, uuidList) -> {
 
-					SendStatus sendStatus = new SendStatus(
+					final SendStatus sendStatus = new SendStatus(
 							Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId
 									: null,
 							messagePojo.senderUuid);
@@ -292,7 +296,7 @@ public class Model {
 					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
 					List<String> receiverMapIdList = new ArrayList<String>();
 					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
-					MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
+					final MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
 							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.useTrackingId,
 							messagePojo.useTimeout, messagePojo.useLocalAddress);
 					remoteMessagePojo.attachment = messagePojo.attachment;
@@ -301,7 +305,7 @@ public class Model {
 
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
-							if (messagePojo.attachment != null) {
+							if (partySize.decrementAndGet() == 0 && messagePojo.attachment != null) {
 								try {
 									Files.deleteIfExists(messagePojo.attachment);
 								} catch (Exception e) {

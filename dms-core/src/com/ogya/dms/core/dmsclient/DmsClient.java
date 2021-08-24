@@ -194,9 +194,10 @@ public class DmsClient {
 
 				if (poller.pollin(pollDealer)) {
 
+					int messageNumber = Integer.parseInt(dealerSocket.recvStr(ZMQ.DONTWAIT));
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
 					synchronized (messageFactory) {
-						messageFactory.inFeed(0, receivedMessage);
+						messageFactory.inFeed(messageNumber, receivedMessage);
 					}
 
 				} else if (poller.pollin(pollInproc)) {

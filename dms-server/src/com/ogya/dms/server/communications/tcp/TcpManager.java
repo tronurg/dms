@@ -26,10 +26,12 @@ import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsMessageFactory.Chunk;
+import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
-import com.ogya.dms.server.common.MessageContainer;
+import com.ogya.dms.server.common.MessageContainerBase;
+import com.ogya.dms.server.common.MessageSorter;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -433,21 +435,7 @@ public class TcpManager implements TcpServerListener {
 			}
 
 		};
-		private static final Comparator<MessageContainer> MESSAGE_SORTER = new Comparator<MessageContainer>() {
-
-			@Override
-			public int compare(MessageContainer o1, MessageContainer o2) {
-				int result = Boolean.compare(o1.bigFile, o2.bigFile);
-				if (result == 0) {
-					result = Long.compare(o1.checkInTime, o2.checkInTime);
-				}
-				if (result == 0) {
-					result = Integer.compare(o1.messageNumber, o2.messageNumber);
-				}
-				return result;
-			}
-
-		};
+		private static final Comparator<MessageContainerBase> MESSAGE_SORTER = new MessageSorter();
 
 		private final String dmsUuid;
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
@@ -530,6 +518,26 @@ public class TcpManager implements TcpServerListener {
 		private void close() {
 			// TODO: delete
 			taskQueue.shutdown();
+		}
+
+	}
+
+	private static class MessageContainer extends MessageContainerBase {
+
+		private final InetAddress useLocalAddress;
+		private final Consumer<Integer> progressConsumer;
+		private BiFunction<Integer, byte[], Boolean> sendFunction;
+
+		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
+				Consumer<Integer> progressConsumer) {
+			super(messageNumber, messagePojo, sendStatus);
+			this.useLocalAddress = messagePojo.useLocalAddress;
+			this.progressConsumer = progressConsumer;
+		}
+
+		@Override
+		protected MessageSender initMessageSender(MessagePojo messagePojo, AtomicBoolean health) {
+			return DmsMessageFactory.outFeedRemote(messagePojo, health);
 		}
 
 	}
