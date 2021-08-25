@@ -446,50 +446,45 @@ public class TcpManager implements TcpServerListener {
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
-			start();
+			new Thread(this::consumeMessages).start();
 		}
 
-		private void start() {
-			Thread thread = new Thread(() -> {
-				while (!Thread.currentThread().isInterrupted()) {
-					try {
-						MessageContainer messageContainer = messageQueue.take();
-						// TODO: end condition
-						while (messageContainer.messageSender.hasNext()) {
-							if (messageContainer.sendFunction == null) {
-								messageContainer.messageSender.close();
-								break;
-							}
-							messageContainer.checkIn();
-							Chunk chunk = messageContainer.messageSender.next();
-							boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber,
-									chunk.data);
-							if (sent) {
-								boolean progressUpdated = chunk.progress > messageContainer.progressPercent
-										.getAndSet(chunk.progress);
-								if (progressUpdated && messageContainer.progressConsumer != null) {
-									messageContainer.progressConsumer.accept(chunk.progress);
-								}
-							} else {
-								messageContainer.reset();
-								updateSendFunction(messageContainer);
-							}
-							if (messageContainer.bigFile && messageContainer.messageSender.hasNext()) {
-								messageQueue.put(messageContainer);
-								break;
-							}
+		private void consumeMessages() {
+			while (!Thread.currentThread().isInterrupted()) {
+				try {
+					MessageContainer messageContainer = messageQueue.take();
+					// TODO: end condition
+					while (messageContainer.messageSender.hasNext()) {
+						if (messageContainer.sendFunction == null) {
+							messageContainer.messageSender.close();
+							break;
 						}
-						if (!messageContainer.messageSender.hasNext() && messageContainer.progressConsumer != null
-								&& messageContainer.progressPercent.get() < 100) {
-							messageContainer.progressConsumer.accept(-1);
+						messageContainer.checkIn();
+						Chunk chunk = messageContainer.messageSender.next();
+						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber, chunk.data);
+						if (sent) {
+							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
+									.getAndSet(chunk.progress);
+							if (progressUpdated && messageContainer.progressConsumer != null) {
+								messageContainer.progressConsumer.accept(chunk.progress);
+							}
+						} else {
+							messageContainer.reset();
+							updateSendFunction(messageContainer);
 						}
-					} catch (InterruptedException e) {
-
+						if (messageContainer.bigFile && messageContainer.messageSender.hasNext()) {
+							messageQueue.put(messageContainer);
+							break;
+						}
 					}
+					if (!messageContainer.messageSender.hasNext() && messageContainer.progressConsumer != null
+							&& messageContainer.progressPercent.get() < 100) {
+						messageContainer.progressConsumer.accept(-1);
+					}
+				} catch (InterruptedException e) {
+
 				}
-			});
-			thread.setDaemon(true);
-			thread.start();
+			}
 		}
 
 		private void sendMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,

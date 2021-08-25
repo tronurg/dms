@@ -6,12 +6,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,6 +67,13 @@ public class Model {
 		@Override
 		public int compare(String arg0, String arg1) {
 			return arg0.toLowerCase().compareTo(arg1.toLowerCase());
+		}
+	};
+
+	private final Comparator<Message> messageSorter = new Comparator<Message>() {
+		@Override
+		public int compare(Message arg0, Message arg1) {
+			return Long.compare(arg0.getId(), arg1.getId());
 		}
 	};
 
@@ -184,24 +191,6 @@ public class Model {
 	public boolean isContactOnline(String uuid) {
 
 		return uuidContacts.containsKey(uuid) && !Objects.equals(getContact(uuid).getStatus(), Availability.OFFLINE);
-
-	}
-
-	public boolean shouldCheckMessages(Contact newContact) {
-
-		if (newContact == null)
-			return false;
-
-		Contact contact = uuidContacts.get(newContact.getUuid());
-
-		if (contact == null || Objects.equals(contact.getLocalRemoteServerIps(), newContact.getLocalRemoteServerIps()))
-			return false;
-
-		if (!contact.getLocalRemoteServerIps().isEmpty()
-				&& contact.getLocalRemoteServerIps().size() < newContact.getLocalRemoteServerIps().size())
-			return false;
-
-		return true;
 
 	}
 
@@ -364,7 +353,7 @@ public class Model {
 		} else if (!Objects.equals(message.getMessageStatus(), MessageStatus.READ)) {
 
 			if (unreadMessagesOfEntity == null) {
-				unreadMessagesOfEntity = new HashSet<Message>();
+				unreadMessagesOfEntity = new TreeSet<Message>(messageSorter);
 				unreadMessages.put(entityId, unreadMessagesOfEntity);
 			}
 
