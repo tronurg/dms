@@ -177,7 +177,7 @@ public class CommonMethods {
 
 	static long getSmallFileLimit() {
 
-		long smallFileLimit = 0;
+		long smallFileLimit = Long.MAX_VALUE;
 
 		try {
 

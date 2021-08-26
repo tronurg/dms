@@ -190,7 +190,7 @@ public class TcpManager implements TcpServerListener {
 			DmsServer dmsServer = dmsServers.get(dmsUuid);
 
 			if (dmsServer != null) {
-				dmsServer.sendMessage(messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
+				dmsServer.queueMessage(messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
 						progressConsumer);
 			} else if (progressConsumer != null) {
 				progressConsumer.accept(-1);
@@ -204,8 +204,8 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			dmsServers
-					.forEach((dmsUuid, dmsServer) -> dmsServer.sendMessage(messagePojo, new AtomicBoolean(true), null));
+			dmsServers.forEach(
+					(dmsUuid, dmsServer) -> dmsServer.queueMessage(messagePojo, new AtomicBoolean(true), null));
 
 		});
 
@@ -267,7 +267,7 @@ public class TcpManager implements TcpServerListener {
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
-			dmsServers.remove(dmsServer.dmsUuid).close(); // TODO
+			dmsServers.remove(dmsServer.dmsUuid).close();
 		}
 
 	}
@@ -438,19 +438,19 @@ public class TcpManager implements TcpServerListener {
 		private static final Comparator<MessageContainerBase> MESSAGE_SORTER = new MessageSorter();
 
 		private final String dmsUuid;
+		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-		private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, MESSAGE_SORTER);
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
-			new Thread(this::consumeMessages).start();
+			new Thread(this::consumeMessageQueue).start();
 		}
 
-		private void consumeMessages() {
-			while (!Thread.currentThread().isInterrupted()) {
+		private void consumeMessageQueue() {
+			while (alive.get() || !messageQueue.isEmpty()) {
 				try {
 					MessageContainer messageContainer = messageQueue.take();
 					// TODO: end condition
@@ -487,7 +487,7 @@ public class TcpManager implements TcpServerListener {
 			}
 		}
 
-		private void sendMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
+		private void queueMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
 			MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
 					sendStatus, progressConsumer);
@@ -511,8 +511,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void close() {
-			// TODO: delete
-			taskQueue.shutdown();
+			// TODO
 		}
 
 	}
