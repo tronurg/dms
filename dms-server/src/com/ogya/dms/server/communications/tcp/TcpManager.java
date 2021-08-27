@@ -43,6 +43,7 @@ import com.ogya.dms.server.factory.DmsFactory;
 public class TcpManager implements TcpServerListener {
 
 	private static final Charset CHARSET = StandardCharsets.UTF_8;
+	private static final MessagePojo END_MESSAGE = new MessagePojo();
 
 	private final int serverPort;
 	private final int clientPortFrom;
@@ -453,7 +454,10 @@ public class TcpManager implements TcpServerListener {
 			while (alive.get() || !messageQueue.isEmpty()) {
 				try {
 					MessageContainer messageContainer = messageQueue.take();
-					// TODO: end condition
+					if (messageContainer.isEndMessage()) {
+						alive.set(false);
+						continue;
+					}
 					while (messageContainer.messageSender.hasNext()) {
 						if (messageContainer.sendFunction == null) {
 							messageContainer.messageSender.close();
@@ -511,7 +515,8 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void close() {
-			// TODO
+			messageQueue.put(new MessageContainer(messageCounter.getAndIncrement(), END_MESSAGE,
+					new AtomicBoolean(false), null));
 		}
 
 	}
@@ -520,13 +525,19 @@ public class TcpManager implements TcpServerListener {
 
 		private final InetAddress useLocalAddress;
 		private final Consumer<Integer> progressConsumer;
+		private final boolean endMessage;
 		private BiFunction<Integer, byte[], Boolean> sendFunction;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
 			super(messageNumber, messagePojo, sendStatus);
 			this.useLocalAddress = messagePojo.useLocalAddress;
+			this.endMessage = messagePojo == END_MESSAGE;
 			this.progressConsumer = progressConsumer;
+		}
+
+		private boolean isEndMessage() {
+			return endMessage;
 		}
 
 		@Override
