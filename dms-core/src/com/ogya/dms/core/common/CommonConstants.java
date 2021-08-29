@@ -1,5 +1,7 @@
 package com.ogya.dms.core.common;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 
 public class CommonConstants {
@@ -14,5 +16,6 @@ public class CommonConstants {
 	public static final boolean AUTO_OPEN_FILE = CommonMethods.getAutoOpenFile();
 
 	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
+	public static final Path TMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));
 
 }

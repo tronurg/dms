@@ -349,13 +349,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	private void sendBeacon(String name, String comment, Availability status, Double latitude, Double longitude,
-			String secretId) {
+			String secretId, Boolean local) {
 
 		if (!model.isServerConnected())
 			return;
 
 		Beacon beacon = new Beacon(model.getLocalUuid(), name, comment, status == null ? null : status.index(),
 				latitude, longitude, secretId);
+		beacon.local = local;
 
 		dmsClient.sendBeacon(beacon);
 
@@ -1066,7 +1067,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = getDstFile(dstFolder, fileName);
 
-			Files.move(path, dstFile);
+			if (path.getParent().equals(CommonConstants.TMP_DIR)) {
+				Files.move(path, dstFile);
+			} else {
+				Files.copy(path, dstFile);
+			}
 
 			return dstFile;
 
@@ -1538,7 +1543,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				Contact identity = model.getIdentity();
 
 				sendBeacon(identity.getName(), identity.getComment(), identity.getStatus(), identity.getLatitude(),
-						identity.getLongitude(), identity.getSecretId());
+						identity.getLongitude(), identity.getSecretId(), model.isServerLocal());
 
 				dmsClient.claimStartInfo();
 
@@ -1885,7 +1890,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, comment, null, null, null, null);
+				sendBeacon(null, comment, null, null, null, null, null);
 
 			} catch (Exception e) {
 
@@ -1917,7 +1922,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, newIdentity.getStatus(), null, null, null);
+				sendBeacon(null, null, newIdentity.getStatus(), null, null, null, null);
 
 			} catch (Exception e) {
 
@@ -3181,7 +3186,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
 
-				sendBeacon(null, null, null, latitude, longitude, null);
+				sendBeacon(null, null, null, latitude, longitude, null, null);
 
 			} catch (Exception e) {
 
@@ -3242,7 +3247,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				model.updateSecretId(secretId);
 
-				sendBeacon(null, null, null, null, null, secretId);
+				sendBeacon(null, null, null, null, null, secretId, null);
 
 			} catch (Exception e) {
 

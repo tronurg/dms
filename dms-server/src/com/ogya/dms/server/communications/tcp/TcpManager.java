@@ -476,7 +476,8 @@ public class TcpManager implements TcpServerListener {
 							messageContainer.reset();
 							updateSendFunction(messageContainer);
 						}
-						if (messageContainer.bigFile && messageContainer.messageSender.hasNext()) {
+						if (messageContainer.bigFile && messageContainer.messageSender.hasNext()
+								&& !messageQueue.isEmpty()) {
 							messageQueue.put(messageContainer);
 							break;
 						}
@@ -542,7 +543,7 @@ public class TcpManager implements TcpServerListener {
 
 		@Override
 		protected MessageSender initMessageSender(MessagePojo messagePojo, AtomicBoolean health) {
-			return DmsMessageFactory.outFeedRemote(messagePojo, health);
+			return DmsMessageFactory.outFeedServerToServer(messagePojo, health);
 		}
 
 	}

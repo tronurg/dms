@@ -24,8 +24,12 @@ public class DmsPackingFactory {
 			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.ALL, Visibility.NONE)
 			.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
-	private static ObjectMapper objectMapperRemote = objectMapper.copy().addMixIn(Beacon.class, BeaconRemoteMixin.class)
-			.addMixIn(MessagePojo.class, MessagePojoRemoteMixin.class);
+	private static ObjectMapper objectMapperServerToClient = objectMapper.copy()
+			.addMixIn(Beacon.class, BeaconServerToClientMixin.class)
+			.addMixIn(MessagePojo.class, MessagePojoServerToClientMixin.class);
+	private static ObjectMapper objectMapperServerToServer = objectMapper.copy()
+			.addMixIn(Beacon.class, BeaconServerToServerMixin.class)
+			.addMixIn(MessagePojo.class, MessagePojoServerToServerMixin.class);
 
 	public static byte[] pack(Object src) {
 
@@ -43,11 +47,27 @@ public class DmsPackingFactory {
 
 	}
 
-	public static byte[] packRemote(Object src) {
+	public static byte[] packServerToClient(Object src) {
 
 		try {
 
-			return objectMapperRemote.writeValueAsBytes(src);
+			return objectMapperServerToClient.writeValueAsBytes(src);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
+
+		return null;
+
+	}
+
+	public static byte[] packServerToServer(Object src) {
+
+		try {
+
+			return objectMapperServerToServer.writeValueAsBytes(src);
 
 		} catch (Exception e) {
 
@@ -79,14 +99,32 @@ public class DmsPackingFactory {
 
 	}
 
-	private static abstract class BeaconRemoteMixin {
+	private static abstract class BeaconServerToClientMixin {
 
 		@JsonIgnore
-		public Map<InetAddress, InetAddress> localRemoteServerIps;
+		public Boolean local;
 
 	}
 
-	private static abstract class MessagePojoRemoteMixin {
+	private static abstract class BeaconServerToServerMixin {
+
+		@JsonIgnore
+		public Map<InetAddress, InetAddress> localRemoteServerIps;
+		@JsonIgnore
+		public Boolean local;
+
+	}
+
+	private static abstract class MessagePojoServerToClientMixin {
+
+		@JsonIgnore
+		public Long useTimeout;
+		@JsonIgnore
+		public InetAddress useLocalAddress;
+
+	}
+
+	private static abstract class MessagePojoServerToServerMixin {
 
 		@JsonIgnore
 		public Long useTrackingId;

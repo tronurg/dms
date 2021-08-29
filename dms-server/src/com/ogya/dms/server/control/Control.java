@@ -346,7 +346,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		@Override
 		protected MessageSender initMessageSender(MessagePojo messagePojo, AtomicBoolean health) {
-			return DmsMessageFactory.outFeed(messagePojo, health);
+			return DmsMessageFactory.outFeedServerToClient(messagePojo, health);
 		}
 
 	}

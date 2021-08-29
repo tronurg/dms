@@ -226,7 +226,7 @@ public class DmsTest {
 ////				messageHandle.setFileHandle(
 ////						dmsHandle.createFileHandle(Paths.get("D:/Onur/JEgtK/Kýþla Geliþim/kgp_new.psb"), 2));
 //				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
-//				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
+//				messageHandle.setListHandle(dmsHandle.createListHandle(testList, 4));
 //				try {
 //					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds,
 //							dmsHandle.createMessageRules().useTrackingId(123L).useTimeout(1000L));

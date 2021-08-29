@@ -57,8 +57,12 @@ public class DmsMessageFactory {
 		return outFeed(DmsPackingFactory.pack(messagePojo), messagePojo.attachment, health);
 	}
 
-	public static MessageSender outFeedRemote(MessagePojo messagePojo, AtomicBoolean health) {
-		return outFeed(DmsPackingFactory.packRemote(messagePojo), messagePojo.attachment, health);
+	public static MessageSender outFeedServerToClient(MessagePojo messagePojo, AtomicBoolean health) {
+		return outFeed(DmsPackingFactory.packServerToClient(messagePojo), messagePojo.attachment, health);
+	}
+
+	public static MessageSender outFeedServerToServer(MessagePojo messagePojo, AtomicBoolean health) {
+		return outFeed(DmsPackingFactory.packServerToServer(messagePojo), messagePojo.attachment, health);
 	}
 
 	private static MessageSender outFeed(byte[] data, Path attachment, AtomicBoolean health) {
