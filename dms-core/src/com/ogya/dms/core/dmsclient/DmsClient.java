@@ -105,12 +105,17 @@ public class DmsClient {
 
 	}
 
-	public void sendMessage(Message message, Path attachment, String receiverUuid, Long trackingId) {
+	public void sendMessage(Message message, Path attachment, boolean linkOnlyAttachment, String receiverUuid,
+			Long trackingId) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
 				ContentType.MESSAGE, trackingId, null, null);
 
-		messagePojo.attachment = attachment;
+		if (linkOnlyAttachment) {
+			messagePojo.attachmentLink = attachment;
+		} else {
+			messagePojo.attachment = attachment;
+		}
 
 		dealerQueue.offer(messagePojo);
 
@@ -157,14 +162,19 @@ public class DmsClient {
 
 	}
 
-	public void sendTransientMessage(MessageHandleImpl message, Iterable<String> receiverUuids, Long useTrackingId,
-			Long useTimeout, InetAddress useLocalInterface) {
+	public void sendTransientMessage(MessageHandleImpl message, boolean linkOnlyAttachment,
+			Iterable<String> receiverUuids, Long useTrackingId, Long useTimeout, InetAddress useLocalInterface) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
 				String.join(";", receiverUuids), ContentType.TRANSIENT, useTrackingId, useTimeout, useLocalInterface);
 
-		if (message.getFileHandle() != null)
-			messagePojo.attachment = message.getFileHandle().getPath();
+		if (message.getFileHandle() != null) {
+			if (linkOnlyAttachment) {
+				messagePojo.attachmentLink = message.getFileHandle().getPath();
+			} else {
+				messagePojo.attachment = message.getFileHandle().getPath();
+			}
+		}
 
 		dealerQueue.offer(messagePojo);
 
@@ -323,7 +333,7 @@ public class DmsClient {
 
 			case MESSAGE:
 
-				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class), messagePojo.attachment,
+				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class), messagePojo.attachmentLink,
 						messagePojo.senderUuid);
 
 				break;
@@ -370,7 +380,7 @@ public class DmsClient {
 			case TRANSIENT:
 
 				transientMessageReceivedToListener(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
-						messagePojo.attachment, messagePojo.senderUuid);
+						messagePojo.attachmentLink, messagePojo.senderUuid);
 
 				break;
 

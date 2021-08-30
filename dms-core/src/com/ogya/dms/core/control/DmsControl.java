@@ -669,7 +669,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			copyMessage.setAttachment(path.getFileName().toString());
 		}
 
-		dmsClient.sendMessage(copyMessage, path, receiverUuid, message.getId());
+		dmsClient.sendMessage(copyMessage, path, model.isServerLocal(), receiverUuid, message.getId());
 
 	}
 
@@ -1067,11 +1067,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Path dstFile = getDstFile(dstFolder, fileName);
 
-			if (path.getParent().equals(CommonConstants.TMP_DIR)) {
-				Files.move(path, dstFile);
-			} else {
-				Files.copy(path, dstFile);
-			}
+			Files.move(path, dstFile);
 
 			return dstFile;
 
@@ -1866,7 +1862,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		response.setTrackingId(trackingId);
 		response.setStatusResponseFlag(1);
 
-		dmsClient.sendTransientMessage(response, Arrays.asList(remoteUuid), null, null, null);
+		dmsClient.sendTransientMessage(response, false, Arrays.asList(remoteUuid), null, null, null);
 
 	}
 
@@ -3533,8 +3529,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		outgoingMessage.setTrackingId(messageRulesImpl.getTrackingId());
 
-		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, messageRulesImpl.getTrackingId(),
-				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
+		dmsClient.sendTransientMessage(outgoingMessage, model.isServerLocal(), contactUuids,
+				messageRulesImpl.getTrackingId(), messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
 
 	}
 

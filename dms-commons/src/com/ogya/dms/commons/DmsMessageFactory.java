@@ -150,10 +150,14 @@ public class DmsMessageFactory {
 			try {
 
 				MessagePojo messagePojo = DmsPackingFactory.unpack(data, MessagePojo.class);
-				messagePojo.attachment = path;
 
-				if (!fileError)
+				if (path != null) {
+					messagePojo.attachmentLink = path;
+				}
+
+				if (!fileError) {
 					this.messagePojo = messagePojo;
+				}
 
 			} catch (Exception e) {
 				clearResources();

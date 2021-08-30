@@ -17,10 +17,12 @@ public class MessagePojo {
 	@JsonProperty("d")
 	public ContentType contentType;
 	@JsonProperty("e")
-	public Long useTrackingId;
+	public Path attachmentLink;
 	@JsonProperty("f")
-	public Long useTimeout;
+	public Long useTrackingId;
 	@JsonProperty("g")
+	public Long useTimeout;
+	@JsonProperty("h")
 	public InetAddress useLocalAddress;
 
 	@JsonIgnore

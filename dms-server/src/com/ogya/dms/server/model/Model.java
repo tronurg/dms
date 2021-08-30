@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -175,6 +176,7 @@ public class Model {
 					break;
 
 				final LocalUser sender = localUsers.get(messagePojo.senderUuid);
+				final Path attachment = messagePojo.attachmentLink;
 
 				final boolean trackedMessage = messagePojo.useTrackingId != null
 						&& Objects.equals(messagePojo.contentType, ContentType.MESSAGE);
@@ -195,15 +197,61 @@ public class Model {
 
 				List<String> localReceiverUuids = new ArrayList<String>();
 				Map<String, Set<String>> remoteServerReceiverUuids = new HashMap<String, Set<String>>();
-				List<String> unreachableUuids = new ArrayList<String>();
+				List<String> unsuccessfulUuids = new ArrayList<String>();
 
 				for (String receiverUuid : receiverUuids) {
 
 					if ((localUser = localUsers.get(receiverUuid)) != null) {
 
-						if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && messagePojo.attachment != null) {
+						if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
 
-							// TODO
+							try {
+								Path copyOfAttachment = Files.copy(attachment, Files.createTempFile("dms", null),
+										StandardCopyOption.REPLACE_EXISTING);
+								final SendStatus sendStatus = new SendStatus(
+										Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
+												? messagePojo.useTrackingId
+												: null,
+										messagePojo.senderUuid);
+								sendStatus.receiverUuids.add(receiverUuid);
+								sendStatuses.add(sendStatus);
+								final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload,
+										messagePojo.senderUuid, null, messagePojo.contentType, null,
+										messagePojo.useTimeout, messagePojo.useLocalAddress);
+								localMessagePojo.attachmentLink = copyOfAttachment;
+								listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
+
+									if (progress < 0) {
+										sendStatuses.remove(sendStatus);
+										deleteTmpFile(copyOfAttachment);
+									} else if (progress == 100) {
+										sendStatuses.remove(sendStatus);
+									}
+
+									if (trackedMessage) {
+
+										MessagePojo progressMessagePojo = new MessagePojo(
+												DmsPackingFactory.pack(progress), String.join(";", uuidList), null,
+												ContentType.PROGRESS_MESSAGE, messagePojo.useTrackingId, null, null);
+
+										listener.sendToLocalUsers(progressMessagePojo, null, null,
+												messagePojo.senderUuid);
+
+									} else if (trackedTransientMessage && progress < 0) {
+
+										MessagePojo progressMessagePojo = new MessagePojo(
+												DmsPackingFactory.pack(progress), String.join(";", uuidList), null,
+												ContentType.PROGRESS_TRANSIENT, messagePojo.useTrackingId, null, null);
+
+										listener.sendToLocalUsers(progressMessagePojo, null, null,
+												messagePojo.senderUuid);
+
+									}
+
+								}, receiverUuid);
+							} catch (Exception e) {
+								unsuccessfulUuids.add(receiverUuid);
+							}
 
 							continue;
 
@@ -218,15 +266,14 @@ public class Model {
 
 					} else {
 
-						unreachableUuids.add(receiverUuid);
+						unsuccessfulUuids.add(receiverUuid);
 
 					}
 
 				}
 
-				if (localReceiverUuids.isEmpty() && remoteServerReceiverUuids.isEmpty()
-						&& messagePojo.attachment != null) {
-					deleteTmpFile(messagePojo.attachment);
+				if (localReceiverUuids.isEmpty() && remoteServerReceiverUuids.isEmpty() && attachment != null) {
+					deleteTmpFile(attachment);
 				}
 
 				final AtomicInteger partySize = new AtomicInteger(remoteServerReceiverUuids.size());
@@ -244,14 +291,14 @@ public class Model {
 
 					final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
 							null, messagePojo.contentType, null, messagePojo.useTimeout, messagePojo.useLocalAddress);
-					localMessagePojo.attachment = messagePojo.attachment;
+					localMessagePojo.attachment = attachment;
 
 					listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
 
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
-							if (partySize.decrementAndGet() == 0 && messagePojo.attachment != null) {
-								deleteTmpFile(messagePojo.attachment);
+							if (partySize.decrementAndGet() == 0 && attachment != null) {
+								deleteTmpFile(attachment);
 							}
 						}
 
@@ -277,10 +324,10 @@ public class Model {
 
 				}
 
-				if (trackedTransientMessage && !unreachableUuids.isEmpty()) {
+				if (trackedTransientMessage && !unsuccessfulUuids.isEmpty()) {
 
 					MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(-1),
-							String.join(";", unreachableUuids), null, ContentType.PROGRESS_TRANSIENT,
+							String.join(";", unsuccessfulUuids), null, ContentType.PROGRESS_TRANSIENT,
 							messagePojo.useTrackingId, null, null);
 
 					listener.sendToLocalUsers(progressMessagePojo, null, null, messagePojo.senderUuid);
@@ -302,14 +349,14 @@ public class Model {
 					final MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
 							String.join(";", receiverMapIdList), messagePojo.contentType, null, messagePojo.useTimeout,
 							messagePojo.useLocalAddress);
-					remoteMessagePojo.attachment = messagePojo.attachment;
+					remoteMessagePojo.attachment = attachment;
 
 					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus.status, progress -> {
 
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
-							if (partySize.decrementAndGet() == 0 && messagePojo.attachment != null) {
-								deleteTmpFile(messagePojo.attachment);
+							if (partySize.decrementAndGet() == 0 && attachment != null) {
+								deleteTmpFile(attachment);
 							}
 						}
 
@@ -360,20 +407,15 @@ public class Model {
 			DmsServer remoteServer = remoteServers.get(dmsUuid);
 
 			if (!(Objects.equals(messagePojo.contentType, ContentType.BCON) || remoteServer == null)) {
-
 				User remoteUser = remoteServer.mappedUsers.get(messagePojo.senderUuid);
 				String senderUuid = remoteUser == null ? messagePojo.senderUuid : remoteUser.beacon.uuid;
+				messagePojo.senderUuid = senderUuid;
 				if (messagePojo.receiverUuid != null) {
 					for (String receiverMapId : messagePojo.receiverUuid.split(";")) {
 						User localUser = mappedUsers.get(receiverMapId);
 						receiverUuids.add(localUser == null ? receiverMapId : localUser.beacon.uuid);
 					}
 				}
-
-				Path attachment = messagePojo.attachment;
-				messagePojo = new MessagePojo(payload, senderUuid, null, messagePojo.contentType, null, null, null);
-				messagePojo.attachment = attachment;
-
 			}
 
 			switch (messagePojo.contentType) {
@@ -416,25 +458,45 @@ public class Model {
 
 			default:
 
+				final Path attachment = messagePojo.attachmentLink;
 				List<String> localReceiverUuids = new ArrayList<String>();
 
 				for (String receiverUuid : receiverUuids) {
 					LocalUser localUser = localUsers.get(receiverUuid);
 					if (localUser == null)
 						continue;
-					if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && messagePojo.attachment != null) {
-						// TODO
+					if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
+						try {
+							Path copyOfAttachment = Files.copy(attachment, Files.createTempFile("dms", null),
+									StandardCopyOption.REPLACE_EXISTING);
+							MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
+									null, messagePojo.contentType, null, null, null);
+							localMessagePojo.attachmentLink = copyOfAttachment;
+							listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
+
+								if (progress < 0) {
+									deleteTmpFile(copyOfAttachment);
+								}
+
+							}, receiverUuid);
+						} catch (Exception e) {
+
+						}
 						continue;
 					}
 					localReceiverUuids.add(receiverUuid);
 				}
 
-				if (localReceiverUuids.isEmpty())
+				if (localReceiverUuids.isEmpty()) {
+					deleteTmpFile(attachment);
 					break;
+				}
 
-				final Path attachment = messagePojo.attachment;
+				MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
+						messagePojo.contentType, null, null, null);
+				localMessagePojo.attachment = attachment;
 
-				listener.sendToLocalUsers(messagePojo, null, (uuidList, progress) -> {
+				listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
 
 					if ((progress < 0 || progress == 100) && attachment != null) {
 						deleteTmpFile(attachment);
