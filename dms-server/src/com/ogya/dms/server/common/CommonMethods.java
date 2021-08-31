@@ -194,6 +194,25 @@ public class CommonMethods {
 
 	}
 
+	static String getTempDir() {
+
+		String tempDir = System.getProperty("java.io.tmpdir");
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/TEMP_DIR")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			tempDir = node.getTextContent();
+
+		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+
+		}
+
+		return tempDir;
+
+	}
+
 	static List<InetAddress> getPreferredIps() {
 
 		List<InetAddress> preferredIps = new ArrayList<InetAddress>();

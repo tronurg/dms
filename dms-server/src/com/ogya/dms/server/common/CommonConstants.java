@@ -19,6 +19,7 @@ public class CommonConstants {
 	public static final int CLIENT_PORT_TO = CommonMethods.getClientPortTo();
 	public static final long SMALL_FILE_LIMIT = CommonMethods.getSmallFileLimit();
 	public static final List<InetAddress> PREFERRED_IPS = CommonMethods.getPreferredIps();
+	public static final String TEMP_DIR = CommonMethods.getTempDir();
 
 	public static final int CONN_TIMEOUT_MS = 5000;
 	public static final Path TMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));

@@ -35,8 +35,9 @@ import com.ogya.dms.server.model.intf.ModelListener;
 public class Model {
 
 	private static final MessagePojo TEST = new MessagePojo();
-
 	private static final AtomicInteger MAP_ID = new AtomicInteger(0);
+
+	private final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
 
 	private final ModelListener listener;
 
@@ -52,11 +53,8 @@ public class Model {
 	private final Set<InetAddress> remoteAddresses = new HashSet<InetAddress>();
 
 	public Model(ModelListener listener) {
-
 		this.listener = listener;
-
 		init();
-
 	}
 
 	private void init() {
@@ -206,6 +204,7 @@ public class Model {
 						if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
 
 							try {
+								Files.createDirectories(tempDir);
 								Path copyOfAttachment = Files.copy(attachment, Files.createTempFile("dms", null),
 										StandardCopyOption.REPLACE_EXISTING);
 								final SendStatus sendStatus = new SendStatus(
@@ -467,6 +466,7 @@ public class Model {
 						continue;
 					if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
 						try {
+							Files.createDirectories(tempDir);
 							Path copyOfAttachment = Files.copy(attachment, Files.createTempFile("dms", null),
 									StandardCopyOption.REPLACE_EXISTING);
 							MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
