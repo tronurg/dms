@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -227,25 +228,8 @@ public class Model {
 										sendStatuses.remove(sendStatus);
 									}
 
-									if (trackedMessage) {
-
-										MessagePojo progressMessagePojo = new MessagePojo(
-												DmsPackingFactory.pack(progress), String.join(";", uuidList), null,
-												ContentType.PROGRESS_MESSAGE, messagePojo.useTrackingId, null, null);
-
-										listener.sendToLocalUsers(progressMessagePojo, null, null,
-												messagePojo.senderUuid);
-
-									} else if (trackedTransientMessage && progress < 0) {
-
-										MessagePojo progressMessagePojo = new MessagePojo(
-												DmsPackingFactory.pack(progress), String.join(";", uuidList), null,
-												ContentType.PROGRESS_TRANSIENT, messagePojo.useTrackingId, null, null);
-
-										listener.sendToLocalUsers(progressMessagePojo, null, null,
-												messagePojo.senderUuid);
-
-									}
+									sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.useTrackingId,
+											trackedMessage, trackedTransientMessage);
 
 								}, receiverUuid);
 							} catch (Exception e) {
@@ -301,23 +285,8 @@ public class Model {
 							}
 						}
 
-						if (trackedMessage) {
-
-							MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
-									String.join(";", uuidList), null, ContentType.PROGRESS_MESSAGE,
-									messagePojo.useTrackingId, null, null);
-
-							listener.sendToLocalUsers(progressMessagePojo, null, null, messagePojo.senderUuid);
-
-						} else if (trackedTransientMessage && progress < 0) {
-
-							MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
-									String.join(";", uuidList), null, ContentType.PROGRESS_TRANSIENT,
-									messagePojo.useTrackingId, null, null);
-
-							listener.sendToLocalUsers(progressMessagePojo, null, null, messagePojo.senderUuid);
-
-						}
+						sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.useTrackingId,
+								trackedMessage, trackedTransientMessage);
 
 					}, localReceiverUuids.toArray(new String[0]));
 
@@ -359,23 +328,8 @@ public class Model {
 							}
 						}
 
-						if (trackedMessage) {
-
-							MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
-									String.join(";", uuidList), null, ContentType.PROGRESS_MESSAGE,
-									messagePojo.useTrackingId, null, null);
-
-							listener.sendToLocalUsers(progressMessagePojo, null, null, messagePojo.senderUuid);
-
-						} else if (trackedTransientMessage && progress < 0) {
-
-							MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
-									String.join(";", uuidList), null, ContentType.PROGRESS_TRANSIENT,
-									messagePojo.useTrackingId, null, null);
-
-							listener.sendToLocalUsers(progressMessagePojo, null, null, messagePojo.senderUuid);
-
-						}
+						sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.useTrackingId,
+								trackedMessage, trackedTransientMessage);
 
 					});
 
@@ -573,6 +527,27 @@ public class Model {
 				null, null);
 
 		listener.sendToAllRemoteServers(remoteMessagePojo);
+
+	}
+
+	private void sendProgress(Collection<String> uuidList, Integer progress, String senderUuid, Long trackingId,
+			boolean trackedMessage, boolean trackedTransientMessage) {
+
+		if (trackedMessage) {
+
+			MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
+					String.join(";", uuidList), null, ContentType.PROGRESS_MESSAGE, trackingId, null, null);
+
+			listener.sendToLocalUsers(progressMessagePojo, null, null, senderUuid);
+
+		} else if (trackedTransientMessage && progress < 0) {
+
+			MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
+					String.join(";", uuidList), null, ContentType.PROGRESS_TRANSIENT, trackingId, null, null);
+
+			listener.sendToLocalUsers(progressMessagePojo, null, null, senderUuid);
+
+		}
 
 	}
 
