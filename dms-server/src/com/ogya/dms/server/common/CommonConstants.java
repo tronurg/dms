@@ -1,8 +1,6 @@
 package com.ogya.dms.server.common;
 
 import java.net.InetAddress;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +20,5 @@ public class CommonConstants {
 	public static final String TEMP_DIR = CommonMethods.getTempDir();
 
 	public static final int CONN_TIMEOUT_MS = 5000;
-	public static final Path TMP_DIR = Paths.get(System.getProperty("java.io.tmpdir"));
 
 }
