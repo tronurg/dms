@@ -74,7 +74,7 @@ public class ForwardSelectionPane extends GridPane {
 
 		super();
 
-		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
 
 		init();
 

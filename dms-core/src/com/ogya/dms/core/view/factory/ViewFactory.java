@@ -3,6 +3,7 @@ package com.ogya.dms.core.view.factory;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -11,11 +12,14 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
@@ -71,7 +75,7 @@ public class ViewFactory {
 
 	}
 
-	public static Button newBackBtn(BooleanProperty highlightProperty) {
+	public static Button newBackBtn(BooleanProperty highlightProperty, Parent parent) {
 
 		Button btn = new Button();
 
@@ -90,6 +94,16 @@ public class ViewFactory {
 			final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
 			btn.effectProperty().bind(
 					Bindings.createObjectBinding(() -> highlightProperty.get() ? highlight : null, highlightProperty));
+		}
+
+		if (parent != null) {
+			parent.setFocusTraversable(true);
+			parent.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+				if (!Objects.equals(e.getCode(), KeyCode.ESCAPE))
+					return;
+				btn.fire();
+				e.consume();
+			});
 		}
 
 		return btn;

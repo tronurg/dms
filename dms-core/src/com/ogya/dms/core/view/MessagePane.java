@@ -210,7 +210,7 @@ class MessagePane extends BorderPane {
 		super();
 
 		this.entityId = entityId;
-		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
 
 		init();
 

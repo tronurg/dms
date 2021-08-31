@@ -57,7 +57,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		super();
 
-		this.backBtn = ViewFactory.newBackBtn(unreadProperty);
+		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
 
 		init();
 
