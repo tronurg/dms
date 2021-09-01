@@ -214,13 +214,16 @@ public class DmsMessageFactory {
 				return;
 			try {
 				inputStream.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 
 			}
 			inputStream = null;
 		}
 
 		public boolean hasNext() {
+			if (!(started || health.get())) {
+				close();
+			}
 			return !ended;
 		}
 

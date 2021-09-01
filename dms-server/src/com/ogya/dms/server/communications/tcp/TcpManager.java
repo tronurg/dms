@@ -458,6 +458,7 @@ public class TcpManager implements TcpServerListener {
 						alive.set(false);
 						continue;
 					}
+					messageContainer.checkIn();
 					while (messageContainer.messageSender.hasNext()) {
 						if (messageContainer.sendFunction == null) {
 							messageContainer.messageSender.close();

@@ -162,6 +162,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					if (messageContainer == null)
 						continue;
 
+					messageContainer.checkIn();
 					while (messageContainer.messageSender.hasNext()) {
 						if (messageContainer.successfulUuids.isEmpty()) {
 							messageContainer.messageSender.close();
