@@ -1,6 +1,5 @@
 /.metadata/
 .settings
 bin
-/workspace/database
-/workspace/received
-/workspace/sent
+workspace/*
+!workspace/plugins
