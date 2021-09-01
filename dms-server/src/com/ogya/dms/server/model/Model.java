@@ -132,7 +132,7 @@ public class Model {
 
 			}
 
-			case REQ_STRT:
+			case REQ_STRT: {
 
 				sendAllBeaconsToLocalUser(messagePojo.senderUuid);
 
@@ -140,13 +140,17 @@ public class Model {
 
 				break;
 
-			case ADD_IPS:
+			}
+
+			case ADD_IPS: {
 
 				addRemoteIps(DmsPackingFactory.unpack(messagePojo.payload, InetAddress[].class));
 
 				break;
 
-			case REMOVE_IPS:
+			}
+
+			case REMOVE_IPS: {
 
 				InetAddress[] ips = DmsPackingFactory.unpack(messagePojo.payload, InetAddress[].class);
 
@@ -157,10 +161,27 @@ public class Model {
 
 				break;
 
+			}
+
 			case CANCEL: {
 
 				sendStatuses.forEach(sendStatus -> {
 					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+							&& Objects.equals(sendStatus.contentType, ContentType.MESSAGE)
+							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
+						sendStatus.status.set(false);
+					}
+				});
+
+				break;
+
+			}
+
+			case CANCEL_TRANSIENT: {
+
+				sendStatuses.forEach(sendStatus -> {
+					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+							&& Objects.equals(sendStatus.contentType, ContentType.TRANSIENT)
 							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
 						sendStatus.status.set(false);
 					}
@@ -210,11 +231,8 @@ public class Model {
 								Path copyOfAttachment = Files.copy(attachment,
 										Files.createTempFile(sharedTempDir, "dms", null),
 										StandardCopyOption.REPLACE_EXISTING);
-								final SendStatus sendStatus = new SendStatus(
-										Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
-												? messagePojo.useTrackingId
-												: null,
-										messagePojo.senderUuid);
+								final SendStatus sendStatus = new SendStatus(messagePojo.useTrackingId,
+										messagePojo.contentType, messagePojo.senderUuid);
 								sendStatus.receiverUuids.add(receiverUuid);
 								sendStatuses.add(sendStatus);
 								final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload,
@@ -267,9 +285,7 @@ public class Model {
 
 					partySize.incrementAndGet();
 
-					final SendStatus sendStatus = new SendStatus(
-							Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId
-									: null,
+					final SendStatus sendStatus = new SendStatus(messagePojo.useTrackingId, messagePojo.contentType,
 							messagePojo.senderUuid);
 					sendStatus.receiverUuids.addAll(localReceiverUuids);
 					sendStatuses.add(sendStatus);
@@ -306,9 +322,7 @@ public class Model {
 
 				remoteServerReceiverUuids.forEach((dmsUuid, uuidList) -> {
 
-					final SendStatus sendStatus = new SendStatus(
-							Objects.equals(messagePojo.contentType, ContentType.MESSAGE) ? messagePojo.useTrackingId
-									: null,
+					final SendStatus sendStatus = new SendStatus(messagePojo.useTrackingId, messagePojo.contentType,
 							messagePojo.senderUuid);
 					sendStatus.receiverUuids.addAll(uuidList);
 					sendStatuses.add(sendStatus);
@@ -870,13 +884,15 @@ public class Model {
 	private class SendStatus {
 
 		private final Long trackingId;
+		private final ContentType contentType;
 		private final String senderUuid;
 		private final AtomicBoolean status = new AtomicBoolean(true);
 		private final Set<String> receiverUuids = Collections.synchronizedSet(new HashSet<String>());
 
-		private SendStatus(Long trackingId, String senderUuid) {
+		private SendStatus(Long trackingId, ContentType contentType, String senderUuid) {
 
 			this.trackingId = trackingId;
+			this.contentType = contentType;
 			this.senderUuid = senderUuid;
 
 		}

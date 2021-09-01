@@ -3535,6 +3535,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void cancelMessage(Long useTrackingId) {
+
+		dmsClient.cancelTransientMessage(useTrackingId);
+
+	}
+
+	@Override
 	public Future<Long> sendGuiMessageToContact(final String message, final Long contactId) {
 
 		return newUncancellableFuture(taskQueue.submit(() -> {

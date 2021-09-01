@@ -87,6 +87,8 @@ public interface DmsHandle {
 
 	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules);
 
+	void cancelMessage(Long useTrackingId);
+
 	Future<Long> sendGuiMessageToContact(String message, Long contactId);
 
 	Future<Long> sendGuiMessageToGroup(String message, Long groupId);
