@@ -30,6 +30,7 @@ import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
+import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
@@ -37,7 +38,8 @@ public class Model {
 	private static final MessagePojo TEST = new MessagePojo();
 	private static final AtomicInteger MAP_ID = new AtomicInteger(0);
 
-	private final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
+	private final Path ioTempDir = Paths.get(CommonConstants.IO_TMP_DIR);
+	private final Path sharedTempDir = Paths.get(CommonConstants.SHARED_TMP_DIR);
 
 	private final ModelListener listener;
 
@@ -204,8 +206,9 @@ public class Model {
 						if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
 
 							try {
-								Files.createDirectories(tempDir);
-								Path copyOfAttachment = Files.copy(attachment, Files.createTempFile("dms", null),
+								Files.createDirectories(sharedTempDir);
+								Path copyOfAttachment = Files.copy(attachment,
+										Files.createTempFile(sharedTempDir, "dms", null),
 										StandardCopyOption.REPLACE_EXISTING);
 								final SendStatus sendStatus = new SendStatus(
 										Objects.equals(messagePojo.contentType, ContentType.MESSAGE)
@@ -222,7 +225,7 @@ public class Model {
 
 									if (progress < 0) {
 										sendStatuses.remove(sendStatus);
-										deleteTmpFile(copyOfAttachment);
+										deleteFileInFolder(copyOfAttachment, sharedTempDir);
 									} else if (progress == 100) {
 										sendStatuses.remove(sendStatus);
 									}
@@ -254,8 +257,8 @@ public class Model {
 
 				}
 
-				if (localReceiverUuids.isEmpty() && remoteServerReceiverUuids.isEmpty() && attachment != null) {
-					deleteTmpFile(attachment);
+				if (localReceiverUuids.isEmpty() && remoteServerReceiverUuids.isEmpty()) {
+					deleteFileInFolder(attachment, ioTempDir);
 				}
 
 				final AtomicInteger partySize = new AtomicInteger(remoteServerReceiverUuids.size());
@@ -279,8 +282,8 @@ public class Model {
 
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
-							if (partySize.decrementAndGet() == 0 && attachment != null) {
-								deleteTmpFile(attachment);
+							if (partySize.decrementAndGet() == 0) {
+								deleteFileInFolder(attachment, ioTempDir);
 							}
 						}
 
@@ -322,8 +325,8 @@ public class Model {
 
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
-							if (partySize.decrementAndGet() == 0 && attachment != null) {
-								deleteTmpFile(attachment);
+							if (partySize.decrementAndGet() == 0) {
+								deleteFileInFolder(attachment, ioTempDir);
 							}
 						}
 
@@ -419,8 +422,9 @@ public class Model {
 						continue;
 					if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
 						try {
-							Files.createDirectories(tempDir);
-							Path copyOfAttachment = Files.copy(attachment, Files.createTempFile("dms", null),
+							Files.createDirectories(sharedTempDir);
+							Path copyOfAttachment = Files.copy(attachment,
+									Files.createTempFile(sharedTempDir, "dms", null),
 									StandardCopyOption.REPLACE_EXISTING);
 							MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
 									null, messagePojo.contentType, null, null, null);
@@ -428,7 +432,7 @@ public class Model {
 							listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
 
 								if (progress < 0) {
-									deleteTmpFile(copyOfAttachment);
+									deleteFileInFolder(copyOfAttachment, sharedTempDir);
 								}
 
 							}, receiverUuid);
@@ -441,7 +445,7 @@ public class Model {
 				}
 
 				if (localReceiverUuids.isEmpty()) {
-					deleteTmpFile(attachment);
+					deleteFileInFolder(attachment, ioTempDir);
 					break;
 				}
 
@@ -451,8 +455,8 @@ public class Model {
 
 				listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
 
-					if ((progress < 0 || progress == 100) && attachment != null) {
-						deleteTmpFile(attachment);
+					if ((progress < 0 || progress == 100)) {
+						deleteFileInFolder(attachment, ioTempDir);
 					}
 
 				}, localReceiverUuids.toArray(new String[0]));
@@ -775,8 +779,8 @@ public class Model {
 
 	}
 
-	private void deleteTmpFile(Path path) {
-		if (path == null || !path.getParent().equals(tempDir))
+	private void deleteFileInFolder(Path path, Path folder) {
+		if (path == null || !path.getParent().equals(folder))
 			return;
 		try {
 			Files.deleteIfExists(path);

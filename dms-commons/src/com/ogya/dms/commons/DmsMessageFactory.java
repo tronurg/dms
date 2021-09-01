@@ -8,7 +8,6 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +17,6 @@ import java.util.function.Consumer;
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageFactory {
-
-	private final Path tempDir = Paths.get(System.getProperty("java.io.tmpdir"));
 
 	private final Consumer<MessagePojo> messageConsumer;
 	private final Map<Integer, MessageReceiver> messageReceivers = new HashMap<Integer, MessageReceiver>();
@@ -83,7 +80,6 @@ public class DmsMessageFactory {
 			this.remaining = remaining;
 			if (remaining > 0) {
 				try {
-					Files.createDirectories(tempDir);
 					path = Files.createTempFile("dms", null);
 					outputStream = new BufferedOutputStream(Files.newOutputStream(path));
 				} catch (IOException e) {

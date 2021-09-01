@@ -12,7 +12,6 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.w3c.dom.Document;
@@ -47,8 +46,8 @@ public class CommonMethods {
 
 			intercomPort = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return intercomPort;
@@ -66,8 +65,8 @@ public class CommonMethods {
 
 			multicastIp = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return multicastIp;
@@ -85,36 +84,11 @@ public class CommonMethods {
 
 			multicastPort = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return multicastPort;
-
-	}
-
-	static int getBeaconIntervalMs() {
-
-		int beaconIntervalMs = 2000;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/BEACON_INTERVAL_MS")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			beaconIntervalMs = Integer.parseInt(node.getTextContent());
-
-			if (beaconIntervalMs < 1000)
-				beaconIntervalMs = 1000;
-
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
-				| NumberFormatException e) {
-
-			e.printStackTrace();
-
-		}
-
-		return beaconIntervalMs;
 
 	}
 
@@ -129,8 +103,8 @@ public class CommonMethods {
 
 			serverPort = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return serverPort;
@@ -148,8 +122,8 @@ public class CommonMethods {
 
 			clientPortFrom = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return clientPortFrom;
@@ -167,11 +141,35 @@ public class CommonMethods {
 
 			clientPortTo = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
 		return clientPortTo;
+
+	}
+
+	static int getBeaconIntervalMs() {
+
+		int beaconIntervalMs = 5000;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/BEACON_INTERVAL_MS")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			beaconIntervalMs = Integer.parseInt(node.getTextContent());
+
+			if (beaconIntervalMs < 1000)
+				beaconIntervalMs = 1000;
+
+		} catch (NullPointerException e) {
+			System.out.println(String.format("BEACON_INTERVAL_MS set to default: %d", beaconIntervalMs));
+		} catch (Exception e) {
+
+		}
+
+		return beaconIntervalMs;
 
 	}
 
@@ -186,7 +184,9 @@ public class CommonMethods {
 
 			smallFileLimit = Long.parseLong(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (NullPointerException e) {
+			System.out.println(String.format("SMALL_FILE_LIMIT set to default: %d", smallFileLimit));
+		} catch (Exception e) {
 
 		}
 
@@ -194,22 +194,24 @@ public class CommonMethods {
 
 	}
 
-	static String getTempDir() {
+	static String getSharedTmpDir() {
 
-		String tempDir = System.getProperty("java.io.tmpdir");
+		String sharedTmpDir = CommonConstants.IO_TMP_DIR;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/TEMP_DIR")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/SHARED_TMP_DIR")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			tempDir = node.getTextContent();
+			sharedTmpDir = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (NullPointerException e) {
+			System.out.println(String.format("SHARED_TMP_DIR set to default: %s", sharedTmpDir));
+		} catch (Exception e) {
 
 		}
 
-		return tempDir;
+		return sharedTmpDir;
 
 	}
 
@@ -231,7 +233,7 @@ public class CommonMethods {
 				}
 			}
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (Exception e) {
 
 		}
 

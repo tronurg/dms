@@ -16,7 +16,6 @@ import java.util.ResourceBundle;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -191,7 +190,9 @@ public class CommonMethods {
 
 			serverIp = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (NullPointerException e) {
+			System.out.println(String.format("SERVER_IP set to default: %s", serverIp));
+		} catch (Exception e) {
 
 		}
 
@@ -201,7 +202,7 @@ public class CommonMethods {
 
 	static int getServerPort() {
 
-		int serverPort = 0;
+		int serverPort = -1;
 
 		try {
 
@@ -210,11 +211,8 @@ public class CommonMethods {
 
 			serverPort = Integer.parseInt(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
-				| NumberFormatException e) {
-
+		} catch (Exception e) {
 			e.printStackTrace();
-
 		}
 
 		return serverPort;
@@ -223,7 +221,7 @@ public class CommonMethods {
 
 	static String getDbPath() {
 
-		String dbPath = "./h2";
+		String dbPath = "./dms_db";
 
 		try {
 
@@ -232,7 +230,9 @@ public class CommonMethods {
 
 			dbPath = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
+		} catch (NullPointerException e) {
+			System.out.println(String.format("DB_PATH set to default: %s", dbPath));
+		} catch (Exception e) {
 
 		}
 
@@ -251,9 +251,9 @@ public class CommonMethods {
 
 			fileExplorerPath = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
-			e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.out.println(String.format("FILE_EXPLORER_PATH set to default: %s", fileExplorerPath));
+		} catch (Exception e) {
 
 		}
 
@@ -272,10 +272,9 @@ public class CommonMethods {
 
 			maxFileLength = Long.parseLong(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException
-				| NumberFormatException e) {
-
-			e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.out.println(String.format("MAX_FILE_LENGTH set to default: %d", maxFileLength));
+		} catch (Exception e) {
 
 		}
 
@@ -294,9 +293,9 @@ public class CommonMethods {
 
 			sendFolder = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
-			e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.out.println(String.format("SEND_FOLDER set to default: %s", sendFolder));
+		} catch (Exception e) {
 
 		}
 
@@ -306,7 +305,7 @@ public class CommonMethods {
 
 	static String getReceiveFolder() {
 
-		String receiveFolder = "./receive";
+		String receiveFolder = "./received";
 
 		try {
 
@@ -315,9 +314,9 @@ public class CommonMethods {
 
 			receiveFolder = node.getTextContent();
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
-			e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.out.println(String.format("RECEIVE_FOLDER set to default: %s", receiveFolder));
+		} catch (Exception e) {
 
 		}
 
@@ -327,7 +326,7 @@ public class CommonMethods {
 
 	static boolean getAutoOpenFile() {
 
-		boolean autoOpenFile = false;
+		boolean autoOpenFile = true;
 
 		try {
 
@@ -336,9 +335,9 @@ public class CommonMethods {
 
 			autoOpenFile = Boolean.valueOf(node.getTextContent());
 
-		} catch (XPathExpressionException | SAXException | IOException | ParserConfigurationException e) {
-
-			e.printStackTrace();
+		} catch (NullPointerException e) {
+			System.out.println(String.format("AUTO_OPEN_FILE set to default: %s", autoOpenFile));
+		} catch (Exception e) {
 
 		}
 
