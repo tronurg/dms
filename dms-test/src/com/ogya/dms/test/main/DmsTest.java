@@ -6,6 +6,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.List;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -212,12 +213,10 @@ public class DmsTest {
 					e1.printStackTrace();
 				}
 
+				final List<Long> selectedContactIds = csh.getSelectedContactIds();
+
 				csh.resetSelection();
 
-//				final List<Long> selectedContactIds = csh.getSelectedContactIds();
-//
-//				csh.resetSelection();
-//
 //				TestPojo testPojo = new TestPojo();
 //				List<TestPojo> testList = new ArrayList<TestPojo>();
 //				testList.add(testPojo);
@@ -234,7 +233,7 @@ public class DmsTest {
 //					e1.printStackTrace();
 //				}
 //
-//				if (selectedContactIds.size() == 1)
+//				if (selectedContactIds.size() == 1) {
 //					try {
 //						System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
 //								dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0)).get(),
@@ -242,6 +241,7 @@ public class DmsTest {
 //					} catch (InterruptedException | ExecutionException e1) {
 //						e1.printStackTrace();
 //					}
+//				}
 
 			});
 

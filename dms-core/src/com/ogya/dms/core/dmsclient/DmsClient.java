@@ -180,9 +180,9 @@ public class DmsClient {
 
 	}
 
-	public void cancelTransientMessage(Long useTrackingId) {
+	public void cancelTransientMessage(Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, useTrackingId, null, null));
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, trackingId, null, null));
 
 	}
 

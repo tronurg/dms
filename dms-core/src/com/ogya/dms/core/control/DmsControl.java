@@ -1354,9 +1354,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			}
 
-			if (progress < 0)
+			if (progress < 0) {
 				listenerTaskQueue
 						.execute(() -> dmsListeners.forEach(listener -> listener.messageFailed(trackingId, remoteIds)));
+			} else {
+				listenerTaskQueue.execute(() -> dmsListeners
+						.forEach(listener -> listener.sendingMessage(trackingId, remoteIds, progress)));
+			}
 
 		});
 
@@ -3535,9 +3539,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void cancelMessage(Long useTrackingId) {
+	public void cancelMessage(Long trackingId) {
 
-		dmsClient.cancelTransientMessage(useTrackingId);
+		dmsClient.cancelTransientMessage(trackingId);
 
 	}
 

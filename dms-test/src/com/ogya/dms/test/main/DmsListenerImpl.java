@@ -102,6 +102,16 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 	}
 
 	@Override
+	public void sendingMessage(Long trackingId, List<Long> contactIds, int progress) {
+
+		System.out.println(String.format("%s: Sending message #%d to %s (%d%%)\n", myName, trackingId,
+				contactIds.stream().map(contactId -> dmsHandle.getContactHandle(contactId).getName())
+						.collect(Collectors.toList()).toString(),
+				progress));
+
+	}
+
+	@Override
 	public void messageTransmitted(Long trackingId, Long contactId) {
 
 		System.out.println(String.format("%s: Message #%d transmitted to %s\n", myName, trackingId,

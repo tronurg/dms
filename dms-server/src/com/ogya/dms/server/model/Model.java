@@ -557,7 +557,7 @@ public class Model {
 
 			listener.sendToLocalUsers(progressMessagePojo, null, null, senderUuid);
 
-		} else if (trackedTransientMessage && progress < 0) {
+		} else if (trackedTransientMessage) {
 
 			MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
 					String.join(";", uuidList), null, ContentType.PROGRESS_TRANSIENT, trackingId, null, null);

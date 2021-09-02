@@ -13,6 +13,8 @@ public interface DmsListener {
 
 	void messageReceived(MessageHandle messageHandle, Long contactId);
 
+	void sendingMessage(Long trackingId, List<Long> contactIds, int progress);
+
 	void messageTransmitted(Long trackingId, Long contactId);
 
 	void messageFailed(Long trackingId, List<Long> contactIds);
