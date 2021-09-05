@@ -14,6 +14,10 @@ public class AttachmentPojo {
 	@JsonIgnore
 	public Path source;
 
+	public AttachmentPojo() {
+		super();
+	}
+
 	public AttachmentPojo(Path path, boolean linkOnly) {
 		if (linkOnly) {
 			this.link = path;
