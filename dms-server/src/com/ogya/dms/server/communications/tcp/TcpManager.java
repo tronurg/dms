@@ -458,13 +458,13 @@ public class TcpManager implements TcpServerListener {
 						alive.set(false);
 						continue;
 					}
-					messageContainer.checkIn();
-					while (messageContainer.messageSender.hasNext()) {
+
+					for (messageContainer.checkIn(); messageContainer.messageSender.hasNext(); messageContainer
+							.checkIn()) {
 						if (messageContainer.sendFunction == null) {
 							messageContainer.messageSender.close();
 							break;
 						}
-						messageContainer.checkIn();
 						Chunk chunk = messageContainer.messageSender.next();
 						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber, chunk.data);
 						if (sent) {

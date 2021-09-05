@@ -162,13 +162,12 @@ public class Control implements TcpManagerListener, ModelListener {
 					if (messageContainer == null)
 						continue;
 
-					messageContainer.checkIn();
-					while (messageContainer.messageSender.hasNext()) {
+					for (messageContainer.checkIn(); messageContainer.messageSender.hasNext(); messageContainer
+							.checkIn()) {
 						if (messageContainer.successfulUuids.isEmpty()) {
 							messageContainer.messageSender.close();
 							break;
 						}
-						messageContainer.checkIn();
 						Chunk chunk = messageContainer.messageSender.next();
 						for (String receiverUuid : messageContainer.receiverUuids) {
 							if (!messageContainer.successfulUuids.contains(receiverUuid))

@@ -3,7 +3,6 @@ package com.ogya.dms.commons.structures;
 import java.net.InetAddress;
 import java.nio.file.Path;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MessagePojo {
@@ -16,17 +15,16 @@ public class MessagePojo {
 	public String receiverUuid;
 	@JsonProperty("d")
 	public ContentType contentType;
+
 	@JsonProperty("e")
-	public Path attachmentLink;
-	@JsonProperty("f")
 	public Long useTrackingId;
-	@JsonProperty("g")
+	@JsonProperty("f")
 	public Long useTimeout;
-	@JsonProperty("h")
+	@JsonProperty("g")
 	public InetAddress useLocalAddress;
 
-	@JsonIgnore
-	public Path attachment;
+	@JsonProperty("h")
+	public AttachmentPojo attachment;
 
 	public MessagePojo() {
 		super();
@@ -43,6 +41,18 @@ public class MessagePojo {
 		this.useTimeout = useTimeout;
 		this.useLocalAddress = useLocalAddress;
 
+	}
+
+	public Path getAttachmentLink() {
+		if (attachment == null)
+			return null;
+		return attachment.link;
+	}
+
+	public Path getAttachmentSource() {
+		if (attachment == null)
+			return null;
+		return attachment.source;
 	}
 
 }

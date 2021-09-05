@@ -17,6 +17,7 @@ import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsMessageFactory.Chunk;
 import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
 import com.ogya.dms.commons.DmsPackingFactory;
+import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
@@ -24,6 +25,7 @@ import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.core.factory.DmsFactory;
+import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
@@ -111,10 +113,8 @@ public class DmsClient {
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
 				ContentType.MESSAGE, trackingId, null, null);
 
-		if (linkOnlyAttachment) {
-			messagePojo.attachmentLink = attachment;
-		} else {
-			messagePojo.attachment = attachment;
+		if (attachment != null) {
+			messagePojo.attachment = new AttachmentPojo(attachment, linkOnlyAttachment);
 		}
 
 		dealerQueue.offer(messagePojo);
@@ -168,11 +168,11 @@ public class DmsClient {
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
 				String.join(";", receiverUuids), ContentType.TRANSIENT, useTrackingId, useTimeout, useLocalInterface);
 
-		if (message.getFileHandle() != null) {
-			if (linkOnlyAttachment) {
-				messagePojo.attachmentLink = message.getFileHandle().getPath();
-			} else {
-				messagePojo.attachment = message.getFileHandle().getPath();
+		FileHandle fileHandle = message.getFileHandle();
+		if (fileHandle != null) {
+			Path attachment = fileHandle.getPath();
+			if (attachment != null) {
+				messagePojo.attachment = new AttachmentPojo(attachment, linkOnlyAttachment);
 			}
 		}
 
@@ -339,8 +339,8 @@ public class DmsClient {
 
 			case MESSAGE:
 
-				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class), messagePojo.attachmentLink,
-						messagePojo.senderUuid);
+				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class),
+						messagePojo.getAttachmentLink(), messagePojo.senderUuid);
 
 				break;
 
@@ -386,7 +386,7 @@ public class DmsClient {
 			case TRANSIENT:
 
 				transientMessageReceivedToListener(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
-						messagePojo.attachmentLink, messagePojo.senderUuid);
+						messagePojo.getAttachmentLink(), messagePojo.senderUuid);
 
 				break;
 

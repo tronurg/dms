@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageFactory;
 import com.ogya.dms.commons.DmsPackingFactory;
+import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
@@ -197,7 +198,7 @@ public class Model {
 					break;
 
 				final LocalUser sender = localUsers.get(messagePojo.senderUuid);
-				final Path attachment = messagePojo.attachmentLink;
+				final Path attachment = messagePojo.getAttachmentLink();
 
 				final boolean trackedMessage = messagePojo.useTrackingId != null
 						&& Objects.equals(messagePojo.contentType, ContentType.MESSAGE);
@@ -238,7 +239,7 @@ public class Model {
 								final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload,
 										messagePojo.senderUuid, null, messagePojo.contentType, null,
 										messagePojo.useTimeout, messagePojo.useLocalAddress);
-								localMessagePojo.attachmentLink = copyOfAttachment;
+								localMessagePojo.attachment = new AttachmentPojo(copyOfAttachment, true);
 								listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
 
 									if (progress < 0) {
@@ -292,7 +293,7 @@ public class Model {
 
 					final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
 							null, messagePojo.contentType, null, messagePojo.useTimeout, messagePojo.useLocalAddress);
-					localMessagePojo.attachment = attachment;
+					localMessagePojo.attachment = new AttachmentPojo(attachment, false);
 
 					listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
 
@@ -333,7 +334,7 @@ public class Model {
 					final MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
 							String.join(";", receiverMapIdList), messagePojo.contentType, null, messagePojo.useTimeout,
 							messagePojo.useLocalAddress);
-					remoteMessagePojo.attachment = attachment;
+					remoteMessagePojo.attachment = new AttachmentPojo(attachment, false);
 
 					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus.status, progress -> {
 
@@ -427,7 +428,7 @@ public class Model {
 
 			default:
 
-				final Path attachment = messagePojo.attachmentLink;
+				final Path attachment = messagePojo.getAttachmentLink();
 				List<String> localReceiverUuids = new ArrayList<String>();
 
 				for (String receiverUuid : receiverUuids) {
@@ -442,7 +443,7 @@ public class Model {
 									StandardCopyOption.REPLACE_EXISTING);
 							MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
 									null, messagePojo.contentType, null, null, null);
-							localMessagePojo.attachmentLink = copyOfAttachment;
+							localMessagePojo.attachment = new AttachmentPojo(copyOfAttachment, true);
 							listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
 
 								if (progress < 0) {
@@ -465,7 +466,7 @@ public class Model {
 
 				MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
 						messagePojo.contentType, null, null, null);
-				localMessagePojo.attachment = attachment;
+				localMessagePojo.attachment = new AttachmentPojo(attachment, false);
 
 				listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
 
