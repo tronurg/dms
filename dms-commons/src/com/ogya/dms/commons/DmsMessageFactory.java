@@ -220,6 +220,8 @@ public class DmsMessageFactory {
 			if (nextChunk == null)
 				return null;
 
+			started = true;
+
 			if (!health.get()) {
 				close();
 				return new Chunk(new byte[0], -1);
@@ -237,7 +239,7 @@ public class DmsMessageFactory {
 						nextChunk = new Chunk(Arrays.copyOf(buffer, bytesRead),
 								(int) (100 * (bytesProcessed / totalBytes)));
 					} else {
-						closeFile();
+						close();
 					}
 				} catch (Exception e) {
 					closeFile();
