@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -451,12 +452,11 @@ public class CommonMethods {
 
 	private static String convertDoubleToCoordinates(double value) {
 
-		int deg = (int) value;
-		double minD = (value - deg) * 60;
-		int min = (int) minD;
-		int sec = (int) ((minD - min) * 60);
+		BigDecimal bdeg = BigDecimal.valueOf(value);
+		BigDecimal bmin = bdeg.remainder(BigDecimal.ONE).multiply(BigDecimal.valueOf(60));
+		BigDecimal bsec = bmin.remainder(BigDecimal.ONE).multiply(BigDecimal.valueOf(60));
 
-		return String.format("%02d\u00B0%02d'%02d\"", deg, min, sec);
+		return String.format("%02d\u00B0%02d'%02d\"", bdeg.intValue(), bmin.intValue(), bsec.intValue());
 
 	}
 
