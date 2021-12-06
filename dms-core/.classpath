@@ -4,7 +4,6 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="lib/jackson-annotations-2.12.1.jar"/>
 	<classpathentry kind="lib" path="lib/jeromq-0.5.2.jar"/>
-	<classpathentry kind="lib" path="lib/jfxrt.jar"/>
 	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.21.jar"/>
 	<classpathentry kind="lib" path="lib/db/h2/h2-1.4.199.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/antlr-2.7.7.jar"/>
