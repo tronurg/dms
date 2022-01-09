@@ -1357,9 +1357,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (progress < 0) {
 				listenerTaskQueue
 						.execute(() -> dmsListeners.forEach(listener -> listener.messageFailed(trackingId, remoteIds)));
-			} else {
-				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.sendingMessage(trackingId, remoteIds, progress)));
 			}
 
 		});
