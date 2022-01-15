@@ -176,7 +176,7 @@ public class Control implements TcpManagerListener, ModelListener {
 								routerSocket.send(receiverUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 								routerSocket.send(String.valueOf(messageContainer.messageNumber),
 										ZMQ.SNDMORE | ZMQ.DONTWAIT);
-								routerSocket.send(chunk.data, ZMQ.DONTWAIT);
+								routerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
 								if (chunk.progress < 0)
 									messageContainer.successfulUuids.remove(receiverUuid);
 							} catch (ZMQException e) {

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -118,7 +119,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							tcpConnection.sendMessage(-1, CommonConstants.DMS_UUID.getBytes(CHARSET));
+							tcpConnection.sendMessage(-1, ByteBuffer.wrap(CommonConstants.DMS_UUID.getBytes(CHARSET)));
 
 							Connection connection = new Connection(tcpConnection, -1,
 									TcpManager.this::messageReceivedFromConnection);
@@ -466,7 +467,8 @@ public class TcpManager implements TcpServerListener {
 							break;
 						}
 						Chunk chunk = messageContainer.messageSender.next();
-						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber, chunk.data);
+						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber,
+								chunk.dataBuffer);
 						if (sent) {
 							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
 									.getAndSet(chunk.progress);
@@ -502,7 +504,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void updateSendFunction(MessageContainer messageContainer) {
-			BiFunction<Integer, byte[], Boolean> sendFunction = null;
+			BiFunction<Integer, ByteBuffer, Boolean> sendFunction = null;
 			synchronized (connections) {
 				connections.sort(CONNECTION_SORTER);
 				for (Connection connection : connections) {
@@ -528,7 +530,7 @@ public class TcpManager implements TcpServerListener {
 		private final InetAddress useLocalAddress;
 		private final Consumer<Integer> progressConsumer;
 		private final boolean endMessage;
-		private BiFunction<Integer, byte[], Boolean> sendFunction;
+		private BiFunction<Integer, ByteBuffer, Boolean> sendFunction;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {

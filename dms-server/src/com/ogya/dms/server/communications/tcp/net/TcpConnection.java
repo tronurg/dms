@@ -7,6 +7,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Queue;
@@ -108,16 +109,17 @@ public final class TcpConnection implements AutoCloseable {
 
 	}
 
-	public synchronized boolean sendMessage(int messageNumber, byte[] message) {
+	public synchronized boolean sendMessage(int messageNumber, ByteBuffer messageBuffer) {
 
 		if (socket.isClosed())
 			return false;
 
 		try {
 
-			messageOutputStream.writeInt(message.length);
+			int messageLen = messageBuffer.limit();
+			messageOutputStream.writeInt(messageLen);
 			messageOutputStream.writeInt(messageNumber);
-			messageOutputStream.write(message);
+			messageOutputStream.write(messageBuffer.array(), 0, messageLen);
 			messageOutputStream.flush();
 			lastSuccessfulSendTime.set(System.nanoTime());
 

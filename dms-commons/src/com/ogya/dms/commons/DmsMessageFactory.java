@@ -1,12 +1,10 @@
 package com.ogya.dms.commons;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -77,7 +75,7 @@ public class DmsMessageFactory {
 	private final class AttachmentReceiver {
 
 		private MessagePojo messagePojo;
-		private OutputStream outputStream;
+		private FileChannel fileChannel;
 		private boolean interrupted = false;
 		private long remaining;
 
@@ -86,7 +84,8 @@ public class DmsMessageFactory {
 			this.remaining = messagePojo.attachment.size;
 			try {
 				messagePojo.attachment.link = Files.createTempFile("dms", null);
-				outputStream = new BufferedOutputStream(Files.newOutputStream(messagePojo.attachment.link));
+				fileChannel = FileChannel.open(messagePojo.attachment.link, StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
 			} catch (Exception e) {
 				interrupt();
 			}
@@ -97,7 +96,7 @@ public class DmsMessageFactory {
 			interrupted = true;
 
 			try {
-				outputStream.close();
+				fileChannel.close();
 			} catch (Exception e) {
 
 			}
@@ -114,22 +113,24 @@ public class DmsMessageFactory {
 
 		private boolean dataReceived(byte[] data) {
 
-			int dataLength = data.length;
-
-			if (dataLength == 0) {
+			if (data.length == 0) {
 				interrupt();
 				return true;
 			}
+
+			ByteBuffer dataBuffer = ByteBuffer.wrap(data);
+			long position = dataBuffer.getLong();
+			int dataLength = dataBuffer.remaining();
 
 			remaining -= dataLength;
 			boolean done = !(remaining > 0);
 
 			if (!interrupted) {
 				try {
-					outputStream.write(data);
+					fileChannel.write(dataBuffer, position);
 					if (done) {
-						outputStream.flush();
-						outputStream.close();
+						fileChannel.force(true);
+						fileChannel.close();
 					}
 				} catch (Exception e) {
 					interrupt();
@@ -155,8 +156,7 @@ public class DmsMessageFactory {
 		private final Function<MessagePojo, byte[]> serializer;
 
 		private Path attachment;
-		private InputStream inputStream;
-		private byte[] buffer;
+		private FileChannel fileChannel;
 		private long fileSize = 0;
 		private long bytesProcessed = 0;
 		private double totalBytes = 0.0;
@@ -178,19 +178,17 @@ public class DmsMessageFactory {
 			try {
 				attachment = messagePojo.getAttachmentSource();
 				if (attachment != null) {
-					inputStream = new BufferedInputStream(Files.newInputStream(attachment));
-					fileSize = Files.size(attachment);
+					fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
+					fileSize = fileChannel.size();
 					messagePojo.attachment.size = fileSize;
 					if (fileSize == 0) {
 						closeFile();
-					} else if (buffer == null) {
-						buffer = new byte[CHUNK_SIZE];
 					}
 				}
 				byte[] data = serializer.apply(messagePojo);
 				bytesProcessed = data.length;
 				totalBytes = fileSize + data.length;
-				nextChunk = new Chunk(data, (int) (100 * (bytesProcessed / totalBytes)));
+				nextChunk = new Chunk(ByteBuffer.wrap(data), (int) (100 * (bytesProcessed / totalBytes)));
 			} catch (Exception e) {
 				close();
 			}
@@ -198,14 +196,14 @@ public class DmsMessageFactory {
 
 		private void closeFile() {
 			attachment = null;
-			if (inputStream == null)
+			if (fileChannel == null)
 				return;
 			try {
-				inputStream.close();
+				fileChannel.close();
 			} catch (Exception e) {
 
 			}
-			inputStream = null;
+			fileChannel = null;
 		}
 
 		public boolean hasNext() {
@@ -224,7 +222,7 @@ public class DmsMessageFactory {
 
 			if (!health.get()) {
 				close();
-				return new Chunk(new byte[0], -1);
+				return new Chunk(ByteBuffer.allocate(0), -1);
 			}
 
 			Chunk result = nextChunk;
@@ -233,17 +231,19 @@ public class DmsMessageFactory {
 				nextChunk = null;
 			} else {
 				try {
-					int bytesRead = inputStream.read(buffer);
+					ByteBuffer dataBuffer = ByteBuffer.allocate(CHUNK_SIZE);
+					dataBuffer.putLong(fileChannel.position());
+					int bytesRead = fileChannel.read(dataBuffer);
+					dataBuffer.flip();
 					if (bytesRead > 0) {
 						bytesProcessed += bytesRead;
-						nextChunk = new Chunk(Arrays.copyOf(buffer, bytesRead),
-								(int) (100 * (bytesProcessed / totalBytes)));
+						nextChunk = new Chunk(dataBuffer, (int) (100 * (bytesProcessed / totalBytes)));
 					} else {
 						close();
 					}
 				} catch (Exception e) {
 					closeFile();
-					nextChunk = new Chunk(new byte[0], -1);
+					nextChunk = new Chunk(ByteBuffer.allocate(0), -1);
 				}
 			}
 
@@ -269,11 +269,11 @@ public class DmsMessageFactory {
 
 	public static final class Chunk {
 
-		public final byte[] data;
+		public final ByteBuffer dataBuffer;
 		public final int progress;
 
-		private Chunk(byte[] data, int progress) {
-			this.data = data;
+		private Chunk(ByteBuffer dataBuffer, int progress) {
+			this.dataBuffer = dataBuffer;
 			this.progress = progress;
 		}
 
