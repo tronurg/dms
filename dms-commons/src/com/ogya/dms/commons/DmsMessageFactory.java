@@ -149,7 +149,7 @@ public class DmsMessageFactory {
 
 	public static final class MessageSender {
 
-		private static final int CHUNK_SIZE = 8192;
+		private static final int CHUNK_SIZE = 8200;
 
 		private final MessagePojo messagePojo;
 		private final AtomicBoolean health;

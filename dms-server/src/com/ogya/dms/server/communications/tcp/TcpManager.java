@@ -108,7 +108,11 @@ public class TcpManager implements TcpServerListener {
 							if (connection == null)
 								return;
 
-							connection.messageFactory.inFeed(messageNumber, message);
+							DmsServer dmsServer = connection.dmsServer;
+							if (dmsServer == null)
+								return;
+
+							dmsServer.messageFactory.inFeed(messageNumber, message);
 
 						});
 
@@ -121,13 +125,12 @@ public class TcpManager implements TcpServerListener {
 
 							tcpConnection.sendMessage(-1, ByteBuffer.wrap(CommonConstants.DMS_UUID.getBytes(CHARSET)));
 
-							Connection connection = new Connection(tcpConnection, -1,
-									TcpManager.this::messageReceivedFromConnection);
+							Connection connection = new Connection(tcpConnection, -1);
 							connections.put(address, connection);
 
 							DmsServer dmsServer = dmsServers.get(dmsUuid);
 							if (dmsServer == null) {
-								dmsServer = new DmsServer(dmsUuid);
+								dmsServer = new DmsServer(dmsUuid, TcpManager.this::messageReceivedToListeners);
 								dmsServers.put(dmsUuid, dmsServer);
 							}
 							connection.dmsServer = dmsServer;
@@ -157,8 +160,6 @@ public class TcpManager implements TcpServerListener {
 							Connection connection = connections.remove(address);
 							if (connection == null)
 								return;
-
-							connection.messageFactory.deleteResources();
 
 							DmsServer dmsServer = dmsServers.get(dmsUuid);
 							if (dmsServer == null)
@@ -274,17 +275,6 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void messageReceivedFromConnection(MessagePojo messagePojo, Connection connection) {
-
-		DmsServer dmsServer = connection.dmsServer;
-
-		if (dmsServer == null)
-			return;
-
-		messageReceivedToListeners(messagePojo, dmsServer.dmsUuid);
-
-	}
-
 	private void messageReceivedToListeners(MessagePojo messagePojo, String dmsUuid) {
 
 		listeners.forEach(e -> e.messageReceivedFromRemoteServer(messagePojo, dmsUuid));
@@ -306,7 +296,7 @@ public class TcpManager implements TcpServerListener {
 			if (connection == null || connection.id != id)
 				return;
 
-			connections.remove(address).messageFactory.deleteResources();
+			connections.remove(address);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -333,13 +323,12 @@ public class TcpManager implements TcpServerListener {
 			if (connection != null) {
 				dmsServer = connection.dmsServer;
 				connection.tcpConnection.close();
-				connection.messageFactory.deleteResources();
 			}
 			if (dmsServer != null && dmsServer.connections.remove(connection)) {
 				serverConnectionsUpdated(dmsServer, false);
 			}
 
-			connections.put(address, new Connection(tcpConnection, id, this::messageReceivedFromConnection));
+			connections.put(address, new Connection(tcpConnection, id));
 
 		});
 
@@ -365,7 +354,7 @@ public class TcpManager implements TcpServerListener {
 					String dmsUuid = UUID.fromString(new String(message, CHARSET)).toString();
 					DmsServer dmsServer = dmsServers.get(dmsUuid);
 					if (dmsServer == null) {
-						dmsServer = new DmsServer(dmsUuid);
+						dmsServer = new DmsServer(dmsUuid, this::messageReceivedToListeners);
 						dmsServers.put(dmsUuid, dmsServer);
 					}
 					connection.dmsServer = dmsServer;
@@ -375,7 +364,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 			} else {
-				connection.messageFactory.inFeed(messageNumber, message);
+				connection.dmsServer.messageFactory.inFeed(messageNumber, message);
 			}
 
 		});
@@ -386,8 +375,6 @@ public class TcpManager implements TcpServerListener {
 
 		private static final AtomicInteger ORDER = new AtomicInteger(0);
 
-		private final DmsMessageFactory messageFactory;
-
 		private final int order;
 		private final int priority;
 
@@ -396,8 +383,7 @@ public class TcpManager implements TcpServerListener {
 
 		private DmsServer dmsServer;
 
-		private Connection(TcpConnection tcpConnection, int id, BiConsumer<MessagePojo, Connection> messageConsumer) {
-			this.messageFactory = new DmsMessageFactory(messagePojo -> messageConsumer.accept(messagePojo, this));
+		private Connection(TcpConnection tcpConnection, int id) {
 			this.order = ORDER.getAndIncrement();
 			this.priority = CommonMethods.getLocalAddressPriority(tcpConnection.getLocalAddress());
 			this.tcpConnection = tcpConnection;
@@ -443,11 +429,13 @@ public class TcpManager implements TcpServerListener {
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
+		private final DmsMessageFactory messageFactory;
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, MESSAGE_SORTER);
 
-		private DmsServer(String dmsUuid) {
+		private DmsServer(String dmsUuid, BiConsumer<MessagePojo, String> messageConsumer) {
 			this.dmsUuid = dmsUuid;
+			this.messageFactory = new DmsMessageFactory(messagePojo -> messageConsumer.accept(messagePojo, dmsUuid));
 			new Thread(this::consumeMessageQueue).start();
 		}
 
@@ -519,6 +507,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void close() {
+			messageFactory.deleteResources();
 			messageQueue.put(new MessageContainer(messageCounter.getAndIncrement(), END_MESSAGE,
 					new AtomicBoolean(false), null));
 		}
