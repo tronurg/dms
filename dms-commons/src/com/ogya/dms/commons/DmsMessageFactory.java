@@ -85,7 +85,7 @@ public class DmsMessageFactory {
 			try {
 				messagePojo.attachment.link = Files.createTempFile("dms", null);
 				fileChannel = FileChannel.open(messagePojo.attachment.link, StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE);
+						StandardOpenOption.WRITE);
 			} catch (Exception e) {
 				interrupt();
 			}

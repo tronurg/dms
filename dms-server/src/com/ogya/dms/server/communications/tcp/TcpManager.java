@@ -426,10 +426,10 @@ public class TcpManager implements TcpServerListener {
 		private static final Comparator<MessageContainerBase> MESSAGE_SORTER = new MessageSorter();
 
 		private final String dmsUuid;
+		private final DmsMessageFactory messageFactory;
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-		private final DmsMessageFactory messageFactory;
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, MESSAGE_SORTER);
 
