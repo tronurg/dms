@@ -1,6 +1,7 @@
 package com.ogya.dms.commons;
 
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 
@@ -82,6 +83,12 @@ public class DmsPackingFactory {
 	public static <T> T unpack(byte[] bytes, Class<T> classOfT) throws Exception {
 
 		return objectMapper.readValue(bytes, classOfT);
+
+	}
+
+	public static <T> T unpack(ByteBuffer byteBuffer, Class<T> classOfT) throws Exception {
+
+		return objectMapper.readValue(byteBuffer.array(), byteBuffer.position(), byteBuffer.remaining(), classOfT);
 
 	}
 

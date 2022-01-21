@@ -24,19 +24,19 @@ public class DmsMessageFactory {
 
 	public void inFeed(int messageNumber, byte[] data) {
 
-		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
+		ByteBuffer dataBuffer = ByteBuffer.wrap(data);
+		byte sign = dataBuffer.get();
 
-		if (attachmentReceiver == null) {
+		if (sign < 0) {
 			try {
-				MessagePojo messagePojo = DmsPackingFactory.unpack(data, MessagePojo.class);
+				MessagePojo messagePojo = DmsPackingFactory.unpack(dataBuffer, MessagePojo.class);
 				if (messagePojo.attachment == null || messagePojo.attachment.link != null) {
 					messageConsumer.accept(messagePojo);
 				} else if (messagePojo.attachment.size == 0) {
 					messagePojo.attachment.link = Files.createTempFile("dms", null);
 					messageConsumer.accept(messagePojo);
 				} else {
-					attachmentReceiver = new AttachmentReceiver(messagePojo);
-					attachmentReceivers.put(messageNumber, attachmentReceiver);
+					newAttachmentReceiver(messageNumber, messagePojo);
 				}
 			} catch (Exception e) {
 
@@ -44,7 +44,12 @@ public class DmsMessageFactory {
 			return;
 		}
 
-		boolean attachmentReady = attachmentReceiver.dataReceived(data);
+		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
+		if (attachmentReceiver == null) {
+			return;
+		}
+		dataBuffer.rewind();
+		boolean attachmentReady = attachmentReceiver.dataReceived(dataBuffer);
 		if (attachmentReady) {
 			attachmentReceivers.remove(messageNumber);
 			MessagePojo messagePojo = attachmentReceiver.getMessagePojo();
@@ -53,6 +58,15 @@ public class DmsMessageFactory {
 			}
 		}
 
+	}
+
+	private void newAttachmentReceiver(int messageNumber, MessagePojo messagePojo) {
+		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
+		if (attachmentReceiver != null) {
+			attachmentReceiver.interrupt();
+		}
+		attachmentReceiver = new AttachmentReceiver(messagePojo);
+		attachmentReceivers.put(messageNumber, attachmentReceiver);
 	}
 
 	public void deleteResources() {
@@ -111,14 +125,13 @@ public class DmsMessageFactory {
 
 		}
 
-		private boolean dataReceived(byte[] data) {
+		private boolean dataReceived(ByteBuffer dataBuffer) {
 
-			if (data.length == 0) {
+			if (!dataBuffer.hasRemaining()) {
 				interrupt();
 				return true;
 			}
 
-			ByteBuffer dataBuffer = ByteBuffer.wrap(data);
 			long position = dataBuffer.getLong();
 			int dataLength = dataBuffer.remaining();
 
@@ -150,6 +163,7 @@ public class DmsMessageFactory {
 	public static final class MessageSender {
 
 		private static final int CHUNK_SIZE = 8200;
+		private static final byte MESSAGE_POJO_PREFIX = -1;
 
 		private final MessagePojo messagePojo;
 		private final AtomicBoolean health;
@@ -186,9 +200,12 @@ public class DmsMessageFactory {
 					}
 				}
 				byte[] data = serializer.apply(messagePojo);
-				bytesProcessed = data.length;
-				totalBytes = fileSize + data.length;
-				nextChunk = new Chunk(ByteBuffer.wrap(data), (int) (100 * (bytesProcessed / totalBytes)));
+				int dataLen = data.length;
+				ByteBuffer dataBuffer = ByteBuffer.allocate(1 + dataLen).put(MESSAGE_POJO_PREFIX).put(data);
+				dataBuffer.flip();
+				bytesProcessed = dataLen;
+				totalBytes = fileSize + dataLen;
+				nextChunk = new Chunk(dataBuffer, (int) (100 * (bytesProcessed / totalBytes)));
 			} catch (Exception e) {
 				close();
 			}
