@@ -21,9 +21,8 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
-import com.ogya.dms.commons.DmsMessageFactory;
-import com.ogya.dms.commons.DmsMessageFactory.Chunk;
-import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
+import com.ogya.dms.commons.DmsMessageSender.Chunk;
+import com.ogya.dms.commons.DmsMessageSender.Direction;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.MessageContainerBase;
@@ -338,15 +337,10 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 				List<String> receiverUuids, BiConsumer<List<String>, Integer> progressConsumer) {
-			super(messageNumber, messagePojo, sendStatus);
+			super(messageNumber, messagePojo, Direction.SERVER_TO_CLIENT, sendStatus);
 			this.receiverUuids = receiverUuids;
 			this.progressConsumer = progressConsumer;
 			this.successfulUuids = new ArrayList<String>(receiverUuids);
-		}
-
-		@Override
-		protected MessageSender initMessageSender(MessagePojo messagePojo, AtomicBoolean health) {
-			return DmsMessageFactory.outFeedServerToClient(messagePojo, health);
 		}
 
 	}

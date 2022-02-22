@@ -13,9 +13,10 @@ import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
-import com.ogya.dms.commons.DmsMessageFactory;
-import com.ogya.dms.commons.DmsMessageFactory.Chunk;
-import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
+import com.ogya.dms.commons.DmsMessageReceiver;
+import com.ogya.dms.commons.DmsMessageSender;
+import com.ogya.dms.commons.DmsMessageSender.Chunk;
+import com.ogya.dms.commons.DmsMessageSender.Direction;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
@@ -47,7 +48,7 @@ public class DmsClient {
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	private final DmsMessageFactory messageFactory;
+	private final DmsMessageReceiver messageFactory;
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -58,7 +59,7 @@ public class DmsClient {
 
 		this.listener = listener;
 
-		this.messageFactory = new DmsMessageFactory(this::processIncomingMessage);
+		this.messageFactory = new DmsMessageReceiver(this::processIncomingMessage);
 
 		start();
 
@@ -241,7 +242,8 @@ public class DmsClient {
 
 					MessagePojo messagePojo = dealerQueue.take();
 
-					MessageSender messageSender = DmsMessageFactory.outFeed(messagePojo, serverConnected);
+					DmsMessageSender messageSender = new DmsMessageSender(messagePojo, serverConnected,
+							Direction.CLIENT_TO_SERVER);
 
 					while (messageSender.hasNext()) {
 

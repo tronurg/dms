@@ -25,9 +25,9 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import com.ogya.dms.commons.DmsMessageFactory;
-import com.ogya.dms.commons.DmsMessageFactory.Chunk;
-import com.ogya.dms.commons.DmsMessageFactory.MessageSender;
+import com.ogya.dms.commons.DmsMessageReceiver;
+import com.ogya.dms.commons.DmsMessageSender.Chunk;
+import com.ogya.dms.commons.DmsMessageSender.Direction;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
@@ -426,7 +426,7 @@ public class TcpManager implements TcpServerListener {
 		private static final Comparator<MessageContainerBase> MESSAGE_SORTER = new MessageSorter();
 
 		private final String dmsUuid;
-		private final DmsMessageFactory messageFactory;
+		private final DmsMessageReceiver messageFactory;
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
@@ -435,7 +435,7 @@ public class TcpManager implements TcpServerListener {
 
 		private DmsServer(String dmsUuid, BiConsumer<MessagePojo, String> messageConsumer) {
 			this.dmsUuid = dmsUuid;
-			this.messageFactory = new DmsMessageFactory(messagePojo -> messageConsumer.accept(messagePojo, dmsUuid));
+			this.messageFactory = new DmsMessageReceiver(messagePojo -> messageConsumer.accept(messagePojo, dmsUuid));
 			new Thread(this::consumeMessageQueue).start();
 		}
 
@@ -523,7 +523,7 @@ public class TcpManager implements TcpServerListener {
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
-			super(messageNumber, messagePojo, sendStatus);
+			super(messageNumber, messagePojo, Direction.SERVER_TO_SERVER, sendStatus);
 			this.useLocalAddress = messagePojo.useLocalAddress;
 			this.endMessage = messagePojo == END_MESSAGE;
 			this.progressConsumer = progressConsumer;
@@ -531,11 +531,6 @@ public class TcpManager implements TcpServerListener {
 
 		private boolean isEndMessage() {
 			return endMessage;
-		}
-
-		@Override
-		protected MessageSender initMessageSender(MessagePojo messagePojo, AtomicBoolean health) {
-			return DmsMessageFactory.outFeedServerToServer(messagePojo, health);
 		}
 
 	}

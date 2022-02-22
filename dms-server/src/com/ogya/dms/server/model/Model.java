@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import com.ogya.dms.commons.DmsMessageFactory;
+import com.ogya.dms.commons.DmsMessageReceiver;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
@@ -821,13 +821,13 @@ public class Model {
 
 	private class LocalUser extends User {
 
-		private final DmsMessageFactory messageFactory;
+		private final DmsMessageReceiver messageFactory;
 
 		private LocalUser(String userUuid, String mapId, Consumer<MessagePojo> messageConsumer) {
 
 			super(userUuid, mapId);
 
-			this.messageFactory = new DmsMessageFactory(messageConsumer);
+			this.messageFactory = new DmsMessageReceiver(messageConsumer);
 
 			try {
 
