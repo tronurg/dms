@@ -20,7 +20,7 @@ public class DmsMessageSender {
 	private Path attachment;
 	private FileChannel fileChannel;
 	private int pojoSize = 0;
-	private double fileSize = 0;
+	private long fileSize = 0;
 	private long position = -1;
 	private long bytesProcessed = 0;
 	private double totalBytes = 0.0;
@@ -137,7 +137,7 @@ public class DmsMessageSender {
 			} else {
 				dataBuffer = getFileData();
 			}
-			int progress = (int) (100 * ((pojoSize + position) / (pojoSize + fileSize)));
+			int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + fileSize));
 			return new Chunk(dataBuffer, progress);
 		} catch (Exception e) {
 
