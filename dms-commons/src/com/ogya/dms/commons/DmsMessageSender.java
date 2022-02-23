@@ -19,7 +19,9 @@ public class DmsMessageSender {
 
 	private Path attachment;
 	private FileChannel fileChannel;
-	private long fileSize = 0;
+	private int pojoSize = 0;
+	private double fileSize = 0;
+	private long position = -1;
 	private long bytesProcessed = 0;
 	private double totalBytes = 0.0;
 	private boolean started;
@@ -88,6 +90,38 @@ public class DmsMessageSender {
 		fileChannel = null;
 	}
 
+	private ByteBuffer getPojoData() throws Exception {
+		byte[] data = null;
+		switch (direction) {
+		case CLIENT_TO_SERVER: {
+			data = DmsPackingFactory.pack(messagePojo);
+			break;
+		}
+		case SERVER_TO_SERVER: {
+			data = DmsPackingFactory.packServerToServer(messagePojo);
+			break;
+		}
+		case SERVER_TO_CLIENT: {
+			data = DmsPackingFactory.packServerToClient(messagePojo);
+			break;
+		}
+		}
+		pojoSize = data.length;
+		position = 0;
+		fileChannel.position(position);
+		ByteBuffer dataBuffer = ByteBuffer.allocate(1 + pojoSize).put(MESSAGE_POJO_PREFIX).put(data);
+		dataBuffer.flip();
+		return dataBuffer;
+	}
+
+	private ByteBuffer getFileData() throws Exception {
+		ByteBuffer dataBuffer = ByteBuffer.allocate(CHUNK_SIZE).putLong(position);
+		fileChannel.read(dataBuffer);
+		position = fileChannel.position();
+		dataBuffer.flip();
+		return dataBuffer;
+	}
+
 	public boolean hasNext() {
 		if (!(started || health.get())) {
 			close();
@@ -96,42 +130,58 @@ public class DmsMessageSender {
 	}
 
 	public Chunk next() {
-
-		if (nextChunk == null)
-			return null;
-
-		started = true;
-
-		if (!health.get()) {
-			close();
-			return new Chunk(ByteBuffer.allocate(0), -1);
-		}
-
-		Chunk result = nextChunk;
-
-		if (attachment == null) {
-			nextChunk = null;
-		} else {
-			try {
-				ByteBuffer dataBuffer = ByteBuffer.allocate(CHUNK_SIZE);
-				dataBuffer.putLong(fileChannel.position());
-				int bytesRead = fileChannel.read(dataBuffer);
-				dataBuffer.flip();
-				if (bytesRead > 0) {
-					bytesProcessed += bytesRead;
-					nextChunk = new Chunk(dataBuffer, (int) (100 * (bytesProcessed / totalBytes)));
-				} else {
-					close();
-				}
-			} catch (Exception e) {
-				closeFile();
-				nextChunk = new Chunk(ByteBuffer.allocate(0), -1);
+		ByteBuffer dataBuffer;
+		try {
+			if (position < 0) {
+				dataBuffer = getPojoData();
+			} else {
+				dataBuffer = getFileData();
 			}
+			int progress = (int) (100 * ((pojoSize + position) / (pojoSize + fileSize)));
+			return new Chunk(dataBuffer, progress);
+		} catch (Exception e) {
+
 		}
-
-		return result;
-
+		return new Chunk(ByteBuffer.allocate(0), -1);
 	}
+
+//	public Chunk next() {
+//
+//		if (nextChunk == null)
+//			return null;
+//
+//		started = true;
+//
+//		if (!health.get()) {
+//			close();
+//			return new Chunk(ByteBuffer.allocate(0), -1);
+//		}
+//
+//		Chunk result = nextChunk;
+//
+//		if (attachment == null) {
+//			nextChunk = null;
+//		} else {
+//			try {
+//				ByteBuffer dataBuffer = ByteBuffer.allocate(CHUNK_SIZE);
+//				dataBuffer.putLong(fileChannel.position());
+//				int bytesRead = fileChannel.read(dataBuffer);
+//				dataBuffer.flip();
+//				if (bytesRead > 0) {
+//					bytesProcessed += bytesRead;
+//					nextChunk = new Chunk(dataBuffer, (int) (100 * (bytesProcessed / totalBytes)));
+//				} else {
+//					close();
+//				}
+//			} catch (Exception e) {
+//				closeFile();
+//				nextChunk = new Chunk(ByteBuffer.allocate(0), -1);
+//			}
+//		}
+//
+//		return result;
+//
+//	}
 
 	public boolean fileSizeGreaterThan(long limitSize) {
 		return fileSize > limitSize;
