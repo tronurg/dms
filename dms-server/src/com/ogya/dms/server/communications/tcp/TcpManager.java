@@ -112,7 +112,7 @@ public class TcpManager implements TcpServerListener {
 							if (dmsServer == null)
 								return;
 
-							dmsServer.messageFactory.inFeed(messageNumber, message);
+							dmsServer.messageReceiver.inFeed(messageNumber, message);
 
 						});
 
@@ -364,7 +364,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 			} else {
-				connection.dmsServer.messageFactory.inFeed(messageNumber, message);
+				connection.dmsServer.messageReceiver.inFeed(messageNumber, message);
 			}
 
 		});
@@ -426,7 +426,7 @@ public class TcpManager implements TcpServerListener {
 		private static final Comparator<MessageContainerBase> MESSAGE_SORTER = new MessageSorter();
 
 		private final String dmsUuid;
-		private final DmsMessageReceiver messageFactory;
+		private final DmsMessageReceiver messageReceiver;
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
@@ -435,7 +435,7 @@ public class TcpManager implements TcpServerListener {
 
 		private DmsServer(String dmsUuid, BiConsumer<MessagePojo, String> messageConsumer) {
 			this.dmsUuid = dmsUuid;
-			this.messageFactory = new DmsMessageReceiver(messagePojo -> messageConsumer.accept(messagePojo, dmsUuid));
+			this.messageReceiver = new DmsMessageReceiver(messagePojo -> messageConsumer.accept(messagePojo, dmsUuid));
 			new Thread(this::consumeMessageQueue).start();
 		}
 
@@ -507,7 +507,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void close() {
-			messageFactory.deleteResources();
+			messageReceiver.deleteResources();
 			messageQueue.put(new MessageContainer(messageCounter.getAndIncrement(), END_MESSAGE,
 					new AtomicBoolean(false), null));
 		}

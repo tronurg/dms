@@ -98,7 +98,7 @@ public class Model {
 			mappedUsers.put(localUser.mapId, localUser);
 		}
 
-		localUser.messageFactory.inFeed(0, data);
+		localUser.messageReceiver.inFeed(0, data);
 
 	}
 
@@ -537,7 +537,7 @@ public class Model {
 
 		MessagePojo messagePojo = new MessagePojo(null, uuid, null, ContentType.UUID_DISCONNECTED, null, null, null);
 
-		localUsers.remove(uuid).messageFactory.deleteResources();
+		localUsers.remove(uuid).messageReceiver.deleteResources();
 
 		listener.sendToLocalUsers(messagePojo, null, null, localUsers.keySet().toArray(new String[0]));
 
@@ -821,13 +821,13 @@ public class Model {
 
 	private class LocalUser extends User {
 
-		private final DmsMessageReceiver messageFactory;
+		private final DmsMessageReceiver messageReceiver;
 
 		private LocalUser(String userUuid, String mapId, Consumer<MessagePojo> messageConsumer) {
 
 			super(userUuid, mapId);
 
-			this.messageFactory = new DmsMessageReceiver(messageConsumer);
+			this.messageReceiver = new DmsMessageReceiver(messageConsumer);
 
 			try {
 

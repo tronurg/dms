@@ -48,7 +48,7 @@ public class DmsClient {
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	private final DmsMessageReceiver messageFactory;
+	private final DmsMessageReceiver messageReceiver;
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -59,7 +59,7 @@ public class DmsClient {
 
 		this.listener = listener;
 
-		this.messageFactory = new DmsMessageReceiver(this::processIncomingMessage);
+		this.messageReceiver = new DmsMessageReceiver(this::processIncomingMessage);
 
 		start();
 
@@ -213,8 +213,8 @@ public class DmsClient {
 
 					int messageNumber = Integer.parseInt(dealerSocket.recvStr(ZMQ.DONTWAIT));
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
-					synchronized (messageFactory) {
-						messageFactory.inFeed(messageNumber, receivedMessage);
+					synchronized (messageReceiver) {
+						messageReceiver.inFeed(messageNumber, receivedMessage);
 					}
 
 				} else if (poller.pollin(pollInproc)) {
@@ -288,8 +288,8 @@ public class DmsClient {
 
 				case ZMQ.EVENT_DISCONNECTED:
 					serverConnected.set(false);
-					synchronized (messageFactory) {
-						messageFactory.deleteResources();
+					synchronized (messageReceiver) {
+						messageReceiver.deleteResources();
 					}
 					serverConnStatusUpdatedToListener();
 					break;
