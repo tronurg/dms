@@ -25,7 +25,7 @@ public abstract class MessageContainerBase {
 		this.messageSender = new DmsMessageSender(messagePojo, health, direction);
 		this.sendStatus = sendStatus;
 		this.useTimeout = messagePojo.useTimeout;
-		this.bigFile = this.messageSender.fileSizeGreaterThan(CommonConstants.SMALL_FILE_LIMIT);
+		this.bigFile = this.messageSender.isFileSizeGreaterThan(CommonConstants.SMALL_FILE_LIMIT);
 	}
 
 	public void checkIn() {
