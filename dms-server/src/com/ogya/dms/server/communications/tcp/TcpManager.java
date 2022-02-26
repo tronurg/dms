@@ -450,7 +450,7 @@ public class TcpManager implements TcpServerListener {
 					Chunk chunk;
 					while ((chunk = messageContainer.next()) != null) {
 						if (messageContainer.sendFunction == null) {
-							messageContainer.close();
+							messageContainer.markAsDone();
 							break;
 						}
 						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber,

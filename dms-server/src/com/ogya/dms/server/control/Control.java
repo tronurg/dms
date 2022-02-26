@@ -181,7 +181,7 @@ public class Control implements TcpManagerListener, ModelListener {
 							}
 						}
 						if (messageContainer.successfulUuids.isEmpty()) {
-							messageContainer.close();
+							messageContainer.markAsDone();
 						} else {
 							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
 									.getAndSet(chunk.progress);

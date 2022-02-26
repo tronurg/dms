@@ -43,7 +43,7 @@ public class DmsMessageSender implements AutoCloseable {
 				fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
 			}
 		} catch (Exception e) {
-			maxPosition = Long.MIN_VALUE;
+			markAsDone();
 		}
 	}
 
@@ -105,7 +105,7 @@ public class DmsMessageSender implements AutoCloseable {
 				int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + maxPosition));
 				chunk = new Chunk(dataBuffer, progress);
 			} catch (Exception e) {
-				maxPosition = Long.MIN_VALUE;
+				markAsDone();
 				if (position > Long.MIN_VALUE) {
 					// Already started sending, so send closure byte
 					chunk = new Chunk(ByteBuffer.allocate(0), -1);
@@ -119,9 +119,13 @@ public class DmsMessageSender implements AutoCloseable {
 		position = -1;
 	}
 
+	public void markAsDone() {
+		maxPosition = Long.MIN_VALUE;
+	}
+
 	@Override
 	public void close() {
-		position = Long.MAX_VALUE;
+		markAsDone();
 		if (fileChannel == null) {
 			return;
 		}
