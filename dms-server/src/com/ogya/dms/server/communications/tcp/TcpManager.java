@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageReceiver;
 import com.ogya.dms.commons.DmsMessageSender.Chunk;
-import com.ogya.dms.commons.DmsMessageSender.Direction;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
@@ -448,13 +447,12 @@ public class TcpManager implements TcpServerListener {
 						continue;
 					}
 
-					for (messageContainer.checkIn(); messageContainer.messageSender.hasNext(); messageContainer
-							.checkIn()) {
+					Chunk chunk;
+					while ((chunk = messageContainer.next()) != null) {
 						if (messageContainer.sendFunction == null) {
-							messageContainer.messageSender.close();
+							messageContainer.close();
 							break;
 						}
-						Chunk chunk = messageContainer.messageSender.next();
 						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber,
 								chunk.dataBuffer);
 						if (sent) {
@@ -467,15 +465,17 @@ public class TcpManager implements TcpServerListener {
 							messageContainer.reset();
 							updateSendFunction(messageContainer);
 						}
-						if (messageContainer.bigFile && messageContainer.messageSender.hasNext()
-								&& !messageQueue.isEmpty()) {
+						if (messageContainer.bigFile && messageContainer.hasMore() && !messageQueue.isEmpty()) {
 							messageQueue.put(messageContainer);
 							break;
 						}
 					}
-					if (!messageContainer.messageSender.hasNext() && messageContainer.progressConsumer != null
-							&& messageContainer.progressPercent.get() < 100) {
-						messageContainer.progressConsumer.accept(-1);
+
+					if (!messageContainer.hasMore()) {
+						messageContainer.close();
+						if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
+							messageContainer.progressConsumer.accept(-1);
+						}
 					}
 				} catch (InterruptedException e) {
 

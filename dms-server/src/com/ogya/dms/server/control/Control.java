@@ -22,7 +22,6 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
 import com.ogya.dms.commons.DmsMessageSender.Chunk;
-import com.ogya.dms.commons.DmsMessageSender.Direction;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.MessageContainerBase;
@@ -158,53 +157,54 @@ public class Control implements TcpManagerListener, ModelListener {
 					inprocSocket.recv(ZMQ.DONTWAIT);
 					MessageContainer messageContainer = messageQueue.poll();
 
-					if (messageContainer == null)
+					if (messageContainer == null) {
 						continue;
+					}
 
-					for (messageContainer.checkIn(); messageContainer.messageSender.hasNext(); messageContainer
-							.checkIn()) {
-						if (messageContainer.successfulUuids.isEmpty()) {
-							messageContainer.messageSender.close();
-							break;
-						}
-						Chunk chunk = messageContainer.messageSender.next();
+					Chunk chunk;
+					while ((chunk = messageContainer.next()) != null) {
 						for (String receiverUuid : messageContainer.receiverUuids) {
-							if (!messageContainer.successfulUuids.contains(receiverUuid))
+							if (!messageContainer.successfulUuids.contains(receiverUuid)) {
 								continue;
+							}
 							try {
 								routerSocket.send(receiverUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 								routerSocket.send(String.valueOf(messageContainer.messageNumber),
 										ZMQ.SNDMORE | ZMQ.DONTWAIT);
 								routerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
-								if (chunk.progress < 0)
+								if (chunk.progress < 0) {
 									messageContainer.successfulUuids.remove(receiverUuid);
+								}
 							} catch (ZMQException e) {
 								messageContainer.successfulUuids.remove(receiverUuid);
 								taskQueue.execute(() -> model.localUuidDisconnected(receiverUuid));
 							}
 						}
-						if (!messageContainer.successfulUuids.isEmpty()) {
+						if (messageContainer.successfulUuids.isEmpty()) {
+							messageContainer.close();
+						} else {
 							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
 									.getAndSet(chunk.progress);
 							if (progressUpdated && messageContainer.progressConsumer != null) {
 								messageContainer.progressConsumer.accept(messageContainer.successfulUuids,
 										chunk.progress);
 							}
-						} else {
-							// Do nothing
 						}
-						if (messageContainer.bigFile && messageContainer.messageSender.hasNext()) {
+						if (messageContainer.bigFile && messageContainer.hasMore() && !messageQueue.isEmpty()) {
 							messageQueue.put(messageContainer);
 							signalQueue.put(SIGNAL);
 							break;
 						}
 					}
 
-					if (!messageContainer.messageSender.hasNext() && messageContainer.progressConsumer != null
-							&& messageContainer.successfulUuids.size() < messageContainer.receiverUuids.size()) {
-						messageContainer.progressConsumer.accept(messageContainer.receiverUuids.stream()
-								.filter(receiverUuid -> !messageContainer.successfulUuids.contains(receiverUuid))
-								.collect(Collectors.toList()), -1);
+					if (!messageContainer.hasMore()) {
+						messageContainer.close();
+						if (messageContainer.progressConsumer != null
+								&& messageContainer.successfulUuids.size() < messageContainer.receiverUuids.size()) {
+							messageContainer.progressConsumer.accept(messageContainer.receiverUuids.stream()
+									.filter(receiverUuid -> !messageContainer.successfulUuids.contains(receiverUuid))
+									.collect(Collectors.toList()), -1);
+						}
 					}
 
 				}

@@ -15,18 +15,17 @@ public class DmsMessageSender implements AutoCloseable {
 	private static final byte MESSAGE_POJO_PREFIX = -1;
 
 	private final MessagePojo messagePojo;
-	private final AtomicBoolean health;
 	private final Direction direction;
 
+	protected final AtomicBoolean health = new AtomicBoolean(true);
 	private FileChannel fileChannel;
 	private int pojoSize = 0;
-	private long fileSize = 0;
-	private long position = -1;
+	private long position = Long.MIN_VALUE;
+	private long maxPosition = 0;
 
-	public DmsMessageSender(MessagePojo messagePojo, AtomicBoolean health, Direction direction) {
+	public DmsMessageSender(MessagePojo messagePojo, Direction direction) {
 
 		this.messagePojo = messagePojo;
-		this.health = health;
 		this.direction = direction;
 
 		init();
@@ -37,14 +36,14 @@ public class DmsMessageSender implements AutoCloseable {
 		Path attachment = messagePojo.getAttachmentSource();
 		try {
 			if (attachment != null) {
-				fileSize = Files.size(attachment);
-				messagePojo.attachment.size = fileSize;
+				maxPosition = Files.size(attachment);
+				messagePojo.attachment.size = maxPosition;
 			}
-			if (fileSize > 0) {
+			if (maxPosition > 0) {
 				fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
 			}
 		} catch (Exception e) {
-			close();
+			maxPosition = Long.MIN_VALUE;
 		}
 	}
 
@@ -82,34 +81,38 @@ public class DmsMessageSender implements AutoCloseable {
 		return dataBuffer;
 	}
 
-	public boolean hasNext() {
-		if (!(health.get() && position < fileSize)) {
-			close();
-		}
-		return position < fileSize;
+	protected boolean isFileSizeGreaterThan(long limitSize) {
+		return maxPosition > limitSize;
+	}
+
+	public boolean hasMore() {
+		return position < maxPosition;
 	}
 
 	public Chunk next() {
-		if (!(position < fileSize)) {
-			return null;
-		}
-		ByteBuffer dataBuffer;
-		try {
-			if (position < 0) {
-				dataBuffer = getPojoData();
-			} else {
-				dataBuffer = getFileData();
+		Chunk chunk = null;
+		if (hasMore()) {
+			try {
+				if (!health.get()) {
+					throw new Exception();
+				}
+				ByteBuffer dataBuffer;
+				if (position < 0) {
+					dataBuffer = getPojoData();
+				} else {
+					dataBuffer = getFileData();
+				}
+				int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + maxPosition));
+				chunk = new Chunk(dataBuffer, progress);
+			} catch (Exception e) {
+				maxPosition = Long.MIN_VALUE;
+				if (position > Long.MIN_VALUE) {
+					// Already started sending, so send closure byte
+					chunk = new Chunk(ByteBuffer.allocate(0), -1);
+				}
 			}
-			int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + fileSize));
-			return new Chunk(dataBuffer, progress);
-		} catch (Exception e) {
-
 		}
-		return new Chunk(ByteBuffer.allocate(0), -1);
-	}
-
-	public boolean isFileSizeGreaterThan(long limitSize) {
-		return fileSize > limitSize;
+		return chunk;
 	}
 
 	public void reset() {
@@ -118,7 +121,7 @@ public class DmsMessageSender implements AutoCloseable {
 
 	@Override
 	public void close() {
-		fileSize = -1;
+		position = Long.MAX_VALUE;
 		if (fileChannel == null) {
 			return;
 		}

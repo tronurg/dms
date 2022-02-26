@@ -242,18 +242,21 @@ public class DmsClient {
 
 					MessagePojo messagePojo = dealerQueue.take();
 
-					DmsMessageSender messageSender = new DmsMessageSender(messagePojo, serverConnected,
-							Direction.CLIENT_TO_SERVER);
+					try (DmsMessageSender messageSender = new DmsMessageSender(messagePojo,
+							Direction.CLIENT_TO_SERVER)) {
 
-					while (messageSender.hasNext()) {
+						Chunk chunk;
 
-						Chunk chunk = messageSender.next();
+						while (serverConnected.get() && (chunk = messageSender.next()) != null) {
 
-						inprocSocket.sendByteBuffer(chunk.dataBuffer, 0);
-						if (chunk.progress < 0 && messagePojo.useTrackingId != null
-								&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT))
-							progressTransientReceivedToListener(messagePojo.useTrackingId,
-									messagePojo.receiverUuid.split(";"), chunk.progress);
+							inprocSocket.sendByteBuffer(chunk.dataBuffer, 0);
+							if (chunk.progress < 0 && messagePojo.useTrackingId != null
+									&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT)) {
+								progressTransientReceivedToListener(messagePojo.useTrackingId,
+										messagePojo.receiverUuid.split(";"), chunk.progress);
+							}
+
+						}
 
 					}
 
