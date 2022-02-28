@@ -11,7 +11,7 @@ import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageSender implements AutoCloseable {
 
-	private static final int CHUNK_SIZE = 8200;
+	private static final int CHUNK_SIZE = 8192;
 	private static final byte MESSAGE_POJO_PREFIX = -1;
 
 	private final MessagePojo messagePojo;
@@ -74,7 +74,7 @@ public class DmsMessageSender implements AutoCloseable {
 	}
 
 	private ByteBuffer getFileData() throws Exception {
-		ByteBuffer dataBuffer = ByteBuffer.allocate(CHUNK_SIZE).putLong(position);
+		ByteBuffer dataBuffer = ByteBuffer.allocate(Long.BYTES + CHUNK_SIZE).putLong(position);
 		fileChannel.read(dataBuffer);
 		position = fileChannel.position();
 		dataBuffer.flip();
@@ -115,8 +115,25 @@ public class DmsMessageSender implements AutoCloseable {
 		return chunk;
 	}
 
-	public void reset() {
-		position = -1;
+	public void rewind() {
+		if (position < 0) {
+			return;
+		}
+		if (position == 0) {
+			position = -1;
+			return;
+		}
+		long remainder = position % CHUNK_SIZE;
+		if (remainder == 0) {
+			remainder = CHUNK_SIZE;
+		}
+		position -= remainder;
+	}
+
+	public void rewind(int times) {
+		for (int i = 0; i < times; ++i) {
+			rewind();
+		}
 	}
 
 	public void markAsDone() {

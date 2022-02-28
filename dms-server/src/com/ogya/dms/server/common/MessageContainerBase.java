@@ -33,10 +33,4 @@ public abstract class MessageContainerBase extends DmsMessageSender {
 		return super.next();
 	}
 
-	@Override
-	public void reset() {
-		super.reset();
-		progressPercent.set(-1);
-	}
-
 }

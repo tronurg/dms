@@ -449,6 +449,10 @@ public class TcpManager implements TcpServerListener {
 
 					Chunk chunk;
 					while ((chunk = messageContainer.next()) != null) {
+						if (messageContainer.isUpdateReady() && updateSendFunction(messageContainer)) {
+							// Update periodically
+							messageContainer.rewind(2);
+						}
 						if (messageContainer.sendFunction == null) {
 							messageContainer.markAsDone();
 							break;
@@ -462,8 +466,7 @@ public class TcpManager implements TcpServerListener {
 								messageContainer.progressConsumer.accept(chunk.progress);
 							}
 						} else {
-							messageContainer.reset();
-							updateSendFunction(messageContainer);
+							messageContainer.rewind(); // Update on the next turn
 						}
 						if (messageContainer.bigFile && messageContainer.hasMore() && !messageQueue.isEmpty()) {
 							messageQueue.put(messageContainer);
@@ -491,7 +494,7 @@ public class TcpManager implements TcpServerListener {
 			messageQueue.put(messageContainer);
 		}
 
-		private void updateSendFunction(MessageContainer messageContainer) {
+		private boolean updateSendFunction(MessageContainer messageContainer) {
 			BiFunction<Integer, ByteBuffer, Boolean> sendFunction = null;
 			synchronized (connections) {
 				connections.sort(CONNECTION_SORTER);
@@ -503,7 +506,7 @@ public class TcpManager implements TcpServerListener {
 					}
 				}
 			}
-			messageContainer.sendFunction = sendFunction;
+			return messageContainer.updateSendFunction(sendFunction);
 		}
 
 		private void close() {
@@ -516,10 +519,13 @@ public class TcpManager implements TcpServerListener {
 
 	private static class MessageContainer extends MessageContainerBase {
 
+		private static final int UPDATE_TURNS = 10;
+
 		private final InetAddress useLocalAddress;
 		private final Consumer<Integer> progressConsumer;
 		private final boolean endMessage;
 		private BiFunction<Integer, ByteBuffer, Boolean> sendFunction;
+		private int updateCounter = 0;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
@@ -529,8 +535,31 @@ public class TcpManager implements TcpServerListener {
 			this.progressConsumer = progressConsumer;
 		}
 
+		private boolean isUpdateReady() {
+			return updateCounter > UPDATE_TURNS;
+		}
+
+		private boolean updateSendFunction(BiFunction<Integer, ByteBuffer, Boolean> sendFunction) {
+			boolean updated = this.sendFunction != sendFunction;
+			this.sendFunction = sendFunction;
+			updateCounter = 0;
+			return updated;
+		}
+
 		private boolean isEndMessage() {
 			return endMessage;
+		}
+
+		@Override
+		public Chunk next() {
+			++updateCounter;
+			return super.next();
+		}
+
+		@Override
+		public void rewind() {
+			updateCounter = UPDATE_TURNS;
+			super.rewind();
 		}
 
 	}
