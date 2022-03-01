@@ -173,7 +173,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		//
 
-		reportsDialog = new ReportsDialog(CommonMethods.getReportTemplates());
+		reportsDialog = new ReportsDialog(CommonConstants.REPORT_TEMPLATES);
 
 		reportsDialog.addReportsListener(this);
 

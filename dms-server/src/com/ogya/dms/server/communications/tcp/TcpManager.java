@@ -452,6 +452,7 @@ public class TcpManager implements TcpServerListener {
 						if (messageContainer.isUpdateReady() && updateSendFunction(messageContainer)) {
 							// Update periodically
 							messageContainer.rewind(2);
+							continue;
 						}
 						if (messageContainer.sendFunction == null) {
 							messageContainer.markAsDone();

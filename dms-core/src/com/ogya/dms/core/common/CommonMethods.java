@@ -37,56 +37,6 @@ public class CommonMethods {
 
 	private static ResourceBundle langFile;
 
-	public static List<ReportTemplate> getReportTemplates() {
-
-		final List<ReportTemplate> templates = new ArrayList<ReportTemplate>();
-
-		try {
-
-			Files.list(Paths.get("./plugins/dms/templates")).forEach(path -> {
-
-				if (Files.isDirectory(path) || !path.toString().toLowerCase().endsWith(".txt"))
-					return;
-
-				try (BufferedReader reader = Files.newBufferedReader(path)) {
-
-					String firstLine = reader.readLine().replace("\uFEFF", "");
-
-					if (!firstLine.startsWith("#"))
-						return;
-
-					Integer reportId = Integer.parseInt(firstLine.substring(1));
-
-					StringBuilder stringBuilder = new StringBuilder();
-
-					int c;
-
-					while ((c = reader.read()) != -1)
-						stringBuilder.append((char) c);
-
-					String fileName = path.getFileName().toString();
-
-					templates.add(new ReportTemplate(reportId, fileName.substring(0, fileName.length() - 4),
-							stringBuilder.toString()));
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
-
-			});
-
-		} catch (IOException e) {
-
-			e.printStackTrace();
-
-		}
-
-		return templates;
-
-	}
-
 	public static void writeReport(Path path, String header, List<String> paragraphs) {
 
 		try (PDDocument document = new PDDocument()) {
@@ -343,6 +293,56 @@ public class CommonMethods {
 		}
 
 		return autoOpenFile;
+
+	}
+
+	static List<ReportTemplate> getReportTemplates() {
+
+		final List<ReportTemplate> templates = new ArrayList<ReportTemplate>();
+
+		try {
+
+			Files.list(Paths.get("./plugins/dms/templates")).forEach(path -> {
+
+				if (Files.isDirectory(path) || !path.toString().toLowerCase().endsWith(".txt"))
+					return;
+
+				try (BufferedReader reader = Files.newBufferedReader(path)) {
+
+					String firstLine = reader.readLine().replace("\uFEFF", "");
+
+					if (!firstLine.startsWith("#"))
+						return;
+
+					Integer reportId = Integer.parseInt(firstLine.substring(1));
+
+					StringBuilder stringBuilder = new StringBuilder();
+
+					int c;
+
+					while ((c = reader.read()) != -1)
+						stringBuilder.append((char) c);
+
+					String fileName = path.getFileName().toString();
+
+					templates.add(new ReportTemplate(reportId, fileName.substring(0, fileName.length() - 4),
+							stringBuilder.toString()));
+
+				} catch (Exception e) {
+
+					e.printStackTrace();
+
+				}
+
+			});
+
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		}
+
+		return templates;
 
 	}
 
