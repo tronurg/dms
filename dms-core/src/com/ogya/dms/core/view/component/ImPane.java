@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.TextAreaSkin;
 
@@ -119,6 +120,8 @@ public class ImPane extends HBox {
 
 	private void initReportBtn() {
 
+		reportBtn.managedProperty().bind(reportBtn.visibleProperty());
+		reportBtn.setVisible(!CommonConstants.REPORT_TEMPLATES.isEmpty());
 		reportBtn.opacityProperty()
 				.bind(Bindings.createObjectBinding(() -> reportBtn.isHover() ? 1.0 : 0.5, reportBtn.hoverProperty()));
 
