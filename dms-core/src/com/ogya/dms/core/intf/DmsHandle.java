@@ -16,6 +16,8 @@ import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
+import com.ogya.dms.core.intf.listeners.DmsDownloadListener;
+import com.ogya.dms.core.intf.listeners.DmsFileServer;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
 import com.ogya.dms.core.intf.tools.MessageRules;
@@ -32,6 +34,14 @@ public interface DmsHandle {
 	void addGuiListener(DmsGuiListener guiListener);
 
 	void removeGuiListener(DmsGuiListener guiListener);
+
+	void addDownloadListener(DmsDownloadListener downloadListener);
+
+	void removeDownloadListener(DmsDownloadListener downloadListener);
+
+	void registerFileServer(DmsFileServer fileServer);
+
+	void unregisterFileServer();
 
 	void setCoordinates(Double latitude, Double longitude) throws UnsupportedOperationException;
 
@@ -88,6 +98,10 @@ public interface DmsHandle {
 	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules);
 
 	void cancelMessage(Long trackingId);
+
+	boolean downloadFile(Long contactId, Integer fileId);
+
+	void cancelDownload(Long contactId, Integer fileId);
 
 	Future<Long> sendGuiMessageToContact(String message, Long contactId);
 

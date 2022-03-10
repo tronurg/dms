@@ -39,4 +39,12 @@ public interface DmsClientListener {
 
 	void transientMessageReceived(MessageHandleImpl message, Path attachment, String remoteUuid);
 
+	void downloadRequested(Integer fileId, String remoteUuid);
+
+	void cancelDownloadRequested(Integer fileId, String remoteUuid);
+
+	void serverNotFound(String remoteUuid);
+
+	void fileNotFound(Integer fileId, String remoteUuid);
+
 }

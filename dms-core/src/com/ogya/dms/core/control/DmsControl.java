@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -63,6 +64,8 @@ import com.ogya.dms.core.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.ListHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
 import com.ogya.dms.core.intf.handles.impl.ObjectHandleImpl;
+import com.ogya.dms.core.intf.listeners.DmsDownloadListener;
+import com.ogya.dms.core.intf.listeners.DmsFileServer;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
 import com.ogya.dms.core.intf.tools.MessageRules;
@@ -111,6 +114,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private final List<DmsListener> dmsListeners = Collections.synchronizedList(new ArrayList<DmsListener>());
 	private final List<DmsGuiListener> dmsGuiListeners = Collections.synchronizedList(new ArrayList<DmsGuiListener>());
+	private final List<DmsDownloadListener> dmsDownloadListeners = Collections
+			.synchronizedList(new ArrayList<DmsDownloadListener>());
+	private final AtomicReference<DmsFileServer> dmsFileServer = new AtomicReference<DmsFileServer>();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final ExecutorService listenerTaskQueue = DmsFactory.newSingleThreadExecutorService();
@@ -1868,6 +1874,76 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void downloadRequested(final Integer fileId, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			DmsFileServer fileServer = dmsFileServer.get();
+			if (fileServer == null) {
+				dmsClient.sendServerNotFound(remoteUuid);
+				return;
+			}
+			Path path = fileServer.fileRequested(fileId);
+			if (path == null) {
+				dmsClient.sendFileNotFound(fileId, remoteUuid);
+				return;
+			}
+			// TODO
+
+		});
+
+	}
+
+	@Override
+	public void cancelDownloadRequested(final Integer fileId, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+			// TODO
+		});
+
+	}
+
+	@Override
+	public void serverNotFound(final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Long contactId = getContact(remoteUuid).getId();
+				dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(contactId));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
+	public void fileNotFound(final Integer fileId, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			try {
+
+				Long contactId = getContact(remoteUuid).getId();
+				dmsDownloadListeners.forEach(listener -> listener.fileNotFound(contactId, fileId));
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		});
+
+	}
+
+	@Override
 	public void commentUpdateRequested(final String comment) {
 
 		taskQueue.execute(() -> {
@@ -3156,6 +3232,34 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void addDownloadListener(DmsDownloadListener downloadListener) {
+
+		dmsDownloadListeners.add(downloadListener);
+
+	}
+
+	@Override
+	public void removeDownloadListener(DmsDownloadListener downloadListener) {
+
+		dmsDownloadListeners.remove(downloadListener);
+
+	}
+
+	@Override
+	public void registerFileServer(DmsFileServer fileServer) {
+
+		dmsFileServer.set(fileServer);
+
+	}
+
+	@Override
+	public void unregisterFileServer() {
+
+		dmsFileServer.set(null);
+
+	}
+
+	@Override
 	public void setCoordinates(Double latitude, Double longitude) throws UnsupportedOperationException {
 
 		if (latitude != null && (latitude < -90.0 || latitude > 90.0))
@@ -3539,6 +3643,33 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public void cancelMessage(Long trackingId) {
 
 		dmsClient.cancelTransientMessage(trackingId);
+
+	}
+
+	@Override
+	public boolean downloadFile(Long contactId, Integer fileId) {
+
+		if (!model.isServerConnected())
+			return false;
+
+		try {
+			Contact contact = getContact(contactId);
+			if (Objects.equals(contact.getStatus(), Availability.OFFLINE)) {
+				return false;
+			}
+			dmsClient.sendDownloadRequest(fileId, contact.getUuid());
+			return true;
+		} catch (Exception e) {
+
+		}
+
+		return false;
+
+	}
+
+	@Override
+	public void cancelDownload(Long contactId, Integer fileId) {
+		// TODO Auto-generated method stub
 
 	}
 

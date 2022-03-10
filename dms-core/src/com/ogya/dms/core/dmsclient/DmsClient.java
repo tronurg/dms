@@ -187,6 +187,33 @@ public class DmsClient {
 
 	}
 
+	public void sendDownloadRequest(Integer fileId, String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(fileId), uuid, receiverUuid,
+				ContentType.DOWNLOAD_REQUEST, null, null, null));
+
+	}
+
+	public void cancelDownloadRequest(Integer fileId, String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(fileId), uuid, receiverUuid,
+				ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null));
+
+	}
+
+	public void sendServerNotFound(String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.SERVER_NOT_FOUND, null, null, null));
+
+	}
+
+	public void sendFileNotFound(Integer fileId, String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(fileId), uuid, receiverUuid,
+				ContentType.FILE_NOT_FOUND, null, null, null));
+
+	}
+
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
@@ -395,6 +422,19 @@ public class DmsClient {
 
 				break;
 
+			case DOWNLOAD_REQUEST:
+
+				downloadRequestedToListener(DmsPackingFactory.unpack(payload, Integer.class), messagePojo.senderUuid);
+
+				break;
+
+			case CANCEL_DOWNLOAD_REQUEST:
+
+				cancelDownloadRequestedToListener(DmsPackingFactory.unpack(payload, Integer.class),
+						messagePojo.senderUuid);
+
+				break;
+
 			default:
 
 				break;
@@ -534,6 +574,46 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.transientMessageReceived(message, attachment, remoteUuid);
+
+		});
+
+	}
+
+	private void downloadRequestedToListener(final Integer fileId, String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.downloadRequested(fileId, remoteUuid);
+
+		});
+
+	}
+
+	private void cancelDownloadRequestedToListener(final Integer fileId, String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.cancelDownloadRequested(fileId, remoteUuid);
+
+		});
+
+	}
+
+	private void serverNotFoundToListener(String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.serverNotFound(remoteUuid);
+
+		});
+
+	}
+
+	private void fileNotFoundToListener(final Integer fileId, String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.fileNotFound(fileId, remoteUuid);
 
 		});
 
