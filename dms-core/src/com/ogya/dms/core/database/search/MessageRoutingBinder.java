@@ -1,7 +1,5 @@
 package com.ogya.dms.core.database.search;
 
-import java.util.Objects;
-
 import org.hibernate.search.mapper.pojo.bridge.RoutingBridge;
 import org.hibernate.search.mapper.pojo.bridge.binding.RoutingBindingContext;
 import org.hibernate.search.mapper.pojo.bridge.mapping.programmatic.RoutingBinder;
@@ -24,8 +22,7 @@ public class MessageRoutingBinder implements RoutingBinder {
 		@Override
 		public void route(DocumentRoutes routes, Object entityIdentifier, Message indexedEntity,
 				RoutingBridgeRouteContext context) {
-			if (indexedEntity.getUpdateType() == null
-					&& !Objects.equals(indexedEntity.getViewStatus(), ViewStatus.DELETED)) {
+			if (indexedEntity.getUpdateType() == null && indexedEntity.getViewStatus() != ViewStatus.DELETED) {
 				routes.addRoute();
 			} else {
 				routes.notIndexed();

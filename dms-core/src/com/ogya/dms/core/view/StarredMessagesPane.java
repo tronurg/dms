@@ -164,10 +164,10 @@ class StarredMessagesPane extends BorderPane {
 		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (!searchModeProperty.get())
 				return;
-			if (Objects.equals(e.getCode(), KeyCode.UP)) {
+			if (e.getCode() == KeyCode.UP) {
 				imSearchField.fireSearchUp();
 				e.consume();
-			} else if (Objects.equals(e.getCode(), KeyCode.DOWN)) {
+			} else if (e.getCode() == KeyCode.DOWN) {
 				imSearchField.fireSearchDown();
 				e.consume();
 			}
@@ -392,7 +392,7 @@ class StarredMessagesPane extends BorderPane {
 			return;
 		}
 
-		if (!Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
+		if (message.getViewStatus() != ViewStatus.ARCHIVED)
 			return;
 
 		MessageBalloon messageBalloon = newMessageBalloon(message);
@@ -408,7 +408,7 @@ class StarredMessagesPane extends BorderPane {
 
 	private void updateMessage(Message message) {
 
-		if (Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
+		if (message.getViewStatus() == ViewStatus.ARCHIVED)
 			return;
 
 		deleteMessage(message);
@@ -517,7 +517,7 @@ class StarredMessagesPane extends BorderPane {
 
 		if (messageInfo.attachment != null) {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
+			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
 
@@ -625,35 +625,34 @@ class StarredMessagesPane extends BorderPane {
 
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
 
-			if (!(Objects.equals(e.getButton(), MouseButton.NONE)
-					|| Objects.equals(e.getButton(), MouseButton.PRIMARY))) {
+			if (!(e.getButton() == MouseButton.NONE || e.getButton() == MouseButton.PRIMARY)) {
 
 				e.consume();
 
 			} else if (selectionModeProperty.get()) {
 
-				if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED))
+				if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType()))
 					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
 
-				if (!Objects.equals(e.getEventType(), MouseEvent.MOUSE_EXITED_TARGET))
+				if (!MouseEvent.MOUSE_EXITED_TARGET.equals(e.getEventType()))
 					e.consume();
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED)) {
+			} else if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType())) {
 
 				longPressTimer.start(messageBalloon);
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_DRAGGED)) {
+			} else if (MouseEvent.MOUSE_DRAGGED.equals(e.getEventType())) {
 
 				longPressTimer.stop();
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_RELEASED)) {
+			} else if (MouseEvent.MOUSE_RELEASED.equals(e.getEventType())) {
 
 				longPressTimer.stop();
 
 				if (!e.isStillSincePress())
 					e.consume();
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED)) {
+			} else if (MouseEvent.MOUSE_CLICKED.equals(e.getEventType())) {
 
 				if (!e.isStillSincePress())
 					e.consume();
@@ -727,7 +726,7 @@ class StarredMessagesPane extends BorderPane {
 
 		void blink() {
 
-			if (!Objects.equals(shadow.getColor(), Color.TRANSPARENT))
+			if (!Color.TRANSPARENT.equals(shadow.getColor()))
 				return;
 
 			new Transition() {
@@ -831,7 +830,7 @@ class StarredMessagesPane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO))
+			if (messageInfo.attachmentType == AttachmentType.AUDIO)
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),

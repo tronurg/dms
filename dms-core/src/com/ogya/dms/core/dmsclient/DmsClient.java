@@ -278,7 +278,7 @@ public class DmsClient {
 
 							inprocSocket.sendByteBuffer(chunk.dataBuffer, 0);
 							if (chunk.progress < 0 && messagePojo.useTrackingId != null
-									&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT)) {
+									&& messagePojo.contentType == ContentType.TRANSIENT) {
 								progressTransientReceivedToListener(messagePojo.useTrackingId,
 										messagePojo.receiverUuid.split(";"), chunk.progress);
 							}

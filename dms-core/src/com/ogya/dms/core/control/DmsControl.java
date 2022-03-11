@@ -208,7 +208,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		dbManager.fetchAllContacts().forEach(contact -> {
 
-			if (!Objects.equals(contact.getStatus(), Availability.OFFLINE)) {
+			if (contact.getStatus() != Availability.OFFLINE) {
 				contact.setStatus(Availability.OFFLINE);
 				try {
 					contact = dbManager.addUpdateContact(contact);
@@ -219,7 +219,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			final Contact newContact = contact;
 			Long id = newContact.getId();
-			boolean entityDeleted = Objects.equals(newContact.getViewStatus(), ViewStatus.DELETED);
+			boolean entityDeleted = newContact.getViewStatus() == ViewStatus.DELETED;
 
 			if (!entityDeleted)
 				model.addUpdateContact(newContact);
@@ -262,7 +262,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		dbManager.fetchAllGroups().forEach(group -> {
 
-			if (Objects.equals(group.getStatus(), Availability.LIMITED)) {
+			if (group.getStatus() == Availability.LIMITED) {
 				group.setStatus(Availability.OFFLINE);
 				try {
 					group = dbManager.addUpdateGroup(group);
@@ -273,7 +273,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			final Dgroup newGroup = group;
 			Long id = newGroup.getId();
-			boolean entityDeleted = Objects.equals(newGroup.getViewStatus(), ViewStatus.DELETED);
+			boolean entityDeleted = newGroup.getViewStatus() == ViewStatus.DELETED;
 
 			if (!entityDeleted)
 				model.addUpdateGroup(newGroup);
@@ -376,7 +376,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			dbManager.getAllActiveGroupsOfContact(id).forEach(group -> {
 
-				if (Objects.equals(group.getStatus(), Availability.OFFLINE))
+				if (group.getStatus() == Availability.OFFLINE)
 					return;
 
 				group.setStatus(Availability.OFFLINE);
@@ -666,7 +666,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			copyMessage.setGroupRefId(group.getGroupRefId());
 		}
 
-		if (!copyMessage.isLocal() && Objects.equals(copyMessage.getSenderGroupOwner(), Boolean.TRUE))
+		if (!copyMessage.isLocal() && Boolean.TRUE.equals(copyMessage.getSenderGroupOwner()))
 			copyMessage.setContactRefId(copyMessage.getContact().getId());
 
 		Path path = null;
@@ -681,7 +681,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void updateMessageReceived(Message message) throws Exception {
 
-		if (Objects.equals(message.getUpdateType(), UpdateType.CANCEL_MESSAGE)) {
+		if (message.getUpdateType() == UpdateType.CANCEL_MESSAGE) {
 
 			Long messageId = Long.parseLong(message.getContent());
 
@@ -690,7 +690,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (dbMessage != null)
 				cancelMessage(dbMessage);
 
-		} else if (Objects.equals(message.getUpdateType(), UpdateType.UPDATE_GROUP)) {
+		} else if (message.getUpdateType() == UpdateType.UPDATE_GROUP) {
 
 			GroupUpdate groupUpdate = DmsPackingFactory.unpack(Base64.getDecoder().decode(message.getContent()),
 					GroupUpdate.class);
@@ -825,7 +825,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			message.setMessageStatus(messageStatus);
 
 			if (!message.isDone())
-				message.setDone(Objects.equals(messageStatus, MessageStatus.READ));
+				message.setDone(messageStatus == MessageStatus.READ);
 
 			final Message newMessage = dbManager.addUpdateMessage(message);
 			model.registerMessage(newMessage);
@@ -833,7 +833,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (newMessage.getUpdateType() == null)
 				updateMessageInPane(newMessage);
 
-			if (Objects.equals(messageStatus, MessageStatus.FRESH))
+			if (messageStatus == MessageStatus.FRESH)
 				sendPrivateMessage(newMessage);
 
 		} else {
@@ -866,7 +866,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			MessageStatus overallMessageStatus = message.getOverallStatus();
 
 			if (!message.isDone())
-				message.setDone(Objects.equals(overallMessageStatus, MessageStatus.READ));
+				message.setDone(overallMessageStatus == MessageStatus.READ);
 
 			// If I am the owner, update the message status too
 			if (message.isLocal())
@@ -878,7 +878,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (newMessage.getUpdateType() == null)
 				updateMessageInPane(newMessage);
 
-			if (Objects.equals(messageStatus, MessageStatus.FRESH)) {
+			if (messageStatus == MessageStatus.FRESH) {
 				// If the message is not received remotely and;
 				// I am the group owner
 				// or
@@ -937,11 +937,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		final List<Long> deletedMessageIds = new ArrayList<Long>();
 
-		if (messages.stream().allMatch(message -> Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))) {
+		if (messages.stream().allMatch(message -> message.getViewStatus() == ViewStatus.ARCHIVED)) {
 
 			messages.forEach(message -> {
 
-				if (Objects.equals(message.getEntity().getViewStatus(), ViewStatus.DELETED)) {
+				if (message.getEntity().getViewStatus() == ViewStatus.DELETED) {
 					preDeleteMessage(message);
 					deletedMessageIds.add(message.getId());
 				} else {
@@ -952,7 +952,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		} else {
 
-			messages.removeIf(message -> !Objects.equals(message.getViewStatus(), ViewStatus.DEFAULT));
+			messages.removeIf(message -> message.getViewStatus() != ViewStatus.DEFAULT);
 
 			messages.forEach(message -> message.setViewStatus(ViewStatus.ARCHIVED));
 
@@ -989,7 +989,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void preDeleteMessage(Message message) {
 
-		if (Objects.equals(message.getMessageStatus(), MessageStatus.FRESH) && !message.isDone())
+		if (message.getMessageStatus() == MessageStatus.FRESH && !message.isDone())
 			dispatchCancellation(message);
 
 		message.setDone(true);
@@ -1384,7 +1384,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				message.setId(null);
 
 				Contact contact = getContact(remoteUuid);
-				if (!Objects.equals(contact.getViewStatus(), ViewStatus.DEFAULT)) {
+				if (contact.getViewStatus() != ViewStatus.DEFAULT) {
 					contact.setViewStatus(ViewStatus.DEFAULT);
 					final Contact newContact = dbManager.addUpdateContact(contact);
 					contact = newContact;
@@ -1399,12 +1399,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				boolean messageToBeRedirected = false;
 
-				if (Objects.equals(message.getSenderGroupOwner(), Boolean.FALSE)) {
+				if (Boolean.FALSE.equals(message.getSenderGroupOwner())) {
 
 					Dgroup group = getGroup(message.getGroupRefId());
 					if (group == null) {
 						return;
-					} else if (!Objects.equals(group.getViewStatus(), ViewStatus.DEFAULT)) {
+					} else if (group.getViewStatus() != ViewStatus.DEFAULT) {
 						group.setViewStatus(ViewStatus.DEFAULT);
 						final Dgroup newGroup = dbManager.addUpdateGroup(group);
 						group = newGroup;
@@ -1425,12 +1425,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					messageToBeRedirected = !message.getStatusReports().isEmpty();
 
-				} else if (Objects.equals(message.getSenderGroupOwner(), Boolean.TRUE)) {
+				} else if (Boolean.TRUE.equals(message.getSenderGroupOwner())) {
 
 					Dgroup group = getRemoteGroup(remoteUuid, message.getGroupRefId());
 					if (group == null) {
 						group = groupUpdateReceived(new Dgroup(contact, message.getGroupRefId()), new GroupUpdate());
-					} else if (!Objects.equals(group.getViewStatus(), ViewStatus.DEFAULT)) {
+					} else if (group.getViewStatus() != ViewStatus.DEFAULT) {
 						group.setViewStatus(ViewStatus.DEFAULT);
 						final Dgroup newGroup = dbManager.addUpdateGroup(group);
 						group = newGroup;
@@ -1476,20 +1476,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 									newMessage.getContent(), newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
-						} else if (Objects.equals(newMessage.getAttachmentType(), AttachmentType.FILE)) {
+						} else if (newMessage.getAttachmentType() == AttachmentType.FILE) {
 
 							dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(newMessage.getId(),
 									newMessage.getContent(), Paths.get(newMessage.getAttachment()),
 									newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
-						} else if (Objects.equals(newMessage.getAttachmentType(), AttachmentType.AUDIO)) {
+						} else if (newMessage.getAttachmentType() == AttachmentType.AUDIO) {
 
 							dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(newMessage.getId(),
 									Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
-						} else if (Objects.equals(newMessage.getAttachmentType(), AttachmentType.REPORT)) {
+						} else if (newMessage.getAttachmentType() == AttachmentType.REPORT) {
 
 							dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(newMessage.getId(),
 									newMessage.getContent(), newMessage.getMessageCode(),
@@ -1986,7 +1986,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Contact identity = model.getIdentity();
 
-				if (Objects.equals(identity.getStatus(), availability))
+				if (identity.getStatus() == availability)
 					return;
 
 				identity.setStatus(availability);
@@ -2201,17 +2201,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				dmsGuiListeners
 						.forEach(guiListener -> guiListener.guiMessageSent(messageId, messageTxt, contactId, groupId));
 
-			} else if (Objects.equals(attachmentType, AttachmentType.FILE)) {
+			} else if (attachmentType == AttachmentType.FILE) {
 
 				dmsGuiListeners.forEach(
 						guiListener -> guiListener.guiFileSent(messageId, messageTxt, attachment, contactId, groupId));
 
-			} else if (Objects.equals(attachmentType, AttachmentType.AUDIO)) {
+			} else if (attachmentType == AttachmentType.AUDIO) {
 
 				dmsGuiListeners
 						.forEach(guiListener -> guiListener.guiAudioSent(messageId, attachment, contactId, groupId));
 
-			} else if (Objects.equals(attachmentType, AttachmentType.REPORT)) {
+			} else if (attachmentType == AttachmentType.REPORT) {
 
 				dmsGuiListeners.forEach(guiListener -> guiListener.guiReportSent(messageId, messageTxt, messageCode,
 						attachment, contactId, groupId));
@@ -2700,8 +2700,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				List<Message> messages = dbManager.getMessagesById(messageIds).stream()
-						.filter(message -> !Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED))
-						.collect(Collectors.toList());
+						.filter(message -> message.getViewStatus() != ViewStatus.ARCHIVED).collect(Collectors.toList());
 				if (messages.isEmpty())
 					return;
 
@@ -3044,7 +3043,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (entityId.isGroup()) {
 
 			Dgroup group = getGroup(entityId.getId());
-			if (group == null || !Objects.equals(group.getStatus(), Availability.OFFLINE))
+			if (group == null || group.getStatus() != Availability.OFFLINE)
 				return;
 
 			group.setViewStatus(status);
@@ -3056,7 +3055,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		} else {
 
 			Contact contact = getContact(entityId.getId());
-			if (!Objects.equals(contact.getStatus(), Availability.OFFLINE))
+			if (contact.getStatus() != Availability.OFFLINE)
 				return;
 
 			contact.setViewStatus(status);
@@ -3579,7 +3578,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		contactIds.forEach(id -> {
 			try {
 				Contact contact = getContact(id);
-				if (!Objects.equals(contact.getStatus(), Availability.OFFLINE))
+				if (contact.getStatus() != Availability.OFFLINE)
 					contactUuids.add(contact.getUuid());
 			} catch (Exception e) {
 
@@ -3656,7 +3655,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		try {
 			Contact contact = getContact(contactId);
-			if (Objects.equals(contact.getStatus(), Availability.OFFLINE)) {
+			if (contact.getStatus() == Availability.OFFLINE) {
 				return false;
 			}
 			dmsClient.sendDownloadRequest(fileId, contact.getUuid());

@@ -3,7 +3,6 @@ package com.ogya.dms.core.view.component;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -52,7 +51,7 @@ public class ImSearchField extends HBox {
 		HBox.setHgrow(searchTextField, Priority.ALWAYS);
 		searchTextField.setMaxWidth(Double.MAX_VALUE);
 		searchTextField.setOnKeyPressed(e -> {
-			if (Objects.equals(e.getCode(), KeyCode.ENTER))
+			if (e.getCode() == KeyCode.ENTER)
 				searchBtn.fire();
 		});
 

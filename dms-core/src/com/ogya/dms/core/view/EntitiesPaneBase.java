@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -169,7 +168,7 @@ class EntitiesPaneBase extends BorderPane {
 
 		EntityId entityId = entity.getEntityId();
 
-		if (Objects.equals(entity.getViewStatus(), ViewStatus.DELETED)) {
+		if (entity.getViewStatus() == ViewStatus.DELETED) {
 			removeEntity(entityId);
 			return;
 		}
@@ -237,10 +236,9 @@ class EntitiesPaneBase extends BorderPane {
 
 			entityPane.setOnMouseClicked(e -> {
 				EventTarget clickedTarget = e.getTarget();
-				if (!Objects.equals(lastClickedTarget.getAndSet(clickedTarget), clickedTarget))
+				if (lastClickedTarget.getAndSet(clickedTarget) != clickedTarget)
 					return;
-				if (!(Objects.equals(e.getButton(), MouseButton.PRIMARY) && e.getClickCount() == 2
-						&& e.isStillSincePress()))
+				if (!(e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2 && e.isStillSincePress()))
 					return;
 				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 			});
@@ -320,9 +318,9 @@ class EntitiesPaneBase extends BorderPane {
 
 			super.updateEntity(entity);
 
-			hideableProperty.set(Objects.equals(entity.getStatus(), Availability.OFFLINE)
-					&& Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT));
-			hiddenProperty.set(Objects.equals(entity.getViewStatus(), ViewStatus.ARCHIVED));
+			hideableProperty
+					.set(entity.getStatus() == Availability.OFFLINE && entity.getViewStatus() == ViewStatus.DEFAULT);
+			hiddenProperty.set(entity.getViewStatus() == ViewStatus.ARCHIVED);
 
 		}
 
@@ -335,7 +333,7 @@ class EntitiesPaneBase extends BorderPane {
 			if (message.isLocal())
 				return;
 
-			if (Objects.equals(message.getMessageStatus(), MessageStatus.READ))
+			if (message.getMessageStatus() == MessageStatus.READ)
 				unreadMessages.remove(messageId);
 			else
 				unreadMessages.add(messageId);

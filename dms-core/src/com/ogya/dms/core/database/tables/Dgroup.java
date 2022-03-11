@@ -1,7 +1,6 @@
 package com.ogya.dms.core.database.tables;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 import javax.persistence.Column;
@@ -168,7 +167,7 @@ public class Dgroup extends EntityBase {
 
 	@PreUpdate
 	protected void preUpdate() {
-		if (viewStatus == null || !Objects.equals(status, Availability.OFFLINE))
+		if (viewStatus == null || status != Availability.OFFLINE)
 			viewStatus = ViewStatus.DEFAULT;
 	}
 

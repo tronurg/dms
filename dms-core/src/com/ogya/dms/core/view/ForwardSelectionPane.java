@@ -136,15 +136,15 @@ public class ForwardSelectionPane extends GridPane {
 
 		EntityId entityId = entity.getEntityId();
 
-		if (Objects.equals(entity.getViewStatus(), ViewStatus.DELETED)) {
+		if (entity.getViewStatus() == ViewStatus.DELETED) {
 			removeEntity(entityId);
 			return;
 		}
 
 		EntityCard entityCard = getEntityCard(entityId);
 
-		boolean active = Objects.equals(entity.getViewStatus(), ViewStatus.DEFAULT)
-				&& !(entityId.isGroup() && Objects.equals(entity.getStatus(), Availability.OFFLINE));
+		boolean active = entity.getViewStatus() == ViewStatus.DEFAULT
+				&& !(entityId.isGroup() && entity.getStatus() == Availability.OFFLINE);
 		if (!active && Objects.equals(selectedEntityIdProperty.get(), entityId))
 			selectedEntityIdProperty.set(null);
 		entityCard.activeProperty().set(active);

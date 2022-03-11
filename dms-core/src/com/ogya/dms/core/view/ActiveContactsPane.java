@@ -6,7 +6,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Predicate;
 
 import javax.swing.UIManager;
@@ -92,7 +91,7 @@ public class ActiveContactsPane extends BorderPane {
 
 		Long id = contact.getId();
 
-		if (Objects.equals(contact.getViewStatus(), ViewStatus.DELETED)) {
+		if (contact.getViewStatus() == ViewStatus.DELETED) {
 			removeContact(id);
 			return;
 		}
@@ -203,7 +202,7 @@ public class ActiveContactsPane extends BorderPane {
 				if (contact == null)
 					return false;
 
-				boolean active = !Objects.equals(contact.getStatus(), Availability.OFFLINE);
+				boolean active = contact.getStatus() != Availability.OFFLINE;
 
 				Predicate<ContactHandle> filter = contactFilterProperty.get();
 

@@ -221,10 +221,10 @@ class MessagePane extends BorderPane {
 		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
 			if (!searchModeProperty.get())
 				return;
-			if (Objects.equals(e.getCode(), KeyCode.UP)) {
+			if (e.getCode() == KeyCode.UP) {
 				imSearchField.fireSearchUp();
 				e.consume();
-			} else if (Objects.equals(e.getCode(), KeyCode.DOWN)) {
+			} else if (e.getCode() == KeyCode.DOWN) {
 				imSearchField.fireSearchDown();
 				e.consume();
 			}
@@ -320,7 +320,7 @@ class MessagePane extends BorderPane {
 		nameLabel.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
 		nameLabel.managedProperty().bind(nameLabel.visibleProperty());
 		nameLabel.setOnMouseClicked(e -> {
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+			if (e.getButton() != MouseButton.PRIMARY)
 				return;
 			if (editableProperty.get())
 				listeners.forEach(listener -> listener.showAddUpdateGroupClicked());
@@ -745,8 +745,8 @@ class MessagePane extends BorderPane {
 		if (!entity.getEntityId().isGroup())
 			return;
 
-		activeProperty.setValue(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
-		editableProperty.set(Objects.equals(entity.getStatus(), Availability.AVAILABLE));
+		activeProperty.setValue(entity.getStatus() != Availability.OFFLINE);
+		editableProperty.set(entity.getStatus() == Availability.AVAILABLE);
 
 		if (activeProperty.get())
 			return;
@@ -777,7 +777,7 @@ class MessagePane extends BorderPane {
 			return;
 		}
 
-		if (Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
+		if (message.getViewStatus() == ViewStatus.DELETED)
 			return;
 
 		MessageBalloon messageBalloon = newMessageBalloon(message);
@@ -834,7 +834,7 @@ class MessagePane extends BorderPane {
 
 	private void updateMessage(Message message) {
 
-		if (Objects.equals(message.getViewStatus(), ViewStatus.DELETED)) {
+		if (message.getViewStatus() == ViewStatus.DELETED) {
 			deleteMessage(message);
 			removeSearchHit(message);
 			return;
@@ -848,7 +848,7 @@ class MessagePane extends BorderPane {
 			return;
 
 		messageBalloon.messageInfo.statusProperty.set(message.getMessageStatus());
-		messageBalloon.messageInfo.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
+		messageBalloon.messageInfo.archivedProperty.set(message.getViewStatus() == ViewStatus.ARCHIVED);
 
 	}
 
@@ -1022,7 +1022,7 @@ class MessagePane extends BorderPane {
 				goToMessage(messageId);
 				return;
 			}
-			if (Objects.equals(shadow.getColor(), Color.DARKGRAY)) {
+			if (Color.DARKGRAY.equals(shadow.getColor())) {
 				new Transition() {
 
 					{
@@ -1038,7 +1038,7 @@ class MessagePane extends BorderPane {
 			}
 		});
 
-		if (!Objects.equals(message.getViewStatus(), ViewStatus.DELETED))
+		if (message.getViewStatus() != ViewStatus.DELETED)
 			referencedMessageIds.add(messageId);
 
 		return referenceBalloon;
@@ -1058,7 +1058,7 @@ class MessagePane extends BorderPane {
 
 		if (messageInfo.attachment != null) {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
+			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
 
@@ -1172,26 +1172,25 @@ class MessagePane extends BorderPane {
 
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
 
-			if (!(Objects.equals(e.getButton(), MouseButton.NONE)
-					|| Objects.equals(e.getButton(), MouseButton.PRIMARY))) {
+			if (!(e.getButton() == MouseButton.NONE || e.getButton() == MouseButton.PRIMARY)) {
 
 				e.consume();
 
 			} else if (selectionModeProperty.get()) {
 
-				if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED))
+				if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType()))
 					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
 
-				if (!Objects.equals(e.getEventType(), MouseEvent.MOUSE_EXITED_TARGET))
+				if (!MouseEvent.MOUSE_EXITED_TARGET.equals(e.getEventType()))
 					e.consume();
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_PRESSED)) {
+			} else if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType())) {
 
 				longPressTimer.start(messageBalloon);
 
 				dragPosProperty.set(e.getSceneX());
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_DRAGGED)) {
+			} else if (MouseEvent.MOUSE_DRAGGED.equals(e.getEventType())) {
 
 				longPressTimer.stop();
 
@@ -1206,7 +1205,7 @@ class MessagePane extends BorderPane {
 				messageBalloon.setTranslateX(translate);
 				replyGroup.inner.setRadius(radius);
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_RELEASED)) {
+			} else if (MouseEvent.MOUSE_RELEASED.equals(e.getEventType())) {
 
 				longPressTimer.stop();
 
@@ -1218,7 +1217,7 @@ class MessagePane extends BorderPane {
 				if (!e.isStillSincePress())
 					e.consume();
 
-			} else if (Objects.equals(e.getEventType(), MouseEvent.MOUSE_CLICKED)) {
+			} else if (MouseEvent.MOUSE_CLICKED.equals(e.getEventType())) {
 
 				if (!e.isStillSincePress())
 					e.consume();
@@ -1318,7 +1317,7 @@ class MessagePane extends BorderPane {
 
 		void blink() {
 
-			if (!Objects.equals(shadow.getColor(), Color.TRANSPARENT))
+			if (!Color.TRANSPARENT.equals(shadow.getColor()))
 				return;
 
 			new Transition() {
@@ -1402,7 +1401,7 @@ class MessagePane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO))
+			if (messageInfo.attachmentType == AttachmentType.AUDIO)
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
@@ -1559,7 +1558,7 @@ class MessagePane extends BorderPane {
 				public void onChanged(Change<? extends Node> arg0) {
 					ObservableList<? extends Node> children = arg0.getList();
 					MessageBalloon namedBalloon = namedBalloonRef.get();
-					if (children.isEmpty() || Objects.equals(children.get(0), namedBalloon))
+					if (children.isEmpty() || children.get(0) == namedBalloon)
 						return;
 					if (namedBalloon != null)
 						namedBalloon.removeNameLbl(nameLbl);
@@ -1783,10 +1782,10 @@ class MessagePane extends BorderPane {
 			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
 			fwdCount = message.getForwardCount();
 			this.statusProperty.set(message.getMessageStatus());
-			this.archivedProperty.set(Objects.equals(message.getViewStatus(), ViewStatus.ARCHIVED));
+			this.archivedProperty.set(message.getViewStatus() == ViewStatus.ARCHIVED);
 
 			this.statusProperty.addListener((e0, e1, e2) -> {
-				if (Objects.equals(e2, MessageStatus.FRESH))
+				if (e2 == MessageStatus.FRESH)
 					this.progressProperty.set(-1);
 			});
 

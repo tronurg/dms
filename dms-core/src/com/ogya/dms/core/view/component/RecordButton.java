@@ -3,7 +3,6 @@ package com.ogya.dms.core.view.component;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -98,7 +97,7 @@ public class RecordButton extends Button {
 
 		setOnMousePressed(e -> {
 
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+			if (e.getButton() != MouseButton.PRIMARY)
 				return;
 
 			timeline.play();
@@ -108,7 +107,7 @@ public class RecordButton extends Button {
 
 		setOnMouseReleased(e -> {
 
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+			if (e.getButton() != MouseButton.PRIMARY)
 				return;
 
 			timeline.stop();

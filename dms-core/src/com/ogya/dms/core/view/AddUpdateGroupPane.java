@@ -133,7 +133,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	void updateContact(Contact contact) {
 
 		getContactGroup(contact.getId()).updateContact(contact.getName(), contact.getStatus(),
-				!Objects.equals(contact.getViewStatus(), ViewStatus.DELETED));
+				contact.getViewStatus() != ViewStatus.DELETED);
 
 	}
 
@@ -500,7 +500,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		private void updateContact(String name, Availability status, boolean active) {
 
-			onlineProperty.set(!Objects.equals(status, Availability.OFFLINE));
+			onlineProperty.set(status != Availability.OFFLINE);
 			activeProperty.set(active);
 
 			boolean toBeSorted = !Objects.equals(addContactBox.getName(), name);

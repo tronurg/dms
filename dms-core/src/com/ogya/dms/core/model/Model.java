@@ -179,7 +179,7 @@ public class Model {
 
 	public void addUpdateContact(Contact contact) {
 
-		if (Objects.equals(contact.getViewStatus(), ViewStatus.DELETED)) {
+		if (contact.getViewStatus() == ViewStatus.DELETED) {
 			removeContact(contact);
 			return;
 		}
@@ -210,7 +210,7 @@ public class Model {
 
 	public boolean isContactOnline(String uuid) {
 
-		return uuidContacts.containsKey(uuid) && !Objects.equals(getContact(uuid).getStatus(), Availability.OFFLINE);
+		return uuidContacts.containsKey(uuid) && getContact(uuid).getStatus() != Availability.OFFLINE;
 
 	}
 
@@ -291,7 +291,7 @@ public class Model {
 
 	public void addUpdateGroup(Dgroup group) {
 
-		if (Objects.equals(group.getViewStatus(), ViewStatus.DELETED)) {
+		if (group.getViewStatus() == ViewStatus.DELETED) {
 			removeGroup(group);
 			return;
 		}
@@ -362,7 +362,7 @@ public class Model {
 
 		Set<Message> unreadMessagesOfEntity = unreadMessages.get(entityId);
 
-		if (Objects.equals(message.getMessageStatus(), MessageStatus.READ) && unreadMessagesOfEntity != null) {
+		if (message.getMessageStatus() == MessageStatus.READ && unreadMessagesOfEntity != null) {
 
 			unreadMessagesOfEntity.remove(message);
 
@@ -370,7 +370,7 @@ public class Model {
 				unreadMessages.remove(entityId);
 			}
 
-		} else if (!Objects.equals(message.getMessageStatus(), MessageStatus.READ)) {
+		} else if (message.getMessageStatus() != MessageStatus.READ) {
 
 			if (unreadMessagesOfEntity == null) {
 				unreadMessagesOfEntity = new TreeSet<Message>(messageSorter);

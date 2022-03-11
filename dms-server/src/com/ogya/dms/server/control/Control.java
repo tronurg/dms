@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -114,7 +113,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private void receiveUdpMessage(InetAddress senderAddress, String message, boolean isUnicast) {
 
-		if (Objects.equals(message, DMS_UUID))
+		if (DMS_UUID.equals(message))
 			return;
 
 		tcpManager.addConnection(message, senderAddress,

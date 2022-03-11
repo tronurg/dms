@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -298,10 +297,10 @@ public class FoldersPane extends BorderPane {
 
 					Kind<?> kind = watchEvent.kind();
 
-					if (Objects.equals(kind, StandardWatchEventKinds.OVERFLOW))
+					if (StandardWatchEventKinds.OVERFLOW.equals(kind))
 						continue;
 
-					if (Objects.equals(kind, StandardWatchEventKinds.ENTRY_DELETE))
+					if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind))
 						Platform.runLater(() -> removeFolderView(dir.resolve((Path) watchEvent.context())));
 
 					if (folderView != null)

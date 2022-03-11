@@ -168,7 +168,7 @@ public class Model {
 
 				sendStatuses.forEach(sendStatus -> {
 					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
-							&& Objects.equals(sendStatus.contentType, ContentType.MESSAGE)
+							&& sendStatus.contentType == ContentType.MESSAGE
 							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
 						sendStatus.status.set(false);
 					}
@@ -182,7 +182,7 @@ public class Model {
 
 				sendStatuses.forEach(sendStatus -> {
 					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
-							&& Objects.equals(sendStatus.contentType, ContentType.TRANSIENT)
+							&& sendStatus.contentType == ContentType.TRANSIENT
 							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
 						sendStatus.status.set(false);
 					}
@@ -201,9 +201,9 @@ public class Model {
 				final Path attachment = messagePojo.getAttachmentLink();
 
 				final boolean trackedMessage = messagePojo.useTrackingId != null
-						&& Objects.equals(messagePojo.contentType, ContentType.MESSAGE);
+						&& messagePojo.contentType == ContentType.MESSAGE;
 				final boolean trackedTransientMessage = messagePojo.useTrackingId != null
-						&& Objects.equals(messagePojo.contentType, ContentType.TRANSIENT);
+						&& messagePojo.contentType == ContentType.TRANSIENT;
 
 				// This piece of code is disabled and commented out on purpose to remind that
 				// in some cases, like conveying a status report, the sender is virtually set to
@@ -225,7 +225,7 @@ public class Model {
 
 					if ((localUser = localUsers.get(receiverUuid)) != null) {
 
-						if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
+						if (Boolean.TRUE.equals(localUser.beacon.local) && attachment != null) {
 
 							try {
 								Files.createDirectories(sharedTempDir);
@@ -376,7 +376,7 @@ public class Model {
 
 			DmsServer remoteServer = remoteServers.get(dmsUuid);
 
-			if (!(Objects.equals(messagePojo.contentType, ContentType.BCON) || remoteServer == null)) {
+			if (!(messagePojo.contentType == ContentType.BCON || remoteServer == null)) {
 				User remoteUser = remoteServer.mappedUsers.get(messagePojo.senderUuid);
 				String senderUuid = remoteUser == null ? messagePojo.senderUuid : remoteUser.beacon.uuid;
 				messagePojo.senderUuid = senderUuid;
@@ -435,7 +435,7 @@ public class Model {
 					LocalUser localUser = localUsers.get(receiverUuid);
 					if (localUser == null)
 						continue;
-					if (Objects.equals(localUser.beacon.local, Boolean.TRUE) && attachment != null) {
+					if (Boolean.TRUE.equals(localUser.beacon.local) && attachment != null) {
 						try {
 							Files.createDirectories(sharedTempDir);
 							Path copyOfAttachment = Files.copy(attachment,

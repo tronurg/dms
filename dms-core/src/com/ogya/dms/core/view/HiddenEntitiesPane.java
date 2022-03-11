@@ -1,7 +1,5 @@
 package com.ogya.dms.core.view;
 
-import java.util.Objects;
-
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
@@ -88,7 +86,7 @@ public class HiddenEntitiesPane extends BorderPane {
 
 	void updateEntity(EntityBase entity) {
 
-		entitiesPane.updateEntity(entity, Objects.equals(entity.getViewStatus(), ViewStatus.ARCHIVED));
+		entitiesPane.updateEntity(entity, entity.getViewStatus() == ViewStatus.ARCHIVED);
 
 	}
 

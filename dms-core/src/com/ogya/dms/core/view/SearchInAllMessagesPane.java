@@ -7,7 +7,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.ogya.dms.core.common.CommonMethods;
@@ -228,7 +227,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		Long messageId = message.getId();
 
-		if (!(messageBalloons.containsKey(messageId) && Objects.equals(message.getViewStatus(), ViewStatus.DELETED)))
+		if (!(messageBalloons.containsKey(messageId) && message.getViewStatus() == ViewStatus.DELETED))
 			return;
 
 		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
@@ -282,7 +281,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		if (messageInfo.attachment != null) {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO)) {
+			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
 
@@ -457,7 +456,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (Objects.equals(messageInfo.attachmentType, AttachmentType.AUDIO))
+			if (messageInfo.attachmentType == AttachmentType.AUDIO)
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
 
 			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),

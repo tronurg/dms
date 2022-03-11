@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.MessageStatus;
@@ -180,10 +179,10 @@ public class StatusInfoPane extends BorderPane {
 
 		void updateMessageStatus(MessageStatus messageStatus) {
 
-			if (Objects.equals(messageStatus, MessageStatus.FRESH))
+			if (messageStatus == MessageStatus.FRESH)
 				setProgress(-1);
 
-			infoGrp.setVisible(!Objects.equals(messageStatus, MessageStatus.FRESH));
+			infoGrp.setVisible(messageStatus != MessageStatus.FRESH);
 
 			waitingCircle.setFill(messageStatus.getWaitingColor());
 			transmittedCircle.setFill(messageStatus.getTransmittedColor());

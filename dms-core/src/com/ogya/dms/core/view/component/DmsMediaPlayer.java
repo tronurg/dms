@@ -2,7 +2,6 @@ package com.ogya.dms.core.view.component;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -150,12 +149,13 @@ public class DmsMediaPlayer extends GridPane {
 
 		final Rectangle rectangle = new Rectangle(16.0 * viewFactor, 16.0 * viewFactor);
 		rectangle.setFill(Color.RED);
-		btn.graphicProperty().bind(Bindings.createObjectBinding(
-				() -> Objects.equals(mediaPlayer.getStatus(), MediaPlayer.Status.PLAYING) ? rectangle : triangle,
-				mediaPlayer.statusProperty()));
+		btn.graphicProperty()
+				.bind(Bindings.createObjectBinding(
+						() -> mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING ? rectangle : triangle,
+						mediaPlayer.statusProperty()));
 
 		btn.setOnAction(e -> {
-			if (Objects.equals(mediaPlayer.getStatus(), MediaPlayer.Status.PLAYING)) {
+			if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
 				resetMediaPlayer();
 			} else {
 				mediaPlayer.play();
@@ -173,10 +173,10 @@ public class DmsMediaPlayer extends GridPane {
 
 		progressBar.setOnMouseClicked(e -> {
 
-			if (!Objects.equals(e.getButton(), MouseButton.PRIMARY))
+			if (e.getButton() != MouseButton.PRIMARY)
 				return;
 
-			if (Objects.equals(mediaPlayer.getStatus(), MediaPlayer.Status.PLAYING))
+			if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING)
 				mediaPlayer.seek(
 						Duration.millis(mediaPlayer.getTotalDuration().toMillis() * e.getX() / progressBar.getWidth()));
 

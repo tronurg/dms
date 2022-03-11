@@ -1,6 +1,5 @@
 package com.ogya.dms.core.view;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -66,7 +65,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private void init() {
 
 		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (!Objects.equals(e.getCode(), KeyCode.ENTER))
+			if (e.getCode() != KeyCode.ENTER)
 				return;
 			addIpButton.fire();
 		});

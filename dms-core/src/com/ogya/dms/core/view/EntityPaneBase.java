@@ -1,7 +1,5 @@
 package com.ogya.dms.core.view;
 
-import java.util.Objects;
-
 import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.structures.Availability;
@@ -174,7 +172,7 @@ class EntityPaneBase extends GridPane {
 		getChildren().remove(commentLbl);
 		getChildren().remove(coordinatesLbl);
 
-		onlineProperty.set(!Objects.equals(entity.getStatus(), Availability.OFFLINE));
+		onlineProperty.set(entity.getStatus() != Availability.OFFLINE);
 
 		String name = entity.getName();
 

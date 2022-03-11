@@ -114,7 +114,7 @@ public class DmsTest {
 			JButton btn = new JButton("test");
 			btn.addActionListener(e -> {
 
-				dmsHandle.setAvailability(dmsHandle.getMyContactHandle().getAvailability().equals(Availability.OFFLINE)
+				dmsHandle.setAvailability(dmsHandle.getMyContactHandle().getAvailability() == Availability.OFFLINE
 						? Availability.AVAILABLE
 						: Availability.OFFLINE);
 

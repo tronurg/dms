@@ -179,7 +179,7 @@ public class Contact extends EntityBase {
 
 	@PreUpdate
 	protected void preUpdate() {
-		if (viewStatus == null || !Objects.equals(status, Availability.OFFLINE))
+		if (viewStatus == null || status != Availability.OFFLINE)
 			viewStatus = ViewStatus.DEFAULT;
 	}
 

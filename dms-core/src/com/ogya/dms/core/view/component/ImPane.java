@@ -3,7 +3,6 @@ package com.ogya.dms.core.view.component;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
 import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -97,7 +96,7 @@ public class ImPane extends HBox {
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 400 ? null : change));
 
 		messageArea.setOnKeyPressed(e -> {
-			if (Objects.equals(e.getCode(), KeyCode.ENTER)) {
+			if (e.getCode() == KeyCode.ENTER) {
 				if (e.isShiftDown()) {
 					messageArea.appendText(System.lineSeparator());
 				} else {

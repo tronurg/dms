@@ -7,7 +7,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.UIManager;
@@ -108,7 +107,7 @@ public class DmsPanel extends StackPane
 
 				topNode.setVisible(true);
 
-				if (Objects.equals(topNode, mainPane))
+				if (topNode == mainPane)
 					unreadEntityIds.clear();
 				else if (topNode instanceof MessagePane)
 					messagePaneOnScreenRef.set((MessagePane) topNode);
@@ -281,8 +280,7 @@ public class DmsPanel extends StackPane
 			hiddenEntitiesPane.moveEntityToTop(entityId);
 		}
 
-		if (getChildren().size() == 1 || message.isLocal()
-				|| Objects.equals(message.getMessageStatus(), MessageStatus.READ))
+		if (getChildren().size() == 1 || message.isLocal() || message.getMessageStatus() == MessageStatus.READ)
 			return;
 
 		unreadEntityIds.add(entityId);

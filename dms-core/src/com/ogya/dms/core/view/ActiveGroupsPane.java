@@ -116,7 +116,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		Long id = group.getId();
 
-		if (Objects.equals(group.getViewStatus(), ViewStatus.DELETED)) {
+		if (group.getViewStatus() == ViewStatus.DELETED) {
 			removeGroup(id);
 			return;
 		}
@@ -245,7 +245,7 @@ public class ActiveGroupsPane extends BorderPane {
 				if (group == null)
 					return false;
 
-				boolean active = !Objects.equals(group.getStatus(), Availability.OFFLINE);
+				boolean active = group.getStatus() != Availability.OFFLINE;
 
 				Predicate<GroupHandle> filter = groupFilterProperty.get();
 

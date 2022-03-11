@@ -85,7 +85,7 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			if (connections.containsKey(address) || Objects.equals(connectionType, TcpConnectionType.SERVER))
+			if (connections.containsKey(address) || connectionType == TcpConnectionType.SERVER)
 				return;
 
 			try {
@@ -393,7 +393,7 @@ public class TcpManager implements TcpServerListener {
 		public boolean equals(Object obj) {
 			if (obj == null || !(obj instanceof Connection))
 				return false;
-			return Objects.equals(((Connection) obj).order, order);
+			return ((Connection) obj).order == order;
 		}
 
 	}

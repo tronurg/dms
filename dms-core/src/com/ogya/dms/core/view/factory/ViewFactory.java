@@ -3,7 +3,6 @@ package com.ogya.dms.core.view.factory;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -99,7 +98,7 @@ public class ViewFactory {
 		if (parent != null) {
 			parent.setFocusTraversable(true);
 			parent.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-				if (!Objects.equals(e.getCode(), KeyCode.ESCAPE))
+				if (e.getCode() != KeyCode.ESCAPE)
 					return;
 				btn.fire();
 				e.consume();
