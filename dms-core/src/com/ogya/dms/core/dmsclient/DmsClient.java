@@ -467,7 +467,7 @@ public class DmsClient {
 
 	}
 
-	private void progressMessageReceivedToListener(final Long messageId, final String[] uuids, int progress) {
+	private void progressMessageReceivedToListener(final Long messageId, final String[] uuids, final int progress) {
 
 		taskQueue.execute(() -> {
 
@@ -477,7 +477,7 @@ public class DmsClient {
 
 	}
 
-	private void progressTransientReceivedToListener(final Long trackingId, final String[] uuids, int progress) {
+	private void progressTransientReceivedToListener(final Long trackingId, final String[] uuids, final int progress) {
 
 		taskQueue.execute(() -> {
 
@@ -527,7 +527,8 @@ public class DmsClient {
 
 	}
 
-	private void messageStatusFedToListener(final Map<Long, MessageStatus> messageIdStatusMap, String remoteUuid) {
+	private void messageStatusFedToListener(final Map<Long, MessageStatus> messageIdStatusMap,
+			final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -538,7 +539,7 @@ public class DmsClient {
 	}
 
 	private void groupMessageStatusFedToListener(final Map<Long, GroupMessageStatus> messageIdGroupStatusMap,
-			String remoteUuid) {
+			final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -579,7 +580,7 @@ public class DmsClient {
 
 	}
 
-	private void downloadRequestedToListener(final Integer fileId, String remoteUuid) {
+	private void downloadRequestedToListener(final Integer fileId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -589,7 +590,7 @@ public class DmsClient {
 
 	}
 
-	private void cancelDownloadRequestedToListener(final Integer fileId, String remoteUuid) {
+	private void cancelDownloadRequestedToListener(final Integer fileId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -599,7 +600,7 @@ public class DmsClient {
 
 	}
 
-	private void serverNotFoundToListener(String remoteUuid) {
+	private void serverNotFoundToListener(final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -609,7 +610,7 @@ public class DmsClient {
 
 	}
 
-	private void fileNotFoundToListener(final Integer fileId, String remoteUuid) {
+	private void fileNotFoundToListener(final Integer fileId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 

@@ -1261,7 +1261,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void remoteIpsReceived(InetAddress[] remoteIps) {
+	public void remoteIpsReceived(final InetAddress[] remoteIps) {
 
 		Platform.runLater(() -> dmsPanel.updateRemoteIps(
 				Arrays.asList(remoteIps).stream().map(ip -> ip.getHostAddress()).toArray(String[]::new)));
@@ -1520,7 +1520,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void userDisconnected(String uuid) {
+	public void userDisconnected(final String uuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1609,7 +1609,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void messageStatusFed(final Map<Long, MessageStatus> messageIdStatusMap, String remoteUuid) {
+	public void messageStatusFed(final Map<Long, MessageStatus> messageIdStatusMap, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1637,7 +1637,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void groupMessageStatusFed(final Map<Long, GroupMessageStatus> messageIdGroupStatusMap, String remoteUuid) {
+	public void groupMessageStatusFed(final Map<Long, GroupMessageStatus> messageIdGroupStatusMap,
+			final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1807,7 +1808,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void transientMessageReceived(final MessageHandleImpl message, final Path attachment, String remoteUuid) {
+	public void transientMessageReceived(final MessageHandleImpl message, final Path attachment,
+			final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
