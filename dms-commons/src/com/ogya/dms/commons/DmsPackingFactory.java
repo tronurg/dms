@@ -27,10 +27,10 @@ public class DmsPackingFactory {
 
 	private static ObjectMapper objectMapperServerToClient = objectMapper.copy()
 			.addMixIn(Beacon.class, BeaconServerToClientMixin.class)
-			.addMixIn(MessagePojo.class, MessagePojoServerToClientMixin.class);
+			.addMixIn(MessagePojo.class, MessagePojoFromServerMixin.class);
 	private static ObjectMapper objectMapperServerToServer = objectMapper.copy()
 			.addMixIn(Beacon.class, BeaconServerToServerMixin.class)
-			.addMixIn(MessagePojo.class, MessagePojoServerToServerMixin.class);
+			.addMixIn(MessagePojo.class, MessagePojoFromServerMixin.class);
 
 	public static byte[] pack(Object src) {
 
@@ -122,19 +122,8 @@ public class DmsPackingFactory {
 
 	}
 
-	private static abstract class MessagePojoServerToClientMixin {
+	private static abstract class MessagePojoFromServerMixin {
 
-		@JsonIgnore
-		public Long useTimeout;
-		@JsonIgnore
-		public InetAddress useLocalAddress;
-
-	}
-
-	private static abstract class MessagePojoServerToServerMixin {
-
-		@JsonIgnore
-		public Long useTrackingId;
 		@JsonIgnore
 		public Long useTimeout;
 		@JsonIgnore

@@ -4,14 +4,14 @@ import java.nio.file.Path;
 
 public interface DmsDownloadListener {
 
-	void fileServerNotFound(Long contactId);
+	void fileServerNotFound(Long downloadId);
 
-	void fileNotFound(Long contactId, Integer fileId);
+	void fileNotFound(Long downloadId);
 
-	void downloadingFile(Long contactId, Integer fileId, int progress);
+	void downloadingFile(Long downloadId, int progress);
 
-	void fileDownloaded(Long contactId, Integer fileId, Path path);
+	void fileDownloaded(Long downloadId, Path path);
 
-	void downloadFailed(Long contactId, Integer fileId);
+	void downloadFailed(Long downloadId);
 
 }

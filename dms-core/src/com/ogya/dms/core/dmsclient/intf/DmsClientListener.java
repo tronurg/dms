@@ -8,6 +8,7 @@ import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
+import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
 
@@ -39,12 +40,10 @@ public interface DmsClientListener {
 
 	void transientMessageReceived(MessageHandleImpl message, Path attachment, String remoteUuid);
 
-	void downloadRequested(Integer fileId, String remoteUuid);
+	void downloadRequested(DownloadPojo downloadPojo, String remoteUuid);
 
-	void cancelDownloadRequested(Integer fileId, String remoteUuid);
+	void serverNotFound(Long downloadId);
 
-	void serverNotFound(String remoteUuid);
-
-	void fileNotFound(Integer fileId, String remoteUuid);
+	void fileNotFound(Long downloadId);
 
 }

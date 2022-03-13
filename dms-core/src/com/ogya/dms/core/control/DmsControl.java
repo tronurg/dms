@@ -74,6 +74,7 @@ import com.ogya.dms.core.model.Model;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ContactMap;
+import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.GroupUpdate;
@@ -1147,6 +1148,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					taskQueue.execute(() -> {
 
+						if (!model.isContactOnline(userUuid)) {
+							return;
+						}
+
 						List<Long> messageIds = new ArrayList<Long>();
 
 						// CHECK PRIVATE MESSAGES
@@ -1246,6 +1251,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 						}
 
+						// CHECK DOWNLOADS
+						List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
+						waitingDownloads.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
+
 					});
 
 				}
@@ -1271,8 +1280,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void progressMessageReceived(final Long messageId, final String[] remoteUuids, final int progress) {
 		// messageId = local database id of the message (not the message id, which is
-		// the local
-		// database id of the sender)
+		// the local database id of the sender)
 
 		taskQueue.execute(() -> {
 
@@ -1876,70 +1884,43 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void downloadRequested(final Integer fileId, final String remoteUuid) {
+	public void downloadRequested(final DownloadPojo downloadPojo, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
 			DmsFileServer fileServer = dmsFileServer.get();
 			if (fileServer == null) {
-				dmsClient.sendServerNotFound(remoteUuid);
+				dmsClient.sendServerNotFound(downloadPojo.downloadId, remoteUuid);
 				return;
 			}
-			Path path = fileServer.fileRequested(fileId);
+			Path path = fileServer.fileRequested(downloadPojo.fileId);
 			if (path == null) {
-				dmsClient.sendFileNotFound(fileId, remoteUuid);
+				dmsClient.sendFileNotFound(downloadPojo.downloadId, remoteUuid);
 				return;
 			}
-			// TODO
+			dmsClient.uploadFile(path, remoteUuid, model.isServerLocal(), downloadPojo.downloadId);
 
 		});
 
 	}
 
 	@Override
-	public void cancelDownloadRequested(final Integer fileId, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-			// TODO
-		});
-
-	}
-
-	@Override
-	public void serverNotFound(final String remoteUuid) {
+	public void serverNotFound(final Long downloadId) {
 
 		taskQueue.execute(() -> {
 
-			try {
-
-				Long contactId = getContact(remoteUuid).getId();
-				dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(contactId));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(downloadId));
 
 		});
 
 	}
 
 	@Override
-	public void fileNotFound(final Integer fileId, final String remoteUuid) {
+	public void fileNotFound(final Long downloadId) {
 
 		taskQueue.execute(() -> {
 
-			try {
-
-				Long contactId = getContact(remoteUuid).getId();
-				dmsDownloadListeners.forEach(listener -> listener.fileNotFound(contactId, fileId));
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			dmsDownloadListeners.forEach(listener -> listener.fileNotFound(downloadId));
 
 		});
 
@@ -3648,29 +3629,43 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean downloadFile(Long contactId, Integer fileId) {
-
-		if (!model.isServerConnected())
-			return false;
+	public Long downloadFile(Long contactId, Integer fileId) {
 
 		try {
 			Contact contact = getContact(contactId);
-			if (contact.getStatus() == Availability.OFFLINE) {
-				return false;
+			DownloadPojo downloadPojo = model.registerDownload(contact.getUuid(), fileId);
+			if (contact.getStatus() != Availability.OFFLINE) {
+				dmsClient.sendDownloadRequest(downloadPojo, contact.getUuid());
 			}
-			dmsClient.sendDownloadRequest(fileId, contact.getUuid());
-			return true;
+			return downloadPojo.downloadId;
 		} catch (Exception e) {
 
 		}
 
-		return false;
+		return null;
 
 	}
 
 	@Override
-	public void cancelDownload(Long contactId, Integer fileId) {
-		// TODO Auto-generated method stub
+	public void cancelDownload(Long downloadId) {
+
+		DownloadPojo downloadPojo = model.removeDownload(downloadId);
+		if (model.isContactOnline(downloadPojo.senderUuid)) {
+			dmsClient.cancelDownloadRequest(downloadId, downloadPojo.senderUuid);
+		}
+		Path path = downloadPojo.path;
+		if (path == null) {
+			return;
+		}
+		try {
+			Files.deleteIfExists(path);
+			Path parent = path.toAbsolutePath().getParent();
+			if (Files.list(parent).count() == 0) {
+				Files.deleteIfExists(parent);
+			}
+		} catch (Exception e) {
+
+		}
 
 	}
 

@@ -99,9 +99,9 @@ public interface DmsHandle {
 
 	void cancelMessage(Long trackingId);
 
-	boolean downloadFile(Long contactId, Integer fileId);
+	Long downloadFile(Long contactId, Integer fileId);
 
-	void cancelDownload(Long contactId, Integer fileId);
+	void cancelDownload(Long downloadId);
 
 	Future<Long> sendGuiMessageToContact(String message, Long contactId);
 

@@ -192,6 +192,20 @@ public class Model {
 
 			}
 
+			case CANCEL_UPLOAD: {
+
+				sendStatuses.forEach(sendStatus -> {
+					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+							&& sendStatus.contentType == ContentType.UPLOAD
+							&& sendStatus.receiverUuids.contains(messagePojo.receiverUuid)) {
+						sendStatus.status.set(false);
+					}
+				});
+
+				break;
+
+			}
+
 			default: {
 
 				if (messagePojo.receiverUuid == null)

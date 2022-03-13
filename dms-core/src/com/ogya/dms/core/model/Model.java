@@ -24,6 +24,7 @@ import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 
@@ -79,6 +80,9 @@ public class Model {
 			return Long.compare(arg0.getId(), arg1.getId());
 		}
 	};
+
+	private final AtomicLong downloadIdCounter = new AtomicLong();
+	private final Map<Long, DownloadPojo> downloadMap = Collections.synchronizedMap(new HashMap<Long, DownloadPojo>());
 
 	public Model(Contact identity) {
 
@@ -533,6 +537,39 @@ public class Model {
 	public void clearPrivateMessageProgresses() {
 
 		privateMessageProgresses.clear();
+
+	}
+
+	public DownloadPojo registerDownload(String contactUuid, Integer fileId) {
+
+		Long downloadId = downloadIdCounter.getAndIncrement();
+		DownloadPojo downloadPojo = new DownloadPojo(contactUuid, fileId, downloadId);
+		downloadMap.put(downloadId, downloadPojo);
+		return downloadPojo;
+
+	}
+
+	public DownloadPojo getDownload(Long downloadId) {
+
+		return downloadMap.get(downloadId);
+
+	}
+
+	public DownloadPojo removeDownload(Long downloadId) {
+
+		return downloadMap.remove(downloadId);
+
+	}
+
+	public List<DownloadPojo> getWaitingDownloads(String contactUuid) {
+
+		List<DownloadPojo> downloadList = new ArrayList<DownloadPojo>();
+		downloadMap.forEach((downloadId, downloadPojo) -> {
+			if (Objects.equals(contactUuid, downloadPojo.senderUuid)) {
+				downloadList.add(downloadPojo);
+			}
+		});
+		return downloadList;
 
 	}
 

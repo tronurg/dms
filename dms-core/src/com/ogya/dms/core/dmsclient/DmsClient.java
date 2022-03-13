@@ -28,6 +28,7 @@ import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.core.factory.DmsFactory;
 import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
+import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
 
@@ -187,30 +188,45 @@ public class DmsClient {
 
 	}
 
-	public void sendDownloadRequest(Integer fileId, String receiverUuid) {
+	public void sendDownloadRequest(DownloadPojo downloadPojo, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(fileId), uuid, receiverUuid,
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadPojo), uuid, receiverUuid,
 				ContentType.DOWNLOAD_REQUEST, null, null, null));
 
 	}
 
-	public void cancelDownloadRequest(Integer fileId, String receiverUuid) {
+	public void cancelDownloadRequest(Long downloadId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(fileId), uuid, receiverUuid,
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadId), uuid, receiverUuid,
 				ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null));
 
 	}
 
-	public void sendServerNotFound(String receiverUuid) {
+	public void sendServerNotFound(Long downloadId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, receiverUuid, ContentType.SERVER_NOT_FOUND, null, null, null));
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid,
+				ContentType.SERVER_NOT_FOUND, null, null, null));
 
 	}
 
-	public void sendFileNotFound(Integer fileId, String receiverUuid) {
+	public void sendFileNotFound(Long downloadId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(fileId), uuid, receiverUuid,
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid,
 				ContentType.FILE_NOT_FOUND, null, null, null));
+
+	}
+
+	public void uploadFile(Path path, String receiverUuid, boolean linkOnlyAttachment, Long trackingId) {
+
+		MessagePojo messagePojo = new MessagePojo(null, null, receiverUuid, ContentType.UPLOAD, trackingId, null, null);
+		messagePojo.attachment = new AttachmentPojo(path, linkOnlyAttachment);
+		dealerQueue.offer(messagePojo);
+
+	}
+
+	public void cancelUpload(String receiverUuid, Long trackingId) {
+
+		dealerQueue.offer(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
 
 	}
 
@@ -424,14 +440,27 @@ public class DmsClient {
 
 			case DOWNLOAD_REQUEST:
 
-				downloadRequestedToListener(DmsPackingFactory.unpack(payload, Integer.class), messagePojo.senderUuid);
+				downloadRequestedToListener(DmsPackingFactory.unpack(payload, DownloadPojo.class),
+						messagePojo.senderUuid);
 
 				break;
 
 			case CANCEL_DOWNLOAD_REQUEST:
 
-				cancelDownloadRequestedToListener(DmsPackingFactory.unpack(payload, Integer.class),
-						messagePojo.senderUuid);
+				dealerQueue.offer(new MessagePojo(null, null, messagePojo.senderUuid, ContentType.CANCEL_UPLOAD,
+						DmsPackingFactory.unpack(payload, Long.class), null, null));
+
+				break;
+
+			case SERVER_NOT_FOUND:
+
+				serverNotFoundToListener(DmsPackingFactory.unpack(payload, Long.class));
+
+				break;
+
+			case FILE_NOT_FOUND:
+
+				fileNotFoundToListener(DmsPackingFactory.unpack(payload, Long.class));
 
 				break;
 
@@ -580,41 +609,31 @@ public class DmsClient {
 
 	}
 
-	private void downloadRequestedToListener(final Integer fileId, final String remoteUuid) {
+	private void downloadRequestedToListener(final DownloadPojo downloadPojo, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.downloadRequested(fileId, remoteUuid);
+			listener.downloadRequested(downloadPojo, remoteUuid);
 
 		});
 
 	}
 
-	private void cancelDownloadRequestedToListener(final Integer fileId, final String remoteUuid) {
+	private void serverNotFoundToListener(final Long downloadId) {
 
 		taskQueue.execute(() -> {
 
-			listener.cancelDownloadRequested(fileId, remoteUuid);
+			listener.serverNotFound(downloadId);
 
 		});
 
 	}
 
-	private void serverNotFoundToListener(final String remoteUuid) {
+	private void fileNotFoundToListener(final Long downloadId) {
 
 		taskQueue.execute(() -> {
 
-			listener.serverNotFound(remoteUuid);
-
-		});
-
-	}
-
-	private void fileNotFoundToListener(final Integer fileId, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.fileNotFound(fileId, remoteUuid);
+			listener.fileNotFound(downloadId);
 
 		});
 
