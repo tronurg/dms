@@ -218,15 +218,10 @@ public class DmsClient {
 
 	public void uploadFile(Path path, String receiverUuid, boolean linkOnlyAttachment, Long trackingId) {
 
-		MessagePojo messagePojo = new MessagePojo(null, null, receiverUuid, ContentType.UPLOAD, trackingId, null, null);
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(path.getFileName().toString()), null,
+				receiverUuid, ContentType.UPLOAD, trackingId, null, null);
 		messagePojo.attachment = new AttachmentPojo(path, linkOnlyAttachment);
 		dealerQueue.offer(messagePojo);
-
-	}
-
-	public void cancelUpload(String receiverUuid, Long trackingId) {
-
-		dealerQueue.offer(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
 
 	}
 
@@ -447,8 +442,7 @@ public class DmsClient {
 
 			case CANCEL_DOWNLOAD_REQUEST:
 
-				dealerQueue.offer(new MessagePojo(null, null, messagePojo.senderUuid, ContentType.CANCEL_UPLOAD,
-						DmsPackingFactory.unpack(payload, Long.class), null, null));
+				cancelUpload(messagePojo.senderUuid, DmsPackingFactory.unpack(payload, Long.class));
 
 				break;
 
@@ -461,6 +455,13 @@ public class DmsClient {
 			case FILE_NOT_FOUND:
 
 				fileNotFoundToListener(DmsPackingFactory.unpack(payload, Long.class));
+
+				break;
+
+			case UPLOAD:
+
+				fileDownloadedToListener(messagePojo.useTrackingId, messagePojo.getAttachmentLink(),
+						DmsPackingFactory.unpack(payload, String.class));
 
 				break;
 
@@ -619,6 +620,12 @@ public class DmsClient {
 
 	}
 
+	private void cancelUpload(String receiverUuid, Long trackingId) {
+
+		dealerQueue.offer(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
+
+	}
+
 	private void serverNotFoundToListener(final Long downloadId) {
 
 		taskQueue.execute(() -> {
@@ -634,6 +641,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.fileNotFound(downloadId);
+
+		});
+
+	}
+
+	private void fileDownloadedToListener(final Long downloadId, final Path path, final String fileName) {
+
+		taskQueue.execute(() -> {
+
+			listener.fileDownloaded(downloadId, path, fileName);
 
 		});
 
