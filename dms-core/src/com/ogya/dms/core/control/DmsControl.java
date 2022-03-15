@@ -1480,26 +1480,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 						if (newMessage.getAttachmentType() == null) {
 
-							dmsGuiListeners.forEach(guiListener -> guiListener.guiMessageReceived(newMessage.getId(),
+							dmsGuiListeners.forEach(listener -> listener.guiMessageReceived(newMessage.getId(),
 									newMessage.getContent(), newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						} else if (newMessage.getAttachmentType() == AttachmentType.FILE) {
 
-							dmsGuiListeners.forEach(guiListener -> guiListener.guiFileReceived(newMessage.getId(),
-									newMessage.getContent(), Paths.get(newMessage.getAttachment()),
-									newMessage.getContact().getId(),
-									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							dmsGuiListeners.forEach(
+									listener -> listener.guiFileReceived(newMessage.getId(), newMessage.getContent(),
+											Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
+											newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						} else if (newMessage.getAttachmentType() == AttachmentType.AUDIO) {
 
-							dmsGuiListeners.forEach(guiListener -> guiListener.guiAudioReceived(newMessage.getId(),
+							dmsGuiListeners.forEach(listener -> listener.guiAudioReceived(newMessage.getId(),
 									Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
 
 						} else if (newMessage.getAttachmentType() == AttachmentType.REPORT) {
 
-							dmsGuiListeners.forEach(guiListener -> guiListener.guiReportReceived(newMessage.getId(),
+							dmsGuiListeners.forEach(listener -> listener.guiReportReceived(newMessage.getId(),
 									newMessage.getContent(), newMessage.getMessageCode(),
 									Paths.get(newMessage.getAttachment()), newMessage.getContact().getId(),
 									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
@@ -1927,11 +1927,27 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void fileDownloaded(Long downloadId, Path path, String fileName) {
+	public void downloadingFile(final Long downloadId, final int progress) {
+
+		listenerTaskQueue.execute(() -> {
+
+			dmsDownloadListeners.forEach(listener -> listener.downloadingFile(downloadId, progress));
+
+		});
+
+	}
+
+	@Override
+	public void fileDownloaded(final Long downloadId, final Path path, final String fileName) {
 
 		taskQueue.execute(() -> {
 
-			// TODO
+			DownloadPojo downloadPojo = model.removeDownload(downloadId);
+			if (downloadPojo != null && downloadPojo.path != null) {
+				// TODO
+			}
+			listenerTaskQueue
+					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.fileDownloaded(downloadId, path)));
 
 		});
 
@@ -2190,22 +2206,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			if (attachmentType == null) {
 
-				dmsGuiListeners
-						.forEach(guiListener -> guiListener.guiMessageSent(messageId, messageTxt, contactId, groupId));
+				dmsGuiListeners.forEach(listener -> listener.guiMessageSent(messageId, messageTxt, contactId, groupId));
 
 			} else if (attachmentType == AttachmentType.FILE) {
 
 				dmsGuiListeners.forEach(
-						guiListener -> guiListener.guiFileSent(messageId, messageTxt, attachment, contactId, groupId));
+						listener -> listener.guiFileSent(messageId, messageTxt, attachment, contactId, groupId));
 
 			} else if (attachmentType == AttachmentType.AUDIO) {
 
-				dmsGuiListeners
-						.forEach(guiListener -> guiListener.guiAudioSent(messageId, attachment, contactId, groupId));
+				dmsGuiListeners.forEach(listener -> listener.guiAudioSent(messageId, attachment, contactId, groupId));
 
 			} else if (attachmentType == AttachmentType.REPORT) {
 
-				dmsGuiListeners.forEach(guiListener -> guiListener.guiReportSent(messageId, messageTxt, messageCode,
+				dmsGuiListeners.forEach(listener -> listener.guiReportSent(messageId, messageTxt, messageCode,
 						attachment, contactId, groupId));
 
 			}

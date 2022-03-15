@@ -458,6 +458,12 @@ public class DmsClient {
 
 				break;
 
+			case PROGRESS_DOWNLOAD:
+
+				downloadingFileToListener(messagePojo.useTrackingId, DmsPackingFactory.unpack(payload, Integer.class));
+
+				break;
+
 			case UPLOAD:
 
 				fileDownloadedToListener(messagePojo.useTrackingId, messagePojo.getAttachmentLink(),
@@ -641,6 +647,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.fileNotFound(downloadId);
+
+		});
+
+	}
+
+	private void downloadingFileToListener(final Long downloadId, final int progress) {
+
+		taskQueue.execute(() -> {
+
+			listener.downloadingFile(downloadId, progress);
 
 		});
 
