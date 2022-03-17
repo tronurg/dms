@@ -1905,10 +1905,26 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
+	public void cancelDownloadRequested(final Long trackingId, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			dmsClient.cancelUpload(remoteUuid, trackingId);
+
+		});
+
+	}
+
+	@Override
 	public void serverNotFound(final Long downloadId) {
 
 		listenerTaskQueue.execute(() -> {
 
+			DownloadPojo downloadPojo = model.removeDownload(downloadId);
+			if (downloadPojo == null) {
+				return;
+			}
+			cleanDownload(downloadPojo);
 			dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(downloadId));
 
 		});
@@ -1920,6 +1936,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		listenerTaskQueue.execute(() -> {
 
+			DownloadPojo downloadPojo = model.removeDownload(downloadId);
+			if (downloadPojo == null) {
+				return;
+			}
+			cleanDownload(downloadPojo);
 			dmsDownloadListeners.forEach(listener -> listener.fileNotFound(downloadId));
 
 		});
@@ -1931,6 +1952,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		listenerTaskQueue.execute(() -> {
 
+			if (!model.isDownloadActive(downloadId)) {
+				return;
+			}
 			dmsDownloadListeners.forEach(listener -> listener.downloadingFile(downloadId, progress));
 
 		});
@@ -1951,6 +1975,38 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		});
 
+	}
+
+	@Override
+	public void downloadFailed(final Long downloadId) {
+
+		taskQueue.execute(() -> {
+
+			DownloadPojo downloadPojo = model.removeDownload(downloadId);
+			if (downloadPojo == null) {
+				return;
+			}
+			cleanDownload(downloadPojo);
+			dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId));
+
+		});
+
+	}
+
+	private void cleanDownload(DownloadPojo downloadPojo) {
+		Path path = downloadPojo.path;
+		if (path == null) {
+			return;
+		}
+		try {
+			Files.deleteIfExists(path);
+			Path parent = path.getParent();
+			if (Files.list(parent).count() == 0) {
+				Files.deleteIfExists(parent);
+			}
+		} catch (Exception e) {
+
+		}
 	}
 
 	@Override
@@ -3688,19 +3744,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (model.isContactOnline(downloadPojo.senderUuid)) {
 			dmsClient.cancelDownloadRequest(downloadId, downloadPojo.senderUuid);
 		}
-		Path path = downloadPojo.path;
-		if (path == null) {
-			return;
-		}
-		try {
-			Files.deleteIfExists(path);
-			Path parent = path.getParent();
-			if (Files.list(parent).count() == 0) {
-				Files.deleteIfExists(parent);
-			}
-		} catch (Exception e) {
-
-		}
+		cleanDownload(downloadPojo);
 
 	}
 

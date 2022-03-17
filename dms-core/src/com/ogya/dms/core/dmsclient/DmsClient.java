@@ -218,10 +218,16 @@ public class DmsClient {
 
 	public void uploadFile(Path path, String receiverUuid, boolean linkOnlyAttachment, Long trackingId) {
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(path.getFileName().toString()), null,
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(path.getFileName().toString()), uuid,
 				receiverUuid, ContentType.UPLOAD, trackingId, null, null);
 		messagePojo.attachment = new AttachmentPojo(path, linkOnlyAttachment);
 		dealerQueue.offer(messagePojo);
+
+	}
+
+	public void cancelUpload(String receiverUuid, Long trackingId) {
+
+		dealerQueue.offer(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
 
 	}
 
@@ -442,7 +448,8 @@ public class DmsClient {
 
 			case CANCEL_DOWNLOAD_REQUEST:
 
-				cancelUpload(messagePojo.senderUuid, DmsPackingFactory.unpack(payload, Long.class));
+				cancelDownloadRequestedToListener(DmsPackingFactory.unpack(payload, Long.class),
+						messagePojo.senderUuid);
 
 				break;
 
@@ -626,9 +633,13 @@ public class DmsClient {
 
 	}
 
-	private void cancelUpload(String receiverUuid, Long trackingId) {
+	private void cancelDownloadRequestedToListener(final Long trackingId, final String remoteUuid) {
 
-		dealerQueue.offer(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
+		taskQueue.execute(() -> {
+
+			listener.cancelDownloadRequested(trackingId, remoteUuid);
+
+		});
 
 	}
 
@@ -667,6 +678,16 @@ public class DmsClient {
 		taskQueue.execute(() -> {
 
 			listener.fileDownloaded(downloadId, path, fileName);
+
+		});
+
+	}
+
+	private void downloadFailedToListener(final Long downloadId) {
+
+		taskQueue.execute(() -> {
+
+			listener.downloadFailed(downloadId);
 
 		});
 

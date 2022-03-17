@@ -561,6 +561,12 @@ public class Model {
 
 	}
 
+	public boolean isDownloadActive(Long downloadId) {
+
+		return downloadMap.containsKey(downloadId);
+
+	}
+
 	public List<DownloadPojo> getWaitingDownloads(String contactUuid) {
 
 		List<DownloadPojo> downloadList = new ArrayList<DownloadPojo>();

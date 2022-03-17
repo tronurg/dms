@@ -42,6 +42,8 @@ public interface DmsClientListener {
 
 	void downloadRequested(DownloadPojo downloadPojo, String remoteUuid);
 
+	void cancelDownloadRequested(Long trackingId, String remoteUuid);
+
 	void serverNotFound(Long downloadId);
 
 	void fileNotFound(Long downloadId);
@@ -49,5 +51,7 @@ public interface DmsClientListener {
 	void downloadingFile(Long downloadId, int progress);
 
 	void fileDownloaded(Long downloadId, Path path, String fileName);
+
+	void downloadFailed(Long downloadId);
 
 }
