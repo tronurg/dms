@@ -650,6 +650,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Message copyMessage = new Message(message);
 
+		copyMessage.setId(null);
 		copyMessage.setMessageRefId(null);
 
 		Message refMessage = copyMessage.getRefMessage();
@@ -1385,11 +1386,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				// If message already received, return
-				if (dbManager.getMessageBySender(remoteUuid, message.getId()) != null)
+				if (dbManager.getMessageBySender(remoteUuid, message.getMessageRefId()) != null)
 					return;
-
-				message.setMessageRefId(message.getId());
-				message.setId(null);
 
 				Contact contact = getContact(remoteUuid);
 				if (contact.getViewStatus() != ViewStatus.DEFAULT) {
@@ -1817,19 +1815,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	@Override
 	public void transientMessageReceived(final MessageHandleImpl message, final Path attachment,
-			final String remoteUuid) {
+			final String remoteUuid, final Long trackingId) {
 
 		taskQueue.execute(() -> {
 
 			try {
-
-				if (message.getStatusResponseFlag() != null) {
-
-					transientMessageStatusReceived(message, remoteUuid);
-
-					return;
-
-				}
 
 				final Long contactId = getContact(remoteUuid).getId();
 
@@ -1842,7 +1832,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				listenerTaskQueue
 						.execute(() -> dmsListeners.forEach(listener -> listener.messageReceived(message, contactId)));
 
-				sendTransientMessageStatus(message, remoteUuid);
+				dmsClient.sendTransientMessageStatus(trackingId, remoteUuid);
 
 			} catch (Exception e) {
 
@@ -1854,32 +1844,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void transientMessageStatusReceived(MessageHandleImpl incomingMessage, String remoteUuid) throws Exception {
+	@Override
+	public void transientMessageStatusReceived(Long trackingId, String remoteUuid) {
 
-		final Long trackingId = incomingMessage.getTrackingId();
+		taskQueue.execute(() -> {
 
-		if (trackingId == null)
-			return;
+			try {
 
-		final Long contactId = getContact(remoteUuid).getId();
+				final Long contactId = getContact(remoteUuid).getId();
 
-		listenerTaskQueue
-				.execute(() -> dmsListeners.forEach(listener -> listener.messageTransmitted(trackingId, contactId)));
+				listenerTaskQueue.execute(
+						() -> dmsListeners.forEach(listener -> listener.messageTransmitted(trackingId, contactId)));
 
-	}
+			} catch (Exception e) {
 
-	private void sendTransientMessageStatus(MessageHandleImpl incomingMessage, String remoteUuid) throws Exception {
+				e.printStackTrace();
 
-		Long trackingId = incomingMessage.getTrackingId();
+			}
 
-		if (trackingId == null)
-			return;
-
-		MessageHandleImpl response = new MessageHandleImpl(null, null);
-		response.setTrackingId(trackingId);
-		response.setStatusResponseFlag(1);
-
-		dmsClient.sendTransientMessage(response, false, Arrays.asList(remoteUuid), null, null, null);
+		});
 
 	}
 
@@ -3702,10 +3685,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		MessageRulesImpl messageRulesImpl = messageRules == null ? new MessageRulesImpl()
 				: (MessageRulesImpl) messageRules;
 
-		outgoingMessage.setTrackingId(messageRulesImpl.getTrackingId());
+		Long trackingId = model.getTransientId();
 
-		dmsClient.sendTransientMessage(outgoingMessage, model.isServerLocal(), contactUuids,
-				messageRulesImpl.getTrackingId(), messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
+		dmsClient.sendTransientMessage(outgoingMessage, model.isServerLocal(), contactUuids, trackingId,
+				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
 
 	}
 

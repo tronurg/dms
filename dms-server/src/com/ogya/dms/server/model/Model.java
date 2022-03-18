@@ -164,10 +164,10 @@ public class Model {
 
 			}
 
-			case CANCEL: {
+			case CANCEL_MESSAGE: {
 
 				sendStatuses.forEach(sendStatus -> {
-					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+					if (Objects.equals(sendStatus.trackingId, messagePojo.trackingId)
 							&& sendStatus.contentType == ContentType.MESSAGE
 							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
 						sendStatus.status.set(false);
@@ -181,7 +181,7 @@ public class Model {
 			case CANCEL_TRANSIENT: {
 
 				sendStatuses.forEach(sendStatus -> {
-					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+					if (Objects.equals(sendStatus.trackingId, messagePojo.trackingId)
 							&& sendStatus.contentType == ContentType.TRANSIENT
 							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
 						sendStatus.status.set(false);
@@ -195,7 +195,7 @@ public class Model {
 			case CANCEL_UPLOAD: {
 
 				sendStatuses.forEach(sendStatus -> {
-					if (Objects.equals(sendStatus.trackingId, messagePojo.useTrackingId)
+					if (Objects.equals(sendStatus.trackingId, messagePojo.trackingId)
 							&& sendStatus.contentType == ContentType.UPLOAD
 							&& sendStatus.receiverUuids.contains(messagePojo.receiverUuid)) {
 						sendStatus.status.set(false);
@@ -213,11 +213,6 @@ public class Model {
 
 				final LocalUser sender = localUsers.get(messagePojo.senderUuid);
 				final Path attachment = messagePojo.getAttachmentLink();
-
-				final boolean trackedMessage = messagePojo.useTrackingId != null
-						&& messagePojo.contentType == ContentType.MESSAGE;
-				final boolean trackedTransientMessage = messagePojo.useTrackingId != null
-						&& messagePojo.contentType == ContentType.TRANSIENT;
 
 				// This piece of code is disabled and commented out on purpose to remind that
 				// in some cases, like conveying a status report, the sender is virtually set to
@@ -246,12 +241,12 @@ public class Model {
 								Path copyOfAttachment = Files.copy(attachment,
 										Files.createTempFile(sharedTempDir, "dms", null),
 										StandardCopyOption.REPLACE_EXISTING);
-								final SendStatus sendStatus = new SendStatus(messagePojo.useTrackingId,
+								final SendStatus sendStatus = new SendStatus(messagePojo.trackingId,
 										messagePojo.contentType, messagePojo.senderUuid);
 								sendStatus.receiverUuids.add(receiverUuid);
 								sendStatuses.add(sendStatus);
 								final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload,
-										messagePojo.senderUuid, null, messagePojo.contentType, null,
+										messagePojo.senderUuid, null, messagePojo.contentType, messagePojo.trackingId,
 										messagePojo.useTimeout, messagePojo.useLocalAddress);
 								localMessagePojo.attachment = new AttachmentPojo(copyOfAttachment, true);
 								listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
@@ -263,8 +258,8 @@ public class Model {
 										sendStatuses.remove(sendStatus);
 									}
 
-									sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.useTrackingId,
-											trackedMessage, trackedTransientMessage);
+									sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.trackingId,
+											messagePojo.contentType);
 
 								}, receiverUuid);
 							} catch (Exception e) {
@@ -300,13 +295,14 @@ public class Model {
 
 					partySize.incrementAndGet();
 
-					final SendStatus sendStatus = new SendStatus(messagePojo.useTrackingId, messagePojo.contentType,
+					final SendStatus sendStatus = new SendStatus(messagePojo.trackingId, messagePojo.contentType,
 							messagePojo.senderUuid);
 					sendStatus.receiverUuids.addAll(localReceiverUuids);
 					sendStatuses.add(sendStatus);
 
 					final MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
-							null, messagePojo.contentType, null, messagePojo.useTimeout, messagePojo.useLocalAddress);
+							null, messagePojo.contentType, messagePojo.trackingId, messagePojo.useTimeout,
+							messagePojo.useLocalAddress);
 					localMessagePojo.attachment = new AttachmentPojo(attachment, false);
 
 					listener.sendToLocalUsers(localMessagePojo, sendStatus.status, (uuidList, progress) -> {
@@ -318,18 +314,18 @@ public class Model {
 							}
 						}
 
-						sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.useTrackingId,
-								trackedMessage, trackedTransientMessage);
+						sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.trackingId,
+								messagePojo.contentType);
 
 					}, localReceiverUuids.toArray(new String[0]));
 
 				}
 
-				if (trackedTransientMessage && !unsuccessfulUuids.isEmpty()) {
+				if (messagePojo.contentType == ContentType.TRANSIENT && !unsuccessfulUuids.isEmpty()) {
 
 					MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(-1),
 							String.join(";", unsuccessfulUuids), null, ContentType.PROGRESS_TRANSIENT,
-							messagePojo.useTrackingId, null, null);
+							messagePojo.trackingId, null, null);
 
 					listener.sendToLocalUsers(progressMessagePojo, null, null, messagePojo.senderUuid);
 
@@ -337,7 +333,7 @@ public class Model {
 
 				remoteServerReceiverUuids.forEach((dmsUuid, uuidList) -> {
 
-					final SendStatus sendStatus = new SendStatus(messagePojo.useTrackingId, messagePojo.contentType,
+					final SendStatus sendStatus = new SendStatus(messagePojo.trackingId, messagePojo.contentType,
 							messagePojo.senderUuid);
 					sendStatus.receiverUuids.addAll(uuidList);
 					sendStatuses.add(sendStatus);
@@ -346,8 +342,8 @@ public class Model {
 					List<String> receiverMapIdList = new ArrayList<String>();
 					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
 					final MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
-							String.join(";", receiverMapIdList), messagePojo.contentType, null, messagePojo.useTimeout,
-							messagePojo.useLocalAddress);
+							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.trackingId,
+							messagePojo.useTimeout, messagePojo.useLocalAddress);
 					remoteMessagePojo.attachment = new AttachmentPojo(attachment, false);
 
 					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus.status, progress -> {
@@ -359,8 +355,8 @@ public class Model {
 							}
 						}
 
-						sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.useTrackingId,
-								trackedMessage, trackedTransientMessage);
+						sendProgress(uuidList, progress, messagePojo.senderUuid, messagePojo.trackingId,
+								messagePojo.contentType);
 
 					});
 
@@ -456,7 +452,7 @@ public class Model {
 									Files.createTempFile(sharedTempDir, "dms", null),
 									StandardCopyOption.REPLACE_EXISTING);
 							MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid,
-									null, messagePojo.contentType, null, null, null);
+									null, messagePojo.contentType, messagePojo.trackingId, null, null);
 							localMessagePojo.attachment = new AttachmentPojo(copyOfAttachment, true);
 							listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
 
@@ -479,7 +475,7 @@ public class Model {
 				}
 
 				MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
-						messagePojo.contentType, null, null, null);
+						messagePojo.contentType, messagePojo.trackingId, null, null);
 				localMessagePojo.attachment = new AttachmentPojo(attachment, false);
 
 				listener.sendToLocalUsers(localMessagePojo, null, (uuidList, progress) -> {
@@ -563,22 +559,26 @@ public class Model {
 	}
 
 	private void sendProgress(Collection<String> uuidList, Integer progress, String senderUuid, Long trackingId,
-			boolean trackedMessage, boolean trackedTransientMessage) {
+			ContentType contentType) {
 
-		if (trackedMessage) {
-
+		switch (contentType) {
+		case MESSAGE: {
 			MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
 					String.join(";", uuidList), null, ContentType.PROGRESS_MESSAGE, trackingId, null, null);
-
 			listener.sendToLocalUsers(progressMessagePojo, null, null, senderUuid);
-
-		} else if (trackedTransientMessage && progress < 0) {
-
-			MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
-					String.join(";", uuidList), null, ContentType.PROGRESS_TRANSIENT, trackingId, null, null);
-
-			listener.sendToLocalUsers(progressMessagePojo, null, null, senderUuid);
-
+			break;
+		}
+		case TRANSIENT: {
+			if (progress < 0) {
+				MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress),
+						String.join(";", uuidList), null, ContentType.PROGRESS_TRANSIENT, trackingId, null, null);
+				listener.sendToLocalUsers(progressMessagePojo, null, null, senderUuid);
+			}
+			break;
+		}
+		default: {
+			break;
+		}
 		}
 
 	}

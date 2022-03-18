@@ -110,10 +110,10 @@ public class DmsClient {
 	}
 
 	public void sendMessage(Message message, Path attachment, boolean linkOnlyAttachment, String receiverUuid,
-			Long trackingId) {
+			Long messageId) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
-				ContentType.MESSAGE, trackingId, null, null);
+				ContentType.MESSAGE, messageId, null, null);
 
 		if (attachment != null) {
 			messagePojo.attachment = new AttachmentPojo(attachment, linkOnlyAttachment);
@@ -125,7 +125,7 @@ public class DmsClient {
 
 	public void cancelMessage(Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL, trackingId, null, null));
+		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL_MESSAGE, trackingId, null, null));
 
 	}
 
@@ -165,10 +165,10 @@ public class DmsClient {
 	}
 
 	public void sendTransientMessage(MessageHandleImpl message, boolean linkOnlyAttachment,
-			Iterable<String> receiverUuids, Long useTrackingId, Long useTimeout, InetAddress useLocalInterface) {
+			Iterable<String> receiverUuids, Long trackingId, Long useTimeout, InetAddress useLocalInterface) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
-				String.join(";", receiverUuids), ContentType.TRANSIENT, useTrackingId, useTimeout, useLocalInterface);
+				String.join(";", receiverUuids), ContentType.TRANSIENT, trackingId, useTimeout, useLocalInterface);
 
 		FileHandle fileHandle = message.getFileHandle();
 		if (fileHandle != null) {
@@ -179,6 +179,13 @@ public class DmsClient {
 		}
 
 		dealerQueue.offer(messagePojo);
+
+	}
+
+	public void sendTransientMessageStatus(Long trackingId, String receiverUuid) {
+
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(trackingId), uuid, receiverUuid,
+				ContentType.FEED_TRANSIENT_STATUS, null, null, null));
 
 	}
 
@@ -294,9 +301,8 @@ public class DmsClient {
 						while (serverConnected.get() && (chunk = messageSender.next()) != null) {
 
 							inprocSocket.sendByteBuffer(chunk.dataBuffer, 0);
-							if (chunk.progress < 0 && messagePojo.useTrackingId != null
-									&& messagePojo.contentType == ContentType.TRANSIENT) {
-								progressTransientReceivedToListener(messagePojo.useTrackingId,
+							if (chunk.progress < 0 && messagePojo.contentType == ContentType.TRANSIENT) {
+								progressTransientReceivedToListener(messagePojo.trackingId,
 										messagePojo.receiverUuid.split(";"), chunk.progress);
 							}
 
@@ -374,22 +380,23 @@ public class DmsClient {
 
 			case PROGRESS_MESSAGE:
 
-				progressMessageReceivedToListener(messagePojo.useTrackingId, messagePojo.senderUuid.split(";"),
+				progressMessageReceivedToListener(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
 						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case PROGRESS_TRANSIENT:
 
-				progressTransientReceivedToListener(messagePojo.useTrackingId, messagePojo.senderUuid.split(";"),
+				progressTransientReceivedToListener(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
 						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case MESSAGE:
 
-				messageReceivedToListener(DmsPackingFactory.unpack(payload, Message.class),
-						messagePojo.getAttachmentLink(), messagePojo.senderUuid);
+				Message message = DmsPackingFactory.unpack(payload, Message.class);
+				message.setMessageRefId(messagePojo.trackingId);
+				messageReceivedToListener(message, messagePojo.getAttachmentLink(), messagePojo.senderUuid);
 
 				break;
 
@@ -435,7 +442,14 @@ public class DmsClient {
 			case TRANSIENT:
 
 				transientMessageReceivedToListener(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
-						messagePojo.getAttachmentLink(), messagePojo.senderUuid);
+						messagePojo.getAttachmentLink(), messagePojo.senderUuid, messagePojo.trackingId);
+
+				break;
+
+			case FEED_TRANSIENT_STATUS:
+
+				transientMessageStatusReceivedToListener(DmsPackingFactory.unpack(payload, Long.class),
+						messagePojo.senderUuid);
 
 				break;
 
@@ -467,13 +481,13 @@ public class DmsClient {
 
 			case PROGRESS_DOWNLOAD:
 
-				downloadingFileToListener(messagePojo.useTrackingId, DmsPackingFactory.unpack(payload, Integer.class));
+				downloadingFileToListener(messagePojo.trackingId, DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case UPLOAD:
 
-				fileDownloadedToListener(messagePojo.useTrackingId, messagePojo.getAttachmentLink(),
+				fileDownloadedToListener(messagePojo.trackingId, messagePojo.getAttachmentLink(),
 						DmsPackingFactory.unpack(payload, String.class));
 
 				break;
@@ -613,11 +627,21 @@ public class DmsClient {
 	}
 
 	private void transientMessageReceivedToListener(final MessageHandleImpl message, final Path attachment,
-			final String remoteUuid) {
+			final String remoteUuid, final Long trackingId) {
 
 		taskQueue.execute(() -> {
 
-			listener.transientMessageReceived(message, attachment, remoteUuid);
+			listener.transientMessageReceived(message, attachment, remoteUuid, trackingId);
+
+		});
+
+	}
+
+	private void transientMessageStatusReceivedToListener(final Long trackingId, final String remoteUuid) {
+
+		taskQueue.execute(() -> {
+
+			listener.transientMessageStatusReceived(trackingId, remoteUuid);
 
 		});
 

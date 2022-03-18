@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import javafx.scene.paint.Color;
@@ -35,6 +36,7 @@ public enum MessageStatus {
 
 	}
 
+	@JsonCreator
 	public static MessageStatus of(Integer index) {
 		return INDEX_MAP.get(index);
 	}

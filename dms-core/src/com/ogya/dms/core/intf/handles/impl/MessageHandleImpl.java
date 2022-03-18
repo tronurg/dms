@@ -18,10 +18,6 @@ public class MessageHandleImpl implements MessageHandle {
 	private ObjectHandleImpl objectHandle;
 	@JsonProperty("e")
 	private ListHandleImpl listHandle;
-	@JsonProperty("f")
-	private Long trackingId;
-	@JsonProperty("g")
-	private Integer statusResponseFlag;
 
 	public MessageHandleImpl() {
 		super();
@@ -43,24 +39,7 @@ public class MessageHandleImpl implements MessageHandle {
 		this.fileHandle = messageHandleImpl.fileHandle;
 		this.objectHandle = messageHandleImpl.objectHandle;
 		this.listHandle = messageHandleImpl.listHandle;
-		this.trackingId = messageHandleImpl.trackingId;
 
-	}
-
-	public Long getTrackingId() {
-		return trackingId;
-	}
-
-	public void setTrackingId(Long trackingId) {
-		this.trackingId = trackingId;
-	}
-
-	public Integer getStatusResponseFlag() {
-		return statusResponseFlag;
-	}
-
-	public void setStatusResponseFlag(Integer statusResponseFlag) {
-		this.statusResponseFlag = statusResponseFlag;
 	}
 
 	@Override

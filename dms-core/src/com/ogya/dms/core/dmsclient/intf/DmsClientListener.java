@@ -38,7 +38,9 @@ public interface DmsClientListener {
 
 	void statusReportFed(Map<Long, StatusReport[]> messageIdStatusReportsMap);
 
-	void transientMessageReceived(MessageHandleImpl message, Path attachment, String remoteUuid);
+	void transientMessageReceived(MessageHandleImpl message, Path attachment, String remoteUuid, Long trackingId);
+
+	void transientMessageStatusReceived(Long trackingId, String remoteUuid);
 
 	void downloadRequested(DownloadPojo downloadPojo, String remoteUuid);
 

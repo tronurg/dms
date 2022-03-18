@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum AttachmentType {
@@ -28,6 +29,7 @@ public enum AttachmentType {
 
 	}
 
+	@JsonCreator
 	public static AttachmentType of(Integer index) {
 		return INDEX_MAP.get(index);
 	}

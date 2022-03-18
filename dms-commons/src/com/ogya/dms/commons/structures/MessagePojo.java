@@ -15,9 +15,9 @@ public class MessagePojo {
 	public String receiverUuid;
 	@JsonProperty("d")
 	public ContentType contentType;
-
 	@JsonProperty("e")
-	public Long useTrackingId;
+	public Long trackingId;
+
 	@JsonProperty("f")
 	public Long useTimeout;
 	@JsonProperty("g")
@@ -30,14 +30,14 @@ public class MessagePojo {
 		super();
 	}
 
-	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType,
-			Long useTrackingId, Long useTimeout, InetAddress useLocalAddress) {
+	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType, Long trackingId,
+			Long useTimeout, InetAddress useLocalAddress) {
 
 		this.payload = payload;
 		this.senderUuid = senderUuid;
 		this.receiverUuid = receiverUuid;
 		this.contentType = contentType;
-		this.useTrackingId = useTrackingId;
+		this.trackingId = trackingId;
 		this.useTimeout = useTimeout;
 		this.useLocalAddress = useLocalAddress;
 
