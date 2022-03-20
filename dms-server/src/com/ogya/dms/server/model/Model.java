@@ -23,9 +23,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageReceiver;
+import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
@@ -93,7 +93,7 @@ public class Model {
 
 		LocalUser localUser = localUsers.get(userUuid);
 		if (localUser == null) {
-			localUser = new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()), this::localMessageReceived);
+			localUser = new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()));
 			localUsers.put(userUuid, localUser);
 			mappedUsers.put(localUser.mapId, localUser);
 		}
@@ -833,15 +833,15 @@ public class Model {
 
 	}
 
-	private class LocalUser extends User {
+	private class LocalUser extends User implements DmsMessageReceiverListener {
 
 		private final DmsMessageReceiver messageReceiver;
 
-		private LocalUser(String userUuid, String mapId, Consumer<MessagePojo> messageConsumer) {
+		private LocalUser(String userUuid, String mapId) {
 
 			super(userUuid, mapId);
 
-			this.messageReceiver = new DmsMessageReceiver(messageConsumer);
+			this.messageReceiver = new DmsMessageReceiver(this);
 
 			try {
 
@@ -860,6 +860,16 @@ public class Model {
 				e.printStackTrace();
 
 			}
+
+		}
+
+		@Override
+		public void messageReceived(MessagePojo messagePojo) {
+			localMessageReceived(messagePojo);
+		}
+
+		@Override
+		public void messageFailed() {
 
 		}
 

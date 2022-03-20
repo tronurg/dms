@@ -14,6 +14,7 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.ogya.dms.commons.DmsMessageReceiver;
+import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
 import com.ogya.dms.commons.DmsMessageSender;
 import com.ogya.dms.commons.DmsMessageSender.Chunk;
 import com.ogya.dms.commons.DmsMessageSender.Direction;
@@ -32,7 +33,7 @@ import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
 
-public class DmsClient {
+public class DmsClient implements DmsMessageReceiverListener {
 
 	private final String uuid;
 
@@ -60,7 +61,7 @@ public class DmsClient {
 
 		this.listener = listener;
 
-		this.messageReceiver = new DmsMessageReceiver(this::processIncomingMessage);
+		this.messageReceiver = new DmsMessageReceiver(this);
 
 		start();
 
@@ -657,11 +658,11 @@ public class DmsClient {
 
 	}
 
-	private void cancelDownloadRequestedToListener(final Long trackingId, final String remoteUuid) {
+	private void cancelDownloadRequestedToListener(final Long downloadId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			listener.cancelDownloadRequested(trackingId, remoteUuid);
+			listener.cancelDownloadRequested(downloadId, remoteUuid);
 
 		});
 
@@ -714,6 +715,16 @@ public class DmsClient {
 			listener.downloadFailed(downloadId);
 
 		});
+
+	}
+
+	@Override
+	public void messageReceived(MessagePojo messagePojo) {
+		processIncomingMessage(messagePojo);
+	}
+
+	@Override
+	public void messageFailed() {
 
 	}
 

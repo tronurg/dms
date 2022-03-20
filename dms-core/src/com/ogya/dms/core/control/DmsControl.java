@@ -1845,7 +1845,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void transientMessageStatusReceived(Long trackingId, String remoteUuid) {
+	public void transientMessageStatusReceived(final Long trackingId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -1888,11 +1888,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void cancelDownloadRequested(final Long trackingId, final String remoteUuid) {
+	public void cancelDownloadRequested(final Long downloadId, final String remoteUuid) {
 
 		taskQueue.execute(() -> {
 
-			dmsClient.cancelUpload(remoteUuid, trackingId);
+			dmsClient.cancelUpload(remoteUuid, downloadId);
 
 		});
 
@@ -1901,14 +1901,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void serverNotFound(final Long downloadId) {
 
-		listenerTaskQueue.execute(() -> {
+		taskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.removeDownload(downloadId);
 			if (downloadPojo == null) {
 				return;
 			}
 			cleanDownload(downloadPojo);
-			dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(downloadId));
+			listenerTaskQueue
+					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(downloadId)));
 
 		});
 
@@ -1917,14 +1918,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void fileNotFound(final Long downloadId) {
 
-		listenerTaskQueue.execute(() -> {
+		taskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.removeDownload(downloadId);
 			if (downloadPojo == null) {
 				return;
 			}
 			cleanDownload(downloadPojo);
-			dmsDownloadListeners.forEach(listener -> listener.fileNotFound(downloadId));
+			listenerTaskQueue
+					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.fileNotFound(downloadId)));
 
 		});
 
@@ -1933,12 +1935,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void downloadingFile(final Long downloadId, final int progress) {
 
-		listenerTaskQueue.execute(() -> {
+		taskQueue.execute(() -> {
 
 			if (!model.isDownloadActive(downloadId)) {
 				return;
 			}
-			dmsDownloadListeners.forEach(listener -> listener.downloadingFile(downloadId, progress));
+			listenerTaskQueue.execute(
+					() -> dmsDownloadListeners.forEach(listener -> listener.downloadingFile(downloadId, progress)));
 
 		});
 
@@ -1970,7 +1973,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return;
 			}
 			cleanDownload(downloadPojo);
-			dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId));
+			listenerTaskQueue
+					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
 
 		});
 

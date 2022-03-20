@@ -6,17 +6,16 @@ import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageReceiver {
 
-	private final Consumer<MessagePojo> messageConsumer;
+	private final DmsMessageReceiverListener listener;
 	private final Map<Integer, AttachmentReceiver> attachmentReceivers = new HashMap<Integer, AttachmentReceiver>();
 
-	public DmsMessageReceiver(Consumer<MessagePojo> messageConsumer) {
-		this.messageConsumer = messageConsumer;
+	public DmsMessageReceiver(DmsMessageReceiverListener listener) {
+		this.listener = listener;
 	}
 
 	public void inFeed(int messageNumber, byte[] data) {
@@ -28,10 +27,10 @@ public class DmsMessageReceiver {
 			try {
 				MessagePojo messagePojo = DmsPackingFactory.unpack(dataBuffer, MessagePojo.class);
 				if (messagePojo.attachment == null || messagePojo.attachment.link != null) {
-					messageConsumer.accept(messagePojo);
+					listener.messageReceived(messagePojo);
 				} else if (messagePojo.attachment.size == 0) {
 					messagePojo.attachment.link = Files.createTempFile("dms", null);
-					messageConsumer.accept(messagePojo);
+					listener.messageReceived(messagePojo);
 				} else {
 					newAttachmentReceiver(messageNumber, messagePojo);
 				}
@@ -51,7 +50,7 @@ public class DmsMessageReceiver {
 			attachmentReceivers.remove(messageNumber);
 			MessagePojo messagePojo = attachmentReceiver.getMessagePojo();
 			if (messagePojo != null) {
-				messageConsumer.accept(messagePojo);
+				listener.messageReceived(messagePojo);
 			}
 		}
 
@@ -142,6 +141,14 @@ public class DmsMessageReceiver {
 		private MessagePojo getMessagePojo() {
 			return messagePojo;
 		}
+
+	}
+
+	public static interface DmsMessageReceiverListener {
+
+		void messageReceived(MessagePojo messagePojo);
+
+		void messageFailed();
 
 	}
 
