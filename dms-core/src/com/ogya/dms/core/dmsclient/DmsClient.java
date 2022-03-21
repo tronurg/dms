@@ -724,8 +724,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	@Override
-	public void messageFailed() {
-
+	public void messageFailed(int messageNumber) {
+		// TODO
 	}
 
 }

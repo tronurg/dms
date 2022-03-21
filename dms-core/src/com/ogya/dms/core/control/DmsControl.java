@@ -3609,25 +3609,24 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) {
+	public Long sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds) {
 
 		return sendMessageToContacts(messageHandle, contactIds, null);
 
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId) {
+	public Long sendMessageToGroup(MessageHandle messageHandle, Long groupId) {
 
 		return sendMessageToGroup(messageHandle, groupId, null);
 
 	}
 
 	@Override
-	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds,
-			MessageRules messageRules) {
+	public Long sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules) {
 
 		if (!model.isServerConnected())
-			return false;
+			return null;
 
 		List<String> contactUuids = new ArrayList<String>();
 
@@ -3642,24 +3641,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		});
 
 		if (contactUuids.isEmpty())
-			return false;
+			return null;
 
-		sendMessageToUuids(messageHandle, contactUuids, messageRules);
-
-		return true;
+		return sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
 	}
 
 	@Override
-	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules) {
+	public Long sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules) {
 
 		if (!model.isServerConnected())
-			return false;
+			return null;
 
 		Dgroup group = getGroup(groupId);
 
 		if (group == null)
-			return false;
+			return null;
 
 		List<String> contactUuids = new ArrayList<String>();
 
@@ -3674,15 +3671,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			contactUuids.add(ownerUuid);
 
 		if (contactUuids.isEmpty())
-			return false;
+			return null;
 
-		sendMessageToUuids(messageHandle, contactUuids, messageRules);
-
-		return true;
+		return sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
 	}
 
-	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules) {
+	private Long sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules) {
 
 		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
 
@@ -3693,6 +3688,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		dmsClient.sendTransientMessage(outgoingMessage, model.isServerLocal(), contactUuids, trackingId,
 				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
+
+		return trackingId;
 
 	}
 

@@ -522,8 +522,8 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		@Override
-		public void messageFailed() {
-
+		public void messageFailed(int messageNumber) {
+			// TODO
 		}
 
 	}

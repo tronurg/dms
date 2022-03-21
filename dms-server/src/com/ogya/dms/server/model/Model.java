@@ -869,8 +869,8 @@ public class Model {
 		}
 
 		@Override
-		public void messageFailed() {
-
+		public void messageFailed(int messageNumber) {
+			// TODO
 		}
 
 	}

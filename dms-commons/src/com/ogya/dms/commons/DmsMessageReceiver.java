@@ -42,6 +42,7 @@ public class DmsMessageReceiver {
 
 		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
 		if (attachmentReceiver == null) {
+			listener.messageFailed(messageNumber);
 			return;
 		}
 		dataBuffer.rewind();
@@ -75,11 +76,11 @@ public class DmsMessageReceiver {
 		private MessagePojo messagePojo;
 		private FileChannel fileChannel;
 		private boolean interrupted = false;
-		private long remaining;
+		private long fileSize;
 
 		private AttachmentReceiver(MessagePojo messagePojo) {
 			this.messagePojo = messagePojo;
-			this.remaining = messagePojo.attachment.size;
+			this.fileSize = messagePojo.attachment.size;
 			try {
 				messagePojo.attachment.link = Files.createTempFile("dms", null);
 				fileChannel = FileChannel.open(messagePojo.attachment.link, StandardOpenOption.CREATE,
@@ -113,28 +114,28 @@ public class DmsMessageReceiver {
 
 			if (!dataBuffer.hasRemaining()) {
 				interrupt();
+			}
+
+			if (interrupted) {
 				return true;
 			}
 
-			long position = dataBuffer.getLong();
-			int dataLength = dataBuffer.remaining();
-
-			remaining -= dataLength;
-			boolean done = !(remaining > 0);
-
-			if (!interrupted) {
-				try {
-					fileChannel.write(dataBuffer, position);
-					if (done) {
-						fileChannel.force(true);
-						fileChannel.close();
-					}
-				} catch (Exception e) {
-					interrupt();
+			try {
+				long position = dataBuffer.getLong();
+				int dataLength = dataBuffer.remaining();
+				long currentSize = position + dataLength;
+				fileChannel.write(dataBuffer, position);
+				boolean done = !(currentSize < fileSize);
+				if (done) {
+					fileChannel.force(true);
+					fileChannel.close();
 				}
+				return done;
+			} catch (Exception e) {
+				interrupt();
 			}
 
-			return done;
+			return true;
 
 		}
 
@@ -148,7 +149,7 @@ public class DmsMessageReceiver {
 
 		void messageReceived(MessagePojo messagePojo);
 
-		void messageFailed();
+		void messageFailed(int messageNumber);
 
 	}
 
