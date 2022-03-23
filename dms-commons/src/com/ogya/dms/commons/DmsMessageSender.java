@@ -2,7 +2,6 @@ package com.ogya.dms.commons;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,13 +33,16 @@ public class DmsMessageSender implements AutoCloseable {
 
 	private void init() {
 		Path attachment = messagePojo.getAttachmentSource();
+		if (attachment == null) {
+			return;
+		}
 		try {
-			if (attachment != null) {
-				maxPosition = Files.size(attachment);
-				messagePojo.attachment.size = maxPosition;
-			}
-			if (maxPosition > 0) {
-				fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
+			fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
+			maxPosition = fileChannel.size();
+			messagePojo.attachment.size = maxPosition;
+			messagePojo.attachment.link = null;
+			if (maxPosition == 0) {
+				fileChannel.close();
 			}
 		} catch (Exception e) {
 			markAsDone();
@@ -68,7 +70,7 @@ public class DmsMessageSender implements AutoCloseable {
 		if (fileChannel != null) {
 			fileChannel.position(position);
 		}
-		ByteBuffer dataBuffer = ByteBuffer.allocate(1 + pojoSize).put(MESSAGE_POJO_PREFIX).put(data);
+		ByteBuffer dataBuffer = ByteBuffer.allocate(Byte.BYTES + pojoSize).put(MESSAGE_POJO_PREFIX).put(data);
 		dataBuffer.flip();
 		return dataBuffer;
 	}

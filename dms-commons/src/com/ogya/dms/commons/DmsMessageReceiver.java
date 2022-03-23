@@ -20,6 +20,11 @@ public class DmsMessageReceiver {
 
 	public void inFeed(int messageNumber, byte[] data) {
 
+		if (data.length == 0) {
+			interruptReceived(messageNumber);
+			return;
+		}
+
 		ByteBuffer dataBuffer = ByteBuffer.wrap(data);
 		byte sign = dataBuffer.get();
 
@@ -55,6 +60,14 @@ public class DmsMessageReceiver {
 			}
 		}
 
+	}
+
+	private void interruptReceived(int messageNumber) {
+		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
+		if (attachmentReceiver == null) {
+			return;
+		}
+		attachmentReceiver.interrupt();
 	}
 
 	private void newAttachmentReceiver(int messageNumber, MessagePojo messagePojo) {
@@ -111,10 +124,6 @@ public class DmsMessageReceiver {
 		}
 
 		private boolean dataReceived(ByteBuffer dataBuffer) {
-
-			if (!dataBuffer.hasRemaining()) {
-				interrupt();
-			}
 
 			if (interrupted) {
 				return true;
