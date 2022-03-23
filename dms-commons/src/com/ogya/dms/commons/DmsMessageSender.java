@@ -40,7 +40,6 @@ public class DmsMessageSender implements AutoCloseable {
 			fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
 			maxPosition = fileChannel.size();
 			messagePojo.attachment.size = maxPosition;
-			messagePojo.attachment.link = null;
 			if (maxPosition == 0) {
 				fileChannel.close();
 			}
