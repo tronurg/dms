@@ -29,7 +29,8 @@ public abstract class MessageContainerBase extends DmsMessageSender {
 	@Override
 	public Chunk next() {
 		checkInTime = System.currentTimeMillis();
-		health.set(sendStatus.get() && (useTimeout == null || checkInTime - startTime < useTimeout));
+		health.set((sendStatus == null || sendStatus.get())
+				&& (useTimeout == null || checkInTime - startTime < useTimeout));
 		return super.next();
 	}
 

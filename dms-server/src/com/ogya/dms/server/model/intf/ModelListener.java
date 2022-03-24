@@ -19,4 +19,6 @@ public interface ModelListener {
 
 	void publishImmediately();
 
+	void stopSending(int messageNumber, String receiverUuid);
+
 }

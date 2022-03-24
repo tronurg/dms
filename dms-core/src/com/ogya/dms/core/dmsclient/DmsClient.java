@@ -2,12 +2,15 @@ package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -47,10 +50,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final DmsClientListener listener;
 
 	private final LinkedBlockingQueue<MessagePojo> dealerQueue = new LinkedBlockingQueue<MessagePojo>();
-
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
-
 	private final DmsMessageReceiver messageReceiver;
+	private final AtomicInteger messageCounter = new AtomicInteger(0);
+	private final Map<Integer, AtomicBoolean> stopMap = Collections
+			.synchronizedMap(new HashMap<Integer, AtomicBoolean>());
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -725,7 +729,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	@Override
 	public void messageFailed(int messageNumber) {
-		// TODO
+		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.STOP_SENDING,
+				null, null, null));
 	}
 
 }

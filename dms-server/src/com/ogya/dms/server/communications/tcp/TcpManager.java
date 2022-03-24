@@ -27,6 +27,8 @@ import java.util.function.Consumer;
 import com.ogya.dms.commons.DmsMessageReceiver;
 import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
 import com.ogya.dms.commons.DmsMessageSender.Chunk;
+import com.ogya.dms.commons.DmsPackingFactory;
+import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
@@ -218,8 +220,7 @@ public class TcpManager implements TcpServerListener {
 			DmsServer dmsServer = dmsServers.get(dmsUuid);
 
 			if (dmsServer != null) {
-				dmsServer.queueMessage(messagePojo, sendStatus == null ? new AtomicBoolean(true) : sendStatus,
-						progressConsumer);
+				dmsServer.queueMessage(messagePojo, sendStatus, progressConsumer);
 			} else if (progressConsumer != null) {
 				progressConsumer.accept(-1);
 			}
@@ -232,8 +233,7 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			dmsServers.forEach(
-					(dmsUuid, dmsServer) -> dmsServer.queueMessage(messagePojo, new AtomicBoolean(true), null));
+			dmsServers.forEach((dmsUuid, dmsServer) -> dmsServer.queueMessage(messagePojo, null, null));
 
 		});
 
@@ -431,6 +431,8 @@ public class TcpManager implements TcpServerListener {
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, MESSAGE_SORTER);
+		private final Map<Integer, AtomicBoolean> stopMap = Collections
+				.synchronizedMap(new HashMap<Integer, AtomicBoolean>());
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
@@ -477,6 +479,7 @@ public class TcpManager implements TcpServerListener {
 
 					if (!messageContainer.hasMore()) {
 						messageContainer.close();
+						stopMap.remove(messageContainer.messageNumber);
 						if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
 							messageContainer.progressConsumer.accept(-1);
 						}
@@ -492,6 +495,7 @@ public class TcpManager implements TcpServerListener {
 			MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
 					sendStatus, progressConsumer);
 			updateSendFunction(messageContainer);
+			stopMap.put(messageContainer.messageNumber, sendStatus);
 			messageQueue.put(messageContainer);
 		}
 
@@ -510,6 +514,14 @@ public class TcpManager implements TcpServerListener {
 			return messageContainer.updateSendFunction(sendFunction);
 		}
 
+		private void stopSending(Integer messageNumber) {
+			AtomicBoolean sendStatus = stopMap.get(messageNumber);
+			if (sendStatus == null) {
+				return;
+			}
+			sendStatus.set(false);
+		}
+
 		private void close() {
 			messageReceiver.deleteResources();
 			messageQueue.put(new MessageContainer(messageCounter.getAndIncrement(), END_MESSAGE,
@@ -518,12 +530,22 @@ public class TcpManager implements TcpServerListener {
 
 		@Override
 		public void messageReceived(MessagePojo messagePojo) {
+			if (messagePojo.contentType == ContentType.STOP_SENDING) {
+				try {
+					Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+					stopSending(messageNumber);
+				} catch (Exception e) {
+
+				}
+				return;
+			}
 			messageReceivedToListeners(messagePojo, dmsUuid);
 		}
 
 		@Override
 		public void messageFailed(int messageNumber) {
-			// TODO
+			queueMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.STOP_SENDING,
+					null, null, null), null, null);
 		}
 
 	}

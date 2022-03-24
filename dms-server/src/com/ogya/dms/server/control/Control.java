@@ -3,6 +3,8 @@ package com.ogya.dms.server.control;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,6 +61,8 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final AtomicInteger messageCounter = new AtomicInteger(0);
 	private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(11,
 			new MessageSorter());
+	private final Map<Integer, MessageContainer> stopMap = Collections
+			.synchronizedMap(new HashMap<Integer, MessageContainer>());
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final Object publishSyncObj = new Object();
 
@@ -198,6 +202,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					if (!messageContainer.hasMore()) {
 						messageContainer.close();
+						stopMap.remove(messageContainer.messageNumber);
 						if (messageContainer.progressConsumer != null
 								&& messageContainer.successfulUuids.size() < messageContainer.receiverUuids.size()) {
 							messageContainer.progressConsumer.accept(messageContainer.receiverUuids.stream()
@@ -292,9 +297,10 @@ public class Control implements TcpManagerListener, ModelListener {
 			BiConsumer<List<String>, Integer> progressConsumer, String... receiverUuids) {
 
 		try {
-			messageQueue.put(new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
-					sendStatus == null ? new AtomicBoolean(true) : sendStatus, Arrays.asList(receiverUuids),
-					progressConsumer));
+			MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
+					sendStatus, Arrays.asList(receiverUuids), progressConsumer);
+			stopMap.put(messageContainer.messageNumber, messageContainer);
+			messageQueue.put(messageContainer);
 			signalQueue.put(SIGNAL);
 		} catch (InterruptedException e) {
 
@@ -328,6 +334,15 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
+	@Override
+	public void stopSending(int messageNumber, String receiverUuid) {
+		MessageContainer messageContainer = stopMap.get(messageNumber);
+		if (messageContainer == null) {
+			return;
+		}
+		messageContainer.successfulUuids.remove(receiverUuid);
+	}
+
 	private final class MessageContainer extends MessageContainerBase {
 
 		private final List<String> receiverUuids;
@@ -339,7 +354,7 @@ public class Control implements TcpManagerListener, ModelListener {
 			super(messageNumber, messagePojo, Direction.SERVER_TO_CLIENT, sendStatus);
 			this.receiverUuids = receiverUuids;
 			this.progressConsumer = progressConsumer;
-			this.successfulUuids = new ArrayList<String>(receiverUuids);
+			this.successfulUuids = Collections.synchronizedList(new ArrayList<String>(receiverUuids));
 		}
 
 	}

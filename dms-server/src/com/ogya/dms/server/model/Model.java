@@ -865,6 +865,15 @@ public class Model {
 
 		@Override
 		public void messageReceived(MessagePojo messagePojo) {
+			if (messagePojo.contentType == ContentType.STOP_SENDING) {
+				try {
+					int messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+					listener.stopSending(messageNumber, beacon.uuid);
+				} catch (Exception e) {
+
+				}
+				return;
+			}
 			localMessageReceived(messagePojo);
 		}
 
