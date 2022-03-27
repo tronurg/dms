@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageSender implements AutoCloseable {
@@ -32,8 +33,13 @@ public class DmsMessageSender implements AutoCloseable {
 	}
 
 	private void init() {
-		Path attachment = messagePojo.getAttachmentSource();
+		AttachmentPojo attachmentPojo = messagePojo.attachment;
+		if (attachmentPojo == null) {
+			return;
+		}
+		Path attachment = attachmentPojo.path;
 		if (attachment == null) {
+			messagePojo.attachment = null;
 			return;
 		}
 		try {

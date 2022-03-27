@@ -1,21 +1,14 @@
 package com.ogya.dms.server.control;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -25,8 +18,7 @@ import org.zeromq.ZMQException;
 import com.ogya.dms.commons.DmsMessageSender.Chunk;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.MessageContainerBase;
-import com.ogya.dms.server.common.MessageSorter;
+import com.ogya.dms.server.common.MessageContainerLocal;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
@@ -47,8 +39,6 @@ public class Control implements TcpManagerListener, ModelListener {
 	private static final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
 	private static final int clientPortTo = CommonConstants.CLIENT_PORT_TO;
 
-	private static final byte[] SIGNAL = new byte[0];
-
 	private static Control instance;
 
 	private final Model model = new Model(this);
@@ -57,17 +47,12 @@ public class Control implements TcpManagerListener, ModelListener {
 			this::receiveUdpMessage);
 	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 	private final ZContext context = new ZContext();
-	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
-	private final AtomicInteger messageCounter = new AtomicInteger(0);
-	private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(11,
-			new MessageSorter());
-	private final Map<Integer, MessageContainer> stopMap = Collections
-			.synchronizedMap(new HashMap<Integer, MessageContainer>());
+	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final Object publishSyncObj = new Object();
 
 	private Control() {
-
+		init();
 	}
 
 	public synchronized static Control getInstance() {
@@ -80,6 +65,22 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		return instance;
 
+	}
+
+	private void init() {
+		try {
+			Files.list(Paths.get(System.getProperty("java.io.tmpdir"))).forEach(path -> {
+				if (path.getFileName().toString().startsWith("dms")) {
+					try {
+						Files.delete(path);
+					} catch (Exception e) {
+
+					}
+				}
+			});
+		} catch (Exception e) {
+
+		}
 	}
 
 	public void start() {
@@ -150,64 +151,54 @@ public class Control implements TcpManagerListener, ModelListener {
 
 				if (poller.pollin(pollRouter)) {
 
-					String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
+					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
+					int messageNumber = Integer.parseInt(routerSocket.recvStr(ZMQ.DONTWAIT));
+					if (!routerSocket.hasReceiveMore()) {
+						localMessageReady(userUuid);
+						continue;
+					}
 					byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
-
-					taskQueue.execute(() -> model.localMessageReceived(data, userUuid));
+					taskQueue.execute(() -> model.localMessageReceived(messageNumber, data, userUuid));
+					try {
+						routerSocket.send(userUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						routerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // Send more signal
+					} catch (ZMQException e) {
+						taskQueue.execute(() -> model.localUuidDisconnected(userUuid));
+					}
 
 				} else if (poller.pollin(pollInproc)) {
 
-					inprocSocket.recv(ZMQ.DONTWAIT);
-					MessageContainer messageContainer = messageQueue.poll();
+					final String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					MessageContainerLocal messageContainer = model.getNextMessage(uuid);
 
 					if (messageContainer == null) {
 						continue;
 					}
 
-					Chunk chunk;
-					while ((chunk = messageContainer.next()) != null) {
-						for (String receiverUuid : messageContainer.receiverUuids) {
-							if (!messageContainer.successfulUuids.contains(receiverUuid)) {
-								continue;
-							}
-							try {
-								routerSocket.send(receiverUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-								routerSocket.send(String.valueOf(messageContainer.messageNumber),
-										ZMQ.SNDMORE | ZMQ.DONTWAIT);
-								routerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
-								if (chunk.progress < 0) {
-									messageContainer.successfulUuids.remove(receiverUuid);
-								}
-							} catch (ZMQException e) {
-								messageContainer.successfulUuids.remove(receiverUuid);
-								taskQueue.execute(() -> model.localUuidDisconnected(receiverUuid));
-							}
-						}
-						if (messageContainer.successfulUuids.isEmpty()) {
-							messageContainer.markAsDone();
-						} else {
+					Chunk chunk = messageContainer.next();
+					if (chunk != null) {
+						try {
+							routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+							routerSocket.send(String.valueOf(messageContainer.messageNumber),
+									ZMQ.SNDMORE | ZMQ.DONTWAIT);
+							routerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
 							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
 									.getAndSet(chunk.progress);
 							if (progressUpdated && messageContainer.progressConsumer != null) {
-								messageContainer.progressConsumer.accept(messageContainer.successfulUuids,
-										chunk.progress);
+								messageContainer.progressConsumer.accept(chunk.progress);
 							}
-						}
-						if (messageContainer.bigFile && messageContainer.hasMore() && !messageQueue.isEmpty()) {
-							messageQueue.put(messageContainer);
-							signalQueue.put(SIGNAL);
-							break;
+						} catch (ZMQException e) {
+							messageContainer.markAsDone();
+							taskQueue.execute(() -> model.localUuidDisconnected(uuid));
 						}
 					}
 
-					if (!messageContainer.hasMore()) {
+					if (messageContainer.hasMore()) {
+						model.queueMessage(uuid, messageContainer);
+					} else {
 						messageContainer.close();
-						stopMap.remove(messageContainer.messageNumber);
-						if (messageContainer.progressConsumer != null
-								&& messageContainer.successfulUuids.size() < messageContainer.receiverUuids.size()) {
-							messageContainer.progressConsumer.accept(messageContainer.receiverUuids.stream()
-									.filter(receiverUuid -> !messageContainer.successfulUuids.contains(receiverUuid))
-									.collect(Collectors.toList()), -1);
+						if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
+							messageContainer.progressConsumer.accept(-1);
 						}
 					}
 
@@ -293,19 +284,12 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToLocalUsers(MessagePojo messagePojo, AtomicBoolean sendStatus,
-			BiConsumer<List<String>, Integer> progressConsumer, String... receiverUuids) {
-
+	public void localMessageReady(String receiverUuid) {
 		try {
-			MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
-					sendStatus, Arrays.asList(receiverUuids), progressConsumer);
-			stopMap.put(messageContainer.messageNumber, messageContainer);
-			messageQueue.put(messageContainer);
-			signalQueue.put(SIGNAL);
+			signalQueue.put(receiverUuid);
 		} catch (InterruptedException e) {
 
 		}
-
 	}
 
 	@Override
@@ -330,31 +314,6 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			publishSyncObj.notify();
 
-		}
-
-	}
-
-	@Override
-	public void stopSending(int messageNumber, String receiverUuid) {
-		MessageContainer messageContainer = stopMap.get(messageNumber);
-		if (messageContainer == null) {
-			return;
-		}
-		messageContainer.successfulUuids.remove(receiverUuid);
-	}
-
-	private final class MessageContainer extends MessageContainerBase {
-
-		private final List<String> receiverUuids;
-		private final BiConsumer<List<String>, Integer> progressConsumer;
-		private final List<String> successfulUuids;
-
-		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
-				List<String> receiverUuids, BiConsumer<List<String>, Integer> progressConsumer) {
-			super(messageNumber, messagePojo, Direction.SERVER_TO_CLIENT, sendStatus);
-			this.receiverUuids = receiverUuids;
-			this.progressConsumer = progressConsumer;
-			this.successfulUuids = Collections.synchronizedList(new ArrayList<String>(receiverUuids));
 		}
 
 	}

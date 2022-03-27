@@ -45,14 +45,7 @@ public class MessagePojo {
 
 	public Path getAttachmentLink() {
 		if (attachment != null) {
-			return attachment.link;
-		}
-		return null;
-	}
-
-	public Path getAttachmentSource() {
-		if (attachment != null) {
-			return attachment.source;
+			return attachment.path;
 		}
 		return null;
 	}

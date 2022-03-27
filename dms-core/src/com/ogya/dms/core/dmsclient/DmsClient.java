@@ -8,9 +8,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -20,7 +22,6 @@ import com.ogya.dms.commons.DmsMessageReceiver;
 import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
 import com.ogya.dms.commons.DmsMessageSender;
 import com.ogya.dms.commons.DmsMessageSender.Chunk;
-import com.ogya.dms.commons.DmsMessageSender.Direction;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
@@ -38,6 +39,8 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsClient implements DmsMessageReceiverListener {
 
+	private static final byte[] SIGNAL = new byte[0];
+
 	private final String uuid;
 
 	private final ZContext context = new ZContext();
@@ -49,12 +52,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	private final DmsClientListener listener;
 
-	private final LinkedBlockingQueue<MessagePojo> dealerQueue = new LinkedBlockingQueue<MessagePojo>();
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final DmsMessageReceiver messageReceiver;
+	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
 	private final AtomicInteger messageCounter = new AtomicInteger(0);
-	private final Map<Integer, AtomicBoolean> stopMap = Collections
-			.synchronizedMap(new HashMap<Integer, AtomicBoolean>());
+	private final LinkedBlockingDeque<MessageContainer> messageQueue = new LinkedBlockingDeque<MessageContainer>();
+	private final Map<Integer, MessageContainer> stopMap = Collections
+			.synchronizedMap(new HashMap<Integer, MessageContainer>());
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -89,88 +93,84 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void sendBeacon(Beacon beacon) {
 
-		dealerQueue
-				.offer(new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null));
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null));
 
 	}
 
 	public void claimStartInfo() {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null));
+		sendMessage(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null));
 
 	}
 
 	public void addRemoteIps(InetAddress... ips) {
 
-		dealerQueue
-				.offer(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null));
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null));
 
 	}
 
 	public void removeRemoteIps(InetAddress... ips) {
 
-		dealerQueue.offer(
-				new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null, null));
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null, null));
 
 	}
 
-	public void sendMessage(Message message, Path attachment, boolean linkOnlyAttachment, String receiverUuid,
-			Long messageId) {
+	public void sendMessage(Message message, Path attachment, String receiverUuid, Long messageId) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
 				ContentType.MESSAGE, messageId, null, null);
 
 		if (attachment != null) {
-			messagePojo.attachment = new AttachmentPojo(attachment, linkOnlyAttachment);
+			messagePojo.attachment = new AttachmentPojo(attachment);
 		}
 
-		dealerQueue.offer(messagePojo);
+		sendMessage(messagePojo);
 
 	}
 
 	public void cancelMessage(Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL_MESSAGE, trackingId, null, null));
+		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_MESSAGE, trackingId, null, null));
 
 	}
 
 	public void claimMessageStatus(Long[] messageIds, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
 				ContentType.CLAIM_MESSAGE_STATUS, null, null, null));
 
 	}
 
 	public void feedMessageStatus(Map<Long, MessageStatus> messageIdStatusMap, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIdStatusMap), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIdStatusMap), uuid, receiverUuid,
 				ContentType.FEED_MESSAGE_STATUS, null, null, null));
 
 	}
 
 	public void feedGroupMessageStatus(Map<Long, GroupMessageStatus> messageIdGroupStatusMap, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIdGroupStatusMap), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIdGroupStatusMap), uuid, receiverUuid,
 				ContentType.FEED_GROUP_MESSAGE_STATUS, null, null, null));
 
 	}
 
 	public void claimStatusReport(Long[] messageIds, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
 				ContentType.CLAIM_STATUS_REPORT, null, null, null));
 
 	}
 
 	public void feedStatusReport(Map<Long, Set<StatusReport>> messageIdStatusReportsMap, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageIdStatusReportsMap), null, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIdStatusReportsMap), null, receiverUuid,
 				ContentType.FEED_STATUS_REPORT, null, null, null));
 
 	}
 
-	public void sendTransientMessage(MessageHandleImpl message, boolean linkOnlyAttachment,
-			Iterable<String> receiverUuids, Long trackingId, Long useTimeout, InetAddress useLocalInterface) {
+	public void sendTransientMessage(MessageHandleImpl message, Iterable<String> receiverUuids, Long trackingId,
+			Long useTimeout, InetAddress useLocalInterface) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
 				String.join(";", receiverUuids), ContentType.TRANSIENT, trackingId, useTimeout, useLocalInterface);
@@ -179,68 +179,84 @@ public class DmsClient implements DmsMessageReceiverListener {
 		if (fileHandle != null) {
 			Path attachment = fileHandle.getPath();
 			if (attachment != null) {
-				messagePojo.attachment = new AttachmentPojo(attachment, linkOnlyAttachment);
+				messagePojo.attachment = new AttachmentPojo(attachment);
 			}
 		}
 
-		dealerQueue.offer(messagePojo);
+		sendMessage(messagePojo);
 
 	}
 
 	public void sendTransientMessageStatus(Long trackingId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(trackingId), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(trackingId), uuid, receiverUuid,
 				ContentType.FEED_TRANSIENT_STATUS, null, null, null));
 
 	}
 
 	public void cancelTransientMessage(Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, trackingId, null, null));
+		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, trackingId, null, null));
 
 	}
 
 	public void sendDownloadRequest(DownloadPojo downloadPojo, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadPojo), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadPojo), uuid, receiverUuid,
 				ContentType.DOWNLOAD_REQUEST, null, null, null));
 
 	}
 
 	public void cancelDownloadRequest(Long downloadId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadId), uuid, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadId), uuid, receiverUuid,
 				ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null));
 
 	}
 
 	public void sendServerNotFound(Long downloadId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid,
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid,
 				ContentType.SERVER_NOT_FOUND, null, null, null));
 
 	}
 
 	public void sendFileNotFound(Long downloadId, String receiverUuid) {
 
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid,
-				ContentType.FILE_NOT_FOUND, null, null, null));
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid, ContentType.FILE_NOT_FOUND,
+				null, null, null));
 
 	}
 
-	public void uploadFile(Path path, String receiverUuid, boolean linkOnlyAttachment, Long trackingId) {
+	public void uploadFile(Path path, String receiverUuid, Long trackingId) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(path.getFileName().toString()), uuid,
 				receiverUuid, ContentType.UPLOAD, trackingId, null, null);
-		messagePojo.attachment = new AttachmentPojo(path, linkOnlyAttachment);
-		dealerQueue.offer(messagePojo);
+		messagePojo.attachment = new AttachmentPojo(path);
+		sendMessage(messagePojo);
 
 	}
 
 	public void cancelUpload(String receiverUuid, Long trackingId) {
 
-		dealerQueue.offer(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
+		sendMessage(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
 
+	}
+
+	private void sendMessage(MessagePojo messagePojo) {
+		MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
+				progress -> {
+					if (progress < 0 && messagePojo.contentType == ContentType.TRANSIENT) {
+						progressTransientReceivedToListener(messagePojo.trackingId, messagePojo.receiverUuid.split(";"),
+								progress);
+					}
+				});
+		messageQueue.offer(messageContainer);
+		raiseSignal();
+	}
+
+	private void raiseSignal() {
+		signalQueue.offer(SIGNAL);
 	}
 
 	private void dealer() {
@@ -268,15 +284,39 @@ public class DmsClient implements DmsMessageReceiverListener {
 				if (poller.pollin(pollDealer)) {
 
 					int messageNumber = Integer.parseInt(dealerSocket.recvStr(ZMQ.DONTWAIT));
+					if (!dealerSocket.hasReceiveMore()) {
+						raiseSignal();
+						continue;
+					}
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
 					synchronized (messageReceiver) {
 						messageReceiver.inFeed(messageNumber, receivedMessage);
 					}
+					dealerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // Send more signal
 
 				} else if (poller.pollin(pollInproc)) {
 
-					byte[] sentMessage = inprocSocket.recv(ZMQ.DONTWAIT);
-					dealerSocket.send(sentMessage, ZMQ.DONTWAIT);
+					inprocSocket.recv(ZMQ.DONTWAIT);
+					MessageContainer messageContainer = messageQueue.poll();
+
+					if (messageContainer == null) {
+						continue;
+					}
+
+					Chunk chunk = messageContainer.next();
+					if (chunk != null) {
+						dealerSocket.send(String.valueOf(messageContainer.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
+					}
+
+					if (messageContainer.hasMore()) {
+						messageQueue.offerFirst(messageContainer);
+					} else {
+						messageContainer.close();
+						if (messageContainer.progressConsumer != null && chunk.progress < 100) {
+							messageContainer.progressConsumer.accept(-1);
+						}
+					}
 
 				}
 
@@ -294,34 +334,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				try {
-
-					MessagePojo messagePojo = dealerQueue.take();
-
-					try (DmsMessageSender messageSender = new DmsMessageSender(messagePojo,
-							Direction.CLIENT_TO_SERVER)) {
-
-						Chunk chunk;
-
-						while (serverConnected.get() && (chunk = messageSender.next()) != null) {
-
-							inprocSocket.sendByteBuffer(chunk.dataBuffer, 0);
-							if (chunk.progress < 0 && messagePojo.contentType == ContentType.TRANSIENT) {
-								progressTransientReceivedToListener(messagePojo.trackingId,
-										messagePojo.receiverUuid.split(";"), chunk.progress);
-							}
-
-						}
-
-					}
-
-				} catch (InterruptedException e) {
-
-					e.printStackTrace();
-
-				}
+				inprocSocket.send(signalQueue.take());
 
 			}
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
 
 		}
 
@@ -346,9 +365,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				case ZMQ.EVENT_DISCONNECTED:
 					serverConnected.set(false);
-					synchronized (messageReceiver) {
-						messageReceiver.deleteResources();
-					}
+					close();
 					serverConnStatusUpdatedToListener();
 					break;
 
@@ -722,15 +739,64 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
+	private void stopSending(Integer messageNumber) {
+		MessageContainer messageContainer = stopMap.get(messageNumber);
+		if (messageContainer == null) {
+			return;
+		}
+		messageContainer.markAsDone();
+	}
+
+	private void close() {
+		synchronized (messageReceiver) {
+			messageReceiver.deleteResources();
+		}
+		while (!messageQueue.isEmpty()) {
+			MessageContainer messageContainer = messageQueue.poll();
+			if (messageContainer == null || messageContainer.progressConsumer == null) {
+				continue;
+			}
+			messageContainer.progressConsumer.accept(-1);
+		}
+	}
+
 	@Override
 	public void messageReceived(MessagePojo messagePojo) {
+		if (messagePojo.contentType == ContentType.SEND_NOMORE) {
+			try {
+				Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+				stopSending(messageNumber);
+			} catch (Exception e) {
+
+			}
+			return;
+		}
 		processIncomingMessage(messagePojo);
 	}
 
 	@Override
 	public void messageFailed(int messageNumber) {
-		dealerQueue.offer(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.STOP_SENDING,
-				null, null, null));
+		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE, null,
+				null, null));
+	}
+
+	private final class MessageContainer extends DmsMessageSender {
+
+		private final int messageNumber;
+		private final Consumer<Integer> progressConsumer;
+
+		private MessageContainer(int messageNumber, MessagePojo messagePojo, Consumer<Integer> progressConsumer) {
+			super(messagePojo, Direction.CLIENT_TO_SERVER);
+			this.messageNumber = messageNumber;
+			this.progressConsumer = progressConsumer;
+		}
+
+		@Override
+		public Chunk next() {
+			health.set(serverConnected.get());
+			return super.next();
+		}
+
 	}
 
 }

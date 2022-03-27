@@ -33,6 +33,7 @@ import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.common.MessageContainerBase;
+import com.ogya.dms.server.common.MessageContainerRemote;
 import com.ogya.dms.server.common.MessageSorter;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
@@ -45,7 +46,6 @@ import com.ogya.dms.server.factory.DmsFactory;
 public class TcpManager implements TcpServerListener {
 
 	private static final Charset CHARSET = StandardCharsets.UTF_8;
-	private static final MessagePojo END_MESSAGE = new MessagePojo();
 
 	private static final AtomicInteger CONNECTION_ORDER = new AtomicInteger(0);
 
@@ -429,10 +429,10 @@ public class TcpManager implements TcpServerListener {
 		private final AtomicBoolean alive = new AtomicBoolean(true);
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
+		private final PriorityBlockingQueue<MessageContainerRemote> messageQueue = new PriorityBlockingQueue<MessageContainerRemote>(
 				11, MESSAGE_SORTER);
-		private final Map<Integer, AtomicBoolean> stopMap = Collections
-				.synchronizedMap(new HashMap<Integer, AtomicBoolean>());
+		private final Map<Integer, MessageContainerRemote> stopMap = Collections
+				.synchronizedMap(new HashMap<Integer, MessageContainerRemote>());
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
@@ -443,7 +443,7 @@ public class TcpManager implements TcpServerListener {
 		private void consumeMessageQueue() {
 			while (alive.get() || !messageQueue.isEmpty()) {
 				try {
-					MessageContainer messageContainer = messageQueue.take();
+					MessageContainerRemote messageContainer = messageQueue.take();
 					if (messageContainer.isEndMessage()) {
 						alive.set(false);
 						continue;
@@ -478,11 +478,7 @@ public class TcpManager implements TcpServerListener {
 					}
 
 					if (!messageContainer.hasMore()) {
-						messageContainer.close();
-						stopMap.remove(messageContainer.messageNumber);
-						if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
-							messageContainer.progressConsumer.accept(-1);
-						}
+						closeMessage(messageContainer);
 					}
 				} catch (InterruptedException e) {
 
@@ -492,14 +488,20 @@ public class TcpManager implements TcpServerListener {
 
 		private void queueMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
-			MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
-					sendStatus, progressConsumer);
+			if (!alive.get()) {
+				if (progressConsumer != null) {
+					progressConsumer.accept(-1);
+				}
+				return;
+			}
+			MessageContainerRemote messageContainer = new MessageContainerRemote(messageCounter.getAndIncrement(),
+					messagePojo, sendStatus, progressConsumer);
 			updateSendFunction(messageContainer);
-			stopMap.put(messageContainer.messageNumber, sendStatus);
+			stopMap.put(messageContainer.messageNumber, messageContainer);
 			messageQueue.put(messageContainer);
 		}
 
-		private boolean updateSendFunction(MessageContainer messageContainer) {
+		private boolean updateSendFunction(MessageContainerRemote messageContainer) {
 			BiFunction<Integer, ByteBuffer, Boolean> sendFunction = null;
 			synchronized (connections) {
 				connections.sort(CONNECTION_SORTER);
@@ -514,23 +516,30 @@ public class TcpManager implements TcpServerListener {
 			return messageContainer.updateSendFunction(sendFunction);
 		}
 
+		private void closeMessage(MessageContainerRemote messageContainer) {
+			messageContainer.close();
+			stopMap.remove(messageContainer.messageNumber);
+			if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
+				messageContainer.progressConsumer.accept(-1);
+			}
+		}
+
 		private void stopSending(Integer messageNumber) {
-			AtomicBoolean sendStatus = stopMap.get(messageNumber);
-			if (sendStatus == null) {
+			MessageContainerRemote messageContainer = stopMap.get(messageNumber);
+			if (messageContainer == null) {
 				return;
 			}
-			sendStatus.set(false);
+			messageContainer.markAsDone();
 		}
 
 		private void close() {
 			messageReceiver.deleteResources();
-			messageQueue.put(new MessageContainer(messageCounter.getAndIncrement(), END_MESSAGE,
-					new AtomicBoolean(false), null));
+			messageQueue.put(MessageContainerRemote.getEndMessage());
 		}
 
 		@Override
 		public void messageReceived(MessagePojo messagePojo) {
-			if (messagePojo.contentType == ContentType.STOP_SENDING) {
+			if (messagePojo.contentType == ContentType.SEND_NOMORE) {
 				try {
 					Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
 					stopSending(messageNumber);
@@ -544,55 +553,8 @@ public class TcpManager implements TcpServerListener {
 
 		@Override
 		public void messageFailed(int messageNumber) {
-			queueMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.STOP_SENDING,
+			queueMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE,
 					null, null, null), null, null);
-		}
-
-	}
-
-	private static class MessageContainer extends MessageContainerBase {
-
-		private static final int UPDATE_TURNS = 10;
-
-		private final InetAddress useLocalAddress;
-		private final Consumer<Integer> progressConsumer;
-		private final boolean endMessage;
-		private BiFunction<Integer, ByteBuffer, Boolean> sendFunction;
-		private int updateCounter = 0;
-
-		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
-				Consumer<Integer> progressConsumer) {
-			super(messageNumber, messagePojo, Direction.SERVER_TO_SERVER, sendStatus);
-			this.useLocalAddress = messagePojo.useLocalAddress;
-			this.endMessage = messagePojo == END_MESSAGE;
-			this.progressConsumer = progressConsumer;
-		}
-
-		private boolean isUpdateReady() {
-			return updateCounter > UPDATE_TURNS;
-		}
-
-		private boolean updateSendFunction(BiFunction<Integer, ByteBuffer, Boolean> sendFunction) {
-			boolean updated = this.sendFunction != sendFunction;
-			this.sendFunction = sendFunction;
-			updateCounter = 0;
-			return updated;
-		}
-
-		private boolean isEndMessage() {
-			return endMessage;
-		}
-
-		@Override
-		public Chunk next() {
-			++updateCounter;
-			return super.next();
-		}
-
-		@Override
-		public void rewind() {
-			updateCounter = UPDATE_TURNS;
-			super.rewind();
 		}
 
 	}

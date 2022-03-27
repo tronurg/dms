@@ -9,21 +9,15 @@ public class AttachmentPojo {
 
 	@JsonProperty("a")
 	public long size;
-	@JsonProperty("b")
-	public Path link;
 	@JsonIgnore
-	public Path source;
+	public Path path;
 
 	public AttachmentPojo() {
 		super();
 	}
 
-	public AttachmentPojo(Path path, boolean linkOnly) {
-		if (linkOnly) {
-			this.link = path;
-		} else {
-			this.source = path;
-		}
+	public AttachmentPojo(Path path) {
+		this.path = path;
 	}
 
 }

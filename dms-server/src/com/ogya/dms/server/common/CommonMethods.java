@@ -194,27 +194,6 @@ public class CommonMethods {
 
 	}
 
-	static String getSharedTmpDir() {
-
-		String sharedTmpDir = CommonConstants.IO_TMP_DIR;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/SHARED_TMP_DIR")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			sharedTmpDir = node.getTextContent();
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("SHARED_TMP_DIR set to default: %s", sharedTmpDir));
-		} catch (Exception e) {
-
-		}
-
-		return sharedTmpDir;
-
-	}
-
 	static List<InetAddress> getPreferredIps() {
 
 		List<InetAddress> preferredIps = new ArrayList<InetAddress>();

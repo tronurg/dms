@@ -31,10 +31,10 @@ public class DmsMessageReceiver {
 		if (sign < 0) {
 			try {
 				MessagePojo messagePojo = DmsPackingFactory.unpack(dataBuffer, MessagePojo.class);
-				if (messagePojo.attachment == null || messagePojo.attachment.link != null) {
+				if (messagePojo.attachment == null) {
 					listener.messageReceived(messagePojo);
 				} else if (messagePojo.attachment.size == 0) {
-					messagePojo.attachment.link = Files.createTempFile("dms", null);
+					messagePojo.attachment.path = Files.createTempFile("dms", null);
 					listener.messageReceived(messagePojo);
 				} else {
 					newAttachmentReceiver(messageNumber, messagePojo);
@@ -95,8 +95,8 @@ public class DmsMessageReceiver {
 			this.messagePojo = messagePojo;
 			this.fileSize = messagePojo.attachment.size;
 			try {
-				messagePojo.attachment.link = Files.createTempFile("dms", null);
-				fileChannel = FileChannel.open(messagePojo.attachment.link, StandardOpenOption.CREATE,
+				messagePojo.attachment.path = Files.createTempFile("dms", null);
+				fileChannel = FileChannel.open(messagePojo.attachment.path, StandardOpenOption.CREATE,
 						StandardOpenOption.WRITE);
 			} catch (Exception e) {
 				interrupt();
@@ -114,7 +114,7 @@ public class DmsMessageReceiver {
 			}
 
 			try {
-				Files.deleteIfExists(messagePojo.attachment.link);
+				Files.deleteIfExists(messagePojo.attachment.path);
 			} catch (Exception e) {
 
 			}

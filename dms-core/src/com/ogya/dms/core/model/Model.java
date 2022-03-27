@@ -1,7 +1,6 @@
 package com.ogya.dms.core.model;
 
 import java.net.InetAddress;
-import java.net.NetworkInterface;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +17,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.EntityId;
@@ -35,7 +33,6 @@ public class Model {
 	private final String localUuid;
 
 	private final AtomicBoolean serverConnected = new AtomicBoolean(false);
-	private final AtomicBoolean serverLocal = new AtomicBoolean(false);
 	private final AtomicBoolean audioOn = new AtomicBoolean(true);
 
 	private final Queue<Runnable> serverTaskQueue = new ConcurrentLinkedQueue<Runnable>();
@@ -139,23 +136,6 @@ public class Model {
 	public void setServerConnStatus(boolean connStatus) {
 
 		serverConnected.set(connStatus);
-
-		if (connStatus) {
-			try {
-				serverLocal.set(
-						NetworkInterface.getByInetAddress(InetAddress.getByName(CommonConstants.SERVER_IP)) != null);
-				return;
-			} catch (Exception e) {
-
-			}
-		}
-		serverLocal.set(false);
-
-	}
-
-	public boolean isServerLocal() {
-
-		return serverLocal.get();
 
 	}
 

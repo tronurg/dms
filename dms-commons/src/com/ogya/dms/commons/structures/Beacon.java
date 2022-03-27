@@ -28,8 +28,6 @@ public class Beacon {
 	@JsonProperty("h")
 	@JsonDeserialize(keyUsing = InetAddressDeserializer.class)
 	public Map<InetAddress, InetAddress> localRemoteServerIps;
-	@JsonProperty("i")
-	public Boolean local;
 
 	public Beacon() {
 		super();
