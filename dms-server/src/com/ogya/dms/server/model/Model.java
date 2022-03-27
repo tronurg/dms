@@ -876,7 +876,8 @@ public class Model {
 
 		@Override
 		public void messageFailed(int messageNumber) {
-			// TODO
+			sendMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE,
+					null, null, null), null, null);
 		}
 
 	}

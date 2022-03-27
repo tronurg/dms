@@ -21,7 +21,7 @@ public class DmsMessageReceiver {
 	public void inFeed(int messageNumber, byte[] data) {
 
 		if (data.length == 0) {
-			interruptReceived(messageNumber);
+			interrupt(messageNumber);
 			return;
 		}
 
@@ -29,6 +29,7 @@ public class DmsMessageReceiver {
 		byte sign = dataBuffer.get();
 
 		if (sign < 0) {
+			interrupt(messageNumber);
 			try {
 				MessagePojo messagePojo = DmsPackingFactory.unpack(dataBuffer, MessagePojo.class);
 				if (messagePojo.attachment == null) {
@@ -37,7 +38,7 @@ public class DmsMessageReceiver {
 					messagePojo.attachment.path = Files.createTempFile("dms", null);
 					listener.messageReceived(messagePojo);
 				} else {
-					newAttachmentReceiver(messageNumber, messagePojo);
+					attachmentReceivers.put(messageNumber, new AttachmentReceiver(messagePojo));
 				}
 			} catch (Exception e) {
 
@@ -62,21 +63,12 @@ public class DmsMessageReceiver {
 
 	}
 
-	private void interruptReceived(int messageNumber) {
-		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
+	private void interrupt(int messageNumber) {
+		AttachmentReceiver attachmentReceiver = attachmentReceivers.remove(messageNumber);
 		if (attachmentReceiver == null) {
 			return;
 		}
 		attachmentReceiver.interrupt();
-	}
-
-	private void newAttachmentReceiver(int messageNumber, MessagePojo messagePojo) {
-		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(messageNumber);
-		if (attachmentReceiver != null) {
-			attachmentReceiver.interrupt();
-		}
-		attachmentReceiver = new AttachmentReceiver(messagePojo);
-		attachmentReceivers.put(messageNumber, attachmentReceiver);
 	}
 
 	public void deleteResources() {

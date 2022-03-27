@@ -7,6 +7,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.ogya.dms.commons.structures.AttachmentPojo;
+import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageSender implements AutoCloseable {
@@ -88,6 +89,24 @@ public class DmsMessageSender implements AutoCloseable {
 		return dataBuffer;
 	}
 
+	private Chunk getEmptyChunk() {
+		return new Chunk(ByteBuffer.allocate(0), -1);
+	}
+
+	private Chunk getUploadFailureChunk() {
+		try {
+			MessagePojo messagePojo = new MessagePojo(null, null, this.messagePojo.receiverUuid,
+					ContentType.UPLOAD_FAILURE, this.messagePojo.trackingId, null, null);
+			byte[] data = DmsPackingFactory.pack(messagePojo);
+			ByteBuffer dataBuffer = ByteBuffer.allocate(Byte.BYTES + data.length).put(MESSAGE_POJO_PREFIX).put(data);
+			dataBuffer.flip();
+			return new Chunk(dataBuffer, -1);
+		} catch (Exception e) {
+
+		}
+		return getEmptyChunk();
+	}
+
 	protected boolean isFileSizeGreaterThan(long limitSize) {
 		return maxPosition > limitSize;
 	}
@@ -97,26 +116,30 @@ public class DmsMessageSender implements AutoCloseable {
 	}
 
 	public Chunk next() {
+		if (!hasMore()) {
+			return null;
+		}
+		boolean healthy = health.get();
 		Chunk chunk = null;
-		if (hasMore()) {
-			try {
-				if (!health.get()) {
-					throw new Exception();
-				}
-				ByteBuffer dataBuffer;
-				if (position < 0) {
-					dataBuffer = getPojoData();
-				} else {
-					dataBuffer = getFileData();
-				}
-				int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + maxPosition));
-				chunk = new Chunk(dataBuffer, progress);
-			} catch (Exception e) {
-				markAsDone();
-				if (position > Long.MIN_VALUE) {
-					// Already started sending, so send closure byte
-					chunk = new Chunk(ByteBuffer.allocate(0), -1);
-				}
+		try {
+			if (!healthy) {
+				throw new Exception();
+			}
+			ByteBuffer dataBuffer;
+			if (position < 0) {
+				dataBuffer = getPojoData();
+			} else {
+				dataBuffer = getFileData();
+			}
+			int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + maxPosition));
+			chunk = new Chunk(dataBuffer, progress);
+		} catch (Exception e) {
+			markAsDone();
+			if (messagePojo.contentType == ContentType.UPLOAD && healthy) {
+				chunk = getUploadFailureChunk();
+			} else if (position > Long.MIN_VALUE) {
+				// Already started sending, so send closure byte
+				chunk = getEmptyChunk();
 			}
 		}
 		return chunk;

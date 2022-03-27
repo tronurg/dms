@@ -292,7 +292,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 					synchronized (messageReceiver) {
 						messageReceiver.inFeed(messageNumber, receivedMessage);
 					}
-					dealerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // Send more signal
+					dealerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // "Send more" signal
 
 				} else if (poller.pollin(pollInproc)) {
 
@@ -511,6 +511,18 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				fileDownloadedToListener(messagePojo.trackingId, messagePojo.getAttachmentLink(),
 						DmsPackingFactory.unpack(payload, String.class));
+
+				break;
+
+			case UPLOAD_FAILURE:
+
+				downloadFailedToListener(messagePojo.trackingId);
+
+				break;
+
+			case DOWNLOAD_FAILURE:
+
+				downloadFailedToListener(messagePojo.trackingId);
 
 				break;
 

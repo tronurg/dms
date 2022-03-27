@@ -25,12 +25,11 @@ public class DmsPackingFactory {
 			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.ALL, Visibility.NONE)
 			.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
-	private static ObjectMapper objectMapperServerToClient = objectMapper.copy()
-			.addMixIn(Beacon.class, BeaconServerToClientMixin.class)
-			.addMixIn(MessagePojo.class, MessagePojoFromServerMixin.class);
+	private static ObjectMapper objectMapperServerToClient = objectMapper.copy().addMixIn(MessagePojo.class,
+			MessagePojoFromServerMixin.class);
 	private static ObjectMapper objectMapperServerToServer = objectMapper.copy()
-			.addMixIn(Beacon.class, BeaconServerToServerMixin.class)
-			.addMixIn(MessagePojo.class, MessagePojoFromServerMixin.class);
+			.addMixIn(MessagePojo.class, MessagePojoFromServerMixin.class)
+			.addMixIn(Beacon.class, BeaconServerToServerMixin.class);
 
 	public static byte[] pack(Object src) {
 
@@ -106,19 +105,10 @@ public class DmsPackingFactory {
 
 	}
 
-	private static abstract class BeaconServerToClientMixin {
-
-		@JsonIgnore
-		public Boolean local;
-
-	}
-
 	private static abstract class BeaconServerToServerMixin {
 
 		@JsonIgnore
 		public Map<InetAddress, InetAddress> localRemoteServerIps;
-		@JsonIgnore
-		public Boolean local;
 
 	}
 

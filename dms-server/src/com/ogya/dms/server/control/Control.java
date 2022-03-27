@@ -154,14 +154,14 @@ public class Control implements TcpManagerListener, ModelListener {
 					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
 					int messageNumber = Integer.parseInt(routerSocket.recvStr(ZMQ.DONTWAIT));
 					if (!routerSocket.hasReceiveMore()) {
-						localMessageReady(userUuid);
+						sendMore(userUuid);
 						continue;
 					}
 					byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
 					taskQueue.execute(() -> model.localMessageReceived(messageNumber, data, userUuid));
 					try {
 						routerSocket.send(userUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-						routerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // Send more signal
+						routerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // "Send more" signal
 					} catch (ZMQException e) {
 						taskQueue.execute(() -> model.localUuidDisconnected(userUuid));
 					}
@@ -268,6 +268,14 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
+	private void sendMore(String receiverUuid) {
+		try {
+			signalQueue.put(receiverUuid);
+		} catch (InterruptedException e) {
+
+		}
+	}
+
 	@Override
 	public void serverConnectionsUpdated(final String dmsUuid, final Map<InetAddress, InetAddress> localRemoteIps,
 			final boolean beaconsRequested) {
@@ -285,11 +293,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	@Override
 	public void localMessageReady(String receiverUuid) {
-		try {
-			signalQueue.put(receiverUuid);
-		} catch (InterruptedException e) {
-
-		}
+		sendMore(receiverUuid);
 	}
 
 	@Override
