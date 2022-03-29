@@ -7,6 +7,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsMessageReceiver {
@@ -55,7 +56,7 @@ public class DmsMessageReceiver {
 		boolean attachmentReady = attachmentReceiver.dataReceived(dataBuffer);
 		if (attachmentReady) {
 			attachmentReceivers.remove(messageNumber);
-			MessagePojo messagePojo = attachmentReceiver.getMessagePojo();
+			MessagePojo messagePojo = attachmentReceiver.messagePojo;
 			if (messagePojo != null) {
 				listener.messageReceived(messagePojo);
 			}
@@ -133,15 +134,18 @@ public class DmsMessageReceiver {
 				}
 				return done;
 			} catch (Exception e) {
+				String receiverUuid = messagePojo.receiverUuid;
+				ContentType contentType = messagePojo.contentType;
+				Long trackingId = messagePojo.trackingId;
 				interrupt();
+				if (contentType == ContentType.UPLOAD) {
+					messagePojo = new MessagePojo(null, null, receiverUuid, ContentType.UPLOAD_FAILURE, trackingId,
+							null, null);
+				}
 			}
 
 			return true;
 
-		}
-
-		private MessagePojo getMessagePojo() {
-			return messagePojo;
 		}
 
 	}

@@ -519,12 +519,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				break;
 
-			case DOWNLOAD_FAILURE:
-
-				downloadFailedToListener(messagePojo.trackingId);
-
-				break;
-
 			default:
 
 				break;
