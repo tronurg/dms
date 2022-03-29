@@ -775,6 +775,14 @@ public class Model {
 		user.queueMessage(messageContainer);
 	}
 
+	public void closeMessage(String uuid, MessageContainerLocal messageContainer) {
+		LocalUser user = localUsers.get(uuid);
+		if (user == null) {
+			return;
+		}
+		user.closeMessage(messageContainer);
+	}
+
 	private abstract class User {
 
 		protected final Beacon beacon;
@@ -829,12 +837,21 @@ public class Model {
 				Consumer<Integer> progressConsumer) {
 			MessageContainerLocal messageContainer = new MessageContainerLocal(messageCounter.getAndIncrement(),
 					messagePojo, sendStatus, progressConsumer);
+			stopMap.put(messageContainer.messageNumber, messageContainer);
 			queueMessage(messageContainer);
 			listener.localMessageReady(beacon.uuid);
 		}
 
 		private void queueMessage(MessageContainerLocal messageContainer) {
 			messageQueue.put(messageContainer);
+		}
+
+		private void closeMessage(MessageContainerLocal messageContainer) {
+			messageContainer.close();
+			stopMap.remove(messageContainer.messageNumber);
+			if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
+				messageContainer.progressConsumer.accept(-1);
+			}
 		}
 
 		private MessageContainerLocal getNextMessage() {
@@ -851,12 +868,9 @@ public class Model {
 
 		private void close() {
 			messageReceiver.deleteResources();
-			while (!messageQueue.isEmpty()) {
-				MessageContainerLocal messageContainer = messageQueue.poll();
-				if (messageContainer == null || messageContainer.progressConsumer == null) {
-					continue;
-				}
-				messageContainer.progressConsumer.accept(-1);
+			MessageContainerLocal messageContainer;
+			while ((messageContainer = messageQueue.poll()) != null) {
+				closeMessage(messageContainer);
 			}
 		}
 
@@ -864,7 +878,7 @@ public class Model {
 		public void messageReceived(MessagePojo messagePojo) {
 			if (messagePojo.contentType == ContentType.SEND_NOMORE) {
 				try {
-					int messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+					Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
 					stopSending(messageNumber);
 				} catch (Exception e) {
 

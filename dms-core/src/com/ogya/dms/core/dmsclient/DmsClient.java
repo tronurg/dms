@@ -251,6 +251,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 								progress);
 					}
 				});
+		stopMap.put(messageContainer.messageNumber, messageContainer);
 		messageQueue.offer(messageContainer);
 		raiseSignal();
 	}
@@ -307,15 +308,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 					if (chunk != null) {
 						dealerSocket.send(String.valueOf(messageContainer.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
+						messageContainer.progressPercent.set(chunk.progress);
 					}
 
 					if (messageContainer.hasMore()) {
 						messageQueue.offerFirst(messageContainer);
 					} else {
-						messageContainer.close();
-						if (messageContainer.progressConsumer != null && chunk.progress < 100) {
-							messageContainer.progressConsumer.accept(-1);
-						}
+						closeMessage(messageContainer);
 					}
 
 				}
@@ -759,16 +758,21 @@ public class DmsClient implements DmsMessageReceiverListener {
 		messageContainer.markAsDone();
 	}
 
+	private void closeMessage(MessageContainer messageContainer) {
+		messageContainer.close();
+		stopMap.remove(messageContainer.messageNumber);
+		if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
+			messageContainer.progressConsumer.accept(-1);
+		}
+	}
+
 	private void close() {
 		synchronized (messageReceiver) {
 			messageReceiver.deleteResources();
 		}
-		while (!messageQueue.isEmpty()) {
-			MessageContainer messageContainer = messageQueue.poll();
-			if (messageContainer == null || messageContainer.progressConsumer == null) {
-				continue;
-			}
-			messageContainer.progressConsumer.accept(-1);
+		MessageContainer messageContainer;
+		while ((messageContainer = messageQueue.poll()) != null) {
+			closeMessage(messageContainer);
 		}
 	}
 
@@ -795,6 +799,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final class MessageContainer extends DmsMessageSender {
 
 		private final int messageNumber;
+		private final AtomicInteger progressPercent = new AtomicInteger(-1);
 		private final Consumer<Integer> progressConsumer;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, Consumer<Integer> progressConsumer) {

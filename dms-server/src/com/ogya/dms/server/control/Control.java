@@ -196,10 +196,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					if (messageContainer.hasMore()) {
 						model.queueMessage(uuid, messageContainer);
 					} else {
-						messageContainer.close();
-						if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
-							messageContainer.progressConsumer.accept(-1);
-						}
+						model.closeMessage(uuid, messageContainer);
 					}
 
 				}
