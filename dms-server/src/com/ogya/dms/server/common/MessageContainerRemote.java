@@ -14,17 +14,15 @@ public class MessageContainerRemote extends MessageContainerBase {
 	private static final int UPDATE_TURNS = 10;
 
 	public final InetAddress useLocalAddress;
-	public final Consumer<Integer> progressConsumer;
 	private final boolean endMessage;
 	public BiFunction<Integer, ByteBuffer, Boolean> sendFunction;
 	private int updateCounter = 0;
 
 	public MessageContainerRemote(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 			Consumer<Integer> progressConsumer) {
-		super(messageNumber, messagePojo, Direction.SERVER_TO_SERVER, sendStatus);
+		super(messageNumber, messagePojo, Direction.SERVER_TO_SERVER, sendStatus, progressConsumer);
 		this.useLocalAddress = messagePojo.useLocalAddress;
 		this.endMessage = messagePojo == END_MESSAGE;
-		this.progressConsumer = progressConsumer;
 	}
 
 	public static MessageContainerRemote getEndMessage() {

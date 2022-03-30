@@ -849,9 +849,6 @@ public class Model {
 		private void closeMessage(MessageContainerLocal messageContainer) {
 			messageContainer.close();
 			stopMap.remove(messageContainer.messageNumber);
-			if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
-				messageContainer.progressConsumer.accept(-1);
-			}
 		}
 
 		private MessageContainerLocal getNextMessage() {

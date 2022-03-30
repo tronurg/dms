@@ -305,7 +305,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 					}
 
 					Chunk chunk = messageContainer.next();
-					if (chunk != null) {
+					if (chunk == null) {
+						raiseSignal(); // Pass the signal
+					} else {
 						dealerSocket.send(String.valueOf(messageContainer.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
 						messageContainer.progressPercent.set(chunk.progress);
@@ -755,9 +757,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private void closeMessage(MessageContainer messageContainer) {
 		messageContainer.close();
 		stopMap.remove(messageContainer.messageNumber);
-		if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
-			messageContainer.progressConsumer.accept(-1);
-		}
 	}
 
 	private void close() {
@@ -806,6 +805,14 @@ public class DmsClient implements DmsMessageReceiverListener {
 		public Chunk next() {
 			health.set(serverConnected.get());
 			return super.next();
+		}
+
+		@Override
+		public void close() {
+			super.close();
+			if (progressConsumer != null && progressPercent.get() < 100) {
+				progressConsumer.accept(-1);
+			}
 		}
 
 	}

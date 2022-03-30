@@ -519,9 +519,6 @@ public class TcpManager implements TcpServerListener {
 		private void closeMessage(MessageContainerRemote messageContainer) {
 			messageContainer.close();
 			stopMap.remove(messageContainer.messageNumber);
-			if (messageContainer.progressConsumer != null && messageContainer.progressPercent.get() < 100) {
-				messageContainer.progressConsumer.accept(-1);
-			}
 		}
 
 		private void stopSending(Integer messageNumber) {

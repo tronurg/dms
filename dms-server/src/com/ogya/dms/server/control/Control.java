@@ -163,7 +163,7 @@ public class Control implements TcpManagerListener, ModelListener {
 						routerSocket.send(userUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						routerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // "Send more" signal
 					} catch (ZMQException e) {
-						taskQueue.execute(() -> model.localUuidDisconnected(userUuid));
+
 					}
 
 				} else if (poller.pollin(pollInproc)) {
@@ -175,8 +175,11 @@ public class Control implements TcpManagerListener, ModelListener {
 						continue;
 					}
 
+					boolean disconnected = false;
 					Chunk chunk = messageContainer.next();
-					if (chunk != null) {
+					if (chunk == null) {
+						sendMore(uuid); // Pass the signal
+					} else {
 						try {
 							routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 							routerSocket.send(String.valueOf(messageContainer.messageNumber),
@@ -188,8 +191,8 @@ public class Control implements TcpManagerListener, ModelListener {
 								messageContainer.progressConsumer.accept(chunk.progress);
 							}
 						} catch (ZMQException e) {
+							disconnected = true;
 							messageContainer.markAsDone();
-							taskQueue.execute(() -> model.localUuidDisconnected(uuid));
 						}
 					}
 
@@ -197,6 +200,10 @@ public class Control implements TcpManagerListener, ModelListener {
 						model.queueMessage(uuid, messageContainer);
 					} else {
 						model.closeMessage(uuid, messageContainer);
+					}
+
+					if (disconnected) {
+						taskQueue.execute(() -> model.localUuidDisconnected(uuid));
 					}
 
 				}
