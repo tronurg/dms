@@ -2,8 +2,10 @@ package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -57,6 +59,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
 	private final AtomicInteger messageCounter = new AtomicInteger(0);
 	private final LinkedBlockingDeque<MessageContainer> messageQueue = new LinkedBlockingDeque<MessageContainer>();
+	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
 	private final Map<Integer, MessageContainer> stopMap = Collections
 			.synchronizedMap(new HashMap<Integer, MessageContainer>());
 
@@ -130,6 +133,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelMessage(Long trackingId) {
 
+		sendStatuses.forEach(sendStatus -> {
+			if (Objects.equals(sendStatus.trackingId, trackingId) && sendStatus.contentType == ContentType.MESSAGE) {
+				sendStatus.status.set(false);
+			}
+		});
 		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_MESSAGE, trackingId, null, null));
 
 	}
@@ -196,6 +204,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelTransientMessage(Long trackingId) {
 
+		sendStatuses.forEach(sendStatus -> {
+			if (Objects.equals(sendStatus.trackingId, trackingId) && sendStatus.contentType == ContentType.TRANSIENT) {
+				sendStatus.status.set(false);
+			}
+		});
 		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, trackingId, null, null));
 
 	}
@@ -239,15 +252,25 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelUpload(String receiverUuid, Long trackingId) {
 
+		sendStatuses.forEach(sendStatus -> {
+			if (Objects.equals(sendStatus.trackingId, trackingId) && sendStatus.contentType == ContentType.UPLOAD) {
+				sendStatus.status.set(false);
+			}
+		});
 		sendMessage(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
 
 	}
 
 	private void sendMessage(MessagePojo messagePojo) {
+		final SendStatus sendStatus = new SendStatus(messagePojo.trackingId, messagePojo.contentType);
+		sendStatuses.add(sendStatus);
 		MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
-				progress -> {
+				sendStatus.status, progress -> {
+					if (progress < 0 || progress == 100) {
+						sendStatuses.remove(sendStatus);
+					}
 					if (progress < 0 && messagePojo.contentType == ContentType.TRANSIENT) {
-						progressTransientReceivedToListener(messagePojo.trackingId, messagePojo.receiverUuid.split(";"),
+						listener.progressTransientReceived(messagePojo.trackingId, messagePojo.receiverUuid.split(";"),
 								progress);
 					}
 				});
@@ -290,9 +313,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 						continue;
 					}
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
-					synchronized (messageReceiver) {
-						messageReceiver.inFeed(messageNumber, receivedMessage);
-					}
+					taskQueue.execute(() -> messageReceiver.inFeed(messageNumber, receivedMessage));
 					dealerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // "Send more" signal
 
 				} else if (poller.pollin(pollInproc)) {
@@ -313,10 +334,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 						messageContainer.progressPercent.set(chunk.progress);
 					}
 
-					if (messageContainer.hasMore()) {
-						messageQueue.offerFirst(messageContainer);
-					} else {
-						closeMessage(messageContainer);
+					synchronized (serverConnected) {
+						if (serverConnected.get() && messageContainer.hasMore()) {
+							messageQueue.offerFirst(messageContainer);
+						} else {
+							closeMessage(messageContainer);
+						}
 					}
 
 				}
@@ -361,13 +384,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				case ZMQ.EVENT_HANDSHAKE_PROTOCOL:
 					serverConnected.set(true);
-					serverConnStatusUpdatedToListener();
+					listener.serverConnStatusUpdated(serverConnected.get());
 					break;
 
 				case ZMQ.EVENT_DISCONNECTED:
 					serverConnected.set(false);
 					close();
-					serverConnStatusUpdatedToListener();
+					listener.serverConnStatusUpdated(serverConnected.get());
 					break;
 
 				}
@@ -391,26 +414,26 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			case BCON:
 
-				beaconReceivedToListener(DmsPackingFactory.unpack(payload, Beacon.class));
+				listener.beaconReceived(DmsPackingFactory.unpack(payload, Beacon.class));
 
 				break;
 
 			case IPS:
 
-				remoteIpsReceivedToListener(DmsPackingFactory.unpack(payload, InetAddress[].class));
+				listener.remoteIpsReceived(DmsPackingFactory.unpack(payload, InetAddress[].class));
 
 				break;
 
 			case PROGRESS_MESSAGE:
 
-				progressMessageReceivedToListener(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
+				listener.progressMessageReceived(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
 						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case PROGRESS_TRANSIENT:
 
-				progressTransientReceivedToListener(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
+				listener.progressTransientReceived(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
 						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
@@ -419,32 +442,32 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				Message message = DmsPackingFactory.unpack(payload, Message.class);
 				message.setMessageRefId(messagePojo.trackingId);
-				messageReceivedToListener(message, messagePojo.getAttachmentLink(), messagePojo.senderUuid);
+				listener.messageReceived(message, messagePojo.getAttachmentLink(), messagePojo.senderUuid);
 
 				break;
 
 			case UUID_DISCONNECTED:
 
-				userDisconnectedToListener(messagePojo.senderUuid);
+				listener.userDisconnected(messagePojo.senderUuid);
 
 				break;
 
 			case CLAIM_MESSAGE_STATUS:
 
-				messageStatusClaimedToListener(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
+				listener.messageStatusClaimed(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
 
 				break;
 
 			case FEED_MESSAGE_STATUS:
 
-				messageStatusFedToListener(DmsPackingFactory.unpackMap(payload, Long.class, MessageStatus.class),
+				listener.messageStatusFed(DmsPackingFactory.unpackMap(payload, Long.class, MessageStatus.class),
 						messagePojo.senderUuid);
 
 				break;
 
 			case FEED_GROUP_MESSAGE_STATUS:
 
-				groupMessageStatusFedToListener(
+				listener.groupMessageStatusFed(
 						DmsPackingFactory.unpackMap(payload, Long.class, GroupMessageStatus.class),
 						messagePojo.senderUuid);
 
@@ -452,72 +475,71 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			case CLAIM_STATUS_REPORT:
 
-				statusReportClaimedToListener(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
+				listener.statusReportClaimed(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
 
 				break;
 
 			case FEED_STATUS_REPORT:
 
-				statusReportFedToListener(DmsPackingFactory.unpackMap(payload, Long.class, StatusReport[].class));
+				listener.statusReportFed(DmsPackingFactory.unpackMap(payload, Long.class, StatusReport[].class));
 
 				break;
 
 			case TRANSIENT:
 
-				transientMessageReceivedToListener(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
+				listener.transientMessageReceived(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
 						messagePojo.getAttachmentLink(), messagePojo.senderUuid, messagePojo.trackingId);
 
 				break;
 
 			case FEED_TRANSIENT_STATUS:
 
-				transientMessageStatusReceivedToListener(DmsPackingFactory.unpack(payload, Long.class),
+				listener.transientMessageStatusReceived(DmsPackingFactory.unpack(payload, Long.class),
 						messagePojo.senderUuid);
 
 				break;
 
 			case DOWNLOAD_REQUEST:
 
-				downloadRequestedToListener(DmsPackingFactory.unpack(payload, DownloadPojo.class),
+				listener.downloadRequested(DmsPackingFactory.unpack(payload, DownloadPojo.class),
 						messagePojo.senderUuid);
 
 				break;
 
 			case CANCEL_DOWNLOAD_REQUEST:
 
-				cancelDownloadRequestedToListener(DmsPackingFactory.unpack(payload, Long.class),
-						messagePojo.senderUuid);
+				listener.cancelDownloadRequested(DmsPackingFactory.unpack(payload, Long.class), messagePojo.senderUuid);
 
 				break;
 
 			case SERVER_NOT_FOUND:
 
-				serverNotFoundToListener(DmsPackingFactory.unpack(payload, Long.class));
+				listener.serverNotFound(DmsPackingFactory.unpack(payload, Long.class));
 
 				break;
 
 			case FILE_NOT_FOUND:
 
-				fileNotFoundToListener(DmsPackingFactory.unpack(payload, Long.class));
+				listener.fileNotFound(DmsPackingFactory.unpack(payload, Long.class));
 
 				break;
 
 			case PROGRESS_DOWNLOAD:
 
-				downloadingFileToListener(messagePojo.trackingId, DmsPackingFactory.unpack(payload, Integer.class));
+				listener.downloadingFile(messagePojo.trackingId, DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
 			case UPLOAD:
 
-				fileDownloadedToListener(messagePojo.trackingId, messagePojo.getAttachmentLink(),
+				listener.fileDownloaded(messagePojo.trackingId, messagePojo.getAttachmentLink(),
 						DmsPackingFactory.unpack(payload, String.class));
 
 				break;
 
 			case UPLOAD_FAILURE:
 
-				downloadFailedToListener(messagePojo.trackingId);
+				listener.downloadFailed(messagePojo.trackingId);
 
 				break;
 
@@ -530,219 +552,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 		} catch (Exception e) {
 
 		}
-
-	}
-
-	private void beaconReceivedToListener(final Beacon beacon) {
-
-		taskQueue.execute(() -> {
-
-			listener.beaconReceived(beacon);
-
-		});
-
-	}
-
-	private void remoteIpsReceivedToListener(final InetAddress[] remoteIps) {
-
-		taskQueue.execute(() -> {
-
-			listener.remoteIpsReceived(remoteIps);
-
-		});
-
-	}
-
-	private void progressMessageReceivedToListener(final Long messageId, final String[] uuids, final int progress) {
-
-		taskQueue.execute(() -> {
-
-			listener.progressMessageReceived(messageId, uuids, progress);
-
-		});
-
-	}
-
-	private void progressTransientReceivedToListener(final Long trackingId, final String[] uuids, final int progress) {
-
-		taskQueue.execute(() -> {
-
-			listener.progressTransientReceived(trackingId, uuids, progress);
-
-		});
-
-	}
-
-	private void messageReceivedToListener(final Message message, final Path attachment, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.messageReceived(message, attachment, remoteUuid);
-
-		});
-
-	}
-
-	private void userDisconnectedToListener(final String uuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.userDisconnected(uuid);
-
-		});
-
-	}
-
-	private void serverConnStatusUpdatedToListener() {
-
-		taskQueue.execute(() -> {
-
-			listener.serverConnStatusUpdated(serverConnected.get());
-
-		});
-
-	}
-
-	private void messageStatusClaimedToListener(final Long[] messageIds, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.messageStatusClaimed(messageIds, remoteUuid);
-
-		});
-
-	}
-
-	private void messageStatusFedToListener(final Map<Long, MessageStatus> messageIdStatusMap,
-			final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.messageStatusFed(messageIdStatusMap, remoteUuid);
-
-		});
-
-	}
-
-	private void groupMessageStatusFedToListener(final Map<Long, GroupMessageStatus> messageIdGroupStatusMap,
-			final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.groupMessageStatusFed(messageIdGroupStatusMap, remoteUuid);
-
-		});
-
-	}
-
-	private void statusReportClaimedToListener(final Long[] messageIds, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.statusReportClaimed(messageIds, remoteUuid);
-
-		});
-
-	}
-
-	private void statusReportFedToListener(final Map<Long, StatusReport[]> messageIdStatusReportsMap) {
-
-		taskQueue.execute(() -> {
-
-			listener.statusReportFed(messageIdStatusReportsMap);
-
-		});
-
-	}
-
-	private void transientMessageReceivedToListener(final MessageHandleImpl message, final Path attachment,
-			final String remoteUuid, final Long trackingId) {
-
-		taskQueue.execute(() -> {
-
-			listener.transientMessageReceived(message, attachment, remoteUuid, trackingId);
-
-		});
-
-	}
-
-	private void transientMessageStatusReceivedToListener(final Long trackingId, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.transientMessageStatusReceived(trackingId, remoteUuid);
-
-		});
-
-	}
-
-	private void downloadRequestedToListener(final DownloadPojo downloadPojo, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.downloadRequested(downloadPojo, remoteUuid);
-
-		});
-
-	}
-
-	private void cancelDownloadRequestedToListener(final Long downloadId, final String remoteUuid) {
-
-		taskQueue.execute(() -> {
-
-			listener.cancelDownloadRequested(downloadId, remoteUuid);
-
-		});
-
-	}
-
-	private void serverNotFoundToListener(final Long downloadId) {
-
-		taskQueue.execute(() -> {
-
-			listener.serverNotFound(downloadId);
-
-		});
-
-	}
-
-	private void fileNotFoundToListener(final Long downloadId) {
-
-		taskQueue.execute(() -> {
-
-			listener.fileNotFound(downloadId);
-
-		});
-
-	}
-
-	private void downloadingFileToListener(final Long downloadId, final int progress) {
-
-		taskQueue.execute(() -> {
-
-			listener.downloadingFile(downloadId, progress);
-
-		});
-
-	}
-
-	private void fileDownloadedToListener(final Long downloadId, final Path path, final String fileName) {
-
-		taskQueue.execute(() -> {
-
-			listener.fileDownloaded(downloadId, path, fileName);
-
-		});
-
-	}
-
-	private void downloadFailedToListener(final Long downloadId) {
-
-		taskQueue.execute(() -> {
-
-			listener.downloadFailed(downloadId);
-
-		});
 
 	}
 
@@ -760,12 +569,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void close() {
-		synchronized (messageReceiver) {
-			messageReceiver.deleteResources();
-		}
-		MessageContainer messageContainer;
-		while ((messageContainer = messageQueue.poll()) != null) {
-			closeMessage(messageContainer);
+		taskQueue.execute(() -> messageReceiver.deleteResources());
+		synchronized (serverConnected) {
+			MessageContainer messageContainer;
+			while ((messageContainer = messageQueue.poll()) != null) {
+				closeMessage(messageContainer);
+			}
 		}
 	}
 
@@ -792,18 +601,22 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final class MessageContainer extends DmsMessageSender {
 
 		private final int messageNumber;
-		private final AtomicInteger progressPercent = new AtomicInteger(-1);
+		public final AtomicBoolean sendStatus;
 		private final Consumer<Integer> progressConsumer;
 
-		private MessageContainer(int messageNumber, MessagePojo messagePojo, Consumer<Integer> progressConsumer) {
+		private final AtomicInteger progressPercent = new AtomicInteger(-1);
+
+		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
+				Consumer<Integer> progressConsumer) {
 			super(messagePojo, Direction.CLIENT_TO_SERVER);
 			this.messageNumber = messageNumber;
+			this.sendStatus = sendStatus;
 			this.progressConsumer = progressConsumer;
 		}
 
 		@Override
 		public Chunk next() {
-			health.set(serverConnected.get());
+			health.set((sendStatus == null || sendStatus.get()) && serverConnected.get());
 			return super.next();
 		}
 
@@ -813,6 +626,19 @@ public class DmsClient implements DmsMessageReceiverListener {
 			if (progressConsumer != null && progressPercent.get() < 100) {
 				progressConsumer.accept(-1);
 			}
+		}
+
+	}
+
+	private class SendStatus {
+
+		private final Long trackingId;
+		private final ContentType contentType;
+		private final AtomicBoolean status = new AtomicBoolean(true);
+
+		private SendStatus(Long trackingId, ContentType contentType) {
+			this.trackingId = trackingId;
+			this.contentType = contentType;
 		}
 
 	}

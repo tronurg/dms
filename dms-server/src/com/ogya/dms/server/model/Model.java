@@ -456,10 +456,13 @@ public class Model {
 
 	public void localUuidDisconnected(String uuid) {
 
-		LocalUser user = localUsers.get(uuid);
+		LocalUser user = localUsers.remove(uuid);
 
 		if (user == null)
 			return;
+
+		mappedUsers.remove(user.mapId);
+		user.close();
 
 		sendStatuses.forEach(sendStatus -> {
 			if (Objects.equals(uuid, sendStatus.senderUuid)
@@ -468,11 +471,7 @@ public class Model {
 			}
 		});
 
-		mappedUsers.remove(user.mapId);
-
 		MessagePojo messagePojo = new MessagePojo(null, uuid, null, ContentType.UUID_DISCONNECTED, null, null, null);
-
-		localUsers.remove(uuid).close();
 
 		localUsers.forEach((localUuid, localUser) -> localUser.sendMessage(messagePojo, null, null));
 

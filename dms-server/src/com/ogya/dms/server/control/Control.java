@@ -154,7 +154,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
 					int messageNumber = Integer.parseInt(routerSocket.recvStr(ZMQ.DONTWAIT));
 					if (!routerSocket.hasReceiveMore()) {
-						sendMore(userUuid);
+						taskQueue.execute(() -> sendMore(userUuid));
 						continue;
 					}
 					byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
@@ -178,7 +178,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					boolean disconnected = false;
 					Chunk chunk = messageContainer.next();
 					if (chunk == null) {
-						sendMore(uuid); // Pass the signal
+						taskQueue.execute(() -> sendMore(uuid)); // Pass the signal
 					} else {
 						try {
 							routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
@@ -203,7 +203,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					}
 
 					if (disconnected) {
-						taskQueue.execute(() -> model.localUuidDisconnected(uuid));
+						model.localUuidDisconnected(uuid);
 					}
 
 				}
