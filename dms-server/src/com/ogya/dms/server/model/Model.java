@@ -769,6 +769,7 @@ public class Model {
 	public void queueMessage(String uuid, MessageContainerLocal messageContainer) {
 		LocalUser user = localUsers.get(uuid);
 		if (user == null) {
+			messageContainer.close();
 			return;
 		}
 		user.queueMessage(messageContainer);
@@ -777,6 +778,7 @@ public class Model {
 	public void closeMessage(String uuid, MessageContainerLocal messageContainer) {
 		LocalUser user = localUsers.get(uuid);
 		if (user == null) {
+			messageContainer.close();
 			return;
 		}
 		user.closeMessage(messageContainer);
