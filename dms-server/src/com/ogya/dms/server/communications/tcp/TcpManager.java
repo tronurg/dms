@@ -530,7 +530,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void close() {
-			messageReceiver.deleteResources();
+			messageReceiver.deleteResourcesKeepDownloads();
 			messageQueue.put(MessageContainerRemote.getEndMessage());
 		}
 

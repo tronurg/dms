@@ -54,6 +54,8 @@ public interface DmsClientListener {
 
 	void fileDownloaded(Long downloadId, Path path, String fileName);
 
+	void filePartDownloaded(Long downloadId, Path path, String fileName);
+
 	void downloadFailed(Long downloadId);
 
 }

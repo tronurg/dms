@@ -537,6 +537,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				break;
 
+			case UPLOAD_PART:
+
+				listener.filePartDownloaded(messagePojo.trackingId, messagePojo.getAttachmentLink(),
+						DmsPackingFactory.unpack(payload, String.class));
+
+				break;
+
 			case UPLOAD_FAILURE:
 
 				listener.downloadFailed(messagePojo.trackingId);
@@ -601,7 +608,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final class MessageContainer extends DmsMessageSender {
 
 		private final int messageNumber;
-		public final AtomicBoolean sendStatus;
+		private final AtomicBoolean sendStatus;
 		private final Consumer<Integer> progressConsumer;
 
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);

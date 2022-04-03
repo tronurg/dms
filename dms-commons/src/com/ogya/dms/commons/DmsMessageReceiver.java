@@ -22,7 +22,7 @@ public class DmsMessageReceiver {
 	public void inFeed(int messageNumber, byte[] data) {
 
 		if (data.length == 0) {
-			interrupt(messageNumber);
+			cancel(messageNumber);
 			return;
 		}
 
@@ -30,7 +30,7 @@ public class DmsMessageReceiver {
 		byte sign = dataBuffer.get();
 
 		if (sign < 0) {
-			interrupt(messageNumber);
+			cancel(messageNumber);
 			try {
 				MessagePojo messagePojo = DmsPackingFactory.unpack(dataBuffer, MessagePojo.class);
 				if (messagePojo.attachment == null) {
@@ -64,16 +64,30 @@ public class DmsMessageReceiver {
 
 	}
 
-	private void interrupt(int messageNumber) {
+	private void cancel(int messageNumber) {
 		AttachmentReceiver attachmentReceiver = attachmentReceivers.remove(messageNumber);
 		if (attachmentReceiver == null) {
 			return;
 		}
-		attachmentReceiver.interrupt();
+		attachmentReceiver.cancel();
+	}
+
+	public void deleteResourcesKeepDownloads() {
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> {
+			MessagePojo messagePojo = attachmentReceiver.messagePojo;
+			if (messagePojo == null || messagePojo.contentType != ContentType.UPLOAD) {
+				attachmentReceiver.cancel();
+				return;
+			}
+			attachmentReceiver.interrupt();
+			messagePojo.contentType = ContentType.UPLOAD_PART;
+			listener.messageReceived(messagePojo);
+		});
+		attachmentReceivers.clear();
 	}
 
 	public void deleteResources() {
-		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> attachmentReceiver.interrupt());
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> attachmentReceiver.cancel());
 		attachmentReceivers.clear();
 	}
 
@@ -92,7 +106,7 @@ public class DmsMessageReceiver {
 				fileChannel = FileChannel.open(messagePojo.attachment.path, StandardOpenOption.CREATE,
 						StandardOpenOption.WRITE);
 			} catch (Exception e) {
-				interrupt();
+				cancel();
 			}
 		}
 
@@ -105,6 +119,12 @@ public class DmsMessageReceiver {
 			} catch (Exception e) {
 
 			}
+
+		}
+
+		private void cancel() {
+
+			interrupt();
 
 			try {
 				Files.deleteIfExists(messagePojo.attachment.path);
@@ -137,7 +157,7 @@ public class DmsMessageReceiver {
 				String receiverUuid = messagePojo.receiverUuid;
 				ContentType contentType = messagePojo.contentType;
 				Long trackingId = messagePojo.trackingId;
-				interrupt();
+				cancel();
 				if (contentType == ContentType.UPLOAD) {
 					messagePojo = new MessagePojo(null, null, receiverUuid, ContentType.UPLOAD_FAILURE, trackingId,
 							null, null);
