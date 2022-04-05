@@ -3,9 +3,12 @@ package com.ogya.dms.core.control;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -120,6 +123,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private final AtomicReference<DmsFileServer> dmsFileServer = new AtomicReference<DmsFileServer>();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final ExecutorService downloadTaskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final ExecutorService listenerTaskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	public DmsControl(String username, String password) throws Exception {
@@ -1252,8 +1256,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						}
 
 						// CHECK DOWNLOADS
-						List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
-						waitingDownloads.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
+						downloadTaskQueue.execute(() -> {
+							List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
+							waitingDownloads
+									.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
+						});
 
 					});
 
@@ -1868,7 +1875,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void downloadRequested(final DownloadPojo downloadPojo, final String remoteUuid) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			DmsFileServer fileServer = dmsFileServer.get();
 			if (fileServer == null) {
@@ -1880,7 +1887,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				dmsClient.sendFileNotFound(downloadPojo.downloadId, remoteUuid);
 				return;
 			}
-			dmsClient.uploadFile(path, remoteUuid, downloadPojo.downloadId);
+			dmsClient.uploadFile(path, remoteUuid, downloadPojo.downloadId, downloadPojo.position);
 
 		});
 
@@ -1889,7 +1896,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void cancelDownloadRequested(final Long downloadId, final String remoteUuid) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			dmsClient.cancelUpload(remoteUuid, downloadId);
 
@@ -1900,7 +1907,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void serverNotFound(final Long downloadId) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.removeDownload(downloadId);
 			if (downloadPojo == null) {
@@ -1917,7 +1924,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void fileNotFound(final Long downloadId) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.removeDownload(downloadId);
 			if (downloadPojo == null) {
@@ -1934,7 +1941,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void downloadingFile(final Long downloadId, final int progress) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			if (!model.isDownloadActive(downloadId)) {
 				return;
@@ -1949,20 +1956,36 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void fileDownloaded(final Long downloadId, final Path path, final String fileName) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.removeDownload(downloadId);
 			if (downloadPojo == null) {
 				deleteFile(path);
 				return;
 			}
-			if (downloadPojo.path == null) {
-				// TODO
-			} else {
 
+			try {
+				if (downloadPojo.path != null) {
+					try (FileChannel fileChannelRead = FileChannel.open(downloadPojo.path, StandardOpenOption.READ);
+							FileChannel fileChannelWrite = FileChannel.open(path, StandardOpenOption.WRITE)) {
+						ByteBuffer buffer = ByteBuffer.allocate(8192);
+						while (fileChannelRead.read(buffer) > 0) {
+							buffer.flip();
+							fileChannelWrite.write(buffer);
+							buffer.rewind();
+						}
+					}
+					deleteFile(downloadPojo.path);
+				}
+				downloadPojo.path = moveFileToReceiveFolder(path, fileName);
+				listenerTaskQueue.execute(() -> dmsDownloadListeners
+						.forEach(listener -> listener.fileDownloaded(downloadId, downloadPojo.path)));
+			} catch (Exception e) {
+				deleteFile(path);
+				deleteFile(downloadPojo.path);
+				listenerTaskQueue
+						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
 			}
-			listenerTaskQueue
-					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.fileDownloaded(downloadId, path)));
 
 		});
 
@@ -1971,18 +1994,37 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void filePartDownloaded(final Long downloadId, final Path path, final String fileName) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.getDownload(downloadId);
 			if (downloadPojo == null) {
 				deleteFile(path);
 				return;
 			}
-			if (downloadPojo.path == null) {
-				// TODO
-			} else {
 
+			try {
+				if (downloadPojo.path != null) {
+					try (FileChannel fileChannelRead = FileChannel.open(downloadPojo.path, StandardOpenOption.READ);
+							FileChannel fileChannelWrite = FileChannel.open(path, StandardOpenOption.WRITE)) {
+						ByteBuffer buffer = ByteBuffer.allocate(8192);
+						while (fileChannelRead.read(buffer) > 0) {
+							buffer.flip();
+							fileChannelWrite.write(buffer);
+							buffer.rewind();
+						}
+					}
+					deleteFile(downloadPojo.path);
+				}
+				downloadPojo.path = path;
+				downloadPojo.position = Files.size(downloadPojo.path);
+			} catch (Exception e) {
+				model.removeDownload(downloadId);
+				deleteFile(path);
+				deleteFile(downloadPojo.path);
+				listenerTaskQueue
+						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
 			}
+
 		});
 
 	}
@@ -1990,7 +2032,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public void downloadFailed(final Long downloadId) {
 
-		taskQueue.execute(() -> {
+		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.removeDownload(downloadId);
 			if (downloadPojo == null) {

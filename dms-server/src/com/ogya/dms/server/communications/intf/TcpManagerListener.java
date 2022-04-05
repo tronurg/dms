@@ -12,4 +12,6 @@ public interface TcpManagerListener {
 
 	void messageReceivedFromRemoteServer(MessagePojo messagePojo, String dmsUuid);
 
+	void downloadProgress(String receiverUuid, Long trackingId, int progress);
+
 }

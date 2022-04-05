@@ -296,6 +296,13 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
+	public void downloadProgress(final String receiverUuid, final Long trackingId, final int progress) {
+
+		taskQueue.execute(() -> model.downloadProgressReceived(receiverUuid, trackingId, progress));
+
+	}
+
+	@Override
 	public void localMessageReady(String receiverUuid) {
 		sendMore(receiverUuid);
 	}

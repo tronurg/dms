@@ -97,6 +97,8 @@ public class DmsMessageReceiver {
 		private FileChannel fileChannel;
 		private boolean interrupted = false;
 		private long fileSize;
+		private long currentSize = 0;
+		private int downloadProgress = -1;
 
 		private AttachmentReceiver(MessagePojo messagePojo) {
 			this.messagePojo = messagePojo;
@@ -105,6 +107,7 @@ public class DmsMessageReceiver {
 				messagePojo.attachment.path = Files.createTempFile("dms", null);
 				fileChannel = FileChannel.open(messagePojo.attachment.path, StandardOpenOption.CREATE,
 						StandardOpenOption.WRITE);
+				checkDownloadProgress();
 			} catch (Exception e) {
 				cancel();
 			}
@@ -145,8 +148,9 @@ public class DmsMessageReceiver {
 			try {
 				long position = dataBuffer.getLong();
 				int dataLength = dataBuffer.remaining();
-				long currentSize = position + dataLength;
+				currentSize = position + dataLength;
 				fileChannel.write(dataBuffer, position);
+				checkDownloadProgress();
 				boolean done = !(currentSize < fileSize);
 				if (done) {
 					fileChannel.force(true);
@@ -168,6 +172,17 @@ public class DmsMessageReceiver {
 
 		}
 
+		private void checkDownloadProgress() {
+			if (messagePojo.contentType != ContentType.UPLOAD) {
+				return;
+			}
+			int progress = (int) (100.0 * currentSize / fileSize);
+			if (downloadProgress < progress) {
+				downloadProgress = progress;
+				listener.downloadProgress(messagePojo.receiverUuid, messagePojo.trackingId, downloadProgress);
+			}
+		}
+
 	}
 
 	public static interface DmsMessageReceiverListener {
@@ -175,6 +190,8 @@ public class DmsMessageReceiver {
 		void messageReceived(MessagePojo messagePojo);
 
 		void messageFailed(int messageNumber);
+
+		void downloadProgress(String receiverUuid, Long trackingId, int progress);
 
 	}
 

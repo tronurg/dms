@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import com.ogya.dms.commons.DmsMessageSender;
+import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 
 public abstract class MessageContainerBase extends DmsMessageSender {
@@ -14,6 +15,7 @@ public abstract class MessageContainerBase extends DmsMessageSender {
 	public final Consumer<Integer> progressConsumer;
 	public final Long useTimeout;
 
+	public final ContentType contentType;
 	public final boolean bigFile;
 	public final long startTime = System.currentTimeMillis();
 	public final AtomicInteger progressPercent = new AtomicInteger(-1);
@@ -26,6 +28,7 @@ public abstract class MessageContainerBase extends DmsMessageSender {
 		this.sendStatus = sendStatus;
 		this.progressConsumer = progressConsumer;
 		this.useTimeout = messagePojo.useTimeout;
+		this.contentType = messagePojo.contentType;
 		this.bigFile = isFileSizeGreaterThan(CommonConstants.SMALL_FILE_LIMIT);
 	}
 

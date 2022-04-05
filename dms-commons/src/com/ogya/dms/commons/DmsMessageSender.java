@@ -22,6 +22,7 @@ public class DmsMessageSender implements AutoCloseable {
 	private FileChannel fileChannel;
 	private int pojoSize = 0;
 	private long position = Long.MIN_VALUE;
+	private long minPosition = 0;
 	private long maxPosition = 0;
 
 	public DmsMessageSender(MessagePojo messagePojo, Direction direction) {
@@ -45,6 +46,9 @@ public class DmsMessageSender implements AutoCloseable {
 		}
 		try {
 			fileChannel = FileChannel.open(attachment, StandardOpenOption.READ);
+			if (attachmentPojo.position != null) {
+				minPosition = attachmentPojo.position;
+			}
 			maxPosition = fileChannel.size();
 			messagePojo.attachment.size = maxPosition;
 			if (maxPosition == 0) {
@@ -72,10 +76,7 @@ public class DmsMessageSender implements AutoCloseable {
 		}
 		}
 		pojoSize = data.length;
-		position = 0;
-		if (fileChannel != null) {
-			fileChannel.position(position);
-		}
+		position = minPosition;
 		ByteBuffer dataBuffer = ByteBuffer.allocate(Byte.BYTES + pojoSize).put(MESSAGE_POJO_PREFIX).put(data);
 		dataBuffer.flip();
 		return dataBuffer;
@@ -83,6 +84,7 @@ public class DmsMessageSender implements AutoCloseable {
 
 	private ByteBuffer getFileData() throws Exception {
 		ByteBuffer dataBuffer = ByteBuffer.allocate(Long.BYTES + CHUNK_SIZE).putLong(position);
+		fileChannel.position(position);
 		fileChannel.read(dataBuffer);
 		position = fileChannel.position();
 		dataBuffer.flip();
@@ -146,10 +148,10 @@ public class DmsMessageSender implements AutoCloseable {
 	}
 
 	public void rewind() {
-		if (position < 0) {
+		if (position < minPosition) {
 			return;
 		}
-		if (position == 0) {
+		if (position == minPosition) {
 			position = -1;
 			return;
 		}

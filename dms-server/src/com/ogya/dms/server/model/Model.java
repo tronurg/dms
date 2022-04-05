@@ -32,7 +32,7 @@ import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.MessageContainerLocal;
-import com.ogya.dms.server.common.MessageSorter;
+import com.ogya.dms.server.common.MessageSorterLocal;
 import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
@@ -45,7 +45,7 @@ public class Model {
 	private final Map<String, LocalUser> localUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, RemoteUser> remoteUsers = Collections.synchronizedMap(new HashMap<String, RemoteUser>());
 
-	private final Map<String, User> mappedUsers = Collections.synchronizedMap(new HashMap<String, User>());
+	private final Map<String, LocalUser> mappedUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, DmsServer> remoteServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
@@ -419,6 +419,19 @@ public class Model {
 
 			e.printStackTrace();
 
+		}
+
+	}
+
+	public void downloadProgressReceived(String receiverUuid, Long trackingId, int progress) {
+
+		for (String receiverMapId : receiverUuid.split(";")) {
+			LocalUser localUser = mappedUsers.get(receiverMapId);
+			if (localUser == null) {
+				continue;
+			}
+			localUser.sendMessage(new MessagePojo(DmsPackingFactory.pack(progress), null, null,
+					ContentType.PROGRESS_DOWNLOAD, trackingId, null, null), null, null);
 		}
 
 	}
@@ -804,7 +817,7 @@ public class Model {
 		private final DmsMessageReceiver messageReceiver;
 		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final PriorityBlockingQueue<MessageContainerLocal> messageQueue = new PriorityBlockingQueue<MessageContainerLocal>(
-				11, new MessageSorter());
+				11, new MessageSorterLocal());
 		private final Map<Integer, MessageContainerLocal> stopMap = Collections
 				.synchronizedMap(new HashMap<Integer, MessageContainerLocal>());
 
@@ -892,6 +905,11 @@ public class Model {
 					null, null, null), null, null);
 		}
 
+		@Override
+		public void downloadProgress(String receiverUuid, Long trackingId, int progress) {
+			//
+		}
+
 	}
 
 	private class RemoteUser extends User {
@@ -913,7 +931,8 @@ public class Model {
 	private class DmsServer {
 
 		private final String dmsUuid;
-		private final Map<String, User> mappedUsers = Collections.synchronizedMap(new HashMap<String, User>());
+		private final Map<String, RemoteUser> mappedUsers = Collections
+				.synchronizedMap(new HashMap<String, RemoteUser>());
 		private final Map<InetAddress, InetAddress> localRemoteIps = Collections
 				.synchronizedMap(new HashMap<InetAddress, InetAddress>());
 

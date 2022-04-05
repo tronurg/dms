@@ -11,6 +11,8 @@ public class AttachmentPojo {
 	public long size;
 	@JsonIgnore
 	public Path path;
+	@JsonIgnore
+	public Long position;
 
 	public AttachmentPojo() {
 		super();

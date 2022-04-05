@@ -300,12 +300,6 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private void messageReceivedToListeners(MessagePojo messagePojo, String dmsUuid) {
-
-		listeners.forEach(e -> e.messageReceivedFromRemoteServer(messagePojo, dmsUuid));
-
-	}
-
 	@Override
 	public void disconnected(final int id) {
 
@@ -535,7 +529,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		@Override
-		public void messageReceived(MessagePojo messagePojo) {
+		public void messageReceived(final MessagePojo messagePojo) {
 			if (messagePojo.contentType == ContentType.SEND_NOMORE) {
 				try {
 					Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
@@ -545,13 +539,18 @@ public class TcpManager implements TcpServerListener {
 				}
 				return;
 			}
-			messageReceivedToListeners(messagePojo, dmsUuid);
+			listeners.forEach(listener -> listener.messageReceivedFromRemoteServer(messagePojo, dmsUuid));
 		}
 
 		@Override
 		public void messageFailed(int messageNumber) {
 			queueMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE,
 					null, null, null), null, null);
+		}
+
+		@Override
+		public void downloadProgress(final String receiverUuid, final Long trackingId, final int progress) {
+			listeners.forEach(listener -> listener.downloadProgress(receiverUuid, trackingId, progress));
 		}
 
 	}

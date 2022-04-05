@@ -4,14 +4,15 @@ import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -58,7 +59,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final DmsMessageReceiver messageReceiver;
 	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
 	private final AtomicInteger messageCounter = new AtomicInteger(0);
-	private final LinkedBlockingDeque<MessageContainer> messageQueue = new LinkedBlockingDeque<MessageContainer>();
+	private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(11,
+			new MessageSorter());
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
 	private final Map<Integer, MessageContainer> stopMap = Collections
 			.synchronizedMap(new HashMap<Integer, MessageContainer>());
@@ -241,11 +243,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
-	public void uploadFile(Path path, String receiverUuid, Long trackingId) {
+	public void uploadFile(Path path, String receiverUuid, Long trackingId, Long position) {
 
 		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(path.getFileName().toString()), uuid,
 				receiverUuid, ContentType.UPLOAD, trackingId, null, null);
 		messagePojo.attachment = new AttachmentPojo(path);
+		messagePojo.attachment.position = position;
 		sendMessage(messagePojo);
 
 	}
@@ -275,12 +278,16 @@ public class DmsClient implements DmsMessageReceiverListener {
 					}
 				});
 		stopMap.put(messageContainer.messageNumber, messageContainer);
-		messageQueue.offer(messageContainer);
+		messageQueue.put(messageContainer);
 		raiseSignal();
 	}
 
 	private void raiseSignal() {
-		signalQueue.offer(SIGNAL);
+		try {
+			signalQueue.put(SIGNAL);
+		} catch (InterruptedException e) {
+
+		}
 	}
 
 	private void dealer() {
@@ -336,7 +343,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 					synchronized (serverConnected) {
 						if (serverConnected.get() && messageContainer.hasMore()) {
-							messageQueue.offerFirst(messageContainer);
+							messageQueue.put(messageContainer);
 						} else {
 							closeMessage(messageContainer);
 						}
@@ -605,12 +612,18 @@ public class DmsClient implements DmsMessageReceiverListener {
 				null, null));
 	}
 
+	@Override
+	public void downloadProgress(String receiverUuid, Long trackingId, int progress) {
+		//
+	}
+
 	private final class MessageContainer extends DmsMessageSender {
 
 		private final int messageNumber;
 		private final AtomicBoolean sendStatus;
 		private final Consumer<Integer> progressConsumer;
 
+		private final ContentType contentType;
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
@@ -619,6 +632,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			this.messageNumber = messageNumber;
 			this.sendStatus = sendStatus;
 			this.progressConsumer = progressConsumer;
+			this.contentType = messagePojo.contentType;
 		}
 
 		@Override
@@ -633,6 +647,23 @@ public class DmsClient implements DmsMessageReceiverListener {
 			if (progressConsumer != null && progressPercent.get() < 100) {
 				progressConsumer.accept(-1);
 			}
+		}
+
+	}
+
+	private final class MessageSorter implements Comparator<MessageContainer> {
+
+		@Override
+		public int compare(MessageContainer m1, MessageContainer m2) {
+			int result = Boolean.compare(m1.contentType == ContentType.UPLOAD, m2.contentType == ContentType.UPLOAD);
+			if (result == 0) {
+				result = Boolean.compare(m1.contentType == ContentType.TRANSIENT,
+						m2.contentType == ContentType.TRANSIENT);
+			}
+			if (result == 0) {
+				result = Integer.compare(m1.messageNumber, m2.messageNumber);
+			}
+			return result;
 		}
 
 	}
