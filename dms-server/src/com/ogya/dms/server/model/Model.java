@@ -27,7 +27,6 @@ import java.util.function.Consumer;
 import com.ogya.dms.commons.DmsMessageReceiver;
 import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
 import com.ogya.dms.commons.DmsPackingFactory;
-import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
@@ -263,7 +262,7 @@ public class Model {
 					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
 							messagePojo.contentType, messagePojo.trackingId, messagePojo.useTimeout,
 							messagePojo.useLocalAddress);
-					localMessagePojo.attachment = new AttachmentPojo(attachment);
+					localMessagePojo.attachment = messagePojo.attachment;
 					user.sendMessage(localMessagePojo, sendStatus.status, progress -> {
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
@@ -286,7 +285,7 @@ public class Model {
 					MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
 							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.trackingId,
 							messagePojo.useTimeout, messagePojo.useLocalAddress);
-					remoteMessagePojo.attachment = new AttachmentPojo(attachment);
+					remoteMessagePojo.attachment = messagePojo.attachment;
 					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus.status, progress -> {
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
@@ -399,7 +398,7 @@ public class Model {
 				localReceivers.forEach(user -> {
 					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
 							messagePojo.contentType, messagePojo.trackingId, null, null);
-					localMessagePojo.attachment = new AttachmentPojo(attachment);
+					localMessagePojo.attachment = messagePojo.attachment;
 					user.sendMessage(localMessagePojo, null, progress -> {
 						if (progress < 0 || progress == 100) {
 							if (partySize.decrementAndGet() == 0) {
@@ -423,7 +422,20 @@ public class Model {
 
 	}
 
-	public void downloadProgressReceived(String receiverUuid, Long trackingId, int progress) {
+	public void localDownloadProgressReceived(String receiverUuid, Long trackingId, int progress) {
+
+		for (String uuid : receiverUuid.split(";")) {
+			LocalUser localUser = localUsers.get(uuid);
+			if (localUser == null) {
+				continue;
+			}
+			localUser.sendMessage(new MessagePojo(DmsPackingFactory.pack(progress), null, null,
+					ContentType.PROGRESS_DOWNLOAD, trackingId, null, null), null, null);
+		}
+
+	}
+
+	public void remoteDownloadProgressReceived(String receiverUuid, Long trackingId, int progress) {
 
 		for (String receiverMapId : receiverUuid.split(";")) {
 			LocalUser localUser = mappedUsers.get(receiverMapId);
@@ -907,7 +919,7 @@ public class Model {
 
 		@Override
 		public void downloadProgress(String receiverUuid, Long trackingId, int progress) {
-			//
+			localDownloadProgressReceived(receiverUuid, trackingId, progress);
 		}
 
 	}

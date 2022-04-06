@@ -52,9 +52,7 @@ public interface DmsClientListener {
 
 	void downloadingFile(Long downloadId, int progress);
 
-	void fileDownloaded(Long downloadId, Path path, String fileName);
-
-	void filePartDownloaded(Long downloadId, Path path, String fileName);
+	void fileDownloaded(Long downloadId, Path path, String fileName, boolean partial);
 
 	void downloadFailed(Long downloadId);
 

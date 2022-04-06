@@ -6,11 +6,7 @@ public class MessageSorterLocal extends MessageSorter {
 
 	@Override
 	public int compare(MessageContainerBase m1, MessageContainerBase m2) {
-		int result = Boolean.compare(m1.contentType != ContentType.UPLOAD_PART,
-				m2.contentType != ContentType.UPLOAD_PART);
-		if (result == 0) {
-			result = Boolean.compare(m1.contentType != ContentType.UPLOAD, m2.contentType != ContentType.UPLOAD);
-		}
+		int result = Boolean.compare(m1.contentType != ContentType.UPLOAD, m2.contentType != ContentType.UPLOAD);
 		if (result == 0) {
 			result = super.compare(m1, m2);
 		}

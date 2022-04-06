@@ -80,7 +80,9 @@ public class DmsMessageReceiver {
 				return;
 			}
 			attachmentReceiver.interrupt();
-			messagePojo.contentType = ContentType.UPLOAD_PART;
+			if (messagePojo.attachment != null) {
+				messagePojo.attachment.partial = true;
+			}
 			listener.messageReceived(messagePojo);
 		});
 		attachmentReceivers.clear();

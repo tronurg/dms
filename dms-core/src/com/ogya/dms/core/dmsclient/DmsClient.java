@@ -540,14 +540,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			case UPLOAD:
 
 				listener.fileDownloaded(messagePojo.trackingId, messagePojo.getAttachmentLink(),
-						DmsPackingFactory.unpack(payload, String.class));
-
-				break;
-
-			case UPLOAD_PART:
-
-				listener.filePartDownloaded(messagePojo.trackingId, messagePojo.getAttachmentLink(),
-						DmsPackingFactory.unpack(payload, String.class));
+						DmsPackingFactory.unpack(payload, String.class), messagePojo.isAttachmentPartial());
 
 				break;
 

@@ -50,4 +50,11 @@ public class MessagePojo {
 		return null;
 	}
 
+	public boolean isAttachmentPartial() {
+		if (attachment == null) {
+			return false;
+		}
+		return Boolean.TRUE.equals(attachment.partial);
+	}
+
 }

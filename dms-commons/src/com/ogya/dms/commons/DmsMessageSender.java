@@ -50,7 +50,7 @@ public class DmsMessageSender implements AutoCloseable {
 				minPosition = attachmentPojo.position;
 			}
 			maxPosition = fileChannel.size();
-			messagePojo.attachment.size = maxPosition;
+			attachmentPojo.size = maxPosition;
 			if (maxPosition == 0) {
 				fileChannel.close();
 			}
@@ -155,7 +155,7 @@ public class DmsMessageSender implements AutoCloseable {
 			position = -1;
 			return;
 		}
-		long remainder = position % CHUNK_SIZE;
+		long remainder = (position - minPosition) % CHUNK_SIZE;
 		if (remainder == 0) {
 			remainder = CHUNK_SIZE;
 		}

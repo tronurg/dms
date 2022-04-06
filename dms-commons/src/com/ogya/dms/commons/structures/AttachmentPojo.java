@@ -9,10 +9,12 @@ public class AttachmentPojo {
 
 	@JsonProperty("a")
 	public long size;
+	@JsonProperty("b")
+	public Long position;
+	@JsonProperty("c")
+	public Boolean partial;
 	@JsonIgnore
 	public Path path;
-	@JsonIgnore
-	public Long position;
 
 	public AttachmentPojo() {
 		super();

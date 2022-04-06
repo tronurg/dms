@@ -1954,45 +1954,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void fileDownloaded(final Long downloadId, final Path path, final String fileName) {
-
-		downloadTaskQueue.execute(() -> {
-
-			DownloadPojo downloadPojo = model.removeDownload(downloadId);
-			if (downloadPojo == null) {
-				deleteFile(path);
-				return;
-			}
-
-			try {
-				if (downloadPojo.path != null) {
-					try (FileChannel fileChannelRead = FileChannel.open(downloadPojo.path, StandardOpenOption.READ);
-							FileChannel fileChannelWrite = FileChannel.open(path, StandardOpenOption.WRITE)) {
-						ByteBuffer buffer = ByteBuffer.allocate(8192);
-						while (fileChannelRead.read(buffer) > 0) {
-							buffer.flip();
-							fileChannelWrite.write(buffer);
-							buffer.rewind();
-						}
-					}
-					deleteFile(downloadPojo.path);
-				}
-				downloadPojo.path = moveFileToReceiveFolder(path, fileName);
-				listenerTaskQueue.execute(() -> dmsDownloadListeners
-						.forEach(listener -> listener.fileDownloaded(downloadId, downloadPojo.path)));
-			} catch (Exception e) {
-				deleteFile(path);
-				deleteFile(downloadPojo.path);
-				listenerTaskQueue
-						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
-			}
-
-		});
-
-	}
-
-	@Override
-	public void filePartDownloaded(final Long downloadId, final Path path, final String fileName) {
+	public void fileDownloaded(final Long downloadId, final Path path, final String fileName, final boolean partial) {
 
 		downloadTaskQueue.execute(() -> {
 
@@ -2015,8 +1977,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					}
 					deleteFile(downloadPojo.path);
 				}
-				downloadPojo.path = path;
-				downloadPojo.position = Files.size(downloadPojo.path);
+				if (partial) {
+					downloadPojo.path = path;
+					downloadPojo.position = Files.size(downloadPojo.path);
+				} else {
+					downloadPojo.path = moveFileToReceiveFolder(path, fileName);
+					model.removeDownload(downloadId);
+					listenerTaskQueue.execute(() -> dmsDownloadListeners
+							.forEach(listener -> listener.fileDownloaded(downloadId, downloadPojo.path)));
+				}
 			} catch (Exception e) {
 				model.removeDownload(downloadId);
 				deleteFile(path);
