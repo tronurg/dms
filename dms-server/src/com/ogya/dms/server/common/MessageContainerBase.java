@@ -29,7 +29,11 @@ public abstract class MessageContainerBase extends DmsMessageSender {
 		this.progressConsumer = progressConsumer;
 		this.useTimeout = messagePojo.useTimeout;
 		this.contentType = messagePojo.contentType;
-		this.bigFile = isFileSizeGreaterThan(CommonConstants.SMALL_FILE_LIMIT);
+		this.bigFile = getFileSize() > CommonConstants.SMALL_FILE_LIMIT;
+	}
+
+	public boolean isSecondary() {
+		return bigFile && health.get();
 	}
 
 	@Override

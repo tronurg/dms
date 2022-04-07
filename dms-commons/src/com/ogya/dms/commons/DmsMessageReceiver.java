@@ -15,14 +15,20 @@ public class DmsMessageReceiver {
 	private final DmsMessageReceiverListener listener;
 	private final Map<Integer, AttachmentReceiver> attachmentReceivers = new HashMap<Integer, AttachmentReceiver>();
 
+	private boolean keepDownloads;
+
 	public DmsMessageReceiver(DmsMessageReceiverListener listener) {
 		this.listener = listener;
+	}
+
+	public void setKeepDownloads(boolean keepDownloads) {
+		this.keepDownloads = keepDownloads;
 	}
 
 	public void inFeed(int messageNumber, byte[] data) {
 
 		if (data.length == 0) {
-			cancel(messageNumber);
+			interrupt(messageNumber, keepDownloads);
 			return;
 		}
 
@@ -30,7 +36,7 @@ public class DmsMessageReceiver {
 		byte sign = dataBuffer.get();
 
 		if (sign < 0) {
-			cancel(messageNumber);
+			interrupt(messageNumber, false);
 			try {
 				MessagePojo messagePojo = DmsPackingFactory.unpack(dataBuffer, MessagePojo.class);
 				if (messagePojo.attachment == null) {
@@ -64,32 +70,16 @@ public class DmsMessageReceiver {
 
 	}
 
-	private void cancel(int messageNumber) {
+	private void interrupt(int messageNumber, boolean keepDownload) {
 		AttachmentReceiver attachmentReceiver = attachmentReceivers.remove(messageNumber);
 		if (attachmentReceiver == null) {
 			return;
 		}
-		attachmentReceiver.cancel();
+		attachmentReceiver.interrupt(keepDownload);
 	}
 
-	public void deleteResourcesKeepDownloads() {
-		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> {
-			MessagePojo messagePojo = attachmentReceiver.messagePojo;
-			if (messagePojo == null || messagePojo.contentType != ContentType.UPLOAD) {
-				attachmentReceiver.cancel();
-				return;
-			}
-			attachmentReceiver.interrupt();
-			if (messagePojo.attachment != null) {
-				messagePojo.attachment.partial = true;
-			}
-			listener.messageReceived(messagePojo);
-		});
-		attachmentReceivers.clear();
-	}
-
-	public void deleteResources() {
-		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> attachmentReceiver.cancel());
+	public void interruptAll() {
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> attachmentReceiver.interrupt(keepDownloads));
 		attachmentReceivers.clear();
 	}
 
@@ -99,23 +89,25 @@ public class DmsMessageReceiver {
 		private FileChannel fileChannel;
 		private boolean interrupted = false;
 		private long fileSize;
+		private Long globalSize;
 		private long currentSize = 0;
 		private int downloadProgress = -1;
 
 		private AttachmentReceiver(MessagePojo messagePojo) {
-			this.messagePojo = messagePojo;
-			this.fileSize = messagePojo.attachment.size;
 			try {
+				this.messagePojo = messagePojo;
+				this.fileSize = messagePojo.attachment.size;
+				this.globalSize = messagePojo.attachment.globalSize;
 				messagePojo.attachment.path = Files.createTempFile("dms", null);
 				fileChannel = FileChannel.open(messagePojo.attachment.path, StandardOpenOption.CREATE,
 						StandardOpenOption.WRITE);
 				checkDownloadProgress();
 			} catch (Exception e) {
-				cancel();
+				interrupt(false);
 			}
 		}
 
-		private void interrupt() {
+		private void interrupt(boolean keepDownload) {
 
 			interrupted = true;
 
@@ -125,11 +117,14 @@ public class DmsMessageReceiver {
 
 			}
 
-		}
+			if (messagePojo == null || messagePojo.attachment == null) {
+				return;
+			}
 
-		private void cancel() {
-
-			interrupt();
+			if (keepDownload && messagePojo.contentType == ContentType.UPLOAD) {
+				messagePojo.attachment.partial = true;
+				return;
+			}
 
 			try {
 				Files.deleteIfExists(messagePojo.attachment.path);
@@ -163,7 +158,7 @@ public class DmsMessageReceiver {
 				String receiverUuid = messagePojo.receiverUuid;
 				ContentType contentType = messagePojo.contentType;
 				Long trackingId = messagePojo.trackingId;
-				cancel();
+				interrupt(false);
 				if (contentType == ContentType.UPLOAD) {
 					messagePojo = new MessagePojo(null, null, receiverUuid, ContentType.UPLOAD_FAILURE, trackingId,
 							null, null);
@@ -175,10 +170,10 @@ public class DmsMessageReceiver {
 		}
 
 		private void checkDownloadProgress() {
-			if (messagePojo.contentType != ContentType.UPLOAD) {
+			if (globalSize == null || !(globalSize > 0)) {
 				return;
 			}
-			int progress = (int) (100.0 * currentSize / fileSize);
+			int progress = (int) (100.0 * currentSize / globalSize);
 			if (downloadProgress < progress) {
 				downloadProgress = progress;
 				listener.downloadProgress(messagePojo.receiverUuid, messagePojo.trackingId, downloadProgress);

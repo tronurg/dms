@@ -528,7 +528,7 @@ public class Model {
 
 	}
 
-	public DownloadPojo registerDownload(String contactUuid, Integer fileId) {
+	public DownloadPojo registerDownload(String contactUuid, Long fileId) {
 
 		Long downloadId = downloadIdCounter.getAndIncrement();
 		DownloadPojo downloadPojo = new DownloadPojo(contactUuid, fileId, downloadId);
@@ -559,11 +559,17 @@ public class Model {
 
 		List<DownloadPojo> downloadList = new ArrayList<DownloadPojo>();
 		downloadMap.forEach((downloadId, downloadPojo) -> {
-			if (Objects.equals(contactUuid, downloadPojo.senderUuid)) {
+			if (Objects.equals(contactUuid, downloadPojo.senderUuid) && !downloadPojo.paused.get()) {
 				downloadList.add(downloadPojo);
 			}
 		});
 		return downloadList;
+
+	}
+
+	public Map<Long, DownloadPojo> getAllDownloads() {
+
+		return downloadMap;
 
 	}
 

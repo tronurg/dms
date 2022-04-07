@@ -51,6 +51,9 @@ public class DmsMessageSender implements AutoCloseable {
 			}
 			maxPosition = fileChannel.size();
 			attachmentPojo.size = maxPosition;
+			if (messagePojo.contentType == ContentType.UPLOAD && attachmentPojo.globalSize == null) {
+				attachmentPojo.globalSize = maxPosition;
+			}
 			if (maxPosition == 0) {
 				fileChannel.close();
 			}
@@ -109,8 +112,8 @@ public class DmsMessageSender implements AutoCloseable {
 		return getEmptyChunk();
 	}
 
-	protected boolean isFileSizeGreaterThan(long limitSize) {
-		return maxPosition > limitSize;
+	public long getFileSize() {
+		return maxPosition;
 	}
 
 	public boolean hasMore() {

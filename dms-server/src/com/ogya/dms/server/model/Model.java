@@ -890,7 +890,7 @@ public class Model {
 		}
 
 		private void close() {
-			messageReceiver.deleteResources();
+			messageReceiver.interruptAll();
 			MessageContainerLocal messageContainer;
 			while ((messageContainer = messageQueue.poll()) != null) {
 				closeMessage(messageContainer);

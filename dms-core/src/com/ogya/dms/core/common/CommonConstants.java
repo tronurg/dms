@@ -20,4 +20,6 @@ public class CommonConstants {
 
 	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
 
+	public static final int CHUNK_SIZE = 8192;
+
 }

@@ -75,6 +75,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		this.listener = listener;
 
 		this.messageReceiver = new DmsMessageReceiver(this);
+		this.messageReceiver.setKeepDownloads(true);
 
 		start();
 
@@ -576,7 +577,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void close() {
-		taskQueue.execute(() -> messageReceiver.deleteResources());
+		taskQueue.execute(() -> messageReceiver.interruptAll());
 		synchronized (serverConnected) {
 			MessageContainer messageContainer;
 			while ((messageContainer = messageQueue.poll()) != null) {

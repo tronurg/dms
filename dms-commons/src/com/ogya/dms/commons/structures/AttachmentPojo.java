@@ -13,6 +13,8 @@ public class AttachmentPojo {
 	public Long position;
 	@JsonProperty("c")
 	public Boolean partial;
+	@JsonProperty("d")
+	public Long globalSize;
 	@JsonIgnore
 	public Path path;
 

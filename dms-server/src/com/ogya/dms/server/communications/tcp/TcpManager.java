@@ -431,6 +431,7 @@ public class TcpManager implements TcpServerListener {
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
 			this.messageReceiver = new DmsMessageReceiver(this);
+			this.messageReceiver.setKeepDownloads(true);
 			new Thread(this::consumeMessageQueue).start();
 		}
 
@@ -465,7 +466,7 @@ public class TcpManager implements TcpServerListener {
 						} else {
 							messageContainer.rewind(); // Update on the next turn
 						}
-						if (messageContainer.bigFile && messageContainer.hasMore() && !messageQueue.isEmpty()) {
+						if (messageContainer.isSecondary() && messageContainer.hasMore() && !messageQueue.isEmpty()) {
 							messageQueue.put(messageContainer);
 							break;
 						}
@@ -524,7 +525,7 @@ public class TcpManager implements TcpServerListener {
 		}
 
 		private void close() {
-			messageReceiver.deleteResourcesKeepDownloads();
+			messageReceiver.interruptAll();
 			messageQueue.put(MessageContainerRemote.getEndMessage());
 		}
 
