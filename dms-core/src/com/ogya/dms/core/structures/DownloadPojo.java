@@ -7,15 +7,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DownloadPojo {
 
-	public final transient String senderUuid;
+	public transient String senderUuid;
 	@JsonProperty("a")
-	public final Long fileId;
+	public Long fileId;
 	@JsonProperty("b")
-	public final Long downloadId;
+	public Long downloadId;
 	@JsonProperty("c")
 	public Long position;
 	public transient Path path;
 	public final transient AtomicBoolean paused = new AtomicBoolean();
+
+	public DownloadPojo() {
+		super();
+	}
 
 	public DownloadPojo(String senderUuid, Long fileId, Long downloadId) {
 		this.senderUuid = senderUuid;
