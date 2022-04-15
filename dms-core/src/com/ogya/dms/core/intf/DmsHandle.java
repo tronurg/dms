@@ -89,13 +89,13 @@ public interface DmsHandle {
 
 	MessageRules createMessageRules();
 
-	Long sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds);
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds);
 
-	Long sendMessageToGroup(MessageHandle messageHandle, Long groupId);
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId);
 
-	Long sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules);
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules);
 
-	Long sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules);
+	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules);
 
 	void cancelMessage(Long trackingId);
 

@@ -6,6 +6,7 @@ import com.ogya.dms.core.intf.tools.MessageRules;
 
 public class MessageRulesImpl implements MessageRules {
 
+	private Long trackingId;
 	private Long timeout;
 	private InetAddress localInterface;
 
@@ -15,12 +16,25 @@ public class MessageRulesImpl implements MessageRules {
 
 	}
 
+	public Long getTrackingId() {
+		return trackingId;
+	}
+
 	public Long getTimeout() {
 		return timeout;
 	}
 
 	public InetAddress getLocalInterface() {
 		return localInterface;
+	}
+
+	@Override
+	public MessageRules useTrackingId(Long trackingId) {
+
+		this.trackingId = trackingId;
+
+		return this;
+
 	}
 
 	@Override

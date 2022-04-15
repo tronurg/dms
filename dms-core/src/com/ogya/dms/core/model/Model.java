@@ -78,8 +78,6 @@ public class Model {
 		}
 	};
 
-	private final AtomicLong transientIdCounter = new AtomicLong();
-
 	private final AtomicLong downloadIdCounter = new AtomicLong();
 	private final Map<Long, DownloadPojo> downloadMap = Collections.synchronizedMap(new HashMap<Long, DownloadPojo>());
 
@@ -519,12 +517,6 @@ public class Model {
 	public void clearPrivateMessageProgresses() {
 
 		privateMessageProgresses.clear();
-
-	}
-
-	public Long getTransientId() {
-
-		return transientIdCounter.getAndIncrement();
 
 	}
 
