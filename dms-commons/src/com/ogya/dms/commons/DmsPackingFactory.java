@@ -109,6 +109,8 @@ public class DmsPackingFactory {
 
 		@JsonIgnore
 		public Map<InetAddress, InetAddress> localRemoteServerIps;
+		@JsonIgnore
+		public String serverUuid;
 
 	}
 

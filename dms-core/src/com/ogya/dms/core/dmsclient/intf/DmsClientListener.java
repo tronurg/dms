@@ -3,6 +3,7 @@ package com.ogya.dms.core.dmsclient.intf;
 import java.net.InetAddress;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.core.database.tables.Message;
@@ -18,9 +19,9 @@ public interface DmsClientListener {
 
 	void remoteIpsReceived(InetAddress[] remoteIps);
 
-	void progressMessageReceived(Long messageId, String[] remoteUuids, int progress);
+	void progressMessageReceived(Long messageId, Set<String> remoteUuids, int progress);
 
-	void progressTransientReceived(Long trackingId, String[] remoteUuids, int progress);
+	void progressTransientReceived(Long trackingId, Set<String> remoteUuids, int progress);
 
 	void messageReceived(Message message, Path attachment, String remoteUuid);
 

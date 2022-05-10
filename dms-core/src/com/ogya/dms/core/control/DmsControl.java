@@ -579,7 +579,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		String receiverUuid = message.getContact().getUuid();
 
 		if (model.isContactOnline(receiverUuid))
-			dmsSendMessage(message, receiverUuid);
+			dmsSendMessage(message, Arrays.asList(receiverUuid));
 
 	}
 
@@ -610,7 +610,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 			if (!onlineUuids.isEmpty())
-				dmsSendMessage(message, String.join(";", onlineUuids));
+				dmsSendMessage(message, onlineUuids);
 
 		} else {
 			// It's not my group, so I will send this message to the group owner only.
@@ -618,7 +618,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			String receiverUuid = group.getOwner().getUuid();
 
 			if (model.isContactOnline(receiverUuid))
-				dmsSendMessage(message, receiverUuid);
+				dmsSendMessage(message, Arrays.asList(receiverUuid));
 
 		}
 
@@ -627,7 +627,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private void sendGroupMessage(Message message, String receiverUuid) {
 
 		if (model.isContactOnline(receiverUuid))
-			dmsSendMessage(message, receiverUuid);
+			dmsSendMessage(message, Arrays.asList(receiverUuid));
 
 	}
 
@@ -645,11 +645,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		}
 
 		if (!onlineUuids.isEmpty())
-			dmsSendMessage(message, String.join(";", onlineUuids));
+			dmsSendMessage(message, onlineUuids);
 
 	}
 
-	private void dmsSendMessage(Message message, String receiverUuid) {
+	private void dmsSendMessage(Message message, List<String> receiverUuids) {
 
 		Message copyMessage = new Message(message);
 
@@ -680,7 +680,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			copyMessage.setAttachment(path.getFileName().toString());
 		}
 
-		dmsClient.sendMessage(copyMessage, path, receiverUuid, message.getId());
+		dmsClient.sendMessage(copyMessage, path, receiverUuids, message.getId());
 
 	}
 
@@ -1285,7 +1285,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void progressMessageReceived(final Long messageId, final String[] remoteUuids, final int progress) {
+	public void progressMessageReceived(final Long messageId, final Set<String> remoteUuids, final int progress) {
 		// messageId = local database id of the message (not the message id, which is
 		// the local database id of the sender)
 
@@ -1359,7 +1359,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void progressTransientReceived(final Long trackingId, final String[] remoteUuids, final int progress) {
+	public void progressTransientReceived(final Long trackingId, final Set<String> remoteUuids, final int progress) {
 
 		taskQueue.execute(() -> {
 

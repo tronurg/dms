@@ -233,6 +233,27 @@ public class CommonMethods {
 
 	}
 
+	static long getSmallFileLimit() {
+
+		long smallFileLimit = Long.MAX_VALUE;
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/SMALL_FILE_LIMIT")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			smallFileLimit = Long.parseLong(node.getTextContent());
+
+		} catch (NullPointerException e) {
+			System.out.println(String.format("SMALL_FILE_LIMIT set to default: %d", smallFileLimit));
+		} catch (Exception e) {
+
+		}
+
+		return smallFileLimit;
+
+	}
+
 	static String getSendFolder() {
 
 		String sendFolder = "./sent";

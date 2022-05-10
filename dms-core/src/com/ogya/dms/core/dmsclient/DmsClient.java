@@ -1,18 +1,21 @@
 package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -30,6 +33,7 @@ import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
+import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
@@ -42,7 +46,7 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsClient implements DmsMessageReceiverListener {
 
-	private static final byte[] SIGNAL = new byte[0];
+//	private static final byte[] SIGNAL = new byte[0];
 
 	private final String uuid;
 
@@ -56,14 +60,31 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final DmsClientListener listener;
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final Comparator<MessageContainer> messageSorter = new Comparator<MessageContainer>() {
+		@Override
+		public int compare(MessageContainer m1, MessageContainer m2) {
+			int result = Boolean.compare(m1.isSecondary(), m2.isSecondary());
+			if (result == 0) {
+				result = Long.compare(m1.checkInTime, m2.checkInTime);
+			}
+			if (result == 0) {
+				result = Integer.compare(m1.messageNumber, m2.messageNumber);
+			}
+			return result;
+		}
+	};
+	private final Map<String, String> userServerMap = Collections.synchronizedMap(new HashMap<String, String>());
+	private final Map<String, PriorityQueue<MessageContainer>> serverMessageMap = Collections
+			.synchronizedMap(new HashMap<String, PriorityQueue<MessageContainer>>());
 	private final DmsMessageReceiver messageReceiver;
-	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
-	private final AtomicInteger messageCounter = new AtomicInteger(0);
-	private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(11,
-			new MessageSorter());
+//	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
+	private final AtomicInteger messageCounter = new AtomicInteger(1);
+	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
+//	private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(11,
+//			new MessageSorter());
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
-	private final Map<Integer, MessageContainer> stopMap = Collections
-			.synchronizedMap(new HashMap<Integer, MessageContainer>());
+//	private final Map<Integer, MessageContainer> stopMap = Collections
+//			.synchronizedMap(new HashMap<Integer, MessageContainer>());
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -99,38 +120,37 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void sendBeacon(Beacon beacon) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null));
+		sendMessage(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null, null);
 
 	}
 
 	public void claimStartInfo() {
 
-		sendMessage(new MessagePojo(null, uuid, null, ContentType.REQ_STRT, null, null, null));
+		sendMessage(null, uuid, null, ContentType.REQ_STRT, null, null, null, null);
 
 	}
 
 	public void addRemoteIps(InetAddress... ips) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null));
+		sendMessage(DmsPackingFactory.pack(ips), null, null, ContentType.ADD_IPS, null, null, null, null);
 
 	}
 
 	public void removeRemoteIps(InetAddress... ips) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null, null));
+		sendMessage(DmsPackingFactory.pack(ips), null, null, ContentType.REMOVE_IPS, null, null, null, null);
 
 	}
 
-	public void sendMessage(Message message, Path attachment, String receiverUuid, Long messageId) {
+	public void sendMessage(Message message, Path attachmentPath, List<String> receiverUuids, Long messageId) {
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid, receiverUuid,
-				ContentType.MESSAGE, messageId, null, null);
-
-		if (attachment != null) {
-			messagePojo.attachment = new AttachmentPojo(attachment);
+		AttachmentPojo attachment = null;
+		if (attachmentPath != null) {
+			attachment = new AttachmentPojo(attachmentPath);
 		}
 
-		sendMessage(messagePojo);
+		sendMessage(DmsPackingFactory.pack(message), uuid, receiverUuids, ContentType.MESSAGE, messageId, null, null,
+				attachment);
 
 	}
 
@@ -141,116 +161,116 @@ public class DmsClient implements DmsMessageReceiverListener {
 				sendStatus.status.set(false);
 			}
 		});
-		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_MESSAGE, trackingId, null, null));
+		sendMessage(null, uuid, null, ContentType.CANCEL_MESSAGE, trackingId, null, null, null);
 
 	}
 
 	public void claimMessageStatus(Long[] messageIds, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
-				ContentType.CLAIM_MESSAGE_STATUS, null, null, null));
+		sendMessage(DmsPackingFactory.pack(messageIds), uuid, Arrays.asList(receiverUuid),
+				ContentType.CLAIM_MESSAGE_STATUS, null, null, null, null);
 
 	}
 
 	public void feedMessageStatus(Map<Long, MessageStatus> messageIdStatusMap, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIdStatusMap), uuid, receiverUuid,
-				ContentType.FEED_MESSAGE_STATUS, null, null, null));
+		sendMessage(DmsPackingFactory.pack(messageIdStatusMap), uuid, Arrays.asList(receiverUuid),
+				ContentType.FEED_MESSAGE_STATUS, null, null, null, null);
 
 	}
 
 	public void feedGroupMessageStatus(Map<Long, GroupMessageStatus> messageIdGroupStatusMap, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIdGroupStatusMap), uuid, receiverUuid,
-				ContentType.FEED_GROUP_MESSAGE_STATUS, null, null, null));
+		sendMessage(DmsPackingFactory.pack(messageIdGroupStatusMap), uuid, Arrays.asList(receiverUuid),
+				ContentType.FEED_GROUP_MESSAGE_STATUS, null, null, null, null);
 
 	}
 
 	public void claimStatusReport(Long[] messageIds, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIds), uuid, receiverUuid,
-				ContentType.CLAIM_STATUS_REPORT, null, null, null));
+		sendMessage(DmsPackingFactory.pack(messageIds), uuid, Arrays.asList(receiverUuid),
+				ContentType.CLAIM_STATUS_REPORT, null, null, null, null);
 
 	}
 
 	public void feedStatusReport(Map<Long, Set<StatusReport>> messageIdStatusReportsMap, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageIdStatusReportsMap), null, receiverUuid,
-				ContentType.FEED_STATUS_REPORT, null, null, null));
+		sendMessage(DmsPackingFactory.pack(messageIdStatusReportsMap), null, Arrays.asList(receiverUuid),
+				ContentType.FEED_STATUS_REPORT, null, null, null, null);
 
 	}
 
-	public void sendTransientMessage(MessageHandleImpl message, Iterable<String> receiverUuids, Long trackingId,
+	public void sendTransientMessage(MessageHandleImpl message, List<String> receiverUuids, Long trackingId,
 			Long useTimeout, InetAddress useLocalInterface) {
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(message), uuid,
-				String.join(";", receiverUuids), ContentType.TRANSIENT, trackingId, useTimeout, useLocalInterface);
-
+		AttachmentPojo attachment = null;
 		FileHandle fileHandle = message.getFileHandle();
 		if (fileHandle != null) {
-			Path attachment = fileHandle.getPath();
-			if (attachment != null) {
-				messagePojo.attachment = new AttachmentPojo(attachment);
+			Path attachmentPath = fileHandle.getPath();
+			if (attachmentPath != null) {
+				attachment = new AttachmentPojo(attachmentPath);
 			}
 		}
 
-		sendMessage(messagePojo);
+		sendMessage(DmsPackingFactory.pack(message), uuid, receiverUuids, ContentType.TRANSIENT, trackingId, useTimeout,
+				useLocalInterface, attachment);
 
 	}
 
 	public void sendTransientMessageStatus(Long trackingId, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(trackingId), uuid, receiverUuid,
-				ContentType.FEED_TRANSIENT_STATUS, null, null, null));
+		sendMessage(DmsPackingFactory.pack(trackingId), uuid, Arrays.asList(receiverUuid),
+				ContentType.FEED_TRANSIENT_STATUS, null, null, null, null);
 
 	}
 
 	public void cancelTransientMessage(Long trackingId) {
 
-		sendStatuses.forEach(sendStatus -> {
-			if (Objects.equals(sendStatus.trackingId, trackingId) && sendStatus.contentType == ContentType.TRANSIENT) {
-				sendStatus.status.set(false);
-			}
-		});
-		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, trackingId, null, null));
+//		sendStatuses.forEach(sendStatus -> {
+//			if (Objects.equals(sendStatus.trackingId, trackingId) && sendStatus.contentType == ContentType.TRANSIENT) {
+//				sendStatus.status.set(false);
+//			}
+//		});
+//		sendMessage(new MessagePojo(null, uuid, null, ContentType.CANCEL_TRANSIENT, trackingId, null, null));
+
+		// TODO
 
 	}
 
 	public void sendDownloadRequest(DownloadPojo downloadPojo, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadPojo), uuid, receiverUuid,
-				ContentType.DOWNLOAD_REQUEST, null, null, null));
+		sendMessage(DmsPackingFactory.pack(downloadPojo), uuid, Arrays.asList(receiverUuid),
+				ContentType.DOWNLOAD_REQUEST, null, null, null, null);
 
 	}
 
 	public void cancelDownloadRequest(Long downloadId, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadId), uuid, receiverUuid,
-				ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null));
+		sendMessage(DmsPackingFactory.pack(downloadId), uuid, Arrays.asList(receiverUuid),
+				ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null, null);
 
 	}
 
 	public void sendServerNotFound(Long downloadId, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid,
-				ContentType.SERVER_NOT_FOUND, null, null, null));
+		sendMessage(DmsPackingFactory.pack(downloadId), null, Arrays.asList(receiverUuid), ContentType.SERVER_NOT_FOUND,
+				null, null, null, null);
 
 	}
 
 	public void sendFileNotFound(Long downloadId, String receiverUuid) {
 
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(downloadId), null, receiverUuid, ContentType.FILE_NOT_FOUND,
-				null, null, null));
+		sendMessage(DmsPackingFactory.pack(downloadId), null, Arrays.asList(receiverUuid), ContentType.FILE_NOT_FOUND,
+				null, null, null, null);
 
 	}
 
 	public void uploadFile(Path path, String receiverUuid, Long trackingId, Long position) {
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(path.getFileName().toString()), uuid,
-				receiverUuid, ContentType.UPLOAD, trackingId, null, null);
-		messagePojo.attachment = new AttachmentPojo(path);
-		messagePojo.attachment.position = position;
-		sendMessage(messagePojo);
+		AttachmentPojo attachment = new AttachmentPojo(path);
+		attachment.position = position;
+		sendMessage(DmsPackingFactory.pack(path.getFileName().toString()), uuid, Arrays.asList(receiverUuid),
+				ContentType.UPLOAD, trackingId, null, null, attachment);
 
 	}
 
@@ -261,31 +281,97 @@ public class DmsClient implements DmsMessageReceiverListener {
 				sendStatus.status.set(false);
 			}
 		});
-		sendMessage(new MessagePojo(null, null, receiverUuid, ContentType.CANCEL_UPLOAD, trackingId, null, null));
+		sendMessage(null, null, Arrays.asList(receiverUuid), ContentType.CANCEL_UPLOAD, trackingId, null, null, null);
 
 	}
 
-	private void sendMessage(MessagePojo messagePojo) {
-		final SendStatus sendStatus = new SendStatus(messagePojo.trackingId, messagePojo.contentType);
-		sendStatuses.add(sendStatus);
-		MessageContainer messageContainer = new MessageContainer(messageCounter.getAndIncrement(), messagePojo,
-				sendStatus.status, progress -> {
-					if (progress < 0 || progress == 100) {
-						sendStatuses.remove(sendStatus);
-					}
-					if (progress < 0 && messagePojo.contentType == ContentType.TRANSIENT) {
-						listener.progressTransientReceived(messagePojo.trackingId, messagePojo.receiverUuid.split(";"),
-								progress);
-					}
-				});
-		stopMap.put(messageContainer.messageNumber, messageContainer);
-		messageQueue.put(messageContainer);
-		raiseSignal();
+	private void sendMessage(byte[] payload, String senderUuid, List<String> receiverUuids, ContentType contentType,
+			Long trackingId, Long useTimeout, InetAddress useLocalAddress, AttachmentPojo attachment) {
+		if (receiverUuids == null) {
+			// TODO
+			return;
+		}
+		Map<String, Set<String>> serverReceiversMap = new HashMap<String, Set<String>>();
+		Set<String> unsuccessfulUuids = new HashSet<String>();
+		for (String receiverUuid : receiverUuids) {
+			String serverUuid = userServerMap.get(receiverUuid);
+			if (serverUuid == null) {
+				unsuccessfulUuids.add(receiverUuid);
+			} else {
+				serverReceiversMap.putIfAbsent(serverUuid, new HashSet<String>());
+				serverReceiversMap.get(serverUuid).add(receiverUuid);
+			}
+		}
+		if (!unsuccessfulUuids.isEmpty() && contentType == ContentType.TRANSIENT) {
+			sendProgress(unsuccessfulUuids, -1, trackingId, contentType);
+		}
+		serverReceiversMap.forEach((serverUuid, uuidList) -> {
+			final SendStatus sendStatus = new SendStatus(trackingId, contentType);
+			sendStatus.receiverUuids.addAll(uuidList);
+			sendStatuses.add(sendStatus);
+			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, String.join(";", uuidList), contentType,
+					trackingId, useTimeout, useLocalAddress);
+			messagePojo.attachment = attachment;
+			int messageNumber = getMessageNumber(messagePojo);
+			MessageContainer messageContainer = new MessageContainer(messageNumber, messagePojo, sendStatus.status,
+					progress -> {
+						if (progress < 0 || progress == 100) {
+							sendStatuses.remove(sendStatus);
+						}
+						sendProgress(uuidList, progress, trackingId, contentType);
+					});
+			PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
+			if (messageQueue == null) {
+				messageQueue = new PriorityQueue<MessageContainer>(11, messageSorter);
+				serverMessageMap.put(serverUuid, messageQueue);
+			}
+			messageQueue.offer(messageContainer);
+			raiseSignal(serverUuid);
+		});
 	}
 
-	private void raiseSignal() {
+	private int getMessageNumber(MessagePojo messagePojo) {
 		try {
-			signalQueue.put(SIGNAL);
+			if (messagePojo.attachment == null || Files.size(messagePojo.attachment.path) == 0) {
+				return 0;
+			}
+		} catch (Exception e) {
+			return 0;
+		}
+		int messageNumber = messageCounter.getAndIncrement();
+		if (messageCounter.get() < 0) {
+			messageCounter.set(1);
+		}
+		return messageNumber;
+	}
+
+	private void sendProgress(Set<String> remoteUuids, int progress, Long trackingId, ContentType contentType) {
+
+		if (trackingId == null) {
+			return;
+		}
+
+		switch (contentType) {
+		case MESSAGE: {
+			listener.progressMessageReceived(trackingId, remoteUuids, progress);
+			break;
+		}
+		case TRANSIENT: {
+			if (progress < 0) {
+				listener.progressTransientReceived(trackingId, remoteUuids, progress);
+			}
+			break;
+		}
+		default: {
+			break;
+		}
+		}
+
+	}
+
+	private void raiseSignal(String serverUuid) {
+		try {
+			signalQueue.put(serverUuid);
 		} catch (InterruptedException e) {
 
 		}
@@ -315,18 +401,27 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				if (poller.pollin(pollDealer)) {
 
-					int messageNumber = Integer.parseInt(dealerSocket.recvStr(ZMQ.DONTWAIT));
+					String head = dealerSocket.recvStr(ZMQ.DONTWAIT);
 					if (!dealerSocket.hasReceiveMore()) {
-						raiseSignal();
+						String serverUuid = head;
+						raiseSignal(serverUuid);
 						continue;
 					}
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
-					taskQueue.execute(() -> messageReceiver.inFeed(messageNumber, receivedMessage));
-					dealerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // "Send more" signal
+					try {
+						int messageNumber = Integer.parseInt(head);
+						taskQueue.execute(() -> messageReceiver.inFeed(messageNumber, receivedMessage));
+					} catch (Exception e) {
+
+					}
 
 				} else if (poller.pollin(pollInproc)) {
 
-					inprocSocket.recv(ZMQ.DONTWAIT);
+					String serverUuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
+					if (messageQueue == null) {
+						continue;
+					}
 					MessageContainer messageContainer = messageQueue.poll();
 
 					if (messageContainer == null) {
@@ -335,19 +430,31 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 					Chunk chunk = messageContainer.next();
 					if (chunk == null) {
-						raiseSignal(); // Pass the signal
+						raiseSignal(serverUuid); // Pass the signal
 					} else {
-						dealerSocket.send(String.valueOf(messageContainer.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						int messageNumber = messageContainer.messageNumber;
+						if (!messageContainer.hasMore()) {
+							messageNumber = -messageNumber;
+						}
+						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
-						messageContainer.progressPercent.set(chunk.progress);
+						boolean progressUpdated = chunk.progress > messageContainer.progressPercent
+								.getAndSet(chunk.progress);
+						if (progressUpdated && messageContainer.progressConsumer != null) {
+							messageContainer.progressConsumer.accept(chunk.progress);
+						}
 					}
 
 					synchronized (serverConnected) {
 						if (serverConnected.get() && messageContainer.hasMore()) {
-							messageQueue.put(messageContainer);
+							messageQueue.offer(messageContainer);
 						} else {
-							closeMessage(messageContainer);
+							messageContainer.close();
 						}
+					}
+
+					if (messageQueue.isEmpty()) {
+						serverMessageMap.remove(serverUuid);
 					}
 
 				}
@@ -422,27 +529,15 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			case BCON:
 
-				listener.beaconReceived(DmsPackingFactory.unpack(payload, Beacon.class));
+				Beacon beacon = DmsPackingFactory.unpack(payload, Beacon.class);
+				userServerMap.put(beacon.uuid, beacon.serverUuid);
+				listener.beaconReceived(beacon);
 
 				break;
 
 			case IPS:
 
 				listener.remoteIpsReceived(DmsPackingFactory.unpack(payload, InetAddress[].class));
-
-				break;
-
-			case PROGRESS_MESSAGE:
-
-				listener.progressMessageReceived(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
-						DmsPackingFactory.unpack(payload, Integer.class));
-
-				break;
-
-			case PROGRESS_TRANSIENT:
-
-				listener.progressTransientReceived(messagePojo.trackingId, messagePojo.senderUuid.split(";"),
-						DmsPackingFactory.unpack(payload, Integer.class));
 
 				break;
 
@@ -456,6 +551,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			case UUID_DISCONNECTED:
 
+				userServerMap.remove(messagePojo.senderUuid);
+				// TODO: Cancel messages, update progresses
 				listener.userDisconnected(messagePojo.senderUuid);
 
 				break;
@@ -564,25 +661,27 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void stopSending(Integer messageNumber) {
-		MessageContainer messageContainer = stopMap.get(messageNumber);
-		if (messageContainer == null) {
-			return;
-		}
-		messageContainer.markAsDone();
+//		MessageContainer messageContainer = stopMap.get(messageNumber);
+//		if (messageContainer == null) {
+//			return;
+//		}
+//		messageContainer.markAsDone();
 	}
 
-	private void closeMessage(MessageContainer messageContainer) {
-		messageContainer.close();
-		stopMap.remove(messageContainer.messageNumber);
-	}
+//	private void closeMessage(MessageContainer messageContainer) {
+//		messageContainer.close();
+//		stopMap.remove(messageContainer.messageNumber);
+//	}
 
 	private void close() {
 		taskQueue.execute(() -> messageReceiver.interruptAll());
 		synchronized (serverConnected) {
-			MessageContainer messageContainer;
-			while ((messageContainer = messageQueue.poll()) != null) {
-				closeMessage(messageContainer);
-			}
+			serverMessageMap.forEach((serverUuid, messageQueue) -> {
+				while (!messageQueue.isEmpty()) {
+					messageQueue.poll().close();
+				}
+			});
+			serverMessageMap.clear();
 		}
 	}
 
@@ -602,8 +701,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	@Override
 	public void messageFailed(int messageNumber) {
-		sendMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE, null,
-				null, null));
+		sendMessage(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE, null, null, null, null);
 	}
 
 	@Override
@@ -616,9 +714,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final int messageNumber;
 		private final AtomicBoolean sendStatus;
 		private final Consumer<Integer> progressConsumer;
+		private final Long useTimeout;
 
 		private final ContentType contentType;
+		private final boolean bigFile;
+		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
+		private long checkInTime = startTime;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AtomicBoolean sendStatus,
 				Consumer<Integer> progressConsumer) {
@@ -626,12 +728,20 @@ public class DmsClient implements DmsMessageReceiverListener {
 			this.messageNumber = messageNumber;
 			this.sendStatus = sendStatus;
 			this.progressConsumer = progressConsumer;
+			this.useTimeout = messagePojo.useTimeout;
 			this.contentType = messagePojo.contentType;
+			this.bigFile = getFileSize() > CommonConstants.SMALL_FILE_LIMIT;
+		}
+
+		private boolean isSecondary() {
+			return bigFile && health.get();
 		}
 
 		@Override
 		public Chunk next() {
-			health.set((sendStatus == null || sendStatus.get()) && serverConnected.get());
+			checkInTime = System.currentTimeMillis();
+			health.set((sendStatus == null || sendStatus.get())
+					&& (useTimeout == null || checkInTime - startTime < useTimeout) && serverConnected.get());
 			return super.next();
 		}
 
@@ -667,6 +777,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final Long trackingId;
 		private final ContentType contentType;
 		private final AtomicBoolean status = new AtomicBoolean(true);
+		private final Set<String> receiverUuids = Collections.synchronizedSet(new HashSet<String>());
 
 		private SendStatus(Long trackingId, ContentType contentType) {
 			this.trackingId = trackingId;

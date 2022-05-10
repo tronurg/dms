@@ -30,6 +30,7 @@ import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
+import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.MessageContainerLocal;
 import com.ogya.dms.server.common.MessageSorterLocal;
 import com.ogya.dms.server.model.intf.ModelListener;
@@ -108,6 +109,7 @@ public class Model {
 			case BCON: {
 
 				Beacon beacon = DmsPackingFactory.unpack(messagePojo.payload, Beacon.class);
+				beacon.serverUuid = CommonConstants.DMS_UUID;
 
 				String userUuid = beacon.uuid;
 
@@ -339,6 +341,7 @@ public class Model {
 			case BCON: {
 
 				Beacon beacon = DmsPackingFactory.unpack(payload, Beacon.class);
+				beacon.serverUuid = dmsUuid;
 
 				String userUuid = beacon.uuid;
 
