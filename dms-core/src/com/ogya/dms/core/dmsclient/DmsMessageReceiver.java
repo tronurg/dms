@@ -1,4 +1,4 @@
-package com.ogya.dms.commons;
+package com.ogya.dms.core.dmsclient;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -7,6 +7,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 
@@ -155,13 +156,11 @@ public class DmsMessageReceiver {
 				}
 				return done;
 			} catch (Exception e) {
-				String receiverUuid = messagePojo.receiverUuid;
 				ContentType contentType = messagePojo.contentType;
 				Long trackingId = messagePojo.trackingId;
 				interrupt(false);
 				if (contentType == ContentType.UPLOAD) {
-					messagePojo = new MessagePojo(null, null, receiverUuid, ContentType.UPLOAD_FAILURE, trackingId,
-							null, null);
+					listener.downloadFailed(trackingId);
 				}
 			}
 
@@ -176,7 +175,7 @@ public class DmsMessageReceiver {
 			int progress = (int) (100.0 * currentSize / globalSize);
 			if (downloadProgress < progress) {
 				downloadProgress = progress;
-				listener.downloadProgress(messagePojo.receiverUuid, messagePojo.trackingId, downloadProgress);
+				listener.downloadProgress(messagePojo.trackingId, downloadProgress);
 			}
 		}
 
@@ -188,7 +187,9 @@ public class DmsMessageReceiver {
 
 		void messageFailed(int messageNumber);
 
-		void downloadProgress(String receiverUuid, Long trackingId, int progress);
+		void downloadProgress(Long trackingId, int progress);
+
+		void downloadFailed(Long trackingId);
 
 	}
 

@@ -2,6 +2,7 @@ package com.ogya.dms.commons.structures;
 
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -12,14 +13,14 @@ public class MessagePojo {
 	@JsonProperty("b")
 	public String senderUuid;
 	@JsonProperty("c")
-	public String receiverUuid;
+	public List<String> receiverUuids;
 	@JsonProperty("d")
-	public ContentType contentType;
+	public String receiverAddress;
 	@JsonProperty("e")
+	public ContentType contentType;
+	@JsonProperty("f")
 	public Long trackingId;
 
-	@JsonProperty("f")
-	public Long useTimeout;
 	@JsonProperty("g")
 	public InetAddress useLocalAddress;
 
@@ -30,15 +31,15 @@ public class MessagePojo {
 		super();
 	}
 
-	public MessagePojo(byte[] payload, String senderUuid, String receiverUuid, ContentType contentType, Long trackingId,
-			Long useTimeout, InetAddress useLocalAddress) {
+	public MessagePojo(byte[] payload, String senderUuid, List<String> receiverUuids, String receiverAddress,
+			ContentType contentType, Long trackingId, InetAddress useLocalAddress) {
 
 		this.payload = payload;
 		this.senderUuid = senderUuid;
-		this.receiverUuid = receiverUuid;
+		this.receiverUuids = receiverUuids;
+		this.receiverAddress = receiverAddress;
 		this.contentType = contentType;
 		this.trackingId = trackingId;
-		this.useTimeout = useTimeout;
 		this.useLocalAddress = useLocalAddress;
 
 	}

@@ -1,4 +1,4 @@
-package com.ogya.dms.commons;
+package com.ogya.dms.core.dmsclient;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
@@ -16,7 +17,6 @@ public class DmsMessageSender implements AutoCloseable {
 	private static final byte MESSAGE_POJO_PREFIX = -1;
 
 	private final MessagePojo messagePojo;
-	private final Direction direction;
 
 	protected final AtomicBoolean health = new AtomicBoolean(true);
 	private FileChannel fileChannel;
@@ -25,10 +25,9 @@ public class DmsMessageSender implements AutoCloseable {
 	private long minPosition = 0;
 	private long maxPosition = 0;
 
-	public DmsMessageSender(MessagePojo messagePojo, Direction direction) {
+	public DmsMessageSender(MessagePojo messagePojo) {
 
 		this.messagePojo = messagePojo;
-		this.direction = direction;
 
 		init();
 
@@ -63,21 +62,7 @@ public class DmsMessageSender implements AutoCloseable {
 	}
 
 	private ByteBuffer getPojoData() throws Exception {
-		byte[] data = null;
-		switch (direction) {
-		case CLIENT_TO_SERVER: {
-			data = DmsPackingFactory.pack(messagePojo);
-			break;
-		}
-		case SERVER_TO_SERVER: {
-			data = DmsPackingFactory.packServerToServer(messagePojo);
-			break;
-		}
-		case SERVER_TO_CLIENT: {
-			data = DmsPackingFactory.packServerToClient(messagePojo);
-			break;
-		}
-		}
+		byte[] data = DmsPackingFactory.pack(messagePojo);
 		pojoSize = data.length;
 		position = minPosition;
 		ByteBuffer dataBuffer = ByteBuffer.allocate(Byte.BYTES + pojoSize).put(MESSAGE_POJO_PREFIX).put(data);
@@ -92,24 +77,6 @@ public class DmsMessageSender implements AutoCloseable {
 		position = fileChannel.position();
 		dataBuffer.flip();
 		return dataBuffer;
-	}
-
-	private Chunk getEmptyChunk() {
-		return new Chunk(ByteBuffer.allocate(0), -1);
-	}
-
-	private Chunk getUploadFailureChunk() {
-		try {
-			MessagePojo messagePojo = new MessagePojo(null, null, this.messagePojo.receiverUuid,
-					ContentType.UPLOAD_FAILURE, this.messagePojo.trackingId, null, null);
-			byte[] data = DmsPackingFactory.pack(messagePojo);
-			ByteBuffer dataBuffer = ByteBuffer.allocate(Byte.BYTES + data.length).put(MESSAGE_POJO_PREFIX).put(data);
-			dataBuffer.flip();
-			return new Chunk(dataBuffer, -1);
-		} catch (Exception e) {
-
-		}
-		return getEmptyChunk();
 	}
 
 	public long getFileSize() {
@@ -140,11 +107,9 @@ public class DmsMessageSender implements AutoCloseable {
 			chunk = new Chunk(dataBuffer, progress);
 		} catch (Exception e) {
 			markAsDone();
-			if (messagePojo.contentType == ContentType.UPLOAD && healthy) {
-				chunk = getUploadFailureChunk();
-			} else if (position > Long.MIN_VALUE) {
+			if (position > Long.MIN_VALUE) {
 				// Already started sending, so send closure byte
-				chunk = getEmptyChunk();
+				chunk = new Chunk(ByteBuffer.allocate(0), -1);
 			}
 		}
 		return chunk;

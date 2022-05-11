@@ -1285,7 +1285,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void progressMessageReceived(final Long messageId, final Set<String> remoteUuids, final int progress) {
+	public void progressMessageReceived(final Long messageId, final List<String> remoteUuids, final int progress) {
 		// messageId = local database id of the message (not the message id, which is
 		// the local database id of the sender)
 
@@ -1359,7 +1359,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void progressTransientReceived(final Long trackingId, final Set<String> remoteUuids, final int progress) {
+	public void progressTransientReceived(final Long trackingId, final List<String> remoteUuids, final int progress) {
 
 		taskQueue.execute(() -> {
 
