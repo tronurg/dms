@@ -1,18 +1,12 @@
 package com.ogya.dms.server.model.intf;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
-
-import com.ogya.dms.commons.structures.MessagePojo;
+import java.util.List;
 
 public interface ModelListener {
 
-	void localMessageReady(String receiverUuid);
+	void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids);
 
-	void sendToRemoteServer(String dmsUuid, MessagePojo messagePojo, AtomicBoolean sendStatus,
-			Consumer<Integer> progressConsumer);
-
-	void sendToAllRemoteServers(MessagePojo messagePojo);
+	void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid);
 
 	void publishImmediately();
 

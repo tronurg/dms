@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -18,23 +17,12 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
-import com.ogya.dms.commons.DmsMessageReceiver;
-import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
-import com.ogya.dms.commons.DmsMessageSender.Chunk;
-import com.ogya.dms.commons.DmsPackingFactory;
-import com.ogya.dms.commons.structures.ContentType;
-import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
-import com.ogya.dms.server.common.MessageContainerBase;
-import com.ogya.dms.server.common.MessageContainerRemote;
-import com.ogya.dms.server.common.MessageSorter;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -71,11 +59,13 @@ public class TcpManager implements TcpServerListener {
 		}
 
 	};
-	private static final Comparator<MessageContainerBase> MESSAGE_SORTER = new MessageSorter();
+
+	private static final Chunk END_CHUNK = new Chunk(-1, null);
 
 	private final int serverPort;
 	private final int clientPortFrom;
 	private final int clientPortTo;
+	private final TcpManagerListener listener;
 
 	private final AtomicInteger nextPort = new AtomicInteger(0);
 
@@ -88,9 +78,6 @@ public class TcpManager implements TcpServerListener {
 			.synchronizedMap(new HashMap<InetAddress, Connection>());
 	private final Set<InetAddress> connectedAddresses = new HashSet<InetAddress>();
 
-	private final List<TcpManagerListener> listeners = Collections
-			.synchronizedList(new ArrayList<TcpManagerListener>());
-
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
 	public TcpManager(int serverPort, int clientPortFrom, int clientPortTo, TcpManagerListener listener) {
@@ -98,10 +85,9 @@ public class TcpManager implements TcpServerListener {
 		this.serverPort = serverPort;
 		this.clientPortFrom = clientPortFrom;
 		this.clientPortTo = clientPortTo;
+		this.listener = listener;
 
 		nextPort.set(clientPortFrom);
-
-		listeners.add(listener);
 
 		tcpServer = new TcpServer(serverPort);
 		tcpServer.addListener(this);
@@ -139,7 +125,7 @@ public class TcpManager implements TcpServerListener {
 							if (dmsServer == null)
 								return;
 
-							dmsServer.messageReceiver.inFeed(messageNumber, message);
+							listener.messageReceivedFromRemoteServer(messageNumber, message, dmsUuid);
 
 						});
 
@@ -150,7 +136,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							tcpConnection.sendMessage(-1, ByteBuffer.wrap(CommonConstants.DMS_UUID.getBytes(CHARSET)));
+							tcpConnection.sendMessage(-1, CommonConstants.DMS_UUID.getBytes(CHARSET));
 
 							Connection connection = new Connection(tcpConnection, -1);
 							connections.put(address, connection);
@@ -212,28 +198,19 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToServer(final String dmsUuid, final MessagePojo messagePojo, final AtomicBoolean sendStatus,
-			final Consumer<Integer> progressConsumer) {
+	public void sendMessageToServer(final int messageNumber, final byte[] data, final String dmsUuid) {
 
 		taskQueue.execute(() -> {
 
-			DmsServer dmsServer = dmsServers.get(dmsUuid);
-
-			if (dmsServer != null) {
-				dmsServer.queueMessage(messagePojo, sendStatus, progressConsumer);
-			} else if (progressConsumer != null) {
-				progressConsumer.accept(-1);
+			Chunk chunk = new Chunk(messageNumber, data);
+			if (dmsUuid == null) {
+				dmsServers.forEach((uuid, server) -> server.queueMessage(chunk));
 			}
-
-		});
-
-	}
-
-	public void sendMessageToAllServers(final MessagePojo messagePojo) {
-
-		taskQueue.execute(() -> {
-
-			dmsServers.forEach((dmsUuid, dmsServer) -> dmsServer.queueMessage(messagePojo, null, null));
+			DmsServer dmsServer = dmsServers.get(dmsUuid);
+			if (dmsServer == null) {
+				return;
+			}
+			dmsServer.queueMessage(chunk);
 
 		});
 
@@ -290,8 +267,7 @@ public class TcpManager implements TcpServerListener {
 		dmsServer.connections.forEach(connection -> localRemoteIps.put(connection.tcpConnection.getLocalAddress(),
 				connection.tcpConnection.getRemoteAddress()));
 
-		listeners.forEach(
-				listener -> listener.serverConnectionsUpdated(dmsServer.dmsUuid, localRemoteIps, beaconsRequested));
+		listener.serverConnectionsUpdated(dmsServer.dmsUuid, localRemoteIps, beaconsRequested);
 
 		if (dmsServer.connections.size() == 0) {
 			// remote server disconnected
@@ -383,7 +359,7 @@ public class TcpManager implements TcpServerListener {
 
 				}
 			} else {
-				connection.dmsServer.messageReceiver.inFeed(messageNumber, message);
+				listener.messageReceivedFromRemoteServer(messageNumber, message, connection.dmsServer.dmsUuid);
 			}
 
 		});
@@ -416,142 +392,65 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	private class DmsServer implements DmsMessageReceiverListener {
+	private class DmsServer {
 
 		private final String dmsUuid;
-		private final DmsMessageReceiver messageReceiver;
 		private final AtomicBoolean alive = new AtomicBoolean(true);
-		private final AtomicInteger messageCounter = new AtomicInteger(0);
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-		private final PriorityBlockingQueue<MessageContainerRemote> messageQueue = new PriorityBlockingQueue<MessageContainerRemote>(
-				11, MESSAGE_SORTER);
-		private final Map<Integer, MessageContainerRemote> stopMap = Collections
-				.synchronizedMap(new HashMap<Integer, MessageContainerRemote>());
+		private final LinkedBlockingQueue<Chunk> messageQueue = new LinkedBlockingQueue<Chunk>();
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
-			this.messageReceiver = new DmsMessageReceiver(this);
-			this.messageReceiver.setKeepDownloads(true);
 			new Thread(this::consumeMessageQueue).start();
 		}
 
 		private void consumeMessageQueue() {
 			while (alive.get() || !messageQueue.isEmpty()) {
 				try {
-					MessageContainerRemote messageContainer = messageQueue.take();
-					if (messageContainer.isEndMessage()) {
+					Chunk chunk = messageQueue.take();
+					if (chunk == END_CHUNK) {
 						alive.set(false);
 						continue;
 					}
 
-					Chunk chunk;
-					while ((chunk = messageContainer.next()) != null) {
-						if (messageContainer.isUpdateReady() && updateSendFunction(messageContainer)) {
-							// Update periodically
-							messageContainer.rewind(2);
-							continue;
-						}
-						if (messageContainer.sendFunction == null) {
-							messageContainer.markAsDone();
-							break;
-						}
-						boolean sent = messageContainer.sendFunction.apply(messageContainer.messageNumber,
-								chunk.dataBuffer);
-						if (sent) {
-							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
-									.getAndSet(chunk.progress);
-							if (progressUpdated && messageContainer.progressConsumer != null) {
-								messageContainer.progressConsumer.accept(chunk.progress);
-							}
-						} else {
-							messageContainer.rewind(); // Update on the next turn
-						}
-						if (messageContainer.isSecondary() && messageContainer.hasMore() && !messageQueue.isEmpty()) {
-							messageQueue.put(messageContainer);
-							break;
-						}
+					boolean sent = connections.get(0).tcpConnection.sendMessage(chunk.messageNumber, chunk.data);
+					if (sent) {
+						// TODO
 					}
+					// TODO
 
-					if (!messageContainer.hasMore()) {
-						closeMessage(messageContainer);
-					}
 				} catch (InterruptedException e) {
 
 				}
 			}
 		}
 
-		private void queueMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
-				Consumer<Integer> progressConsumer) {
-			if (!alive.get()) {
-				if (progressConsumer != null) {
-					progressConsumer.accept(-1);
-				}
-				return;
-			}
-			MessageContainerRemote messageContainer = new MessageContainerRemote(messageCounter.getAndIncrement(),
-					messagePojo, sendStatus, progressConsumer);
-			updateSendFunction(messageContainer);
-			stopMap.put(messageContainer.messageNumber, messageContainer);
-			messageQueue.put(messageContainer);
-		}
+		private void queueMessage(Chunk chunk) {
+			try {
+				messageQueue.put(chunk);
+			} catch (InterruptedException e) {
 
-		private boolean updateSendFunction(MessageContainerRemote messageContainer) {
-			BiFunction<Integer, ByteBuffer, Boolean> sendFunction = null;
-			synchronized (connections) {
-				connections.sort(CONNECTION_SORTER);
-				for (Connection connection : connections) {
-					if (messageContainer.useLocalAddress == null
-							|| messageContainer.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())) {
-						sendFunction = connection.tcpConnection::sendMessage;
-						break;
-					}
-				}
 			}
-			return messageContainer.updateSendFunction(sendFunction);
-		}
-
-		private void closeMessage(MessageContainerRemote messageContainer) {
-			messageContainer.close();
-			stopMap.remove(messageContainer.messageNumber);
-		}
-
-		private void stopSending(Integer messageNumber) {
-			MessageContainerRemote messageContainer = stopMap.get(messageNumber);
-			if (messageContainer == null) {
-				return;
-			}
-			messageContainer.markAsDone();
 		}
 
 		private void close() {
-			messageReceiver.interruptAll();
-			messageQueue.put(MessageContainerRemote.getEndMessage());
-		}
+			try {
+				messageQueue.put(END_CHUNK);
+			} catch (InterruptedException e) {
 
-		@Override
-		public void messageReceived(final MessagePojo messagePojo) {
-			if (messagePojo.contentType == ContentType.SEND_NOMORE) {
-				try {
-					Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
-					stopSending(messageNumber);
-				} catch (Exception e) {
-
-				}
-				return;
 			}
-			listeners.forEach(listener -> listener.messageReceivedFromRemoteServer(messagePojo, dmsUuid));
 		}
 
-		@Override
-		public void messageFailed(int messageNumber) {
-			queueMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE,
-					null, null, null), null, null);
-		}
+	}
 
-		@Override
-		public void downloadProgress(final String receiverUuid, final Long trackingId, final int progress) {
-			listeners.forEach(listener -> listener.downloadProgress(receiverUuid, trackingId, progress));
+	private static class Chunk {
+
+		private final int messageNumber;
+		private final byte[] data;
+
+		private Chunk(int messageNumber, byte[] data) {
+			this.messageNumber = messageNumber;
+			this.data = data;
 		}
 
 	}

@@ -3,22 +3,19 @@ package com.ogya.dms.server.control;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
-import com.ogya.dms.commons.DmsMessageSender.Chunk;
-import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.MessageContainerLocal;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
@@ -30,6 +27,7 @@ import com.ogya.dms.server.model.intf.ModelListener;
 public class Control implements TcpManagerListener, ModelListener {
 
 	private static final String DMS_UUID = CommonConstants.DMS_UUID;
+	private static final byte[] SIGNAL = new byte[0];
 
 	private static final int routerPort = CommonConstants.INTERCOM_PORT;
 	private static final String multicastGroup = CommonConstants.MULTICAST_IP;
@@ -47,7 +45,8 @@ public class Control implements TcpManagerListener, ModelListener {
 			this::receiveUdpMessage);
 	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 	private final ZContext context = new ZContext();
-	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
+	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
+	private final LinkedBlockingQueue<Chunk> messageQueue = new LinkedBlockingQueue<Chunk>();
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final Object publishSyncObj = new Object();
 
@@ -153,57 +152,26 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
 					int messageNumber = Integer.parseInt(routerSocket.recvStr(ZMQ.DONTWAIT));
-					if (!routerSocket.hasReceiveMore()) {
-						taskQueue.execute(() -> sendMore(userUuid));
-						continue;
-					}
 					byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
 					taskQueue.execute(() -> model.localMessageReceived(messageNumber, data, userUuid));
-					try {
-						routerSocket.send(userUuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-						routerSocket.send(String.valueOf(0), ZMQ.DONTWAIT); // "Send more" signal
-					} catch (ZMQException e) {
-
-					}
 
 				} else if (poller.pollin(pollInproc)) {
 
-					final String uuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
-					MessageContainerLocal messageContainer = model.getNextMessage(uuid);
+					inprocSocket.recv(ZMQ.DONTWAIT);
+					Chunk chunk = messageQueue.poll();
 
-					if (messageContainer == null) {
+					if (chunk == null) {
 						continue;
 					}
 
-					boolean disconnected = false;
-					Chunk chunk = messageContainer.next();
-					if (chunk == null) {
-						taskQueue.execute(() -> sendMore(uuid)); // Pass the signal
-					} else {
+					for (String uuid : chunk.receiverUuids) {
 						try {
 							routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-							routerSocket.send(String.valueOf(messageContainer.messageNumber),
-									ZMQ.SNDMORE | ZMQ.DONTWAIT);
-							routerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
-							boolean progressUpdated = chunk.progress > messageContainer.progressPercent
-									.getAndSet(chunk.progress);
-							if (progressUpdated && messageContainer.progressConsumer != null) {
-								messageContainer.progressConsumer.accept(chunk.progress);
-							}
+							routerSocket.send(String.valueOf(chunk.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+							routerSocket.send(chunk.data, ZMQ.DONTWAIT);
 						} catch (ZMQException e) {
-							disconnected = true;
-							messageContainer.markAsDone();
+							model.localUuidDisconnected(uuid);
 						}
-					}
-
-					if (messageContainer.hasMore()) {
-						model.queueMessage(uuid, messageContainer);
-					} else {
-						model.closeMessage(uuid, messageContainer);
-					}
-
-					if (disconnected) {
-						model.localUuidDisconnected(uuid);
 					}
 
 				}
@@ -272,14 +240,6 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	}
 
-	private void sendMore(String receiverUuid) {
-		try {
-			signalQueue.put(receiverUuid);
-		} catch (InterruptedException e) {
-
-		}
-	}
-
 	@Override
 	public void serverConnectionsUpdated(final String dmsUuid, final Map<InetAddress, InetAddress> localRemoteIps,
 			final boolean beaconsRequested) {
@@ -289,37 +249,25 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void messageReceivedFromRemoteServer(final MessagePojo messagePojo, final String dmsUuid) {
+	public void messageReceivedFromRemoteServer(final int messageNumber, final byte[] data, final String dmsUuid) {
 
-		taskQueue.execute(() -> model.remoteMessageReceived(messagePojo, dmsUuid));
-
-	}
-
-	@Override
-	public void downloadProgress(final String receiverUuid, final Long trackingId, final int progress) {
-
-		taskQueue.execute(() -> model.remoteDownloadProgressReceived(receiverUuid, trackingId, progress));
+		taskQueue.execute(() -> model.remoteMessageReceived(messageNumber, data, dmsUuid));
 
 	}
 
 	@Override
-	public void localMessageReady(String receiverUuid) {
-		sendMore(receiverUuid);
+	public void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids) {
+		try {
+			messageQueue.put(new Chunk(messageNumber, data, receiverUuids));
+			signalQueue.put(SIGNAL);
+		} catch (InterruptedException e) {
+
+		}
 	}
 
 	@Override
-	public void sendToRemoteServer(String dmsUuid, MessagePojo messagePojo, AtomicBoolean sendStatus,
-			Consumer<Integer> progressConsumer) {
-
-		tcpManager.sendMessageToServer(dmsUuid, messagePojo, sendStatus, progressConsumer);
-
-	}
-
-	@Override
-	public void sendToAllRemoteServers(MessagePojo messagePojo) {
-
-		tcpManager.sendMessageToAllServers(messagePojo);
-
+	public void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid) {
+		tcpManager.sendMessageToServer(messageNumber, data, dmsUuid);
 	}
 
 	@Override
@@ -329,6 +277,20 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			publishSyncObj.notify();
 
+		}
+
+	}
+
+	private class Chunk {
+
+		private final int messageNumber;
+		private final byte[] data;
+		private final List<String> receiverUuids = new ArrayList<String>();
+
+		private Chunk(int messageNumber, byte[] data, List<String> receiverUuids) {
+			this.messageNumber = messageNumber;
+			this.data = data;
+			this.receiverUuids.addAll(receiverUuids);
 		}
 
 	}

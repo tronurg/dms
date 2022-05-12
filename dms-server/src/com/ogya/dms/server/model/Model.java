@@ -19,20 +19,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
-import com.ogya.dms.commons.DmsMessageReceiver;
-import com.ogya.dms.commons.DmsMessageReceiver.DmsMessageReceiverListener;
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.MessageContainerLocal;
-import com.ogya.dms.server.common.MessageSorterLocal;
 import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
@@ -48,10 +41,10 @@ public class Model {
 	private final Map<String, LocalUser> mappedUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, DmsServer> remoteServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 
-	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
-
 	private final Set<InetAddress> remoteIps = Collections.synchronizedSet(new LinkedHashSet<InetAddress>());
 	private final Set<InetAddress> remoteAddresses = new HashSet<InetAddress>();
+
+	private final AtomicInteger messageCounter = new AtomicInteger(1);
 
 	public Model(ModelListener listener) {
 		this.listener = listener;
@@ -163,51 +156,9 @@ public class Model {
 
 			}
 
-			case CANCEL_MESSAGE: {
-
-				sendStatuses.forEach(sendStatus -> {
-					if (Objects.equals(sendStatus.trackingId, messagePojo.trackingId)
-							&& sendStatus.contentType == ContentType.MESSAGE
-							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
-						sendStatus.status.set(false);
-					}
-				});
-
-				break;
-
-			}
-
-			case CANCEL_TRANSIENT: {
-
-				sendStatuses.forEach(sendStatus -> {
-					if (Objects.equals(sendStatus.trackingId, messagePojo.trackingId)
-							&& sendStatus.contentType == ContentType.TRANSIENT
-							&& Objects.equals(sendStatus.senderUuid, messagePojo.senderUuid)) {
-						sendStatus.status.set(false);
-					}
-				});
-
-				break;
-
-			}
-
-			case CANCEL_UPLOAD: {
-
-				sendStatuses.forEach(sendStatus -> {
-					if (Objects.equals(sendStatus.trackingId, messagePojo.trackingId)
-							&& sendStatus.contentType == ContentType.UPLOAD
-							&& sendStatus.receiverUuids.contains(messagePojo.receiverUuid)) {
-						sendStatus.status.set(false);
-					}
-				});
-
-				break;
-
-			}
-
 			default: {
 
-				if (messagePojo.receiverUuid == null)
+				if (messagePojo.receiverUuids == null)
 					break;
 
 				final LocalUser sender = localUsers.get(messagePojo.senderUuid);
@@ -314,7 +265,7 @@ public class Model {
 
 	}
 
-	public void remoteMessageReceived(MessagePojo messagePojo, String dmsUuid) {
+	public void remoteMessageReceived(int messageNumber, byte[] data, String dmsUuid) {
 
 		try {
 
@@ -425,32 +376,6 @@ public class Model {
 
 	}
 
-	public void localDownloadProgressReceived(String receiverUuid, Long trackingId, int progress) {
-
-		for (String uuid : receiverUuid.split(";")) {
-			LocalUser localUser = localUsers.get(uuid);
-			if (localUser == null) {
-				continue;
-			}
-			localUser.sendMessage(new MessagePojo(DmsPackingFactory.pack(progress), null, null,
-					ContentType.PROGRESS_DOWNLOAD, trackingId, null, null), null, null);
-		}
-
-	}
-
-	public void remoteDownloadProgressReceived(String receiverUuid, Long trackingId, int progress) {
-
-		for (String receiverMapId : receiverUuid.split(";")) {
-			LocalUser localUser = mappedUsers.get(receiverMapId);
-			if (localUser == null) {
-				continue;
-			}
-			localUser.sendMessage(new MessagePojo(DmsPackingFactory.pack(progress), null, null,
-					ContentType.PROGRESS_DOWNLOAD, trackingId, null, null), null, null);
-		}
-
-	}
-
 	public void testAllLocalUsers() {
 
 		localUsers.forEach((localUuid, localUser) -> localUser.sendMessage(TEST, null, null));
@@ -507,35 +432,6 @@ public class Model {
 				null, null);
 
 		listener.sendToAllRemoteServers(remoteMessagePojo);
-
-	}
-
-	private void sendProgress(String senderUuid, Integer progress, LocalUser receiverUser, Long trackingId,
-			ContentType contentType) {
-
-		if (receiverUser == null) {
-			return;
-		}
-
-		switch (contentType) {
-		case MESSAGE: {
-			MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress), senderUuid, null,
-					ContentType.PROGRESS_MESSAGE, trackingId, null, null);
-			receiverUser.sendMessage(progressMessagePojo, null, null);
-			break;
-		}
-		case TRANSIENT: {
-			if (progress < 0) {
-				MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(progress), senderUuid, null,
-						ContentType.PROGRESS_TRANSIENT, trackingId, null, null);
-				receiverUser.sendMessage(progressMessagePojo, null, null);
-			}
-			break;
-		}
-		default: {
-			break;
-		}
-		}
 
 	}
 
@@ -786,32 +682,6 @@ public class Model {
 		}
 	}
 
-	public MessageContainerLocal getNextMessage(String uuid) {
-		LocalUser user = localUsers.get(uuid);
-		if (user == null) {
-			return null;
-		}
-		return user.getNextMessage();
-	}
-
-	public void queueMessage(String uuid, MessageContainerLocal messageContainer) {
-		LocalUser user = localUsers.get(uuid);
-		if (user == null) {
-			messageContainer.close();
-			return;
-		}
-		user.queueMessage(messageContainer);
-	}
-
-	public void closeMessage(String uuid, MessageContainerLocal messageContainer) {
-		LocalUser user = localUsers.get(uuid);
-		if (user == null) {
-			messageContainer.close();
-			return;
-		}
-		user.closeMessage(messageContainer);
-	}
-
 	private abstract class User {
 
 		protected final Beacon beacon;
@@ -827,20 +697,11 @@ public class Model {
 
 	}
 
-	private class LocalUser extends User implements DmsMessageReceiverListener {
-
-		private final DmsMessageReceiver messageReceiver;
-		private final AtomicInteger messageCounter = new AtomicInteger(0);
-		private final PriorityBlockingQueue<MessageContainerLocal> messageQueue = new PriorityBlockingQueue<MessageContainerLocal>(
-				11, new MessageSorterLocal());
-		private final Map<Integer, MessageContainerLocal> stopMap = Collections
-				.synchronizedMap(new HashMap<Integer, MessageContainerLocal>());
+	private class LocalUser extends User {
 
 		private LocalUser(String userUuid, String mapId) {
 
 			super(userUuid, mapId);
-
-			this.messageReceiver = new DmsMessageReceiver(this);
 
 			try {
 
@@ -860,69 +721,6 @@ public class Model {
 
 			}
 
-		}
-
-		private void sendMessage(MessagePojo messagePojo, AtomicBoolean sendStatus,
-				Consumer<Integer> progressConsumer) {
-			MessageContainerLocal messageContainer = new MessageContainerLocal(messageCounter.getAndIncrement(),
-					messagePojo, sendStatus, progressConsumer);
-			stopMap.put(messageContainer.messageNumber, messageContainer);
-			queueMessage(messageContainer);
-			listener.localMessageReady(beacon.uuid);
-		}
-
-		private void queueMessage(MessageContainerLocal messageContainer) {
-			messageQueue.put(messageContainer);
-		}
-
-		private void closeMessage(MessageContainerLocal messageContainer) {
-			messageContainer.close();
-			stopMap.remove(messageContainer.messageNumber);
-		}
-
-		private MessageContainerLocal getNextMessage() {
-			return messageQueue.poll();
-		}
-
-		private void stopSending(Integer messageNumber) {
-			MessageContainerLocal messageContainer = stopMap.get(messageNumber);
-			if (messageContainer == null) {
-				return;
-			}
-			messageContainer.markAsDone();
-		}
-
-		private void close() {
-			messageReceiver.interruptAll();
-			MessageContainerLocal messageContainer;
-			while ((messageContainer = messageQueue.poll()) != null) {
-				closeMessage(messageContainer);
-			}
-		}
-
-		@Override
-		public void messageReceived(MessagePojo messagePojo) {
-			if (messagePojo.contentType == ContentType.SEND_NOMORE) {
-				try {
-					Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
-					stopSending(messageNumber);
-				} catch (Exception e) {
-
-				}
-				return;
-			}
-			localMessageReceived(messagePojo);
-		}
-
-		@Override
-		public void messageFailed(int messageNumber) {
-			sendMessage(new MessagePojo(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE,
-					null, null, null), null, null);
-		}
-
-		@Override
-		public void downloadProgress(String receiverUuid, Long trackingId, int progress) {
-			localDownloadProgressReceived(receiverUuid, trackingId, progress);
 		}
 
 	}
@@ -954,24 +752,6 @@ public class Model {
 		private DmsServer(String dmsUuid) {
 
 			this.dmsUuid = dmsUuid;
-
-		}
-
-	}
-
-	private class SendStatus {
-
-		private final Long trackingId;
-		private final ContentType contentType;
-		private final String senderUuid;
-		private final AtomicBoolean status = new AtomicBoolean(true);
-		private final Set<String> receiverUuids = Collections.synchronizedSet(new HashSet<String>());
-
-		private SendStatus(Long trackingId, ContentType contentType, String senderUuid) {
-
-			this.trackingId = trackingId;
-			this.contentType = contentType;
-			this.senderUuid = senderUuid;
 
 		}
 
