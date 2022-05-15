@@ -44,6 +44,8 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsClient implements DmsMessageReceiverListener {
 
+	private static final String LOCAL_SERVER = "";
+
 	private final String uuid;
 
 	private final ZContext context = new ZContext();
@@ -276,8 +278,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private void sendMessage(byte[] payload, String senderUuid, List<String> receiverUuids, ContentType contentType,
 			Long trackingId, Long useTimeout, InetAddress useLocalAddress, AttachmentPojo attachment) {
 		if (receiverUuids == null) {
-			// Message destined to the server
-			String serverUuid = "";
+			// Message destined to the local server
+			String serverUuid = LOCAL_SERVER;
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, serverUuid, contentType, null, null);
 			MessageContainer messageContainer = new MessageContainer(messagePojo, useTimeout, null, null);
 			PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);

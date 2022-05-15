@@ -205,6 +205,7 @@ public class TcpManager implements TcpServerListener {
 			Chunk chunk = new Chunk(messageNumber, data);
 			if (dmsUuid == null) {
 				dmsServers.forEach((uuid, server) -> server.queueMessage(chunk));
+				return;
 			}
 			DmsServer dmsServer = dmsServers.get(dmsUuid);
 			if (dmsServer == null) {

@@ -30,15 +30,15 @@ import com.ogya.dms.server.model.intf.ModelListener;
 
 public class Model {
 
-	private static final MessagePojo TEST = new MessagePojo();
+	private static final byte[] TEST_DATA = new byte[0];
 	private static final AtomicInteger MAP_ID = new AtomicInteger(0);
 
 	private final ModelListener listener;
 
 	private final Map<String, LocalUser> localUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, RemoteUser> remoteUsers = Collections.synchronizedMap(new HashMap<String, RemoteUser>());
-
-	private final Map<String, LocalUser> mappedUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
+	private final Map<String, LocalUser> localMappedUsers = Collections
+			.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, DmsServer> remoteServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 
 	private final Set<InetAddress> remoteIps = Collections.synchronizedSet(new LinkedHashSet<InetAddress>());
@@ -86,14 +86,26 @@ public class Model {
 		if (localUser == null) {
 			localUser = new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()));
 			localUsers.put(userUuid, localUser);
-			mappedUsers.put(localUser.mapId, localUser);
+			localMappedUsers.put(localUser.mapId, localUser);
 		}
 
-		localUser.messageReceiver.inFeed(messageNumber, data);
+		localUser.messageReceived(messageNumber, data);
 
 	}
 
-	private void localMessageReceived(final MessagePojo messagePojo) {
+	public void remoteMessageReceived(int messageNumber, byte[] data, String dmsUuid) {
+
+		DmsServer remoteServer = remoteServers.get(dmsUuid);
+		if (remoteServer == null) {
+			remoteServer = new DmsServer(dmsUuid);
+			remoteServers.put(dmsUuid, remoteServer);
+		}
+
+		remoteServer.messageReceived(messageNumber, data);
+
+	}
+
+	private void localMessageReceived(final int messageNumber, final MessagePojo messagePojo) {
 
 		try {
 
@@ -118,8 +130,9 @@ public class Model {
 
 				sendBeaconToLocalUsers(localUser.beacon);
 
-				sendMessageToRemoteServers(new MessagePojo(messagePojo.payload, localUser.mapId,
-						messagePojo.receiverUuid, messagePojo.contentType, null, null, null));
+				sendRemoteMessageToAll(messageNumber,
+						DmsPackingFactory.packServerToServer(new MessagePojo(messagePojo.payload, localUser.mapId, null,
+								null, messagePojo.contentType, null, null)));
 
 				break;
 
@@ -158,209 +171,27 @@ public class Model {
 
 			default: {
 
-				if (messagePojo.receiverUuids == null)
+				if (messagePojo.receiverAddress == null || messagePojo.receiverUuids == null) {
 					break;
-
-				final LocalUser sender = localUsers.get(messagePojo.senderUuid);
-				final Path attachment = messagePojo.getAttachmentLink();
-
-				// This piece of code is disabled and commented out on purpose to remind that
-				// in some cases, like conveying a status report, the sender is virtually set to
-				// represent some remote users, which naturally do not appear on local users
-				// list
-//				if (sender == null)
-//					break;
-
-				String[] receiverUuids = messagePojo.receiverUuid.split(";");
-
-				LocalUser localUser;
-				RemoteUser remoteUser;
-
-				List<LocalUser> localReceivers = new ArrayList<LocalUser>();
-				Map<String, Set<String>> remoteServerReceiverUuids = new HashMap<String, Set<String>>();
-				List<String> unsuccessfulUuids = new ArrayList<String>();
-
-				for (String receiverUuid : receiverUuids) {
-					if ((localUser = localUsers.get(receiverUuid)) != null) {
-						localReceivers.add(localUser);
-					} else if ((remoteUser = remoteUsers.get(receiverUuid)) != null) {
-						remoteServerReceiverUuids.putIfAbsent(remoteUser.dmsServer.dmsUuid, new HashSet<String>());
-						remoteServerReceiverUuids.get(remoteUser.dmsServer.dmsUuid).add(receiverUuid);
-					} else {
-						unsuccessfulUuids.add(receiverUuid);
-					}
 				}
 
-				final AtomicInteger partySize = new AtomicInteger(
-						localReceivers.size() + remoteServerReceiverUuids.size());
+				LocalUser sender = localUsers.get(messagePojo.senderUuid);
 
-				if (partySize.get() == 0) {
-					deleteFile(attachment);
-				}
-
-				if (messagePojo.contentType == ContentType.TRANSIENT && !unsuccessfulUuids.isEmpty()
-						&& sender != null) {
-					MessagePojo progressMessagePojo = new MessagePojo(DmsPackingFactory.pack(-1),
-							String.join(";", unsuccessfulUuids), null, ContentType.PROGRESS_TRANSIENT,
-							messagePojo.trackingId, null, null);
-					sender.sendMessage(progressMessagePojo, null, null);
-				}
-
-				localReceivers.forEach(user -> {
-					final String uuid = user.beacon.uuid;
-					final SendStatus sendStatus = new SendStatus(messagePojo.trackingId, messagePojo.contentType,
-							messagePojo.senderUuid);
-					sendStatus.receiverUuids.add(uuid);
-					sendStatuses.add(sendStatus);
-					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
-							messagePojo.contentType, messagePojo.trackingId, messagePojo.useTimeout,
-							messagePojo.useLocalAddress);
-					localMessagePojo.attachment = messagePojo.attachment;
-					user.sendMessage(localMessagePojo, sendStatus.status, progress -> {
-						if (progress < 0 || progress == 100) {
-							sendStatuses.remove(sendStatus);
-							if (partySize.decrementAndGet() == 0) {
-								deleteFile(attachment);
-							}
+				if (CommonConstants.DMS_UUID.equals(messagePojo.receiverAddress)) {
+					sendLocalMessage(messageNumber, DmsPackingFactory.packServerToClient(messagePojo),
+							messagePojo.receiverUuids);
+				} else {
+					messagePojo.senderUuid = sender == null ? messagePojo.senderUuid : sender.mapId;
+					messagePojo.receiverUuids.replaceAll(uuid -> {
+						RemoteUser remoteUser = remoteUsers.get(uuid);
+						if (remoteUser == null) {
+							return uuid;
 						}
-						sendProgress(uuid, progress, sender, messagePojo.trackingId, messagePojo.contentType);
+						return remoteUser.mapId;
 					});
-				});
-
-				remoteServerReceiverUuids.forEach((dmsUuid, uuidList) -> {
-					final SendStatus sendStatus = new SendStatus(messagePojo.trackingId, messagePojo.contentType,
-							messagePojo.senderUuid);
-					sendStatus.receiverUuids.addAll(uuidList);
-					sendStatuses.add(sendStatus);
-					String senderMapId = sender == null ? messagePojo.senderUuid : sender.mapId;
-					List<String> receiverMapIdList = new ArrayList<String>();
-					uuidList.forEach(uuid -> receiverMapIdList.add(remoteUsers.get(uuid).mapId));
-					MessagePojo remoteMessagePojo = new MessagePojo(messagePojo.payload, senderMapId,
-							String.join(";", receiverMapIdList), messagePojo.contentType, messagePojo.trackingId,
-							messagePojo.useTimeout, messagePojo.useLocalAddress);
-					remoteMessagePojo.attachment = messagePojo.attachment;
-					listener.sendToRemoteServer(dmsUuid, remoteMessagePojo, sendStatus.status, progress -> {
-						if (progress < 0 || progress == 100) {
-							sendStatuses.remove(sendStatus);
-							if (partySize.decrementAndGet() == 0) {
-								deleteFile(attachment);
-							}
-						}
-						sendProgress(String.join(";", uuidList), progress, sender, messagePojo.trackingId,
-								messagePojo.contentType);
-					});
-				});
-
-				break;
-
-			}
-
-			}
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
-
-	}
-
-	public void remoteMessageReceived(int messageNumber, byte[] data, String dmsUuid) {
-
-		try {
-
-			byte[] payload = messagePojo.payload;
-
-			List<String> receiverUuids = new ArrayList<String>();
-
-			DmsServer remoteServer = remoteServers.get(dmsUuid);
-
-			if (!(messagePojo.contentType == ContentType.BCON || remoteServer == null)) {
-				User remoteUser = remoteServer.mappedUsers.get(messagePojo.senderUuid);
-				String senderUuid = remoteUser == null ? messagePojo.senderUuid : remoteUser.beacon.uuid;
-				messagePojo.senderUuid = senderUuid;
-				if (messagePojo.receiverUuid != null) {
-					for (String receiverMapId : messagePojo.receiverUuid.split(";")) {
-						User localUser = mappedUsers.get(receiverMapId);
-						receiverUuids.add(localUser == null ? receiverMapId : localUser.beacon.uuid);
-					}
+					sendRemoteMessage(messageNumber, DmsPackingFactory.packServerToServer(messagePojo),
+							messagePojo.receiverAddress);
 				}
-			}
-
-			switch (messagePojo.contentType) {
-
-			case BCON: {
-
-				Beacon beacon = DmsPackingFactory.unpack(payload, Beacon.class);
-				beacon.serverUuid = dmsUuid;
-
-				String userUuid = beacon.uuid;
-
-				if (userUuid == null)
-					break;
-
-				String mapId = messagePojo.senderUuid;
-
-				remoteServers.putIfAbsent(dmsUuid, new DmsServer(dmsUuid));
-				remoteUsers.putIfAbsent(userUuid, new RemoteUser(userUuid, mapId, remoteServers.get(dmsUuid)));
-				remoteServers.get(dmsUuid).mappedUsers.putIfAbsent(mapId, remoteUsers.get(userUuid));
-
-				copyBeacon(beacon, remoteUsers.get(userUuid).beacon);
-
-				sendBeaconToLocalUsers(remoteUsers.get(userUuid).beacon);
-
-				break;
-
-			}
-
-			case UUID_DISCONNECTED: {
-
-				String uuid = messagePojo.senderUuid;
-
-				User remoteUser = remoteUsers.get(uuid);
-
-				DmsServer dmsServer = remoteServers.get(dmsUuid);
-
-				if (dmsServer != null)
-					dmsServer.mappedUsers.remove(remoteUser.mapId);
-
-				remoteUserDisconnected(remoteUser);
-
-				break;
-
-			}
-
-			default: {
-
-				final Path attachment = messagePojo.getAttachmentLink();
-				List<LocalUser> localReceivers = new ArrayList<LocalUser>();
-
-				for (String receiverUuid : receiverUuids) {
-					LocalUser localUser = localUsers.get(receiverUuid);
-					if (localUser == null) {
-						continue;
-					}
-					localReceivers.add(localUser);
-				}
-
-				final AtomicInteger partySize = new AtomicInteger(localReceivers.size());
-
-				if (partySize.get() == 0) {
-					deleteFile(attachment);
-				}
-
-				localReceivers.forEach(user -> {
-					MessagePojo localMessagePojo = new MessagePojo(messagePojo.payload, messagePojo.senderUuid, null,
-							messagePojo.contentType, messagePojo.trackingId, null, null);
-					localMessagePojo.attachment = messagePojo.attachment;
-					user.sendMessage(localMessagePojo, null, progress -> {
-						if (progress < 0 || progress == 100) {
-							if (partySize.decrementAndGet() == 0) {
-								deleteFile(attachment);
-							}
-						}
-					});
-				});
 
 				break;
 
@@ -378,7 +209,7 @@ public class Model {
 
 	public void testAllLocalUsers() {
 
-		localUsers.forEach((localUuid, localUser) -> localUser.sendMessage(TEST, null, null));
+		sendLocalMessageToAll(0, TEST_DATA);
 
 	}
 
@@ -403,7 +234,7 @@ public class Model {
 		if (beaconsRequested)
 			sendAllBeaconsToRemoteServer(dmsUuid);
 
-		dmsServer.mappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
+		dmsServer.remoteMappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
 
 	}
 
@@ -414,24 +245,14 @@ public class Model {
 		if (user == null)
 			return;
 
-		mappedUsers.remove(user.mapId);
-		user.close();
+		localMappedUsers.remove(user.mapId);
 
-		sendStatuses.forEach(sendStatus -> {
-			if (Objects.equals(uuid, sendStatus.senderUuid)
-					|| (sendStatus.receiverUuids.remove(uuid) && sendStatus.receiverUuids.isEmpty())) {
-				sendStatus.status.set(false);
-			}
-		});
+		MessagePojo messagePojo = new MessagePojo(null, uuid, null, null, ContentType.UUID_DISCONNECTED, null, null);
+		sendLocalMessageToAll(0, DmsPackingFactory.packServerToClient(messagePojo));
 
-		MessagePojo messagePojo = new MessagePojo(null, uuid, null, ContentType.UUID_DISCONNECTED, null, null, null);
-
-		localUsers.forEach((localUuid, localUser) -> localUser.sendMessage(messagePojo, null, null));
-
-		MessagePojo remoteMessagePojo = new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null,
+		MessagePojo remoteMessagePojo = new MessagePojo(null, user.mapId, null, null, ContentType.UUID_DISCONNECTED,
 				null, null);
-
-		listener.sendToAllRemoteServers(remoteMessagePojo);
+		sendRemoteMessageToAll(0, DmsPackingFactory.packServerToServer(remoteMessagePojo));
 
 	}
 
@@ -442,7 +263,7 @@ public class Model {
 		if (dmsServer == null)
 			return;
 
-		dmsServer.mappedUsers.forEach((mapId, user) -> remoteUserDisconnected(user));
+		dmsServer.remoteMappedUsers.forEach((mapId, user) -> remoteUserDisconnected(user));
 
 	}
 
@@ -453,18 +274,11 @@ public class Model {
 
 		String userUuid = user.beacon.uuid;
 
-		sendStatuses.forEach(sendStatus -> {
-			if (sendStatus.receiverUuids.remove(userUuid) && sendStatus.receiverUuids.isEmpty()) {
-				sendStatus.status.set(false);
-			}
-		});
-
-		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null,
-				null);
-
 		remoteUsers.remove(userUuid);
 
-		localUsers.forEach((localUuid, localUser) -> localUser.sendMessage(messagePojo, null, null));
+		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, null, ContentType.UUID_DISCONNECTED, null,
+				null);
+		sendLocalMessageToAll(0, DmsPackingFactory.packServerToClient(messagePojo));
 
 	}
 
@@ -478,24 +292,15 @@ public class Model {
 
 	private void sendBeaconToLocalUsers(Beacon beacon) {
 
-		MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packServerToClient(beacon), null, null,
-				ContentType.BCON, null, null, null);
-
-		localUsers.forEach((localUuid, localUser) -> {
-			if (Objects.equals(beacon.uuid, localUuid)) {
-				return;
-			}
-			localUser.sendMessage(beaconPojo, null, null);
-		});
+		MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packServerToClient(beacon), null, null, null,
+				ContentType.BCON, null, null);
+		List<String> receiverUuids = new ArrayList<String>(localUsers.keySet());
+		receiverUuids.remove(beacon.uuid);
+		sendLocalMessage(0, DmsPackingFactory.packServerToClient(beaconPojo), receiverUuids);
 
 	}
 
 	private void sendAllBeaconsToLocalUser(final String receiverUuid) {
-
-		LocalUser localUser = localUsers.get(receiverUuid);
-		if (localUser == null) {
-			return;
-		}
 
 		localUsers.forEach((uuid, user) -> {
 
@@ -503,26 +308,20 @@ public class Model {
 				return;
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packServerToClient(user.beacon), null, null,
-					ContentType.BCON, null, null, null);
-
-			localUser.sendMessage(beaconPojo, null, null);
+					null, ContentType.BCON, null, null);
+			sendLocalMessage(0, DmsPackingFactory.packServerToClient(beaconPojo),
+					Collections.singletonList(receiverUuid));
 
 		});
 
 		remoteUsers.forEach((uuid, user) -> {
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packServerToClient(user.beacon), null, null,
-					ContentType.BCON, null, null, null);
-
-			localUser.sendMessage(beaconPojo, null, null);
+					null, ContentType.BCON, null, null);
+			sendLocalMessage(0, DmsPackingFactory.packServerToClient(beaconPojo),
+					Collections.singletonList(receiverUuid));
 
 		});
-
-	}
-
-	private void sendMessageToRemoteServers(MessagePojo messagePojo) {
-
-		listener.sendToAllRemoteServers(messagePojo);
 
 	}
 
@@ -539,9 +338,8 @@ public class Model {
 				return;
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packServerToServer(user.beacon), user.mapId,
-					null, ContentType.BCON, null, null, null);
-
-			listener.sendToRemoteServer(dmsUuid, beaconPojo, null, null);
+					null, null, ContentType.BCON, null, null);
+			sendRemoteMessage(0, DmsPackingFactory.packServerToServer(beaconPojo), dmsUuid);
 
 		});
 
@@ -633,19 +431,17 @@ public class Model {
 			return;
 		}
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, ContentType.IPS, null,
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, null, ContentType.IPS,
 				null, null);
-
-		localUser.sendMessage(messagePojo, null, null);
+		sendLocalMessage(0, DmsPackingFactory.packServerToClient(messagePojo), Collections.singletonList(receiverUuid));
 
 	}
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, ContentType.IPS, null,
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, null, ContentType.IPS,
 				null, null);
-
-		localUsers.forEach((localUuid, localUser) -> localUser.sendMessage(messagePojo, null, null));
+		sendLocalMessageToAll(0, DmsPackingFactory.packServerToClient(messagePojo));
 
 	}
 
@@ -671,15 +467,31 @@ public class Model {
 
 	}
 
-	private void deleteFile(Path path) {
-		if (path == null) {
-			return;
+	private int mapMessageNumber(int messageNumber) {
+		if (messageNumber == 0) {
+			return 0;
 		}
-		try {
-			Files.deleteIfExists(path);
-		} catch (Exception e) {
-			path.toFile().deleteOnExit();
+		int mappedMessageNumber = messageCounter.getAndIncrement();
+		if (messageCounter.get() < 0) {
+			messageCounter.set(1);
 		}
+		return mappedMessageNumber;
+	}
+
+	private void sendLocalMessage(int messageNumber, byte[] data, List<String> receiverUuids) {
+		listener.sendToLocalUsers(messageNumber, data, receiverUuids);
+	}
+
+	private void sendLocalMessageToAll(int messageNumber, byte[] data) {
+		sendLocalMessage(messageNumber, data, new ArrayList<String>(localUsers.keySet()));
+	}
+
+	private void sendRemoteMessage(int messageNumber, byte[] data, String receiverAddress) {
+		listener.sendToRemoteServer(messageNumber, data, receiverAddress);
+	}
+
+	private void sendRemoteMessageToAll(int messageNumber, byte[] data) {
+		sendRemoteMessage(messageNumber, data, null);
 	}
 
 	private abstract class User {
@@ -698,6 +510,9 @@ public class Model {
 	}
 
 	private class LocalUser extends User {
+
+		private final Map<Integer, MessageInfo> messageMap = Collections
+				.synchronizedMap(new HashMap<Integer, MessageInfo>());
 
 		private LocalUser(String userUuid, String mapId) {
 
@@ -723,17 +538,41 @@ public class Model {
 
 		}
 
+		private void messageReceived(int messageNumber, byte[] data) {
+			int sign = Integer.signum(messageNumber);
+			int absMessageNumber = Math.abs(messageNumber);
+			MessageInfo messageInfo = messageMap.get(absMessageNumber);
+			if (messageInfo != null) {
+				if (CommonConstants.DMS_UUID.equals(messageInfo.receiverAddress)) {
+					sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids);
+				} else {
+					sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverAddress);
+				}
+				if (sign < 0) {
+					messageMap.remove(absMessageNumber);
+				}
+				return;
+			}
+			try {
+				MessagePojo messagePojo = DmsPackingFactory.unpack(data, MessagePojo.class);
+				int mappedMessageNumber = mapMessageNumber(absMessageNumber);
+				if (sign > 0) {
+					messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.receiverAddress,
+							messagePojo.receiverUuids));
+				}
+				localMessageReceived(sign * mappedMessageNumber, messagePojo);
+			} catch (Exception e) {
+
+			}
+		}
+
 	}
 
 	private class RemoteUser extends User {
 
-		private final DmsServer dmsServer;
-
 		private RemoteUser(String userUuid, String mapId, DmsServer dmsServer) {
 
 			super(userUuid, mapId);
-
-			this.dmsServer = dmsServer;
 
 			this.beacon.localRemoteServerIps = dmsServer.localRemoteIps;
 
@@ -744,15 +583,145 @@ public class Model {
 	private class DmsServer {
 
 		private final String dmsUuid;
-		private final Map<String, RemoteUser> mappedUsers = Collections
+		private final Map<String, RemoteUser> remoteMappedUsers = Collections
 				.synchronizedMap(new HashMap<String, RemoteUser>());
 		private final Map<InetAddress, InetAddress> localRemoteIps = Collections
 				.synchronizedMap(new HashMap<InetAddress, InetAddress>());
+
+		private final Map<Integer, MessageInfo> messageMap = Collections
+				.synchronizedMap(new HashMap<Integer, MessageInfo>());
 
 		private DmsServer(String dmsUuid) {
 
 			this.dmsUuid = dmsUuid;
 
+		}
+
+		private void messageReceived(int messageNumber, byte[] data) {
+			int sign = Integer.signum(messageNumber);
+			int absMessageNumber = Math.abs(messageNumber);
+			MessageInfo messageInfo = messageMap.get(absMessageNumber);
+			if (messageInfo != null) {
+				if (CommonConstants.DMS_UUID.equals(messageInfo.receiverAddress)) {
+					sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids);
+				} else {
+					sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverAddress);
+				}
+				if (sign < 0) {
+					messageMap.remove(absMessageNumber);
+				}
+				return;
+			}
+			try {
+				MessagePojo messagePojo = DmsPackingFactory.unpack(data, MessagePojo.class);
+				int mappedMessageNumber = mapMessageNumber(absMessageNumber);
+				if (sign > 0) {
+					messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.receiverAddress,
+							messagePojo.receiverUuids));
+				}
+				remoteMessageReceived(sign * mappedMessageNumber, messagePojo);
+			} catch (Exception e) {
+
+			}
+		}
+
+		private void remoteMessageReceived(final int messageNumber, final MessagePojo messagePojo) {
+
+			try {
+
+				String mapId = messagePojo.senderUuid;
+
+				RemoteUser sender = remoteMappedUsers.get(mapId);
+				if (sender != null) {
+					messagePojo.senderUuid = sender.beacon.uuid;
+				}
+
+				if (messagePojo.receiverUuids != null) {
+					messagePojo.receiverUuids.replaceAll(uuid -> {
+						User localUser = remoteMappedUsers.get(uuid);
+						if (localUser == null) {
+							return uuid;
+						}
+						return localUser.beacon.uuid;
+					});
+				}
+
+				switch (messagePojo.contentType) {
+
+				case BCON: {
+
+					Beacon beacon = DmsPackingFactory.unpack(messagePojo.payload, Beacon.class);
+					beacon.serverUuid = dmsUuid;
+
+					String userUuid = beacon.uuid;
+
+					if (userUuid == null)
+						break;
+
+					RemoteUser remoteUser = remoteUsers.get(userUuid);
+					if (remoteUser == null) {
+						remoteUser = new RemoteUser(userUuid, mapId, this);
+						remoteUsers.put(userUuid, remoteUser);
+						remoteMappedUsers.put(mapId, remoteUser);
+					}
+
+					copyBeacon(beacon, remoteUsers.get(userUuid).beacon);
+
+					sendBeaconToLocalUsers(remoteUsers.get(userUuid).beacon);
+
+					break;
+
+				}
+
+				case UUID_DISCONNECTED: {
+
+					String uuid = messagePojo.senderUuid;
+
+					User remoteUser = remoteUsers.get(uuid);
+
+					remoteMappedUsers.remove(remoteUser.mapId);
+
+					remoteUserDisconnected(remoteUser);
+
+					break;
+
+				}
+
+				default: {
+
+					if (messagePojo.receiverAddress == null || messagePojo.receiverUuids == null) {
+						break;
+					}
+
+					sendLocalMessage(messageNumber, DmsPackingFactory.packServerToClient(messagePojo),
+							messagePojo.receiverUuids);
+
+					break;
+
+				}
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
+
+			}
+
+		}
+
+	}
+
+	private class MessageInfo {
+
+		private final int mappedMessageNumber;
+		private final String receiverAddress;
+		private final List<String> receiverUuids;
+
+		public MessageInfo(int mappedMessageNumber, String receiverAddress, List<String> receiverUuids) {
+			this.mappedMessageNumber = mappedMessageNumber;
+			this.receiverAddress = receiverAddress;
+			this.receiverUuids = receiverUuids;
 		}
 
 	}
