@@ -28,6 +28,8 @@ public class DmsMessageReceiver {
 
 	public void inFeed(int messageNumber, byte[] data) {
 
+		messageNumber = Math.abs(messageNumber);
+
 		if (data.length == 0) {
 			interrupt(messageNumber, keepDownloads);
 			return;

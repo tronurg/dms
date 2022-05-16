@@ -279,16 +279,15 @@ public class DmsClient implements DmsMessageReceiverListener {
 			Long trackingId, Long useTimeout, InetAddress useLocalAddress, AttachmentPojo attachment) {
 		if (receiverUuids == null) {
 			// Message destined to the local server
-			String serverUuid = LOCAL_SERVER;
-			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, serverUuid, contentType, null, null);
+			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, null, contentType, null, null);
 			MessageContainer messageContainer = new MessageContainer(messagePojo, useTimeout, null, null);
-			PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
+			PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(LOCAL_SERVER);
 			if (messageQueue == null) {
 				messageQueue = new PriorityQueue<MessageContainer>(11, messageSorter);
-				serverMessageMap.put(serverUuid, messageQueue);
+				serverMessageMap.put(LOCAL_SERVER, messageQueue);
 			}
 			messageQueue.offer(messageContainer);
-			raiseSignal(serverUuid);
+			raiseSignal(LOCAL_SERVER);
 			return;
 		}
 		Map<String, List<String>> serverReceiversMap = new HashMap<String, List<String>>();

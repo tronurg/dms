@@ -16,6 +16,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
 import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.common.SendMorePojo;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
@@ -174,6 +175,11 @@ public class Control implements TcpManagerListener, ModelListener {
 						}
 					}
 
+					if (chunk.sendMore != null) {
+						routerSocket.send(chunk.sendMore.localUser, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						routerSocket.send(chunk.sendMore.targetServer, ZMQ.DONTWAIT);
+					}
+
 				}
 
 			}
@@ -256,9 +262,9 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids) {
+	public void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
 		try {
-			messageQueue.put(new Chunk(messageNumber, data, receiverUuids));
+			messageQueue.put(new Chunk(messageNumber, data, receiverUuids, sendMore));
 			signalQueue.put(SIGNAL);
 		} catch (InterruptedException e) {
 
@@ -286,11 +292,13 @@ public class Control implements TcpManagerListener, ModelListener {
 		private final int messageNumber;
 		private final byte[] data;
 		private final List<String> receiverUuids = new ArrayList<String>();
+		private final SendMorePojo sendMore;
 
-		private Chunk(int messageNumber, byte[] data, List<String> receiverUuids) {
+		private Chunk(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
 			this.messageNumber = messageNumber;
 			this.data = data;
 			this.receiverUuids.addAll(receiverUuids);
+			this.sendMore = sendMore;
 		}
 
 	}

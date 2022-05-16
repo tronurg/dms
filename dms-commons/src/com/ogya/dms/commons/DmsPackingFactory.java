@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.ogya.dms.commons.structures.Beacon;
-import com.ogya.dms.commons.structures.MessagePojo;
 
 public class DmsPackingFactory {
 
@@ -25,11 +24,8 @@ public class DmsPackingFactory {
 			.setSerializationInclusion(Include.NON_NULL).setVisibility(PropertyAccessor.ALL, Visibility.NONE)
 			.setVisibility(PropertyAccessor.FIELD, Visibility.ANY);
 
-	private static ObjectMapper objectMapperServerToClient = objectMapper.copy().addMixIn(MessagePojo.class,
-			MessagePojoFromServerMixin.class);
-	private static ObjectMapper objectMapperServerToServer = objectMapper.copy()
-			.addMixIn(MessagePojo.class, MessagePojoFromServerMixin.class)
-			.addMixIn(Beacon.class, BeaconServerToServerMixin.class);
+	private static ObjectMapper objectMapperBeaconServerToServer = objectMapper.copy().addMixIn(Beacon.class,
+			BeaconServerToServerMixin.class);
 
 	public static byte[] pack(Object src) {
 
@@ -47,27 +43,11 @@ public class DmsPackingFactory {
 
 	}
 
-	public static byte[] packServerToClient(Object src) {
+	public static byte[] packBeaconServerToServer(Beacon src) {
 
 		try {
 
-			return objectMapperServerToClient.writeValueAsBytes(src);
-
-		} catch (Exception e) {
-
-			e.printStackTrace();
-
-		}
-
-		return null;
-
-	}
-
-	public static byte[] packServerToServer(Object src) {
-
-		try {
-
-			return objectMapperServerToServer.writeValueAsBytes(src);
+			return objectMapperBeaconServerToServer.writeValueAsBytes(src);
 
 		} catch (Exception e) {
 
@@ -111,15 +91,6 @@ public class DmsPackingFactory {
 		public Map<InetAddress, InetAddress> localRemoteServerIps;
 		@JsonIgnore
 		public String serverUuid;
-
-	}
-
-	private static abstract class MessagePojoFromServerMixin {
-
-		@JsonIgnore
-		public Long useTimeout;
-		@JsonIgnore
-		public InetAddress useLocalAddress;
 
 	}
 
