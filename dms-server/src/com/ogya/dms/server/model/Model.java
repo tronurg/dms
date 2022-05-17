@@ -178,14 +178,15 @@ public class Model {
 					break;
 				}
 
+				String receiverAddress = messagePojo.receiverAddress;
+				messagePojo.receiverAddress = null;
 				InetAddress useLocalAddress = messagePojo.useLocalAddress;
 				messagePojo.useLocalAddress = null;
 
-				LocalUser sender = localUsers.get(messagePojo.senderUuid);
-
-				if (CommonConstants.DMS_UUID.equals(messagePojo.receiverAddress)) {
+				if (CommonConstants.DMS_UUID.equals(receiverAddress)) {
 					sendLocalMessage(messageNumber, packMessagePojo(messagePojo), messagePojo.receiverUuids, sendMore);
 				} else {
+					LocalUser sender = localUsers.get(messagePojo.senderUuid);
 					messagePojo.senderUuid = sender == null ? messagePojo.senderUuid : sender.mapId;
 					messagePojo.receiverUuids.replaceAll(uuid -> {
 						RemoteUser remoteUser = remoteUsers.get(uuid);
@@ -194,7 +195,7 @@ public class Model {
 						}
 						return remoteUser.mapId;
 					});
-					sendRemoteMessage(messageNumber, packMessagePojo(messagePojo), messagePojo.receiverAddress);
+					sendRemoteMessage(messageNumber, packMessagePojo(messagePojo), receiverAddress);
 				}
 
 				break;
@@ -551,8 +552,7 @@ public class Model {
 			int sign = Integer.signum(messageNumber);
 			int absMessageNumber = Math.abs(messageNumber);
 			ByteBuffer messageBuffer = ByteBuffer.wrap(data);
-			byte position = messageBuffer.get();
-			if (position < 0) {
+			if (messageBuffer.hasRemaining() && messageBuffer.get() < 0) {
 				try {
 					MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
@@ -619,8 +619,7 @@ public class Model {
 			int sign = Integer.signum(messageNumber);
 			int absMessageNumber = Math.abs(messageNumber);
 			ByteBuffer messageBuffer = ByteBuffer.wrap(data);
-			byte position = messageBuffer.get();
-			if (position < 0) {
+			if (messageBuffer.hasRemaining() && messageBuffer.get() < 0) {
 				try {
 					MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
@@ -639,11 +638,7 @@ public class Model {
 				// TODO: Send nomore
 				return;
 			}
-			if (CommonConstants.DMS_UUID.equals(messageInfo.receiverAddress)) {
-				sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids, null);
-			} else {
-				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverAddress);
-			}
+			sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids, null);
 			if (sign < 0) {
 				messageMap.remove(absMessageNumber);
 			}
@@ -662,7 +657,7 @@ public class Model {
 
 				if (messagePojo.receiverUuids != null) {
 					messagePojo.receiverUuids.replaceAll(uuid -> {
-						User localUser = remoteMappedUsers.get(uuid);
+						User localUser = localMappedUsers.get(uuid);
 						if (localUser == null) {
 							return uuid;
 						}
@@ -689,9 +684,9 @@ public class Model {
 						remoteMappedUsers.put(mapId, remoteUser);
 					}
 
-					copyBeacon(beacon, remoteUsers.get(userUuid).beacon);
+					copyBeacon(beacon, remoteUser.beacon);
 
-					sendBeaconToLocalUsers(remoteUsers.get(userUuid).beacon);
+					sendBeaconToLocalUsers(remoteUser.beacon);
 
 					break;
 
@@ -713,7 +708,7 @@ public class Model {
 
 				default: {
 
-					if (messagePojo.receiverAddress == null || messagePojo.receiverUuids == null) {
+					if (messagePojo.receiverUuids == null) {
 						break;
 					}
 

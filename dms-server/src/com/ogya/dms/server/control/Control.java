@@ -176,8 +176,12 @@ public class Control implements TcpManagerListener, ModelListener {
 					}
 
 					if (chunk.sendMore != null) {
-						routerSocket.send(chunk.sendMore.localUser, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-						routerSocket.send(chunk.sendMore.targetServer, ZMQ.DONTWAIT);
+						try {
+							routerSocket.send(chunk.sendMore.localUser, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+							routerSocket.send(chunk.sendMore.targetServer, ZMQ.DONTWAIT);
+						} catch (ZMQException e) {
+							model.localUuidDisconnected(chunk.sendMore.localUser);
+						}
 					}
 
 				}

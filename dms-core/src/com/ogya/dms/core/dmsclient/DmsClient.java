@@ -12,10 +12,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -72,8 +72,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 	};
 	private final Map<String, String> userServerMap = Collections.synchronizedMap(new HashMap<String, String>());
-	private final Map<String, PriorityQueue<MessageContainer>> serverMessageMap = Collections
-			.synchronizedMap(new HashMap<String, PriorityQueue<MessageContainer>>());
+	private final Map<String, PriorityBlockingQueue<MessageContainer>> serverMessageMap = Collections
+			.synchronizedMap(new HashMap<String, PriorityBlockingQueue<MessageContainer>>());
 	private final DmsMessageReceiver messageReceiver;
 	private final AtomicInteger messageCounter = new AtomicInteger(1);
 	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
@@ -281,9 +281,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 			// Message destined to the local server
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, null, contentType, null, null);
 			MessageContainer messageContainer = new MessageContainer(messagePojo, useTimeout, null, null);
-			PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(LOCAL_SERVER);
+			PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(LOCAL_SERVER);
 			if (messageQueue == null) {
-				messageQueue = new PriorityQueue<MessageContainer>(11, messageSorter);
+				messageQueue = new PriorityBlockingQueue<MessageContainer>(11, messageSorter);
 				serverMessageMap.put(LOCAL_SERVER, messageQueue);
 			}
 			messageQueue.offer(messageContainer);
@@ -318,9 +318,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 						}
 						sendProgress(uuidList, progress, trackingId, contentType);
 					});
-			PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
+			PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
 			if (messageQueue == null) {
-				messageQueue = new PriorityQueue<MessageContainer>(11, messageSorter);
+				messageQueue = new PriorityBlockingQueue<MessageContainer>(11, messageSorter);
 				serverMessageMap.put(serverUuid, messageQueue);
 			}
 			messageQueue.offer(messageContainer);
@@ -416,7 +416,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				} else if (poller.pollin(pollInproc)) {
 
 					String serverUuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
-					PriorityQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
+					PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
 					if (messageQueue == null) {
 						continue;
 					}
