@@ -109,8 +109,7 @@ public class Model {
 
 	}
 
-	private void localMessageReceived(final int messageNumber, final MessagePojo messagePojo,
-			final SendMorePojo sendMore) {
+	private void localMessageReceived(int messageNumber, MessagePojo messagePojo, SendMorePojo sendMore) {
 
 		try {
 
@@ -251,6 +250,7 @@ public class Model {
 			return;
 
 		localMappedUsers.remove(user.mapId);
+		cleanMessagesToUuid(uuid);
 
 		MessagePojo messagePojo = new MessagePojo(null, uuid, null, null, ContentType.UUID_DISCONNECTED, null, null);
 		sendLocalMessageToAll(0, packMessagePojo(messagePojo));
@@ -278,13 +278,18 @@ public class Model {
 			return;
 
 		String userUuid = user.beacon.uuid;
-
 		remoteUsers.remove(userUuid);
+		cleanMessagesToUuid(userUuid);
 
 		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, null, ContentType.UUID_DISCONNECTED, null,
 				null);
 		sendLocalMessageToAll(0, packMessagePojo(messagePojo));
 
+	}
+
+	private void cleanMessagesToUuid(String uuid) {
+		localUsers.forEach((userUuid, user) -> user.cleanMessagesToUuid(uuid));
+		remoteServers.forEach((serverUuid, dmsServer) -> dmsServer.cleanMessagesToUuid(uuid));
 	}
 
 	public Set<InetAddress> getRemoteAddresses() {
@@ -559,18 +564,17 @@ public class Model {
 					SendMorePojo sendMore = null;
 					if (sign > 0) {
 						sendMore = new SendMorePojo(beacon.uuid, messagePojo.receiverAddress);
-						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber,
+						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
 								messagePojo.receiverAddress, messagePojo.receiverUuids, sendMore));
 					}
 					localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
 				} catch (Exception e) {
-
+					// TODO: Send nomore
 				}
 				return;
 			}
 			MessageInfo messageInfo = messageMap.get(absMessageNumber);
 			if (messageInfo == null) {
-				// TODO: Send nomore
 				return;
 			}
 			if (CommonConstants.DMS_UUID.equals(messageInfo.receiverAddress)) {
@@ -582,6 +586,11 @@ public class Model {
 			if (sign < 0) {
 				messageMap.remove(absMessageNumber);
 			}
+		}
+
+		private void cleanMessagesToUuid(String uuid) {
+			messageMap.forEach((messageNumber, messageInfo) -> messageInfo.receiverUuids.remove(uuid));
+			messageMap.entrySet().removeIf(e -> e.getValue().receiverUuids.isEmpty());
 		}
 
 	}
@@ -622,20 +631,20 @@ public class Model {
 			if (messageBuffer.hasRemaining() && messageBuffer.get() < 0) {
 				try {
 					MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
+					remapMessagePojo(messagePojo);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					if (sign > 0) {
-						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber,
+						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
 								messagePojo.receiverAddress, messagePojo.receiverUuids, null));
 					}
 					remoteMessageReceived(sign * mappedMessageNumber, messagePojo);
 				} catch (Exception e) {
-
+					// TODO: Send nomore
 				}
 				return;
 			}
 			MessageInfo messageInfo = messageMap.get(absMessageNumber);
 			if (messageInfo == null) {
-				// TODO: Send nomore
 				return;
 			}
 			sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids, null);
@@ -644,37 +653,46 @@ public class Model {
 			}
 		}
 
-		private void remoteMessageReceived(final int messageNumber, final MessagePojo messagePojo) {
+		private void remapMessagePojo(MessagePojo messagePojo) {
+
+			if (messagePojo.contentType == ContentType.BCON) {
+				return;
+			}
+
+			String mapId = messagePojo.senderUuid;
+
+			RemoteUser sender = remoteMappedUsers.get(mapId);
+			if (sender != null) {
+				messagePojo.senderUuid = sender.beacon.uuid;
+			}
+
+			if (messagePojo.receiverUuids != null) {
+				messagePojo.receiverUuids.replaceAll(uuid -> {
+					User localUser = localMappedUsers.get(uuid);
+					if (localUser == null) {
+						return uuid;
+					}
+					return localUser.beacon.uuid;
+				});
+			}
+
+		}
+
+		private void remoteMessageReceived(int messageNumber, MessagePojo messagePojo) {
 
 			try {
-
-				String mapId = messagePojo.senderUuid;
-
-				RemoteUser sender = remoteMappedUsers.get(mapId);
-				if (sender != null) {
-					messagePojo.senderUuid = sender.beacon.uuid;
-				}
-
-				if (messagePojo.receiverUuids != null) {
-					messagePojo.receiverUuids.replaceAll(uuid -> {
-						User localUser = localMappedUsers.get(uuid);
-						if (localUser == null) {
-							return uuid;
-						}
-						return localUser.beacon.uuid;
-					});
-				}
 
 				switch (messagePojo.contentType) {
 
 				case BCON: {
 
+					String mapId = messagePojo.senderUuid;
 					Beacon beacon = DmsPackingFactory.unpack(messagePojo.payload, Beacon.class);
-
 					String userUuid = beacon.uuid;
 
-					if (userUuid == null)
+					if (userUuid == null) {
 						break;
+					}
 
 					RemoteUser remoteUser = remoteUsers.get(userUuid);
 					if (remoteUser == null) {
@@ -695,11 +713,9 @@ public class Model {
 				case UUID_DISCONNECTED: {
 
 					String uuid = messagePojo.senderUuid;
-
 					User remoteUser = remoteUsers.get(uuid);
-
 					remoteMappedUsers.remove(remoteUser.mapId);
-
+					cleanMessagesFromUuid(uuid);
 					remoteUserDisconnected(remoteUser);
 
 					break;
@@ -728,18 +744,32 @@ public class Model {
 
 		}
 
+		private void cleanMessagesFromUuid(String uuid) {
+			if (uuid == null) {
+				return;
+			}
+			messageMap.entrySet().removeIf(e -> uuid.equals(e.getValue().senderUuid));
+		}
+
+		private void cleanMessagesToUuid(String uuid) {
+			messageMap.forEach((messageNumber, messageInfo) -> messageInfo.receiverUuids.remove(uuid));
+			messageMap.entrySet().removeIf(e -> e.getValue().receiverUuids.isEmpty());
+		}
+
 	}
 
 	private class MessageInfo {
 
 		private final int mappedMessageNumber;
+		private final String senderUuid;
 		private final String receiverAddress;
 		private final List<String> receiverUuids;
 		private final SendMorePojo sendMore;
 
-		public MessageInfo(int mappedMessageNumber, String receiverAddress, List<String> receiverUuids,
-				SendMorePojo sendMore) {
+		public MessageInfo(int mappedMessageNumber, String senderUuid, String receiverAddress,
+				List<String> receiverUuids, SendMorePojo sendMore) {
 			this.mappedMessageNumber = mappedMessageNumber;
+			this.senderUuid = senderUuid;
 			this.receiverAddress = receiverAddress;
 			this.receiverUuids = receiverUuids;
 			this.sendMore = sendMore;
