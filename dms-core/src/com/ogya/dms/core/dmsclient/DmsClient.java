@@ -1,7 +1,6 @@
 package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,19 +24,21 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 import com.ogya.dms.commons.DmsPackingFactory;
-import com.ogya.dms.commons.structures.AttachmentPojo;
 import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.core.common.CommonConstants;
+import com.ogya.dms.core.common.DmsMessageReceiver;
+import com.ogya.dms.core.common.DmsMessageReceiver.DmsMessageReceiverListener;
+import com.ogya.dms.core.common.DmsMessageSender;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
-import com.ogya.dms.core.dmsclient.DmsMessageReceiver.DmsMessageReceiverListener;
-import com.ogya.dms.core.dmsclient.DmsMessageSender.Chunk;
 import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
 import com.ogya.dms.core.factory.DmsFactory;
 import com.ogya.dms.core.intf.handles.FileHandle;
 import com.ogya.dms.core.intf.handles.impl.MessageHandleImpl;
+import com.ogya.dms.core.structures.AttachmentPojo;
+import com.ogya.dms.core.structures.Chunk;
 import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
@@ -75,7 +76,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final Map<String, PriorityBlockingQueue<MessageContainer>> serverMessageMap = Collections
 			.synchronizedMap(new HashMap<String, PriorityBlockingQueue<MessageContainer>>());
 	private final DmsMessageReceiver messageReceiver;
-	private final AtomicInteger messageCounter = new AtomicInteger(1);
+	private final AtomicInteger attachmentCounter = new AtomicInteger(1);
 	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
 //	private final Map<Integer, MessageContainer> stopMap = Collections
@@ -141,7 +142,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		AttachmentPojo attachment = null;
 		if (attachmentPath != null) {
-			attachment = new AttachmentPojo(attachmentPath);
+			attachment = new AttachmentPojo(attachmentPath, null);
 		}
 
 		sendMessage(DmsPackingFactory.pack(message), uuid, receiverUuids, ContentType.MESSAGE, messageId, null, null,
@@ -202,7 +203,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		if (fileHandle != null) {
 			Path attachmentPath = fileHandle.getPath();
 			if (attachmentPath != null) {
-				attachment = new AttachmentPojo(attachmentPath);
+				attachment = new AttachmentPojo(attachmentPath, null);
 			}
 		}
 
@@ -258,8 +259,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void uploadFile(Path path, String receiverUuid, Long trackingId, Long position) {
 
-		AttachmentPojo attachment = new AttachmentPojo(path);
-		attachment.position = position;
+		AttachmentPojo attachment = new AttachmentPojo(path, position);
 		sendMessage(DmsPackingFactory.pack(path.getFileName().toString()), uuid, Arrays.asList(receiverUuid),
 				ContentType.UPLOAD, trackingId, null, null, attachment);
 
@@ -276,11 +276,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void sendMessage(byte[] payload, String senderUuid, List<String> receiverUuids, ContentType contentType,
-			Long trackingId, Long useTimeout, InetAddress useLocalAddress, AttachmentPojo attachment) {
+			Long trackingId, Long useTimeout, InetAddress useLocalAddress, AttachmentPojo attachmentPojo) {
 		if (receiverUuids == null) {
 			// Message destined to the local server
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, null, contentType, null, null);
-			MessageContainer messageContainer = new MessageContainer(messagePojo, useTimeout, null, null);
+			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout, null,
+					null);
 			PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(LOCAL_SERVER);
 			if (messageQueue == null) {
 				messageQueue = new PriorityBlockingQueue<MessageContainer>(11, messageSorter);
@@ -310,9 +311,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 			sendStatuses.add(sendStatus);
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, serverUuid, contentType,
 					trackingId, useLocalAddress);
-			messagePojo.attachment = attachment;
-			MessageContainer messageContainer = new MessageContainer(messagePojo, useTimeout, sendStatus.status,
-					progress -> {
+			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout,
+					sendStatus.status, progress -> {
 						if (progress < 0 || progress == 100) {
 							sendStatuses.remove(sendStatus);
 						}
@@ -328,17 +328,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 		});
 	}
 
-	private int getMessageNumber(MessagePojo messagePojo) {
-		try {
-			if (messagePojo.attachment == null || Files.size(messagePojo.attachment.path) == 0) {
-				return 0;
-			}
-		} catch (Exception e) {
+	private int getMessageNumber(boolean messageOnly) {
+		if (messageOnly) {
 			return 0;
 		}
-		int messageNumber = messageCounter.getAndIncrement();
-		if (messageCounter.get() < 0) {
-			messageCounter.set(1);
+		int messageNumber = attachmentCounter.getAndIncrement();
+		if (attachmentCounter.get() < 0) {
+			attachmentCounter.set(1);
 		}
 		return messageNumber;
 	}
@@ -514,7 +510,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
-	private void processIncomingMessage(MessagePojo messagePojo) {
+	private void processIncomingMessage(MessagePojo messagePojo, Path attachment, boolean partial) {
 
 		try {
 
@@ -543,7 +539,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				Message message = DmsPackingFactory.unpack(payload, Message.class);
 				message.setMessageRefId(messagePojo.trackingId);
-				listener.messageReceived(message, messagePojo.getAttachmentLink(), messagePojo.senderUuid);
+				listener.messageReceived(message, attachment, messagePojo.senderUuid);
 
 				break;
 
@@ -591,7 +587,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			case TRANSIENT:
 
 				listener.transientMessageReceived(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
-						messagePojo.getAttachmentLink(), messagePojo.senderUuid, messagePojo.trackingId);
+						attachment, messagePojo.senderUuid, messagePojo.trackingId);
 
 				break;
 
@@ -629,8 +625,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			case UPLOAD:
 
-				listener.fileDownloaded(messagePojo.trackingId, messagePojo.getAttachmentLink(),
-						DmsPackingFactory.unpack(payload, String.class), messagePojo.isAttachmentPartial());
+				listener.fileDownloaded(messagePojo.trackingId, attachment,
+						DmsPackingFactory.unpack(payload, String.class), partial);
 
 				break;
 
@@ -672,7 +668,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	@Override
-	public void messageReceived(MessagePojo messagePojo) {
+	public void messageReceived(MessagePojo messagePojo, Path attachment, boolean partial) {
 		if (messagePojo.contentType == ContentType.SEND_NOMORE) {
 			try {
 				Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
@@ -682,7 +678,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			}
 			return;
 		}
-		processIncomingMessage(messagePojo);
+		processIncomingMessage(messagePojo, attachment, partial);
 	}
 
 	@Override
@@ -714,10 +710,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
 		private long checkInTime = startTime;
 
-		private MessageContainer(MessagePojo messagePojo, Long useTimeout, AtomicBoolean sendStatus,
-				Consumer<Integer> progressConsumer) {
-			super(messagePojo);
-			this.messageNumber = getMessageNumber(messagePojo);
+		private MessageContainer(MessagePojo messagePojo, AttachmentPojo attachmentPojo, Long useTimeout,
+				AtomicBoolean sendStatus, Consumer<Integer> progressConsumer) {
+			super(messagePojo, attachmentPojo);
+			this.messageNumber = getMessageNumber(attachmentPojo == null);
 			this.sendStatus = sendStatus;
 			this.progressConsumer = progressConsumer;
 			this.useTimeout = useTimeout;

@@ -1,7 +1,6 @@
 package com.ogya.dms.commons.structures;
 
 import java.net.InetAddress;
-import java.nio.file.Path;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -20,12 +19,11 @@ public class MessagePojo {
 	public ContentType contentType;
 	@JsonProperty("f")
 	public Long trackingId;
-
 	@JsonProperty("g")
-	public InetAddress useLocalAddress;
+	public Long globalSize;
 
 	@JsonProperty("h")
-	public AttachmentPojo attachment;
+	public InetAddress useLocalAddress;
 
 	public MessagePojo() {
 		super();
@@ -42,20 +40,6 @@ public class MessagePojo {
 		this.trackingId = trackingId;
 		this.useLocalAddress = useLocalAddress;
 
-	}
-
-	public Path getAttachmentLink() {
-		if (attachment != null) {
-			return attachment.path;
-		}
-		return null;
-	}
-
-	public boolean isAttachmentPartial() {
-		if (attachment == null) {
-			return false;
-		}
-		return Boolean.TRUE.equals(attachment.partial);
 	}
 
 }
