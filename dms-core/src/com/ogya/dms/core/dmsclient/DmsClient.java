@@ -92,7 +92,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 		this.listener = listener;
 
 		this.messageReceiver = new DmsMessageReceiver(this);
-		this.messageReceiver.setKeepDownloads(true);
 
 		start();
 
@@ -140,13 +139,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void sendMessage(Message message, Path attachmentPath, List<String> receiverUuids, Long messageId) {
 
-		AttachmentPojo attachment = null;
+		AttachmentPojo attachmentPojo = null;
 		if (attachmentPath != null) {
-			attachment = new AttachmentPojo(attachmentPath, null);
+			attachmentPojo = new AttachmentPojo(attachmentPath, null);
 		}
 
 		sendMessage(DmsPackingFactory.pack(message), uuid, receiverUuids, ContentType.MESSAGE, messageId, null, null,
-				attachment);
+				attachmentPojo);
 
 	}
 
@@ -198,17 +197,17 @@ public class DmsClient implements DmsMessageReceiverListener {
 	public void sendTransientMessage(MessageHandleImpl message, List<String> receiverUuids, Long trackingId,
 			Long useTimeout, InetAddress useLocalInterface) {
 
-		AttachmentPojo attachment = null;
+		AttachmentPojo attachmentPojo = null;
 		FileHandle fileHandle = message.getFileHandle();
 		if (fileHandle != null) {
 			Path attachmentPath = fileHandle.getPath();
 			if (attachmentPath != null) {
-				attachment = new AttachmentPojo(attachmentPath, null);
+				attachmentPojo = new AttachmentPojo(attachmentPath, null);
 			}
 		}
 
 		sendMessage(DmsPackingFactory.pack(message), uuid, receiverUuids, ContentType.TRANSIENT, trackingId, useTimeout,
-				useLocalInterface, attachment);
+				useLocalInterface, attachmentPojo);
 
 	}
 
@@ -259,9 +258,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void uploadFile(Path path, String receiverUuid, Long trackingId, Long position) {
 
-		AttachmentPojo attachment = new AttachmentPojo(path, position);
+		AttachmentPojo attachmentPojo = new AttachmentPojo(path, position);
 		sendMessage(DmsPackingFactory.pack(path.getFileName().toString()), uuid, Arrays.asList(receiverUuid),
-				ContentType.UPLOAD, trackingId, null, null, attachment);
+				ContentType.UPLOAD, trackingId, null, null, attachmentPojo);
 
 	}
 
@@ -424,19 +423,20 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 					Chunk chunk = messageContainer.next();
 					if (chunk == null) {
-						raiseSignal(serverUuid); // Pass the signal
-					} else {
-						int messageNumber = messageContainer.messageNumber;
-						if (!messageContainer.hasMore()) {
-							messageNumber = -messageNumber;
-						}
-						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
-						dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
-						boolean progressUpdated = chunk.progress > messageContainer.progressPercent
-								.getAndSet(chunk.progress);
-						if (progressUpdated && messageContainer.progressConsumer != null) {
-							messageContainer.progressConsumer.accept(chunk.progress);
-						}
+						messageContainer.close();
+						continue;
+					}
+
+					int messageNumber = messageContainer.messageNumber;
+					if (!messageContainer.hasMore()) {
+						messageNumber = -messageNumber;
+					}
+					dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+					dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
+					boolean progressUpdated = chunk.progress > messageContainer.progressPercent
+							.getAndSet(chunk.progress);
+					if (progressUpdated && messageContainer.progressConsumer != null) {
+						messageContainer.progressConsumer.accept(chunk.progress);
 					}
 
 					synchronized (serverConnected) {
@@ -547,6 +547,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				userServerMap.remove(messagePojo.senderUuid);
 				// TODO: Cancel messages, update progresses
+				taskQueue.execute(() -> messageReceiver.closeMessagesFrom(messagePojo.senderUuid));
 				listener.userDisconnected(messagePojo.senderUuid);
 
 				break;
@@ -656,7 +657,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 //	}
 
 	private void close() {
-		taskQueue.execute(() -> messageReceiver.interruptAll());
+		taskQueue.execute(() -> messageReceiver.close());
 		synchronized (serverConnected) {
 			serverMessageMap.forEach((serverUuid, messageQueue) -> {
 				while (!messageQueue.isEmpty()) {

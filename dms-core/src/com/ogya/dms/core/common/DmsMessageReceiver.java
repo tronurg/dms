@@ -5,7 +5,9 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.ogya.dms.commons.DmsPackingFactory;
@@ -17,14 +19,8 @@ public class DmsMessageReceiver {
 	private final DmsMessageReceiverListener listener;
 	private final Map<Integer, AttachmentReceiver> attachmentReceivers = new HashMap<Integer, AttachmentReceiver>();
 
-	private boolean keepDownloads;
-
 	public DmsMessageReceiver(DmsMessageReceiverListener listener) {
 		this.listener = listener;
-	}
-
-	public void setKeepDownloads(boolean keepDownloads) {
-		this.keepDownloads = keepDownloads;
 	}
 
 	public void inFeed(int messageNumber, byte[] data) {
@@ -33,57 +29,94 @@ public class DmsMessageReceiver {
 		int absMessageNumber = Math.abs(messageNumber);
 		ByteBuffer messageBuffer = ByteBuffer.wrap(data);
 
+		try {
+			inFeed(sign, absMessageNumber, messageBuffer);
+		} catch (Exception e) {
+			destroy(absMessageNumber);
+			listener.messageFailed(absMessageNumber);
+		}
+
+	}
+
+	public void closeMessagesFrom(String senderUuid) {
+		if (senderUuid == null) {
+			return;
+		}
+		List<Integer> messageNumbersToRemove = new ArrayList<Integer>();
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> {
+			MessagePojo messagePojo = attachmentReceiver.messagePojo;
+			if (messagePojo == null || !senderUuid.equals(messagePojo.senderUuid)) {
+				return;
+			}
+			messageNumbersToRemove.add(messageNumber);
+			if (messagePojo.contentType == ContentType.UPLOAD) {
+				attachmentReceiver.interrupt();
+				listener.messageReceived(messagePojo, attachmentReceiver.path, true);
+			} else {
+				attachmentReceiver.destroy();
+			}
+		});
+		messageNumbersToRemove.forEach(messageNumber -> attachmentReceivers.remove(messageNumber));
+	}
+
+	public void close() {
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> {
+			MessagePojo messagePojo = attachmentReceiver.messagePojo;
+			if (messagePojo != null && messagePojo.contentType == ContentType.UPLOAD) {
+				attachmentReceiver.interrupt();
+				listener.messageReceived(messagePojo, attachmentReceiver.path, true);
+			} else {
+				attachmentReceiver.destroy();
+			}
+		});
+		attachmentReceivers.clear();
+	}
+
+	private void inFeed(int sign, int absMessageNumber, ByteBuffer messageBuffer) throws Exception {
+
 		if (!messageBuffer.hasRemaining()) {
-			interrupt(absMessageNumber, keepDownloads);
+			destroy(absMessageNumber);
 			return;
 		}
 
 		if (messageBuffer.get() < 0) {
-			interrupt(absMessageNumber, false);
-			try {
-				MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
-				if (sign == 0) {
-					listener.messageReceived(messagePojo, null, false);
-				} else if (sign < 0) {
-					Path path = Files.createTempFile("dms", null);
-					listener.messageReceived(messagePojo, path, false);
-				} else {
-					attachmentReceivers.put(absMessageNumber, new AttachmentReceiver(messagePojo));
-				}
-			} catch (Exception e) {
-
+			destroy(absMessageNumber);
+			MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
+			if (sign == 0) {
+				listener.messageReceived(messagePojo, null, false);
+			} else if (sign < 0) {
+				Path path = Files.createTempFile("dms", null);
+				listener.messageReceived(messagePojo, path, false);
+			} else {
+				attachmentReceivers.put(absMessageNumber, new AttachmentReceiver(messagePojo));
 			}
 			return;
 		}
 
 		AttachmentReceiver attachmentReceiver = attachmentReceivers.get(absMessageNumber);
 		if (attachmentReceiver == null) {
-			listener.messageFailed(absMessageNumber);
 			return;
 		}
 		messageBuffer.rewind();
-		boolean attachmentReady = attachmentReceiver.dataReceived(messageBuffer, sign < 0);
-		if (attachmentReady) {
-			attachmentReceivers.remove(absMessageNumber);
-			MessagePojo messagePojo = attachmentReceiver.messagePojo;
-			if (messagePojo != null) {
-				listener.messageReceived(messagePojo, attachmentReceiver.path, attachmentReceiver.partial);
-			}
+		boolean done = sign < 0;
+		attachmentReceiver.dataReceived(messageBuffer, done);
+		if (!done) {
+			return;
+		}
+		attachmentReceivers.remove(absMessageNumber);
+		MessagePojo messagePojo = attachmentReceiver.messagePojo;
+		if (messagePojo != null) {
+			listener.messageReceived(messagePojo, attachmentReceiver.path, false);
 		}
 
 	}
 
-	private void interrupt(int messageNumber, boolean keepDownload) {
+	private void destroy(int messageNumber) {
 		AttachmentReceiver attachmentReceiver = attachmentReceivers.remove(messageNumber);
 		if (attachmentReceiver == null) {
 			return;
 		}
-		attachmentReceiver.interrupt(keepDownload);
-	}
-
-	public void interruptAll() {
-		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> attachmentReceiver.interrupt(keepDownloads));
-		attachmentReceivers.clear();
+		attachmentReceiver.destroy();
 	}
 
 	private final class AttachmentReceiver {
@@ -93,12 +126,10 @@ public class DmsMessageReceiver {
 		private Path path;
 		private FileChannel fileChannel;
 
-		private boolean interrupted = false;
 		private long currentSize = 0;
 		private int downloadProgress = -1;
-		private boolean partial = false;
 
-		private AttachmentReceiver(MessagePojo messagePojo) {
+		private AttachmentReceiver(MessagePojo messagePojo) throws Exception {
 			try {
 				this.messagePojo = messagePojo;
 				this.globalSize = messagePojo.globalSize;
@@ -106,13 +137,12 @@ public class DmsMessageReceiver {
 				fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
 				checkDownloadProgress();
 			} catch (Exception e) {
-				interrupt(false);
+				destroy();
+				throw e;
 			}
 		}
 
-		private void interrupt(boolean keepDownload) {
-
-			interrupted = true;
+		private void interrupt() {
 
 			try {
 				fileChannel.close();
@@ -120,14 +150,11 @@ public class DmsMessageReceiver {
 
 			}
 
-			if (messagePojo == null || path == null) {
-				return;
-			}
+		}
 
-			if (keepDownload && messagePojo.contentType == ContentType.UPLOAD) {
-				partial = true;
-				return;
-			}
+		private void destroy() {
+
+			interrupt();
 
 			try {
 				Files.deleteIfExists(path);
@@ -135,37 +162,30 @@ public class DmsMessageReceiver {
 
 			}
 
+			if (messagePojo == null) {
+				return;
+			}
+
+			ContentType contentType = messagePojo.contentType;
+			Long trackingId = messagePojo.trackingId;
 			messagePojo = null;
+			if (contentType == ContentType.UPLOAD) {
+				listener.downloadFailed(trackingId);
+			}
 
 		}
 
-		private boolean dataReceived(ByteBuffer dataBuffer, boolean done) {
+		private void dataReceived(ByteBuffer dataBuffer, boolean done) throws Exception {
 
-			if (interrupted) {
-				return true;
+			long position = dataBuffer.getLong();
+			int dataLength = dataBuffer.remaining();
+			currentSize = position + dataLength;
+			fileChannel.write(dataBuffer, position);
+			checkDownloadProgress();
+			if (done) {
+				fileChannel.force(true);
+				fileChannel.close();
 			}
-
-			try {
-				long position = dataBuffer.getLong();
-				int dataLength = dataBuffer.remaining();
-				currentSize = position + dataLength;
-				fileChannel.write(dataBuffer, position);
-				checkDownloadProgress();
-				if (done) {
-					fileChannel.force(true);
-					fileChannel.close();
-				}
-				return done;
-			} catch (Exception e) {
-				ContentType contentType = messagePojo.contentType;
-				Long trackingId = messagePojo.trackingId;
-				interrupt(false);
-				if (contentType == ContentType.UPLOAD) {
-					listener.downloadFailed(trackingId);
-				}
-			}
-
-			return true;
 
 		}
 
