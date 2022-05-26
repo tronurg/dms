@@ -63,7 +63,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		@Override
 		public int compare(MessageContainer m1, MessageContainer m2) {
 			int result = Boolean.compare(m1.isSecondary(), m2.isSecondary());
-			if (result == 0) {
+			if (result == 0 && m1.isSecondary()) {
 				result = Long.compare(m1.checkInTime, m2.checkInTime);
 			}
 			if (result == 0) {
@@ -79,8 +79,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final AtomicInteger attachmentCounter = new AtomicInteger(1);
 	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
 	private final List<SendStatus> sendStatuses = Collections.synchronizedList(new ArrayList<SendStatus>());
-//	private final Map<Integer, MessageContainer> stopMap = Collections
-//			.synchronizedMap(new HashMap<Integer, MessageContainer>());
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -492,14 +490,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 				switch (event.getEvent()) {
 
 				case ZMQ.EVENT_HANDSHAKE_PROTOCOL:
-					serverConnected.set(true);
-					listener.serverConnStatusUpdated(serverConnected.get());
+					updateServerConnStatus(true);
 					break;
 
 				case ZMQ.EVENT_DISCONNECTED:
-					serverConnected.set(false);
-					close();
-					listener.serverConnStatusUpdated(serverConnected.get());
+					updateServerConnStatus(false);
 					break;
 
 				}
@@ -510,7 +505,38 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
-	private void processIncomingMessage(MessagePojo messagePojo, Path attachment, boolean partial) {
+	private void stopSending(Integer messageNumber) {
+//		MessageContainer messageContainer = stopMap.get(messageNumber);
+//		if (messageContainer == null) {
+//			return;
+//		}
+//		messageContainer.markAsDone();
+	}
+
+	private void updateServerConnStatus(boolean serverConnStatus) {
+
+		serverConnected.set(serverConnStatus);
+		listener.serverConnStatusUpdated(serverConnStatus);
+
+		if (serverConnStatus) {
+			return;
+		}
+
+		taskQueue.execute(() -> messageReceiver.close());
+		synchronized (serverMessageMap) {
+			serverMessageMap.forEach((serverUuid, messageQueue) -> {
+				MessageContainer messageContainer;
+				while ((messageContainer = messageQueue.poll()) != null) {
+					messageContainer.close();
+				}
+			});
+			serverMessageMap.clear();
+		}
+
+	}
+
+	@Override
+	public void messageReceived(MessagePojo messagePojo, Path attachment, boolean partial) {
 
 		try {
 
@@ -631,6 +657,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				break;
 
+			case SEND_NOMORE:
+
+				Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+				stopSending(messageNumber);
+
+				break;
+
 			default:
 
 				break;
@@ -641,45 +674,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		}
 
-	}
-
-	private void stopSending(Integer messageNumber) {
-//		MessageContainer messageContainer = stopMap.get(messageNumber);
-//		if (messageContainer == null) {
-//			return;
-//		}
-//		messageContainer.markAsDone();
-	}
-
-//	private void closeMessage(MessageContainer messageContainer) {
-//		messageContainer.close();
-//		stopMap.remove(messageContainer.messageNumber);
-//	}
-
-	private void close() {
-		taskQueue.execute(() -> messageReceiver.close());
-		synchronized (serverConnected) {
-			serverMessageMap.forEach((serverUuid, messageQueue) -> {
-				while (!messageQueue.isEmpty()) {
-					messageQueue.poll().close();
-				}
-			});
-			serverMessageMap.clear();
-		}
-	}
-
-	@Override
-	public void messageReceived(MessagePojo messagePojo, Path attachment, boolean partial) {
-		if (messagePojo.contentType == ContentType.SEND_NOMORE) {
-			try {
-				Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
-				stopSending(messageNumber);
-			} catch (Exception e) {
-
-			}
-			return;
-		}
-		processIncomingMessage(messagePojo, attachment, partial);
 	}
 
 	@Override
@@ -729,7 +723,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		public Chunk next() {
 			checkInTime = System.currentTimeMillis();
 			health.set((sendStatus == null || sendStatus.get())
-					&& (useTimeout == null || checkInTime - startTime < useTimeout) && serverConnected.get());
+					&& (useTimeout == null || checkInTime - startTime < useTimeout));
 			return super.next();
 		}
 
