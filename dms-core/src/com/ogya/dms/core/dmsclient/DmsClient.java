@@ -1,6 +1,7 @@
 package com.ogya.dms.core.dmsclient;
 
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.zeromq.SocketType;
@@ -72,9 +74,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 			return result;
 		}
 	};
-	private final Map<String, String> userServerMap = Collections.synchronizedMap(new HashMap<String, String>());
-	private final Map<String, PriorityBlockingQueue<MessageContainer>> serverMessageMap = Collections
-			.synchronizedMap(new HashMap<String, PriorityBlockingQueue<MessageContainer>>());
+	private final Map<String, DmsServer> dmsServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
+	private final Map<String, DmsServer> userServerMap = Collections.synchronizedMap(new HashMap<String, DmsServer>());
 	private final DmsMessageReceiver messageReceiver;
 	private final AtomicInteger attachmentCounter = new AtomicInteger(1);
 	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
@@ -279,34 +280,33 @@ public class DmsClient implements DmsMessageReceiverListener {
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, null, contentType, null, null);
 			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout, null,
 					null);
-			PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(LOCAL_SERVER);
-			if (messageQueue == null) {
-				messageQueue = new PriorityBlockingQueue<MessageContainer>(11, messageSorter);
-				serverMessageMap.put(LOCAL_SERVER, messageQueue);
+			DmsServer dmsServer = dmsServers.get(LOCAL_SERVER);
+			if (dmsServer == null) {
+				dmsServer = new DmsServer(LOCAL_SERVER);
+				dmsServers.put(LOCAL_SERVER, dmsServer);
 			}
-			messageQueue.offer(messageContainer);
-			raiseSignal(LOCAL_SERVER);
+			dmsServer.queueMessage(messageContainer);
 			return;
 		}
-		Map<String, List<String>> serverReceiversMap = new HashMap<String, List<String>>();
+		Map<DmsServer, List<String>> serverReceiversMap = new HashMap<DmsServer, List<String>>();
 		List<String> unsuccessfulUuids = new ArrayList<String>();
 		for (String receiverUuid : receiverUuids) {
-			String serverUuid = userServerMap.get(receiverUuid);
-			if (serverUuid == null) {
+			DmsServer dmsServer = userServerMap.get(receiverUuid);
+			if (dmsServer == null) {
 				unsuccessfulUuids.add(receiverUuid);
 			} else {
-				serverReceiversMap.putIfAbsent(serverUuid, new ArrayList<String>());
-				serverReceiversMap.get(serverUuid).add(receiverUuid);
+				serverReceiversMap.putIfAbsent(dmsServer, new ArrayList<String>());
+				serverReceiversMap.get(dmsServer).add(receiverUuid);
 			}
 		}
 		if (!unsuccessfulUuids.isEmpty() && contentType == ContentType.TRANSIENT) {
 			sendProgress(unsuccessfulUuids, -1, trackingId, contentType);
 		}
-		serverReceiversMap.forEach((serverUuid, uuidList) -> {
+		serverReceiversMap.forEach((dmsServer, uuidList) -> {
 			final SendStatus sendStatus = new SendStatus(trackingId, contentType);
 			sendStatus.receiverUuids.addAll(uuidList);
 			sendStatuses.add(sendStatus);
-			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, serverUuid, contentType,
+			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, dmsServer.uuid, contentType,
 					trackingId, useLocalAddress);
 			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout,
 					sendStatus.status, progress -> {
@@ -315,13 +315,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 						}
 						sendProgress(uuidList, progress, trackingId, contentType);
 					});
-			PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
-			if (messageQueue == null) {
-				messageQueue = new PriorityBlockingQueue<MessageContainer>(11, messageSorter);
-				serverMessageMap.put(serverUuid, messageQueue);
-			}
-			messageQueue.offer(messageContainer);
-			raiseSignal(serverUuid);
+			dmsServer.queueMessage(messageContainer);
 		});
 	}
 
@@ -409,45 +403,15 @@ public class DmsClient implements DmsMessageReceiverListener {
 				} else if (poller.pollin(pollInproc)) {
 
 					String serverUuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
-					PriorityBlockingQueue<MessageContainer> messageQueue = serverMessageMap.get(serverUuid);
-					if (messageQueue == null) {
-						continue;
-					}
-					MessageContainer messageContainer = messageQueue.poll();
-
-					if (messageContainer == null) {
+					DmsServer dmsServer = dmsServers.get(serverUuid);
+					if (dmsServer == null) {
 						continue;
 					}
 
-					Chunk chunk = messageContainer.next();
-					if (chunk == null) {
-						messageContainer.close();
-						continue;
-					}
-
-					int messageNumber = messageContainer.messageNumber;
-					if (!messageContainer.hasMore()) {
-						messageNumber = -messageNumber;
-					}
-					dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
-					dealerSocket.sendByteBuffer(chunk.dataBuffer, ZMQ.DONTWAIT);
-					boolean progressUpdated = chunk.progress > messageContainer.progressPercent
-							.getAndSet(chunk.progress);
-					if (progressUpdated && messageContainer.progressConsumer != null) {
-						messageContainer.progressConsumer.accept(chunk.progress);
-					}
-
-					synchronized (serverConnected) {
-						if (serverConnected.get() && messageContainer.hasMore()) {
-							messageQueue.offer(messageContainer);
-						} else {
-							messageContainer.close();
-						}
-					}
-
-					if (messageQueue.isEmpty()) {
-						serverMessageMap.remove(serverUuid);
-					}
+					dmsServer.sendMore((messageNumber, dataBuffer) -> {
+						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						dealerSocket.sendByteBuffer(dataBuffer, ZMQ.DONTWAIT);
+					});
 
 				}
 
@@ -523,15 +487,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 
 		taskQueue.execute(() -> messageReceiver.close());
-		synchronized (serverMessageMap) {
-			serverMessageMap.forEach((serverUuid, messageQueue) -> {
-				MessageContainer messageContainer;
-				while ((messageContainer = messageQueue.poll()) != null) {
-					messageContainer.close();
-				}
-			});
-			serverMessageMap.clear();
-		}
+		userServerMap.clear();
+		dmsServers.forEach((serverUuid, dmsServer) -> dmsServer.close());
+		dmsServers.clear();
 
 	}
 
@@ -547,21 +505,35 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			switch (messagePojo.contentType) {
 
-			case BCON:
+			case BCON: {
 
 				Beacon beacon = DmsPackingFactory.unpack(payload, Beacon.class);
-				userServerMap.put(beacon.uuid, beacon.serverUuid);
+				String userUuid = beacon.uuid;
+				String serverUuid = beacon.serverUuid;
+				if (serverUuid == null) {
+					break;
+				}
+				DmsServer dmsServer = dmsServers.get(serverUuid);
+				if (dmsServer == null) {
+					dmsServer = new DmsServer(serverUuid);
+					dmsServers.put(serverUuid, dmsServer);
+				}
+				dmsServer.addUser(userUuid);
 				listener.beaconReceived(beacon);
 
 				break;
 
-			case IPS:
+			}
+
+			case IPS: {
 
 				listener.remoteIpsReceived(DmsPackingFactory.unpack(payload, InetAddress[].class));
 
 				break;
 
-			case MESSAGE:
+			}
+
+			case MESSAGE: {
 
 				Message message = DmsPackingFactory.unpack(payload, Message.class);
 				message.setMessageRefId(messagePojo.trackingId);
@@ -569,29 +541,42 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				break;
 
-			case UUID_DISCONNECTED:
+			}
 
-				userServerMap.remove(messagePojo.senderUuid);
+			case UUID_DISCONNECTED: {
+
+				String userUuid = messagePojo.senderUuid;
 				// TODO: Cancel messages, update progresses
-				taskQueue.execute(() -> messageReceiver.closeMessagesFrom(messagePojo.senderUuid));
-				listener.userDisconnected(messagePojo.senderUuid);
+				messageReceiver.closeMessagesFrom(userUuid);
+				listener.userDisconnected(userUuid);
+				DmsServer dmsServer = userServerMap.remove(userUuid);
+				if (dmsServer == null) {
+					break;
+				}
+				dmsServer.removeUser(userUuid);
 
 				break;
 
-			case CLAIM_MESSAGE_STATUS:
+			}
+
+			case CLAIM_MESSAGE_STATUS: {
 
 				listener.messageStatusClaimed(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
 
 				break;
 
-			case FEED_MESSAGE_STATUS:
+			}
+
+			case FEED_MESSAGE_STATUS: {
 
 				listener.messageStatusFed(DmsPackingFactory.unpackMap(payload, Long.class, MessageStatus.class),
 						messagePojo.senderUuid);
 
 				break;
 
-			case FEED_GROUP_MESSAGE_STATUS:
+			}
+
+			case FEED_GROUP_MESSAGE_STATUS: {
 
 				listener.groupMessageStatusFed(
 						DmsPackingFactory.unpackMap(payload, Long.class, GroupMessageStatus.class),
@@ -599,70 +584,92 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				break;
 
-			case CLAIM_STATUS_REPORT:
+			}
+
+			case CLAIM_STATUS_REPORT: {
 
 				listener.statusReportClaimed(DmsPackingFactory.unpack(payload, Long[].class), messagePojo.senderUuid);
 
 				break;
 
-			case FEED_STATUS_REPORT:
+			}
+
+			case FEED_STATUS_REPORT: {
 
 				listener.statusReportFed(DmsPackingFactory.unpackMap(payload, Long.class, StatusReport[].class));
 
 				break;
 
-			case TRANSIENT:
+			}
+
+			case TRANSIENT: {
 
 				listener.transientMessageReceived(DmsPackingFactory.unpack(payload, MessageHandleImpl.class),
 						attachment, messagePojo.senderUuid, messagePojo.trackingId);
 
 				break;
 
-			case FEED_TRANSIENT_STATUS:
+			}
+
+			case FEED_TRANSIENT_STATUS: {
 
 				listener.transientMessageStatusReceived(DmsPackingFactory.unpack(payload, Long.class),
 						messagePojo.senderUuid);
 
 				break;
 
-			case DOWNLOAD_REQUEST:
+			}
+
+			case DOWNLOAD_REQUEST: {
 
 				listener.downloadRequested(DmsPackingFactory.unpack(payload, DownloadPojo.class),
 						messagePojo.senderUuid);
 
 				break;
 
-			case CANCEL_DOWNLOAD_REQUEST:
+			}
+
+			case CANCEL_DOWNLOAD_REQUEST: {
 
 				listener.cancelDownloadRequested(DmsPackingFactory.unpack(payload, Long.class), messagePojo.senderUuid);
 
 				break;
 
-			case SERVER_NOT_FOUND:
+			}
+
+			case SERVER_NOT_FOUND: {
 
 				listener.serverNotFound(DmsPackingFactory.unpack(payload, Long.class));
 
 				break;
 
-			case FILE_NOT_FOUND:
+			}
+
+			case FILE_NOT_FOUND: {
 
 				listener.fileNotFound(DmsPackingFactory.unpack(payload, Long.class));
 
 				break;
 
-			case UPLOAD:
+			}
+
+			case UPLOAD: {
 
 				listener.fileDownloaded(messagePojo.trackingId, attachment,
 						DmsPackingFactory.unpack(payload, String.class), partial);
 
 				break;
 
-			case SEND_NOMORE:
+			}
+
+			case SEND_NOMORE: {
 
 				Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
 				stopSending(messageNumber);
 
 				break;
+
+			}
 
 			default:
 
@@ -691,6 +698,84 @@ public class DmsClient implements DmsMessageReceiverListener {
 	public void downloadFailed(Long trackingId) {
 		// TODO Auto-generated method stub
 		listener.downloadFailed(trackingId);
+	}
+
+	private final class DmsServer {
+
+		private final String uuid;
+		private final AtomicBoolean closed = new AtomicBoolean(false);
+		private final Set<String> users = Collections.synchronizedSet(new HashSet<String>());
+		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
+				11, messageSorter);
+
+		private DmsServer(String uuid) {
+			this.uuid = uuid;
+		}
+
+		private synchronized void queueMessage(MessageContainer messageContainer) {
+			if (closed.get()) {
+				messageContainer.close();
+				return;
+			}
+			messageQueue.offer(messageContainer);
+			raiseSignal(uuid);
+		}
+
+		private synchronized void sendMore(BiConsumer<Integer, ByteBuffer> bc) {
+
+			MessageContainer messageContainer = messageQueue.poll();
+			if (messageContainer == null) {
+				return;
+			}
+
+			Chunk chunk = messageContainer.next();
+			if (chunk == null) {
+				messageContainer.close();
+				return;
+			}
+
+			int messageNumber = messageContainer.messageNumber;
+			if (!messageContainer.hasMore()) {
+				messageNumber = -messageNumber;
+			}
+
+			bc.accept(messageNumber, chunk.dataBuffer);
+
+			boolean progressUpdated = chunk.progress > messageContainer.progressPercent.getAndSet(chunk.progress);
+			if (progressUpdated && messageContainer.progressConsumer != null) {
+				messageContainer.progressConsumer.accept(chunk.progress);
+			}
+
+			if (messageContainer.hasMore()) {
+				messageQueue.offer(messageContainer);
+			} else {
+				messageContainer.close();
+			}
+
+		}
+
+		private synchronized void addUser(String userUuid) {
+			users.add(userUuid);
+			userServerMap.put(userUuid, this);
+		}
+
+		private synchronized void removeUser(String userUuid) {
+			// TODO: bekleyen mesajlardan kullaniciyi cikar, kullanici kalmazsa mesaji kapat
+			users.remove(userUuid);
+			if (users.isEmpty()) {
+				close();
+				dmsServers.remove(uuid);
+			}
+		}
+
+		private synchronized void close() {
+			closed.set(true);
+			MessageContainer messageContainer;
+			while ((messageContainer = messageQueue.poll()) != null) {
+				messageContainer.close();
+			}
+		}
+
 	}
 
 	private final class MessageContainer extends DmsMessageSender {
