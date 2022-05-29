@@ -469,12 +469,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
-	private void stopSending(Integer messageNumber) {
-//		MessageContainer messageContainer = stopMap.get(messageNumber);
-//		if (messageContainer == null) {
-//			return;
-//		}
-//		messageContainer.markAsDone();
+	private void sendNoMore(int messageNumber, List<String> receiverUuids, String receiverAddress) {
+		DmsServer dmsServer = dmsServers.get(receiverAddress);
+		if (dmsServer == null) {
+			return;
+		}
+		dmsServer.sendNoMore(messageNumber, receiverUuids);
 	}
 
 	private void updateServerConnStatus(boolean serverConnStatus) {
@@ -546,7 +546,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 			case UUID_DISCONNECTED: {
 
 				String userUuid = messagePojo.senderUuid;
-				// TODO: Cancel messages, update progresses
 				messageReceiver.closeMessagesFrom(userUuid);
 				listener.userDisconnected(userUuid);
 				DmsServer dmsServer = userServerMap.remove(userUuid);
@@ -664,8 +663,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			case SEND_NOMORE: {
 
-				Integer messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
-				stopSending(messageNumber);
+				int messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+				sendNoMore(messageNumber, messagePojo.receiverUuids, messagePojo.receiverAddress);
 
 				break;
 
@@ -690,13 +689,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	@Override
 	public void downloadProgress(Long trackingId, int progress) {
-		// TODO Auto-generated method stub
 		listener.downloadingFile(trackingId, progress);
 	}
 
 	@Override
 	public void downloadFailed(Long trackingId) {
-		// TODO Auto-generated method stub
 		listener.downloadFailed(trackingId);
 	}
 
@@ -713,7 +710,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 
 		private synchronized void queueMessage(MessageContainer messageContainer) {
-			if (closed.get()) {
+			boolean nok = closed.get();
+			if (!(nok || messageContainer.receiverUuids == null)) {
+				messageContainer.receiverUuids.removeIf(uuid -> !users.contains(uuid));
+				nok = messageContainer.receiverUuids.isEmpty();
+			}
+			if (nok) {
 				messageContainer.close();
 				return;
 			}
@@ -754,13 +756,43 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		}
 
+		private synchronized void sendNoMore(int messageNumber, List<String> receiverUuids) {
+			messageQueue.forEach(messageContainer -> {
+				if (messageContainer.messageNumber != messageNumber) {
+					return;
+				}
+				if (receiverUuids == null) {
+					messageQueue.remove(messageContainer);
+					messageContainer.close();
+					return;
+				}
+				if (messageContainer.receiverUuids == null) {
+					return;
+				}
+				messageContainer.receiverUuids.removeAll(receiverUuids);
+				if (messageContainer.receiverUuids.isEmpty()) {
+					messageQueue.remove(messageContainer);
+					messageContainer.close();
+				}
+			});
+		}
+
 		private synchronized void addUser(String userUuid) {
 			users.add(userUuid);
 			userServerMap.put(userUuid, this);
 		}
 
 		private synchronized void removeUser(String userUuid) {
-			// TODO: bekleyen mesajlardan kullaniciyi cikar, kullanici kalmazsa mesaji kapat
+			messageQueue.forEach(messageContainer -> {
+				if (messageContainer.receiverUuids == null) {
+					return;
+				}
+				messageContainer.receiverUuids.remove(userUuid);
+				if (messageContainer.receiverUuids.isEmpty()) {
+					messageQueue.remove(messageContainer);
+					messageContainer.close();
+				}
+			});
 			users.remove(userUuid);
 			if (users.isEmpty()) {
 				close();
@@ -784,8 +816,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final AtomicBoolean sendStatus;
 		private final Consumer<Integer> progressConsumer;
 		private final Long useTimeout;
-
 		private final boolean bigFile;
+		private final List<String> receiverUuids;
+
 		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
 		private long checkInTime = startTime;
@@ -798,6 +831,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			this.progressConsumer = progressConsumer;
 			this.useTimeout = useTimeout;
 			this.bigFile = getFileSize() > CommonConstants.SMALL_FILE_LIMIT;
+			this.receiverUuids = messagePojo.receiverUuids;
 		}
 
 		private boolean isSecondary() {

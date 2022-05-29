@@ -1,8 +1,6 @@
 package com.ogya.dms.server.control;
 
 import java.net.InetAddress;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +50,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final Object publishSyncObj = new Object();
 
 	private Control() {
-		init();
+
 	}
 
 	public synchronized static Control getInstance() {
@@ -65,22 +63,6 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		return instance;
 
-	}
-
-	private void init() {
-		try {
-			Files.list(Paths.get(System.getProperty("java.io.tmpdir"))).forEach(path -> {
-				if (path.getFileName().toString().startsWith("dms")) {
-					try {
-						Files.delete(path);
-					} catch (Exception e) {
-
-					}
-				}
-			});
-		} catch (Exception e) {
-
-		}
 	}
 
 	public void start() {
