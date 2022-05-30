@@ -466,7 +466,12 @@ public class Model {
 					}
 					localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore, absMessageNumber);
 				} catch (Exception e) {
-					// TODO: Send nomore
+					if (sign > 0) {
+						MessagePojo sendNoMorePojo = new MessagePojo(DmsPackingFactory.pack(absMessageNumber), null,
+								null, null, ContentType.SEND_NOMORE, null, null);
+						sendLocalMessage(0, packMessagePojo(sendNoMorePojo), Collections.singletonList(beacon.uuid),
+								null);
+					}
 				}
 				return;
 			}
@@ -543,6 +548,54 @@ public class Model {
 						clearRemoteIps();
 					else
 						removeRemoteIps(ips);
+
+					break;
+
+				}
+
+				case SEND_NOMORE: {
+
+					int mappedMessageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+					MessagePojo sendNoMorePojo = messagePojo;
+
+					List<Integer> messageNumbersToRemove = new ArrayList<Integer>();
+
+					// Search message in local users
+					localUsers.forEach((userUuid, localUser) -> {
+						localUser.messageMap.forEach((originalMessageNumber, messageInfo) -> {
+							if (messageInfo.mappedMessageNumber != mappedMessageNumber) {
+								return;
+							}
+							messageNumbersToRemove.add(originalMessageNumber);
+							// Send "No More Pojo"
+							sendNoMorePojo.payload = DmsPackingFactory.pack(originalMessageNumber);
+							sendNoMorePojo.receiverUuids = Collections.singletonList(beacon.uuid);
+							sendNoMorePojo.receiverAddress = CommonConstants.DMS_UUID;
+							sendLocalMessage(0, packMessagePojo(sendNoMorePojo), Collections.singletonList(userUuid),
+									null);
+						});
+						messageNumbersToRemove
+								.forEach(originalMessageNumber -> localUser.messageMap.remove(originalMessageNumber));
+						messageNumbersToRemove.clear();
+					});
+
+					// Search message in remote servers
+					remoteServers.forEach((serverUuid, dmsServer) -> {
+						dmsServer.messageMap.forEach((originalMessageNumber, messageInfo) -> {
+							if (messageInfo.mappedMessageNumber != mappedMessageNumber) {
+								return;
+							}
+							messageNumbersToRemove.add(originalMessageNumber);
+							// Send "No More Pojo"
+							sendNoMorePojo.payload = DmsPackingFactory.pack(originalMessageNumber);
+							sendNoMorePojo.receiverUuids = Collections.singletonList(mapId);
+							sendNoMorePojo.receiverAddress = null;
+							sendRemoteMessage(0, packMessagePojo(sendNoMorePojo), serverUuid);
+						});
+						messageNumbersToRemove
+								.forEach(originalMessageNumber -> dmsServer.messageMap.remove(originalMessageNumber));
+						messageNumbersToRemove.clear();
+					});
 
 					break;
 
@@ -657,7 +710,11 @@ public class Model {
 					}
 					remoteMessageReceived(sign * mappedMessageNumber, messagePojo, absMessageNumber);
 				} catch (Exception e) {
-					// TODO: Send nomore
+					if (sign > 0) {
+						MessagePojo sendNoMorePojo = new MessagePojo(DmsPackingFactory.pack(absMessageNumber), null,
+								null, null, ContentType.SEND_NOMORE, null, null);
+						sendRemoteMessage(0, packMessagePojo(sendNoMorePojo), dmsUuid);
+					}
 				}
 				return;
 			}
@@ -677,18 +734,17 @@ public class Model {
 				return;
 			}
 
-			String mapId = messagePojo.senderUuid;
-
-			RemoteUser sender = remoteMappedUsers.get(mapId);
+			String senderMapId = messagePojo.senderUuid;
+			RemoteUser sender = remoteMappedUsers.get(senderMapId);
 			if (sender != null) {
 				messagePojo.senderUuid = sender.beacon.uuid;
 			}
 
 			if (messagePojo.receiverUuids != null) {
-				messagePojo.receiverUuids.replaceAll(uuid -> {
-					User localUser = localMappedUsers.get(uuid);
+				messagePojo.receiverUuids.replaceAll(mapId -> {
+					User localUser = localMappedUsers.get(mapId);
 					if (localUser == null) {
-						return uuid;
+						return mapId;
 					}
 					return localUser.beacon.uuid;
 				});
@@ -738,6 +794,44 @@ public class Model {
 					remoteMappedUsers.remove(remoteUser.mapId);
 					cleanMessagesFromUuid(uuid);
 					remoteUserDisconnected(remoteUser);
+
+					break;
+
+				}
+
+				case SEND_NOMORE: {
+
+					int mappedMessageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
+					MessagePojo sendNoMorePojo = messagePojo;
+					if (sendNoMorePojo.receiverUuids != null) {
+						sendNoMorePojo.receiverUuids.replaceAll(mapId -> {
+							User localUser = localMappedUsers.get(mapId);
+							if (localUser == null) {
+								return mapId;
+							}
+							return localUser.beacon.uuid;
+						});
+					}
+
+					List<Integer> messageNumbersToRemove = new ArrayList<Integer>();
+
+					// Search message in local users
+					localUsers.forEach((userUuid, localUser) -> {
+						localUser.messageMap.forEach((originalMessageNumber, messageInfo) -> {
+							if (messageInfo.mappedMessageNumber != mappedMessageNumber) {
+								return;
+							}
+							messageNumbersToRemove.add(originalMessageNumber);
+							// Send "No More Pojo"
+							sendNoMorePojo.payload = DmsPackingFactory.pack(originalMessageNumber);
+							sendNoMorePojo.receiverAddress = dmsUuid;
+							sendLocalMessage(0, packMessagePojo(sendNoMorePojo), Collections.singletonList(userUuid),
+									null);
+						});
+						messageNumbersToRemove
+								.forEach(originalMessageNumber -> localUser.messageMap.remove(originalMessageNumber));
+						messageNumbersToRemove.clear();
+					});
 
 					break;
 

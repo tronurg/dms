@@ -1573,13 +1573,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				clearMessageProgresses();
 
-				downloadTaskQueue.execute(() -> {
-					model.getAllDownloads().forEach((downloadId, downloadPojo) -> {
-						listenerTaskQueue.execute(() -> dmsDownloadListeners
-								.forEach(listener -> listener.downloadingFile(downloadId, 0)));
-					});
-				});
-
 			}
 
 			Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(connStatus));

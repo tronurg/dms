@@ -135,7 +135,6 @@ public class DmsMessageReceiver {
 				this.globalSize = messagePojo.globalSize;
 				path = Files.createTempFile("dms", null);
 				fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-				checkDownloadProgress();
 			} catch (Exception e) {
 				destroy();
 				throw e;

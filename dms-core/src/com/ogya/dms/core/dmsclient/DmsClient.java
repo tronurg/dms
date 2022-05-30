@@ -470,6 +470,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void sendNoMore(int messageNumber, List<String> receiverUuids, String receiverAddress) {
+		if (receiverAddress == null) {
+			dmsServers.forEach((serverUuid, dmsServer) -> dmsServer.sendNoMore(messageNumber, receiverUuids));
+			return;
+		}
 		DmsServer dmsServer = dmsServers.get(receiverAddress);
 		if (dmsServer == null) {
 			return;

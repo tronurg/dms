@@ -96,12 +96,13 @@ public class DmsMessageSender implements AutoCloseable {
 				throw new Exception();
 			}
 			ByteBuffer dataBuffer;
+			int progress = 0;
 			if (position < 0) {
 				dataBuffer = getPojoData();
 			} else {
 				dataBuffer = getFileData();
+				progress = (int) (100.0 * (pojoSize + position) / (pojoSize + maxPosition));
 			}
-			int progress = (int) (100.0 * (pojoSize + position) / (pojoSize + maxPosition));
 			chunk = new Chunk(dataBuffer, progress);
 		} catch (Exception e) {
 			markAsDone();
