@@ -244,7 +244,7 @@ public class Model {
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packBeaconServerToServer(user.beacon),
 					user.mapId, null, null, ContentType.BCON, null, null);
-			sendRemoteMessage(0, packMessagePojo(beaconPojo), dmsUuid);
+			sendRemoteMessage(0, packMessagePojo(beaconPojo), dmsUuid, null);
 
 		});
 
@@ -398,12 +398,12 @@ public class Model {
 		sendLocalMessage(messageNumber, data, new ArrayList<String>(localUsers.keySet()), null);
 	}
 
-	private void sendRemoteMessage(int messageNumber, byte[] data, String receiverAddress) {
-		listener.sendToRemoteServer(messageNumber, data, receiverAddress);
+	private void sendRemoteMessage(int messageNumber, byte[] data, String receiverAddress, SendMorePojo sendMore) {
+		listener.sendToRemoteServer(messageNumber, data, receiverAddress, sendMore);
 	}
 
 	private void sendRemoteMessageToAll(int messageNumber, byte[] data) {
-		sendRemoteMessage(messageNumber, data, null);
+		sendRemoteMessage(messageNumber, data, null, null);
 	}
 
 	private abstract class User {
@@ -483,7 +483,8 @@ public class Model {
 				sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids,
 						messageInfo.sendMore);
 			} else {
-				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverAddress);
+				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverAddress,
+						messageInfo.sendMore);
 			}
 			if (sign < 0) {
 				messageMap.remove(absMessageNumber);
@@ -590,7 +591,7 @@ public class Model {
 							sendNoMorePojo.payload = DmsPackingFactory.pack(originalMessageNumber);
 							sendNoMorePojo.receiverUuids = Collections.singletonList(mapId);
 							sendNoMorePojo.receiverAddress = null;
-							sendRemoteMessage(0, packMessagePojo(sendNoMorePojo), serverUuid);
+							sendRemoteMessage(0, packMessagePojo(sendNoMorePojo), serverUuid, null);
 						});
 						messageNumbersToRemove
 								.forEach(originalMessageNumber -> dmsServer.messageMap.remove(originalMessageNumber));
@@ -640,7 +641,7 @@ public class Model {
 							}
 							return remoteUser.mapId;
 						});
-						sendRemoteMessage(messageNumber, packMessagePojo(messagePojo), receiverAddress);
+						sendRemoteMessage(messageNumber, packMessagePojo(messagePojo), receiverAddress, sendMore);
 					}
 
 					break;
@@ -713,7 +714,7 @@ public class Model {
 					if (sign > 0) {
 						MessagePojo sendNoMorePojo = new MessagePojo(DmsPackingFactory.pack(absMessageNumber), null,
 								null, null, ContentType.SEND_NOMORE, null, null);
-						sendRemoteMessage(0, packMessagePojo(sendNoMorePojo), dmsUuid);
+						sendRemoteMessage(0, packMessagePojo(sendNoMorePojo), dmsUuid, null);
 					}
 				}
 				return;

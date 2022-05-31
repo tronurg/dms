@@ -8,7 +8,7 @@ public interface ModelListener {
 
 	void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore);
 
-	void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid);
+	void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid, SendMorePojo sendMore);
 
 	void publishImmediately();
 

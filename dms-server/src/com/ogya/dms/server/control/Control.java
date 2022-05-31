@@ -216,8 +216,8 @@ public class Control implements TcpManagerListener, ModelListener {
 				case ZMQ.EVENT_DISCONNECTED:
 
 					Thread.sleep(100);
-
 					taskQueue.execute(() -> model.testAllLocalUsers());
+
 					break;
 
 				}
@@ -248,6 +248,13 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
+	public void sendMoreClaimed(SendMorePojo sendMore) {
+
+		sendToLocalUsers(0, null, null, sendMore);
+
+	}
+
+	@Override
 	public void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
 		try {
 			messageQueue.put(new Chunk(messageNumber, data, receiverUuids, sendMore));
@@ -258,8 +265,8 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid) {
-		tcpManager.sendMessageToServer(messageNumber, data, dmsUuid);
+	public void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid, SendMorePojo sendMore) {
+		tcpManager.sendMessageToServer(messageNumber, data, dmsUuid, sendMore);
 	}
 
 	@Override
@@ -283,7 +290,9 @@ public class Control implements TcpManagerListener, ModelListener {
 		private Chunk(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
 			this.messageNumber = messageNumber;
 			this.data = data;
-			this.receiverUuids.addAll(receiverUuids);
+			if (receiverUuids != null) {
+				this.receiverUuids.addAll(receiverUuids);
+			}
 			this.sendMore = sendMore;
 		}
 
