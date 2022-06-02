@@ -1,4 +1,4 @@
-package com.ogya.dms.server.common;
+package com.ogya.dms.server.structures;
 
 public class SendMorePojo {
 

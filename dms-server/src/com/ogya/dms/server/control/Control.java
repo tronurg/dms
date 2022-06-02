@@ -1,8 +1,6 @@
 package com.ogya.dms.server.control;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -14,7 +12,6 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.SendMorePojo;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
@@ -22,6 +19,7 @@ import com.ogya.dms.server.communications.udp.MulticastManager;
 import com.ogya.dms.server.factory.DmsFactory;
 import com.ogya.dms.server.model.Model;
 import com.ogya.dms.server.model.intf.ModelListener;
+import com.ogya.dms.server.structures.Chunk;
 
 public class Control implements TcpManagerListener, ModelListener {
 
@@ -248,16 +246,16 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendMoreClaimed(SendMorePojo sendMore) {
+	public void sendMoreClaimed(Chunk chunk) {
 
-		sendToLocalUsers(0, null, null, sendMore);
+		sendToLocalUsers(chunk);
 
 	}
 
 	@Override
-	public void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
+	public void sendToLocalUsers(Chunk chunk) {
 		try {
-			messageQueue.put(new Chunk(messageNumber, data, receiverUuids, sendMore));
+			messageQueue.put(chunk);
 			signalQueue.put(SIGNAL);
 		} catch (InterruptedException e) {
 
@@ -265,8 +263,8 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid, SendMorePojo sendMore) {
-		tcpManager.sendMessageToServer(messageNumber, data, dmsUuid, sendMore);
+	public void sendToRemoteServer(Chunk chunk, String dmsUuid) {
+		tcpManager.sendMessageToServer(chunk, dmsUuid);
 	}
 
 	@Override
@@ -276,24 +274,6 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			publishSyncObj.notify();
 
-		}
-
-	}
-
-	private class Chunk {
-
-		private final int messageNumber;
-		private final byte[] data;
-		private final List<String> receiverUuids = new ArrayList<String>();
-		private final SendMorePojo sendMore;
-
-		private Chunk(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
-			this.messageNumber = messageNumber;
-			this.data = data;
-			if (receiverUuids != null) {
-				this.receiverUuids.addAll(receiverUuids);
-			}
-			this.sendMore = sendMore;
 		}
 
 	}

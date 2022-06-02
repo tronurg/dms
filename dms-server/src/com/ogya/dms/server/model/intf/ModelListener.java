@@ -1,14 +1,12 @@
 package com.ogya.dms.server.model.intf;
 
-import java.util.List;
-
-import com.ogya.dms.server.common.SendMorePojo;
+import com.ogya.dms.server.structures.Chunk;
 
 public interface ModelListener {
 
-	void sendToLocalUsers(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore);
+	void sendToLocalUsers(Chunk chunk);
 
-	void sendToRemoteServer(int messageNumber, byte[] data, String dmsUuid, SendMorePojo sendMore);
+	void sendToRemoteServer(Chunk chunk, String dmsUuid);
 
 	void publishImmediately();
 

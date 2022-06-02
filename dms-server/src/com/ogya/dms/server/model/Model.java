@@ -27,8 +27,9 @@ import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.SendMorePojo;
 import com.ogya.dms.server.model.intf.ModelListener;
+import com.ogya.dms.server.structures.Chunk;
+import com.ogya.dms.server.structures.SendMorePojo;
 
 public class Model {
 
@@ -391,7 +392,7 @@ public class Model {
 	}
 
 	private void sendLocalMessage(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
-		listener.sendToLocalUsers(messageNumber, data, receiverUuids, sendMore);
+		listener.sendToLocalUsers(new Chunk(messageNumber, data, receiverUuids, sendMore));
 	}
 
 	private void sendLocalMessageToAll(int messageNumber, byte[] data) {
@@ -399,7 +400,7 @@ public class Model {
 	}
 
 	private void sendRemoteMessage(int messageNumber, byte[] data, String receiverAddress, SendMorePojo sendMore) {
-		listener.sendToRemoteServer(messageNumber, data, receiverAddress, sendMore);
+		listener.sendToRemoteServer(new Chunk(messageNumber, data, sendMore), receiverAddress);
 	}
 
 	private void sendRemoteMessageToAll(int messageNumber, byte[] data) {

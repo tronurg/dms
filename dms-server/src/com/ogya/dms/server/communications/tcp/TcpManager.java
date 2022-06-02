@@ -23,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
-import com.ogya.dms.server.common.SendMorePojo;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -31,6 +30,7 @@ import com.ogya.dms.server.communications.tcp.net.TcpConnection;
 import com.ogya.dms.server.communications.tcp.net.TcpServer;
 import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
+import com.ogya.dms.server.structures.Chunk;
 
 public class TcpManager implements TcpServerListener {
 
@@ -199,12 +199,10 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToServer(final int messageNumber, final byte[] data, final String dmsUuid,
-			final SendMorePojo sendMore) {
+	public void sendMessageToServer(final Chunk chunk, final String dmsUuid) {
 
 		taskQueue.execute(() -> {
 
-			Chunk chunk = new Chunk(messageNumber, data, sendMore);
 			if (dmsUuid == null) {
 				dmsServers.forEach((uuid, server) -> server.queueMessage(chunk));
 				return;
@@ -423,7 +421,7 @@ public class TcpManager implements TcpServerListener {
 					// TODO
 
 					if (chunk.sendMore != null) {
-						listener.sendMoreClaimed(chunk.sendMore);
+						listener.sendMoreClaimed(chunk);
 					}
 
 				} catch (InterruptedException e) {
@@ -446,20 +444,6 @@ public class TcpManager implements TcpServerListener {
 			} catch (InterruptedException e) {
 
 			}
-		}
-
-	}
-
-	private static class Chunk {
-
-		private final int messageNumber;
-		private final byte[] data;
-		private final SendMorePojo sendMore;
-
-		private Chunk(int messageNumber, byte[] data, SendMorePojo sendMore) {
-			this.messageNumber = messageNumber;
-			this.data = data;
-			this.sendMore = sendMore;
 		}
 
 	}

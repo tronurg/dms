@@ -3,7 +3,7 @@ package com.ogya.dms.server.communications.intf;
 import java.net.InetAddress;
 import java.util.Map;
 
-import com.ogya.dms.server.common.SendMorePojo;
+import com.ogya.dms.server.structures.Chunk;
 
 public interface TcpManagerListener {
 
@@ -12,6 +12,6 @@ public interface TcpManagerListener {
 
 	void messageReceivedFromRemoteServer(int messageNumber, byte[] data, String dmsUuid);
 
-	void sendMoreClaimed(SendMorePojo sendMore);
+	void sendMoreClaimed(Chunk chunk);
 
 }
