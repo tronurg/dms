@@ -14,7 +14,7 @@ public class MessagePojo {
 	@JsonProperty("c")
 	public List<String> receiverUuids;
 	@JsonProperty("d")
-	public String receiverAddress;
+	public String address;
 	@JsonProperty("e")
 	public ContentType contentType;
 	@JsonProperty("f")
@@ -29,13 +29,13 @@ public class MessagePojo {
 		super();
 	}
 
-	public MessagePojo(byte[] payload, String senderUuid, List<String> receiverUuids, String receiverAddress,
+	public MessagePojo(byte[] payload, String senderUuid, List<String> receiverUuids, String address,
 			ContentType contentType, Long trackingId, InetAddress useLocalAddress) {
 
 		this.payload = payload;
 		this.senderUuid = senderUuid;
 		this.receiverUuids = receiverUuids;
-		this.receiverAddress = receiverAddress;
+		this.address = address;
 		this.contentType = contentType;
 		this.trackingId = trackingId;
 		this.useLocalAddress = useLocalAddress;
