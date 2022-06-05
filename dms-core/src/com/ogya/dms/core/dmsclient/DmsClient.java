@@ -307,12 +307,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, dmsServer.uuid, contentType,
 					trackingId, useLocalAddress);
 			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout,
-					sendStatus.status, (progress, uuids) -> {
-						if (progress < 0 || progress == 100) {
-							sendStatuses.remove(sendStatus);
-						}
-						sendProgress(uuids, progress, trackingId, contentType);
-					});
+					sendStatus, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
 			dmsServer.queueMessage(messageContainer);
 		});
 	}
@@ -819,7 +814,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final class MessageContainer extends DmsMessageSender {
 
 		private final int messageNumber;
-		private final AtomicBoolean sendStatus;
+		private final SendStatus sendStatus;
 		private final BiConsumer<Integer, List<String>> progressConsumer;
 		private final Long useTimeout;
 		private final boolean bigFile;
@@ -830,7 +825,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private long checkInTime = startTime;
 
 		private MessageContainer(MessagePojo messagePojo, AttachmentPojo attachmentPojo, Long useTimeout,
-				AtomicBoolean sendStatus, BiConsumer<Integer, List<String>> progressConsumer) {
+				SendStatus sendStatus, BiConsumer<Integer, List<String>> progressConsumer) {
 			super(messagePojo, attachmentPojo);
 			this.messageNumber = getMessageNumber(attachmentPojo == null);
 			this.sendStatus = sendStatus;
@@ -856,7 +851,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		@Override
 		public Chunk next() {
 			checkInTime = System.currentTimeMillis();
-			health.set((sendStatus == null || sendStatus.get())
+			health.set((sendStatus == null || sendStatus.status.get())
 					&& (useTimeout == null || checkInTime - startTime < useTimeout));
 			return super.next();
 		}
@@ -864,6 +859,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 		@Override
 		public void close() {
 			super.close();
+			if (sendStatus != null) {
+				sendStatuses.remove(sendStatus);
+			}
 			if (progressConsumer != null && progressPercent.get() < 100) {
 				progressConsumer.accept(-1, receiverUuids);
 			}
