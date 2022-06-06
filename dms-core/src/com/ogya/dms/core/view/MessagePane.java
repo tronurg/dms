@@ -507,6 +507,7 @@ class MessagePane extends BorderPane {
 
 			}
 		});
+		scrollPane.setVvalue(scrollPane.getVmax());
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 			autoScroll.set(e1.doubleValue() == scrollPane.getVmax() || e2.doubleValue() == scrollPane.getVmax());
 			if (scrollPane.isNeedsLayout())
