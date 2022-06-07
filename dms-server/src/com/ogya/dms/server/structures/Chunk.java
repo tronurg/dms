@@ -9,6 +9,7 @@ public class Chunk {
 	public final byte[] data;
 	public final List<String> receiverUuids = new ArrayList<String>();
 	public final SendMorePojo sendMore;
+	public RemoteWork remoteWork;
 
 	public Chunk(int messageNumber, byte[] data, SendMorePojo sendMore) {
 		this.messageNumber = messageNumber;
