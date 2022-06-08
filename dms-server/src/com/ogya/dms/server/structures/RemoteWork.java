@@ -6,12 +6,18 @@ import java.util.function.BiFunction;
 public class RemoteWork {
 
 	public final InetAddress useLocalAddress;
+	public final Runnable failureRun;
 
 	public BiFunction<Integer, byte[], Boolean> sendFunction;
 	public Chunk lastChunk;
 
-	public RemoteWork(InetAddress useLocalAddress) {
+	public RemoteWork() {
+		this(null, null);
+	}
+
+	public RemoteWork(InetAddress useLocalAddress, Runnable failureRun) {
 		this.useLocalAddress = useLocalAddress;
+		this.failureRun = failureRun;
 	}
 
 }

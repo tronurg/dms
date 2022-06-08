@@ -30,7 +30,7 @@ import com.ogya.dms.server.communications.tcp.net.TcpConnection;
 import com.ogya.dms.server.communications.tcp.net.TcpServer;
 import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
-import com.ogya.dms.server.structures.Chunk;
+import com.ogya.dms.server.structures.RemoteChunk;
 import com.ogya.dms.server.structures.RemoteWork;
 
 public class TcpManager implements TcpServerListener {
@@ -62,7 +62,7 @@ public class TcpManager implements TcpServerListener {
 
 	};
 
-	private static final Chunk END_CHUNK = new Chunk(-1, null, null);
+	private static final RemoteChunk END_CHUNK = new RemoteChunk();
 
 	private final int serverPort;
 	private final int clientPortFrom;
@@ -200,7 +200,7 @@ public class TcpManager implements TcpServerListener {
 
 	}
 
-	public void sendMessageToServer(final Chunk chunk, final String dmsUuid) {
+	public void sendMessageToServer(final RemoteChunk chunk, final String dmsUuid) {
 
 		taskQueue.execute(() -> {
 
@@ -398,7 +398,7 @@ public class TcpManager implements TcpServerListener {
 
 		private final String dmsUuid;
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
-		private final LinkedBlockingQueue<Chunk> messageQueue = new LinkedBlockingQueue<Chunk>();
+		private final LinkedBlockingQueue<RemoteChunk> messageQueue = new LinkedBlockingQueue<RemoteChunk>();
 		private final AtomicInteger updateCounter = new AtomicInteger();
 		private BiFunction<Integer, byte[], Boolean> bestSendFunction;
 
@@ -410,7 +410,7 @@ public class TcpManager implements TcpServerListener {
 		private void consumeMessageQueue() {
 			while (!Thread.currentThread().isInterrupted()) {
 				try {
-					Chunk chunk = messageQueue.take();
+					RemoteChunk chunk = messageQueue.take();
 					if (chunk == END_CHUNK) {
 						break;
 					}
@@ -419,38 +419,32 @@ public class TcpManager implements TcpServerListener {
 
 					RemoteWork remoteWork = chunk.remoteWork;
 					if (remoteWork == null) {
-						synchronized (connections) {
-							connections.sort(CONNECTION_SORTER);
-							for (Connection connection : connections) {
-								success = connection.tcpConnection.sendMessage(chunk.messageNumber, chunk.data);
-								if (success) {
-									break;
-								}
-							}
+						remoteWork = new RemoteWork();
+					}
+
+					while (!success) {
+						boolean updated = checkSendFunction(remoteWork);
+						if (remoteWork.sendFunction == null) {
+							break;
 						}
-					} else {
-						while (!success) {
-							boolean updated = checkSendFunction(remoteWork);
-							if (remoteWork.sendFunction == null) {
-								break;
-							}
-							if (updated && remoteWork.lastChunk != null) {
-								success = remoteWork.sendFunction.apply(remoteWork.lastChunk.messageNumber,
-										remoteWork.lastChunk.data);
-								if (!success) {
-									continue;
-								}
-							}
-							success = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
+						if (updated && remoteWork.lastChunk != null) {
+							success = remoteWork.sendFunction.apply(remoteWork.lastChunk.messageNumber,
+									remoteWork.lastChunk.data);
 							if (!success) {
 								continue;
 							}
-							remoteWork.lastChunk = chunk;
 						}
+						success = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
+						if (!success) {
+							continue;
+						}
+						remoteWork.lastChunk = chunk;
 					}
 
 					if (!success) {
-						// TODO
+						if (!(remoteWork.failureRun == null || remoteWork.useLocalAddress == null)) {
+							remoteWork.failureRun.run();
+						}
 					} else if (chunk.sendMore != null) {
 						listener.sendMoreClaimed(chunk);
 					}
@@ -460,7 +454,7 @@ public class TcpManager implements TcpServerListener {
 			}
 		}
 
-		private void queueMessage(Chunk chunk) {
+		private void queueMessage(RemoteChunk chunk) {
 			try {
 				messageQueue.put(chunk);
 			} catch (InterruptedException e) {

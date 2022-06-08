@@ -19,7 +19,8 @@ import com.ogya.dms.server.communications.udp.MulticastManager;
 import com.ogya.dms.server.factory.DmsFactory;
 import com.ogya.dms.server.model.Model;
 import com.ogya.dms.server.model.intf.ModelListener;
-import com.ogya.dms.server.structures.Chunk;
+import com.ogya.dms.server.structures.LocalChunk;
+import com.ogya.dms.server.structures.RemoteChunk;
 
 public class Control implements TcpManagerListener, ModelListener {
 
@@ -43,7 +44,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 	private final ZContext context = new ZContext();
 	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
-	private final LinkedBlockingQueue<Chunk> messageQueue = new LinkedBlockingQueue<Chunk>();
+	private final LinkedBlockingQueue<LocalChunk> messageQueue = new LinkedBlockingQueue<LocalChunk>();
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final Object publishSyncObj = new Object();
 
@@ -139,7 +140,7 @@ public class Control implements TcpManagerListener, ModelListener {
 				} else if (poller.pollin(pollInproc)) {
 
 					inprocSocket.recv(ZMQ.DONTWAIT);
-					Chunk chunk = messageQueue.poll();
+					LocalChunk chunk = messageQueue.poll();
 
 					if (chunk == null) {
 						continue;
@@ -246,14 +247,14 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendMoreClaimed(Chunk chunk) {
+	public void sendMoreClaimed(RemoteChunk chunk) {
 
-		sendToLocalUsers(chunk);
+		sendToLocalUsers(new LocalChunk(chunk));
 
 	}
 
 	@Override
-	public void sendToLocalUsers(Chunk chunk) {
+	public void sendToLocalUsers(LocalChunk chunk) {
 		try {
 			messageQueue.put(chunk);
 			signalQueue.put(SIGNAL);
@@ -263,7 +264,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	@Override
-	public void sendToRemoteServer(Chunk chunk, String dmsUuid) {
+	public void sendToRemoteServer(RemoteChunk chunk, String dmsUuid) {
 		tcpManager.sendMessageToServer(chunk, dmsUuid);
 	}
 

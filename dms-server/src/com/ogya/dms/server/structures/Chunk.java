@@ -1,15 +1,14 @@
 package com.ogya.dms.server.structures;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class Chunk {
+public abstract class Chunk {
 
 	public final int messageNumber;
 	public final byte[] data;
-	public final List<String> receiverUuids = new ArrayList<String>();
 	public final SendMorePojo sendMore;
-	public RemoteWork remoteWork;
+
+	public Chunk() {
+		this(0, null, null);
+	}
 
 	public Chunk(int messageNumber, byte[] data, SendMorePojo sendMore) {
 		this.messageNumber = messageNumber;
@@ -17,11 +16,8 @@ public class Chunk {
 		this.sendMore = sendMore;
 	}
 
-	public Chunk(int messageNumber, byte[] data, List<String> receiverUuids, SendMorePojo sendMore) {
-		this(messageNumber, data, sendMore);
-		if (receiverUuids != null) {
-			this.receiverUuids.addAll(receiverUuids);
-		}
+	public Chunk(Chunk chunk) {
+		this(chunk.messageNumber, chunk.data, chunk.sendMore);
 	}
 
 }
