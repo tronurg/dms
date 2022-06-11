@@ -86,6 +86,7 @@ public class DmsMessageReceiver {
 				listener.messageReceived(messagePojo, null, false);
 			} else if (sign < 0) {
 				Path path = Files.createTempFile("dms", null);
+				path.toFile().deleteOnExit();
 				listener.messageReceived(messagePojo, path, false);
 			} else {
 				attachmentReceivers.put(absMessageNumber, new AttachmentReceiver(messagePojo));
@@ -134,6 +135,7 @@ public class DmsMessageReceiver {
 				this.messagePojo = messagePojo;
 				this.globalSize = messagePojo.globalSize;
 				path = Files.createTempFile("dms", null);
+				path.toFile().deleteOnExit();
 				fileChannel = FileChannel.open(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
 			} catch (Exception e) {
 				destroy();
