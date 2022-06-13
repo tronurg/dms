@@ -15,6 +15,8 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public interface DmsClientListener {
 
+	void clientClosed();
+
 	void beaconReceived(Beacon beacon);
 
 	void remoteIpsReceived(InetAddress[] remoteIps);

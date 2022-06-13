@@ -200,6 +200,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
+	public void close() {
+		dmsClient.close();
+	}
+
 	private void initDbModelAndGui() throws Exception {
 
 		Platform.runLater(() -> {
@@ -1083,6 +1087,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			return dstFile;
 
 		}
+
+	}
+
+	@Override
+	public void clientClosed() {
+
+		taskQueue.execute(() -> {
+
+			model.getContacts().forEach((id, contact) -> contactDisconnected(contact));
+			dbManager.close();
+			clearMessageProgresses();
+			Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(false));
+
+		});
 
 	}
 

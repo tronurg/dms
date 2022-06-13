@@ -52,8 +52,12 @@ public class DbManager {
 				.addAnnotatedClass(Contact.class).addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class)
 				.addAnnotatedClass(Message.class).addAnnotatedClass(StatusReport.class).buildSessionFactory();
 
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> factory.close()));
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
 
+	}
+
+	public void close() {
+		factory.close();
 	}
 
 	public Contact getIdentity() throws HibernateException {

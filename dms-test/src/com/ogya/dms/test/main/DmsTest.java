@@ -20,7 +20,6 @@ import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
 import com.ogya.dms.core.main.DmsCore;
-import com.ogya.dms.core.structures.Availability;
 
 public class DmsTest {
 
@@ -86,6 +85,7 @@ public class DmsTest {
 		try {
 
 			DmsHandle dmsHandle = DmsCore.login("armut", "armut");
+			JPanel panel = new JPanel(new BorderLayout());
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
@@ -97,44 +97,14 @@ public class DmsTest {
 			JComponent mcPanel = dmsHandle.getDmsPanel();
 //			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
+			final AtomicBoolean loggedIn = new AtomicBoolean(true);
 			btn.addActionListener(e -> {
-
-				dmsHandle.setAvailability(dmsHandle.getMyContactHandle().getAvailability() == Availability.OFFLINE
-						? Availability.AVAILABLE
-						: Availability.OFFLINE);
-
-				final Long selectedGroupId = gsh.getSelectedGroupId();
-
-				gsh.resetSelection();
-
-				if (selectedGroupId == null)
-					return;
-
-				System.out.println("Group " + dmsHandle.getGroupHandle(selectedGroupId).getName() + " selected.");
-
-//				TestPojo testPojo = new TestPojo();
-//				List<TestPojo> testList = new ArrayList<TestPojo>();
-//				testList.add(testPojo);
-//
-//				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-////				messageHandle.setFileHandle(dmsHandle.createFileHandle(Paths.get("D:/test.txt"), 2));
-//				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
-//				messageHandle.setListHandle(dmsHandle.createListHandle(testList, TestPojo.class, 4));
-//				try {
-//					dmsHandle.sendMessageToGroup(messageHandle, selectedGroupId,
-//							dmsHandle.createMessageRules().useTrackingId(124L));
-//				} catch (Exception e1) {
-//					e1.printStackTrace();
-//				}
-//
-//				try {
-//					System.out.println(String.format("armut: Message #%d sent to group %s\n",
-//							dmsHandle.sendGuiMessageToGroup("api grup deneme", selectedGroupId).get(),
-//							dmsHandle.getGroupHandle(selectedGroupId).getName()));
-//				} catch (InterruptedException | ExecutionException e1) {
-//					e1.printStackTrace();
-//				}
-
+				if (loggedIn.get()) {
+					loggedIn.set(false);
+					DmsCore.logout("armut");
+				} else {
+					//
+				}
 			});
 
 			new Thread(() -> {
@@ -155,7 +125,6 @@ public class DmsTest {
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-			JPanel panel = new JPanel(new BorderLayout());
 			panel.add(mcPanel, BorderLayout.CENTER);
 			panel.add(btn, BorderLayout.SOUTH);
 

@@ -111,6 +111,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
+	public void close() {
+		context.close();
+	}
+
 	public void sendBeacon(Beacon beacon) {
 
 		sendMessage(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null, null, null, null);
@@ -417,6 +421,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			}
 
+		} catch (Exception e) {
+
 		}
 
 	}
@@ -434,8 +440,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 			}
 
 		} catch (Exception e) {
-
-			e.printStackTrace();
 
 		}
 
@@ -465,7 +469,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			}
 
+		} catch (Exception e) {
+
 		}
+
+		listener.clientClosed();
 
 	}
 
