@@ -235,8 +235,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelDownloadRequest(Long downloadId, String receiverUuid) {
 
-		sendMessage(DmsPackingFactory.pack(downloadId), uuid, Arrays.asList(receiverUuid),
-				ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null, null);
+		taskQueue.execute(() -> {
+			messageReceiver.interruptDownload(downloadId);
+			sendMessage(DmsPackingFactory.pack(downloadId), uuid, Arrays.asList(receiverUuid),
+					ContentType.CANCEL_DOWNLOAD_REQUEST, null, null, null, null);
+		});
 
 	}
 

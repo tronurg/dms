@@ -38,6 +38,24 @@ public class DmsMessageReceiver {
 
 	}
 
+	public void interruptDownload(Long downloadId) {
+		if (downloadId == null) {
+			return;
+		}
+		List<Integer> messageNumbersToRemove = new ArrayList<Integer>();
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> {
+			MessagePojo messagePojo = attachmentReceiver.messagePojo;
+			if (messagePojo == null || messagePojo.contentType != ContentType.UPLOAD
+					|| !downloadId.equals(messagePojo.trackingId)) {
+				return;
+			}
+			messageNumbersToRemove.add(messageNumber);
+			attachmentReceiver.interrupt();
+			listener.messageReceived(messagePojo, attachmentReceiver.path, true);
+		});
+		messageNumbersToRemove.forEach(messageNumber -> attachmentReceivers.remove(messageNumber));
+	}
+
 	public void closeMessagesFrom(String senderUuid) {
 		if (senderUuid == null) {
 			return;

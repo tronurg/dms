@@ -3760,7 +3760,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (downloadPojo == null) {
 				return;
 			}
-			if (model.isContactOnline(downloadPojo.senderUuid)) {
+			if (!downloadPojo.paused.get() && model.isContactOnline(downloadPojo.senderUuid)) {
 				dmsClient.cancelDownloadRequest(downloadId, downloadPojo.senderUuid);
 			}
 			deleteFile(downloadPojo.path);
@@ -3775,7 +3775,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.getDownload(downloadId);
-			if (downloadPojo == null) {
+			if (downloadPojo == null || downloadPojo.paused.get()) {
 				return;
 			}
 			if (model.isContactOnline(downloadPojo.senderUuid)) {
@@ -3793,7 +3793,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.getDownload(downloadId);
-			if (downloadPojo == null) {
+			if (downloadPojo == null || !downloadPojo.paused.get()) {
 				return;
 			}
 			downloadPojo.paused.set(false);

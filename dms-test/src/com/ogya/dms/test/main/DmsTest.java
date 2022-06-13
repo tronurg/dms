@@ -5,8 +5,8 @@ import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -39,27 +39,10 @@ public class DmsTest {
 					InetAddress.getByName("192.168.1.90"));
 			dmsHandle.clearRemoteIps();
 
-//			final AtomicReference<String> secretIdRef = new AtomicReference<String>();
-//			Thread secretIdThread = new Thread(() -> {
-//				while (!Thread.currentThread().isInterrupted()) {
-//					if (secretIdRef.get() == null) {
-//						secretIdRef.set("sid");
-//					} else {
-//						secretIdRef.set(null);
-//					}
-//					dmsHandle.setSecretId(secretIdRef.get());
-//					try {
-//						Thread.sleep(2000);
-//					} catch (InterruptedException e) {
-//						e.printStackTrace();
-//					}
-//				}
-//			});
-//			secretIdThread.setDaemon(true);
-//			secretIdThread.start();
-
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.addDownloadListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.registerFileServer(new DmsListenerImpl(dmsHandle));
 
 			JComponent mcPanel = dmsHandle.getDmsPanel();
 
@@ -106,6 +89,8 @@ public class DmsTest {
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.addDownloadListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.registerFileServer(new DmsListenerImpl(dmsHandle));
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
@@ -192,57 +177,31 @@ public class DmsTest {
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.addDownloadListener(new DmsListenerImpl(dmsHandle));
+			dmsHandle.registerFileServer(new DmsListenerImpl(dmsHandle));
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-			JComponent mcPanel = dmsHandle.getDmsPanel();
-//			InetAddress localAddress = InetAddress.getByName("192.168.1.87");
-//			JComponent mcPanel = csh.getContactSelectionPanel();
-//			JComponent mcPanel = csh.getContactSelectionPanel(contact -> Objects.equals(contact.getSecretId(), "sid"));
+//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = csh.getContactSelectionPanel();
 			JButton btn = new JButton("test");
+			final AtomicReference<Long> downloadId = new AtomicReference<Long>();
+			final AtomicBoolean downloading = new AtomicBoolean();
 			btn.addActionListener(e -> {
-
-				csh.getSelectedContactIds().forEach(
-						id -> System.out.println("Contact " + dmsHandle.getContactHandle(id).getName() + " selected."));
-
-				try {
-					dmsHandle.getIdsByServerIp(InetAddress.getByName("localhost"))
-							.forEach(cid -> System.out.println(dmsHandle.getContactHandle(cid).getName()));
-				} catch (UnknownHostException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				if (downloadId.get() == null) {
+					if (csh.getSelectedContactIds().isEmpty()) {
+						return;
+					}
+					downloadId.set(dmsHandle.downloadFile(0L, csh.getSelectedContactIds().get(0)));
+					downloading.set(true);
+				} else if (downloading.get()) {
+					dmsHandle.pauseDownload(downloadId.get());
+					downloading.set(false);
+				} else {
+//					dmsHandle.resumeDownload(downloadId.get());
+//					downloading.set(true);
+					dmsHandle.cancelDownload(downloadId.getAndSet(null));
 				}
-
-				final List<Long> selectedContactIds = csh.getSelectedContactIds();
-
-				csh.resetSelection();
-
-//				TestPojo testPojo = new TestPojo();
-//				List<TestPojo> testList = new ArrayList<TestPojo>();
-//				testList.add(testPojo);
-//
-//				MessageHandle messageHandle = dmsHandle.createMessageHandle("hello contact!", 1);
-////				messageHandle.setFileHandle(
-////						dmsHandle.createFileHandle(Paths.get("D:/Onur/JEgtK/Kýþla Geliþim/kgp_new.psb"), 2));
-//				messageHandle.setObjectHandle(dmsHandle.createObjectHandle(testPojo, 3));
-//				messageHandle.setListHandle(dmsHandle.createListHandle(testList, 4));
-//				try {
-//					dmsHandle.sendMessageToContacts(messageHandle, selectedContactIds,
-//							dmsHandle.createMessageRules().useTrackingId(123L).useTimeout(1000L));
-//				} catch (Exception e1) {
-//					e1.printStackTrace();
-//				}
-//
-//				if (selectedContactIds.size() == 1) {
-//					try {
-//						System.out.println(String.format("kiraz: Message #%d sent to contact %s\n",
-//								dmsHandle.sendGuiMessageToContact("api deneme", selectedContactIds.get(0)).get(),
-//								dmsHandle.getContactHandle(selectedContactIds.get(0)).getName()));
-//					} catch (InterruptedException | ExecutionException e1) {
-//						e1.printStackTrace();
-//					}
-//				}
-
 			});
 
 			JFrame frame = new JFrame();

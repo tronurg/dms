@@ -3,6 +3,7 @@ package com.ogya.dms.test.main;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,11 +15,13 @@ import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.ListHandle;
 import com.ogya.dms.core.intf.handles.MessageHandle;
 import com.ogya.dms.core.intf.handles.ObjectHandle;
+import com.ogya.dms.core.intf.listeners.DmsDownloadListener;
+import com.ogya.dms.core.intf.listeners.DmsFileServer;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
 import com.ogya.dms.core.structures.MessageStatus;
 
-public class DmsListenerImpl implements DmsListener, DmsGuiListener {
+public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownloadListener, DmsFileServer {
 
 	private final DmsHandle dmsHandle;
 	private final String myName;
@@ -259,6 +262,36 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener {
 		System.out.println(String.format("Group conversation cleared: %s\nDeleted messages: %s\n",
 				dmsHandle.getGroupHandle(groupId).getName(), Arrays.toString(deletedMessageIds)));
 
+	}
+
+	@Override
+	public Path fileRequested(Long fileId) {
+		return Paths.get("D:/Onur/E-kitap/JavaTM_ The Complete Reference, - Herbert Schildt.pdf");
+	}
+
+	@Override
+	public void fileServerNotFound(Long downloadId) {
+		System.out.println(String.format("File server not found [%d]", downloadId));
+	}
+
+	@Override
+	public void fileNotFound(Long downloadId) {
+		System.out.println(String.format("File not found [%d]", downloadId));
+	}
+
+	@Override
+	public void downloadingFile(Long downloadId, int progress) {
+		System.out.println(String.format("Downloading file [%d]: %d%%", downloadId, progress));
+	}
+
+	@Override
+	public void fileDownloaded(Long downloadId, Path path) {
+		System.out.println(String.format("File downloaded [%d]: %s", downloadId, path.toAbsolutePath().toString()));
+	}
+
+	@Override
+	public void downloadFailed(Long downloadId) {
+		System.out.println(String.format("Download failed [%d]", downloadId));
 	}
 
 }
