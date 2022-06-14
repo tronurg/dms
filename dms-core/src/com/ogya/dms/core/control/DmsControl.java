@@ -2051,27 +2051,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
+			Contact identity = model.getIdentity();
+			String oldComment = identity.getComment();
+
+			if (Objects.equals(oldComment, comment)) {
+				return;
+			}
+
 			try {
-
-				Contact identity = model.getIdentity();
-
-				if (Objects.equals(identity.getComment(), comment))
-					return;
-
 				identity.setComment(comment);
-
 				Contact newIdentity = dbManager.updateIdentity(identity);
-
-				model.updateComment(comment);
-
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
-
 				sendBeacon(null, comment, null, null, null, null);
-
 			} catch (Exception e) {
-
-				e.printStackTrace();
-
+				model.updateComment(oldComment);
 			}
 
 		});
@@ -2083,27 +2076,20 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
+			Contact identity = model.getIdentity();
+			Availability oldAvailability = identity.getStatus();
+
+			if (oldAvailability == availability) {
+				return;
+			}
+
 			try {
-
-				Contact identity = model.getIdentity();
-
-				if (identity.getStatus() == availability)
-					return;
-
 				identity.setStatus(availability);
-
 				Contact newIdentity = dbManager.updateIdentity(identity);
-
-				model.updateStatus(newIdentity.getStatus());
-
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
-
-				sendBeacon(null, null, newIdentity.getStatus(), null, null, null);
-
+				sendBeacon(null, null, availability, null, null, null);
 			} catch (Exception e) {
-
-				e.printStackTrace();
-
+				model.updateStatus(oldAvailability);
 			}
 
 		});
@@ -3377,29 +3363,22 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
+			Contact identity = model.getIdentity();
+			Double oldLatitude = identity.getLatitude();
+			Double oldLongitude = identity.getLongitude();
+
+			if (Objects.equals(oldLatitude, latitude) && Objects.equals(oldLongitude, longitude)) {
+				return;
+			}
+
 			try {
-
-				Contact identity = model.getIdentity();
-
-				if (Objects.equals(latitude, identity.getLatitude())
-						&& Objects.equals(longitude, identity.getLongitude()))
-					return;
-
 				identity.setLatitude(latitude);
 				identity.setLongitude(longitude);
-
 				Contact newIdentity = dbManager.updateIdentity(identity);
-
-				model.updateCoordinates(latitude, longitude);
-
 				Platform.runLater(() -> dmsPanel.setIdentity(newIdentity));
-
 				sendBeacon(null, null, null, latitude, longitude, null);
-
 			} catch (Exception e) {
-
-				e.printStackTrace();
-
+				model.updateCoordinates(oldLatitude, oldLongitude);
 			}
 
 		});
@@ -3442,25 +3421,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		taskQueue.execute(() -> {
 
+			Contact identity = model.getIdentity();
+			String oldSecretId = identity.getSecretId();
+
+			if (Objects.equals(oldSecretId, secretId)) {
+				return;
+			}
+
 			try {
-
-				Contact identity = model.getIdentity();
-
-				if (Objects.equals(secretId, identity.getSecretId()))
-					return;
-
 				identity.setSecretId(secretId);
-
 				dbManager.updateIdentity(identity);
-
-				model.updateSecretId(secretId);
-
 				sendBeacon(null, null, null, null, null, secretId);
-
 			} catch (Exception e) {
-
-				e.printStackTrace();
-
+				model.updateSecretId(oldSecretId);
 			}
 
 		});
@@ -3676,25 +3649,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds,
 			MessageRules messageRules) {
 
-		if (!model.isServerConnected())
+		if (!model.isServerConnected()) {
 			return false;
+		}
 
-		List<String> contactUuids = new ArrayList<String>();
+		List<Contact> contacts = new ArrayList<Contact>();
 
 		contactIds.forEach(id -> {
 			try {
-				Contact contact = getContact(id);
-				if (contact.getStatus() != Availability.OFFLINE)
-					contactUuids.add(contact.getUuid());
+				contacts.add(getContact(id));
 			} catch (Exception e) {
 
 			}
 		});
 
-		if (contactUuids.isEmpty())
+		if (contacts.isEmpty()) {
 			return false;
+		}
 
-		sendMessageToUuids(messageHandle, contactUuids, messageRules);
+		sendTransientMessage(messageHandle, contacts, messageRules);
 
 		return true;
 
@@ -3703,44 +3676,60 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules) {
 
-		if (!model.isServerConnected())
+		if (!model.isServerConnected()) {
 			return false;
+		}
 
 		Dgroup group = getGroup(groupId);
 
-		if (group == null)
+		if (group == null) {
 			return false;
+		}
 
-		List<String> contactUuids = new ArrayList<String>();
+		List<Contact> contacts = new ArrayList<Contact>();
 
-		group.getMembers().forEach(contact -> {
-			String contactUuid = contact.getUuid();
-			if (model.isContactOnline(contactUuid))
-				contactUuids.add(contactUuid);
-		});
+		contacts.addAll(group.getMembers());
+		if (!group.isLocal()) {
+			contacts.add(group.getOwner());
+		}
 
-		String ownerUuid = group.getOwner().getUuid();
-		if (!group.isLocal() && model.isContactOnline(ownerUuid))
-			contactUuids.add(ownerUuid);
-
-		if (contactUuids.isEmpty())
+		if (contacts.isEmpty()) {
 			return false;
+		}
 
-		sendMessageToUuids(messageHandle, contactUuids, messageRules);
+		sendTransientMessage(messageHandle, contacts, messageRules);
 
 		return true;
 
 	}
 
-	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules) {
-
-		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
+	private void sendTransientMessage(MessageHandle messageHandle, List<Contact> contacts, MessageRules messageRules) {
 
 		MessageRulesImpl messageRulesImpl = messageRules == null ? new MessageRulesImpl()
 				: (MessageRulesImpl) messageRules;
+		final Long trackingId = messageRulesImpl.getTrackingId();
+		final Long useTimeout = messageRulesImpl.getTimeout();
+		final InetAddress useLocalInterface = messageRulesImpl.getLocalInterface();
 
-		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, messageRulesImpl.getTrackingId(),
-				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
+		List<Contact> unsuccessfulContacts = new ArrayList<Contact>();
+		contacts.forEach(contact -> {
+			if (contact.getStatus() == Availability.OFFLINE || !(useLocalInterface == null
+					|| contact.getLocalRemoteServerIps().containsKey(useLocalInterface))) {
+				unsuccessfulContacts.add(contact);
+			}
+		});
+		contacts.removeAll(unsuccessfulContacts);
+
+		if (!(trackingId == null || unsuccessfulContacts.isEmpty())) {
+			List<Long> unsuccessfulIds = unsuccessfulContacts.stream().map(contact -> contact.getId())
+					.collect(Collectors.toList());
+			listenerTaskQueue.execute(
+					() -> dmsListeners.forEach(listener -> listener.messageFailed(trackingId, unsuccessfulIds)));
+		}
+
+		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
+		List<String> contactUuids = contacts.stream().map(contact -> contact.getUuid()).collect(Collectors.toList());
+		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, trackingId, useTimeout, useLocalInterface);
 
 	}
 
