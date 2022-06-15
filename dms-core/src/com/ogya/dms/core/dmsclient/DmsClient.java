@@ -478,6 +478,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void sendNoMore(int messageNumber, String receiverUuid, String receiverAddress) {
+		if (messageNumber == 0) {
+			return;
+		}
 		if (receiverAddress == null) {
 			dmsServers.forEach((serverUuid, dmsServer) -> dmsServer.sendNoMore(messageNumber, receiverUuid));
 			return;
@@ -695,7 +698,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	@Override
-	public void messageFailed(int messageNumber) {
+	public void cannotReceiveMore(int messageNumber) {
 		sendMessage(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE, null, null, null, null);
 	}
 

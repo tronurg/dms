@@ -682,9 +682,11 @@ public class Model {
 
 		private void remoteMessageFailed(int absMessageNumber, String dmsUuid) {
 			messageMap.remove(absMessageNumber);
-			MessagePojo sendNoMorePojo = new MessagePojo(DmsPackingFactory.pack(absMessageNumber), null, null, null,
-					ContentType.SEND_NOMORE, null, null);
-			sendLocalMessage(0, packMessagePojo(sendNoMorePojo), Collections.singletonList(beacon.uuid), null);
+			if (absMessageNumber > 0) {
+				MessagePojo sendNoMorePojo = new MessagePojo(DmsPackingFactory.pack(absMessageNumber), null, null, null,
+						ContentType.SEND_NOMORE, null, null);
+				sendLocalMessage(0, packMessagePojo(sendNoMorePojo), Collections.singletonList(beacon.uuid), null);
+			}
 			sendRemoteMessage(-absMessageNumber, EMPTY_DATA, dmsUuid, null, null);
 		}
 

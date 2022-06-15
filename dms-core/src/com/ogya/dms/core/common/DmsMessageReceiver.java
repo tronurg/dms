@@ -33,7 +33,9 @@ public class DmsMessageReceiver {
 			inFeed(sign, absMessageNumber, messageBuffer);
 		} catch (Exception e) {
 			destroy(absMessageNumber);
-			listener.messageFailed(absMessageNumber);
+			if (sign > 0) {
+				listener.cannotReceiveMore(absMessageNumber);
+			}
 		}
 
 	}
@@ -225,7 +227,7 @@ public class DmsMessageReceiver {
 
 		void messageReceived(MessagePojo messagePojo, Path attachment, boolean partial);
 
-		void messageFailed(int messageNumber);
+		void cannotReceiveMore(int messageNumber);
 
 		void downloadProgress(Long trackingId, int progress);
 
