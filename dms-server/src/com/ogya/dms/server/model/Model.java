@@ -461,7 +461,7 @@ public class Model {
 			if (messageBuffer.hasRemaining() && messageBuffer.get() < 0) {
 				try {
 					MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
-					if (messagePojo.address == null) {
+					if (sign == 0) {
 						commandReceived(messagePojo);
 						return;
 					}
@@ -737,7 +737,7 @@ public class Model {
 				try {
 					MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
 					remapMessagePojo(messagePojo);
-					if (messagePojo.receiverUuids == null) {
+					if (sign == 0) {
 						commandReceived(messagePojo);
 						return;
 					}

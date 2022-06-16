@@ -284,7 +284,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		if (receiverUuids == null) {
 			// Message destined to the local server
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, null, contentType, null, null);
-			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout, null,
+			MessageContainer messageContainer = new MessageContainer(0, messagePojo, attachmentPojo, useTimeout, null,
 					null);
 			DmsServer dmsServer = dmsServers.get(LOCAL_SERVER);
 			if (dmsServer == null) {
@@ -313,16 +313,14 @@ public class DmsClient implements DmsMessageReceiverListener {
 			sendStatuses.add(sendStatus);
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, dmsServer.uuid, contentType,
 					trackingId, useLocalAddress);
-			MessageContainer messageContainer = new MessageContainer(messagePojo, attachmentPojo, useTimeout,
-					sendStatus, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
+			MessageContainer messageContainer = new MessageContainer(getMessageNumber(), messagePojo, attachmentPojo,
+					useTimeout, sendStatus,
+					(progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
 			dmsServer.queueMessage(messageContainer);
 		});
 	}
 
-	private int getMessageNumber(boolean messageOnly) {
-		if (messageOnly) {
-			return 0;
-		}
+	private int getMessageNumber() {
 		int messageNumber = attachmentCounter.getAndIncrement();
 		if (attachmentCounter.get() < 0) {
 			attachmentCounter.set(1);
@@ -838,10 +836,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
 		private long checkInTime = startTime;
 
-		private MessageContainer(MessagePojo messagePojo, AttachmentPojo attachmentPojo, Long useTimeout,
-				SendStatus sendStatus, BiConsumer<Integer, List<String>> progressConsumer) {
+		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
+				Long useTimeout, SendStatus sendStatus, BiConsumer<Integer, List<String>> progressConsumer) {
 			super(messagePojo, attachmentPojo);
-			this.messageNumber = getMessageNumber(attachmentPojo == null);
+			this.messageNumber = messageNumber;
 			this.sendStatus = sendStatus;
 			this.progressConsumer = progressConsumer;
 			this.useTimeout = useTimeout;

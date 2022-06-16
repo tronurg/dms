@@ -102,14 +102,10 @@ public class DmsMessageReceiver {
 		if (messageBuffer.get() < 0) {
 			destroy(absMessageNumber);
 			MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
-			if (sign == 0) {
-				listener.messageReceived(messagePojo, null, false);
-			} else if (sign < 0) {
-				Path path = Files.createTempFile("dms", null);
-				path.toFile().deleteOnExit();
-				listener.messageReceived(messagePojo, path, false);
-			} else {
+			if (sign > 0) {
 				attachmentReceivers.put(absMessageNumber, new AttachmentReceiver(messagePojo));
+			} else {
+				listener.messageReceived(messagePojo, null, false);
 			}
 			return;
 		}
@@ -119,9 +115,9 @@ public class DmsMessageReceiver {
 			return;
 		}
 		messageBuffer.rewind();
-		boolean done = sign < 0;
-		attachmentReceiver.dataReceived(messageBuffer, done);
-		if (!done) {
+		boolean hasMore = sign > 0;
+		attachmentReceiver.dataReceived(messageBuffer, hasMore);
+		if (hasMore) {
 			return;
 		}
 		attachmentReceivers.remove(absMessageNumber);
@@ -196,14 +192,14 @@ public class DmsMessageReceiver {
 
 		}
 
-		private void dataReceived(ByteBuffer dataBuffer, boolean done) throws Exception {
+		private void dataReceived(ByteBuffer dataBuffer, boolean hasMore) throws Exception {
 
 			long position = dataBuffer.getLong();
 			int dataLength = dataBuffer.remaining();
 			currentSize = position + dataLength;
 			fileChannel.write(dataBuffer, position);
 			checkDownloadProgress();
-			if (done) {
+			if (!hasMore) {
 				fileChannel.force(true);
 				fileChannel.close();
 			}
