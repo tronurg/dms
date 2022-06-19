@@ -157,12 +157,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					}
 
 					if (chunk.sendMore != null) {
-						try {
-							routerSocket.send(chunk.sendMore.localUser, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-							routerSocket.send(chunk.sendMore.targetServer, ZMQ.DONTWAIT);
-						} catch (ZMQException e) {
-							model.localUuidDisconnected(chunk.sendMore.localUser);
-						}
+						chunk.sendMore.accept(true);
 					}
 
 				}
@@ -243,13 +238,6 @@ public class Control implements TcpManagerListener, ModelListener {
 	public void messageReceivedFromRemoteServer(final int messageNumber, final byte[] data, final String dmsUuid) {
 
 		taskQueue.execute(() -> model.remoteMessageReceived(messageNumber, data, dmsUuid));
-
-	}
-
-	@Override
-	public void sendMoreClaimed(RemoteChunk chunk) {
-
-		sendToLocalUsers(new LocalChunk(chunk));
 
 	}
 

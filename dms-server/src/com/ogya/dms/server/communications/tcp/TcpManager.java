@@ -415,12 +415,16 @@ public class TcpManager implements TcpServerListener {
 						break;
 					}
 
-					boolean success = false;
-
 					RemoteWork remoteWork = chunk.remoteWork;
 					if (remoteWork == null) {
 						remoteWork = new RemoteWork();
 					}
+
+					if (remoteWork.failed) {
+						continue;
+					}
+
+					boolean success = false;
 
 					while (!success) {
 						boolean updated = checkSendFunction(remoteWork);
@@ -431,22 +435,22 @@ public class TcpManager implements TcpServerListener {
 							success = remoteWork.sendFunction.apply(remoteWork.lastChunk.messageNumber,
 									remoteWork.lastChunk.data);
 							if (!success) {
+								remoteWork.sendFunction = null;
 								continue;
 							}
 						}
 						success = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
 						if (!success) {
+							remoteWork.sendFunction = null;
 							continue;
 						}
 						remoteWork.lastChunk = chunk;
 					}
 
-					if (!success) {
-						if (!(remoteWork.failureRun == null || remoteWork.useLocalAddress == null)) {
-							remoteWork.failureRun.run();
-						}
-					} else if (chunk.sendMore != null) {
-						listener.sendMoreClaimed(chunk);
+					remoteWork.failed = !success;
+
+					if (chunk.sendMore != null) {
+						chunk.sendMore.accept(success);
 					}
 				} catch (Exception e) {
 
@@ -475,7 +479,9 @@ public class TcpManager implements TcpServerListener {
 
 		private boolean checkSendFunction(RemoteWork remoteWork) {
 			if (remoteWork.useLocalAddress != null) {
-				remoteWork.sendFunction = null;
+				if (remoteWork.sendFunction != null) {
+					return false;
+				}
 				synchronized (connections) {
 					for (Connection connection : connections) {
 						if (remoteWork.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())) {
