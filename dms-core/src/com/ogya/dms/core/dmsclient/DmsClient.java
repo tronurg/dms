@@ -18,7 +18,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -283,7 +285,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			Long trackingId, Long useTimeout, InetAddress useLocalAddress, AttachmentPojo attachmentPojo) {
 		if (receiverUuids == null) {
 			// Message destined to the local server
-			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, null, contentType, null, null);
+			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, LOCAL_SERVER, contentType, null, null);
 			MessageContainer messageContainer = new MessageContainer(0, messagePojo, attachmentPojo, useTimeout, null,
 					null);
 			DmsServer dmsServer = dmsServers.get(LOCAL_SERVER);
@@ -291,7 +293,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				dmsServer = new DmsServer(LOCAL_SERVER);
 				dmsServers.put(LOCAL_SERVER, dmsServer);
 			}
-			dmsServer.queueMessage(messageContainer);
+			dmsServer.queueMessage(messageContainer, null);
 			return;
 		}
 		Map<DmsServer, List<String>> serverReceiversMap = new HashMap<DmsServer, List<String>>();
@@ -305,9 +307,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 				serverReceiversMap.get(dmsServer).add(receiverUuid);
 			}
 		}
-		if (!unsuccessfulUuids.isEmpty() && contentType == ContentType.TRANSIENT) {
-			sendProgress(unsuccessfulUuids, -1, trackingId, contentType);
-		}
 		serverReceiversMap.forEach((dmsServer, uuidList) -> {
 			final SendStatus sendStatus = new SendStatus(trackingId, contentType);
 			sendStatuses.add(sendStatus);
@@ -316,8 +315,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 			MessageContainer messageContainer = new MessageContainer(getMessageNumber(), messagePojo, attachmentPojo,
 					useTimeout, sendStatus,
 					(progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
-			dmsServer.queueMessage(messageContainer);
+			dmsServer.queueMessage(messageContainer, unsuccessfulUuids);
 		});
+		if (!unsuccessfulUuids.isEmpty() && contentType == ContentType.TRANSIENT) {
+			sendProgress(unsuccessfulUuids, -1, trackingId, contentType);
+		}
 	}
 
 	private int getMessageNumber() {
@@ -356,14 +358,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
-	private void raiseSignal(String serverUuid) {
-		try {
-			signalQueue.put(serverUuid);
-		} catch (InterruptedException e) {
-
-		}
-	}
-
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
@@ -388,15 +382,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				if (poller.pollin(pollDealer)) {
 
-					String head = dealerSocket.recvStr(ZMQ.DONTWAIT);
-					if (!dealerSocket.hasReceiveMore()) {
-						String serverUuid = head;
-						raiseSignal(serverUuid);
-						continue;
-					}
+					String messageNumberStr = dealerSocket.recvStr(ZMQ.DONTWAIT);
 					byte[] receivedMessage = dealerSocket.recv(ZMQ.DONTWAIT);
 					try {
-						int messageNumber = Integer.parseInt(head);
+						int messageNumber = Integer.parseInt(messageNumberStr);
 						taskQueue.execute(() -> messageReceiver.inFeed(messageNumber, receivedMessage));
 					} catch (Exception e) {
 
@@ -410,7 +399,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 						continue;
 					}
 
-					dmsServer.sendMore((messageNumber, dataBuffer) -> {
+					dmsServer.sendNext((messageNumber, dataBuffer) -> {
 						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(dataBuffer, ZMQ.DONTWAIT);
 					});
@@ -473,6 +462,14 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		listener.clientClosed();
 
+	}
+
+	private void sendMore(boolean success, String receiverAddress) {
+		DmsServer dmsServer = dmsServers.get(receiverAddress);
+		if (dmsServer == null) {
+			return;
+		}
+		dmsServer.sendMore(success);
 	}
 
 	private void sendNoMore(int messageNumber, String receiverUuid, String receiverAddress) {
@@ -674,6 +671,15 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			}
 
+			case SEND_MORE: {
+
+				boolean success = DmsPackingFactory.unpack(messagePojo.payload, Boolean.class);
+				sendMore(success, messagePojo.address);
+
+				break;
+
+			}
+
 			case SEND_NOMORE: {
 
 				int messageNumber = DmsPackingFactory.unpack(messagePojo.payload, Integer.class);
@@ -717,15 +723,21 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final Set<String> users = Collections.synchronizedSet(new HashSet<String>());
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, messageSorter);
+		private final AtomicReference<MessageContainer> lastMessageRef = new AtomicReference<MessageContainer>();
 
 		private DmsServer(String uuid) {
 			this.uuid = uuid;
 		}
 
-		private synchronized void queueMessage(MessageContainer messageContainer) {
+		private synchronized void queueMessage(MessageContainer messageContainer, List<String> unsuccessfulUuids) {
 			boolean nok = closed.get();
 			if (!(nok || messageContainer.receiverUuids == null)) {
-				messageContainer.receiverUuids.removeIf(uuid -> !users.contains(uuid));
+				List<String> offlineUuids = messageContainer.receiverUuids.stream()
+						.filter(uuid -> !users.contains(uuid)).collect(Collectors.toList());
+				if (unsuccessfulUuids != null) {
+					unsuccessfulUuids.addAll(offlineUuids);
+				}
+				messageContainer.receiverUuids.removeAll(offlineUuids);
 				nok = messageContainer.receiverUuids.isEmpty();
 			}
 			if (nok) {
@@ -733,10 +745,21 @@ public class DmsClient implements DmsMessageReceiverListener {
 				return;
 			}
 			messageQueue.offer(messageContainer);
-			raiseSignal(uuid);
+			raiseSignal();
 		}
 
-		private synchronized void sendMore(BiConsumer<Integer, ByteBuffer> bc) {
+		private synchronized void raiseSignal() {
+			if (lastMessageRef.get() != null) {
+				return;
+			}
+			try {
+				signalQueue.put(uuid);
+			} catch (InterruptedException e) {
+
+			}
+		}
+
+		private synchronized void sendNext(BiConsumer<Integer, ByteBuffer> bc) {
 
 			MessageContainer messageContainer = messageQueue.poll();
 			if (messageContainer == null) {
@@ -756,9 +779,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			bc.accept(messageNumber, chunk.dataBuffer);
 
-			boolean progressUpdated = chunk.progress > messageContainer.progressPercent.getAndSet(chunk.progress);
-			if (progressUpdated && messageContainer.progressConsumer != null) {
-				messageContainer.progressConsumer.accept(chunk.progress, messageContainer.receiverUuids);
+			messageContainer.nextProgress = chunk.progress;
+
+			if (messageNumber != 0) {
+				lastMessageRef.set(messageContainer);
 			}
 
 			if (messageContainer.hasMore()) {
@@ -767,6 +791,18 @@ public class DmsClient implements DmsMessageReceiverListener {
 				messageContainer.close();
 			}
 
+		}
+
+		private synchronized void sendMore(boolean success) {
+			MessageContainer lastMessage = lastMessageRef.getAndSet(null);
+			raiseSignal();
+			if (lastMessage == null) {
+				return;
+			}
+			if (!success) {
+				lastMessage.nextProgress = -1;
+			}
+			lastMessage.updateProgress();
 		}
 
 		private synchronized void sendNoMore(int messageNumber, String receiverUuid) {
@@ -834,6 +870,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
+		private int nextProgress;
 		private long checkInTime = startTime;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
@@ -849,6 +886,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		private boolean isSecondary() {
 			return bigFile && health.get();
+		}
+
+		private void updateProgress() {
+			boolean progressUpdated = nextProgress != progressPercent.getAndSet(nextProgress);
+			if (progressUpdated && progressConsumer != null) {
+				progressConsumer.accept(nextProgress, receiverUuids);
+			}
 		}
 
 		private void removeReceiver(String receiverUuid) {

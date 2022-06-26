@@ -9,7 +9,6 @@ public class RemoteWork {
 
 	public BiFunction<Integer, byte[], Boolean> sendFunction;
 	public Chunk lastChunk;
-	public boolean failed = false;
 
 	public RemoteWork() {
 		this(null);

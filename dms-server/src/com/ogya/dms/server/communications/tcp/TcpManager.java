@@ -420,10 +420,6 @@ public class TcpManager implements TcpServerListener {
 						remoteWork = new RemoteWork();
 					}
 
-					if (remoteWork.failed) {
-						continue;
-					}
-
 					boolean success = false;
 
 					while (!success) {
@@ -446,8 +442,6 @@ public class TcpManager implements TcpServerListener {
 						}
 						remoteWork.lastChunk = chunk;
 					}
-
-					remoteWork.failed = !success;
 
 					if (chunk.sendMore != null) {
 						chunk.sendMore.accept(success);

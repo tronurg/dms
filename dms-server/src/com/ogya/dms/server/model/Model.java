@@ -466,16 +466,17 @@ public class Model {
 						commandReceived(messagePojo);
 						return;
 					}
-					boolean local = CommonConstants.DMS_UUID.equals(messagePojo.address);
+					String address = messagePojo.address;
+					boolean local = CommonConstants.DMS_UUID.equals(address);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					RemoteWork remoteWork = null;
 					if (!local) {
 						remoteWork = new RemoteWork(messagePojo.useLocalAddress);
 					}
-					Consumer<Boolean> sendMore = success -> sendMore(success, absMessageNumber, messagePojo.address);
+					Consumer<Boolean> sendMore = success -> sendMore(success, address);
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								messagePojo.address, messagePojo.receiverUuids, remoteWork, sendMore));
+								address, messagePojo.receiverUuids, remoteWork, sendMore));
 					}
 					if (local) {
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
@@ -679,10 +680,10 @@ public class Model {
 
 		}
 
-		private void sendMore(boolean success, int absMessageNumber, String dmsUuid) {
+		private void sendMore(boolean success, String dmsUuid) {
 			// TODO
 			MessagePojo sendMorePojo = new MessagePojo(DmsPackingFactory.pack(success), null, null, dmsUuid,
-					ContentType.SEND_MORE, (long) absMessageNumber, null);
+					ContentType.SEND_MORE, null, null);
 			sendLocalMessage(0, packMessagePojo(sendMorePojo), Collections.singletonList(beacon.uuid), null);
 		}
 
