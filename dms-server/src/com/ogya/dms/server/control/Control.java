@@ -157,7 +157,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					}
 
 					if (chunk.sendMore != null) {
-						chunk.sendMore.accept(true);
+						chunk.sendMore.accept(chunk.messageNumber, true);
 					}
 
 				}

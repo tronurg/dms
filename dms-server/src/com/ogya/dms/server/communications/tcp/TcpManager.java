@@ -438,13 +438,14 @@ public class TcpManager implements TcpServerListener {
 						success = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
 						if (!success) {
 							remoteWork.sendFunction = null;
+							remoteWork.useLocalAddress = null;
 							continue;
 						}
 						remoteWork.lastChunk = chunk;
 					}
 
 					if (chunk.sendMore != null) {
-						chunk.sendMore.accept(success);
+						chunk.sendMore.accept(chunk.messageNumber, success);
 					}
 				} catch (Exception e) {
 

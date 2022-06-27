@@ -439,12 +439,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void clearMessageProgresses() {
 
-		model.getPrivateMessageProgresses()
-				.forEach((entityId, messageIdProgress) -> messageIdProgress.forEach((messageId, progress) -> Platform
-						.runLater(() -> dmsPanel.updateMessageProgress(entityId, messageId, -1))));
-
-		model.clearPrivateMessageProgresses();
-
 		Long messageId = model.getDetailedGroupMessageId();
 
 		Map<Long, Integer> groupMessageProgresses = model.getGroupMessageProgresses(messageId);
@@ -1343,8 +1337,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (message.getDgroup() == null) {
 
 					for (EntityId entityId : entityIds) {
-
-						model.storePrivateMessageProgress(entityId, messageId, progress);
 
 						Platform.runLater(() -> dmsPanel.updateMessageProgress(entityId, messageId, progress));
 
@@ -3654,21 +3646,21 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			return false;
 		}
 
-		List<Contact> contacts = new ArrayList<Contact>();
+		List<String> contactUuids = new ArrayList<String>();
 
 		contactIds.forEach(id -> {
 			try {
-				contacts.add(getContact(id));
+				contactUuids.add(getContact(id).getUuid());
 			} catch (Exception e) {
 
 			}
 		});
 
-		if (contacts.isEmpty()) {
+		if (contactUuids.isEmpty()) {
 			return false;
 		}
 
-		sendTransientMessage(messageHandle, contacts, messageRules);
+		sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
 		return true;
 
@@ -3687,50 +3679,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			return false;
 		}
 
-		List<Contact> contacts = new ArrayList<Contact>();
+		List<String> contactUuids = new ArrayList<String>();
 
-		contacts.addAll(group.getMembers());
+		group.getMembers().forEach(contact -> contactUuids.add(contact.getUuid()));
 		if (!group.isLocal()) {
-			contacts.add(group.getOwner());
+			contactUuids.add(group.getOwner().getUuid());
 		}
 
-		if (contacts.isEmpty()) {
+		if (contactUuids.isEmpty()) {
 			return false;
 		}
 
-		sendTransientMessage(messageHandle, contacts, messageRules);
+		sendMessageToUuids(messageHandle, contactUuids, messageRules);
 
 		return true;
 
 	}
 
-	private void sendTransientMessage(MessageHandle messageHandle, List<Contact> contacts, MessageRules messageRules) {
+	private void sendMessageToUuids(MessageHandle messageHandle, List<String> contactUuids, MessageRules messageRules) {
+
+		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
 
 		MessageRulesImpl messageRulesImpl = messageRules == null ? new MessageRulesImpl()
 				: (MessageRulesImpl) messageRules;
-		final Long trackingId = messageRulesImpl.getTrackingId();
-		final Long useTimeout = messageRulesImpl.getTimeout();
-		final InetAddress useLocalInterface = messageRulesImpl.getLocalInterface();
 
-		List<Contact> unsuccessfulContacts = new ArrayList<Contact>();
-		contacts.forEach(contact -> {
-			if (contact.getStatus() == Availability.OFFLINE || !(useLocalInterface == null
-					|| contact.getLocalRemoteServerIps().containsKey(useLocalInterface))) {
-				unsuccessfulContacts.add(contact);
-			}
-		});
-		contacts.removeAll(unsuccessfulContacts);
-
-		if (!(trackingId == null || unsuccessfulContacts.isEmpty())) {
-			List<Long> unsuccessfulIds = unsuccessfulContacts.stream().map(contact -> contact.getId())
-					.collect(Collectors.toList());
-			listenerTaskQueue.execute(
-					() -> dmsListeners.forEach(listener -> listener.messageFailed(trackingId, unsuccessfulIds)));
-		}
-
-		MessageHandleImpl outgoingMessage = new MessageHandleImpl(messageHandle);
-		List<String> contactUuids = contacts.stream().map(contact -> contact.getUuid()).collect(Collectors.toList());
-		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, trackingId, useTimeout, useLocalInterface);
+		dmsClient.sendTransientMessage(outgoingMessage, contactUuids, messageRulesImpl.getTrackingId(),
+				messageRulesImpl.getTimeout(), messageRulesImpl.getLocalInterface());
 
 	}
 

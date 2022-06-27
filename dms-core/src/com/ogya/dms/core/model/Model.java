@@ -54,9 +54,6 @@ public class Model {
 	private final Map<Long, Map<Long, Integer>> groupMessageProgresses = Collections
 			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
 
-	private final Map<EntityId, Map<Long, Integer>> privateMessageProgresses = Collections
-			.synchronizedMap(new HashMap<EntityId, Map<Long, Integer>>());
-
 	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
 		@Override
 		public int compare(Contact arg0, Contact arg1) {
@@ -483,40 +480,6 @@ public class Model {
 	public void clearGroupMessageProgresses() {
 
 		groupMessageProgresses.clear();
-
-	}
-
-	public void storePrivateMessageProgress(EntityId entityId, Long messageId, int progress) {
-
-		if (progress < 0 || progress == 100) {
-
-			if (!privateMessageProgresses.containsKey(entityId))
-				return;
-
-			privateMessageProgresses.get(entityId).remove(messageId);
-
-			if (privateMessageProgresses.get(entityId).isEmpty())
-				privateMessageProgresses.remove(entityId);
-
-		} else {
-
-			privateMessageProgresses.putIfAbsent(entityId, Collections.synchronizedMap(new HashMap<Long, Integer>()));
-
-			privateMessageProgresses.get(entityId).put(messageId, progress);
-
-		}
-
-	}
-
-	public Map<EntityId, Map<Long, Integer>> getPrivateMessageProgresses() {
-
-		return privateMessageProgresses;
-
-	}
-
-	public void clearPrivateMessageProgresses() {
-
-		privateMessageProgresses.clear();
 
 	}
 

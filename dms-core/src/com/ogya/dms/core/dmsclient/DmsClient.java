@@ -476,10 +476,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 		if (messageNumber == 0) {
 			return;
 		}
-		if (receiverAddress == null) {
-			dmsServers.forEach((serverUuid, dmsServer) -> dmsServer.sendNoMore(messageNumber, receiverUuid));
-			return;
-		}
 		DmsServer dmsServer = dmsServers.get(receiverAddress);
 		if (dmsServer == null) {
 			return;
@@ -768,7 +764,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			Chunk chunk = messageContainer.next();
 			if (chunk == null) {
-				messageContainer.close();
+				closeMessage(messageContainer);
+				raiseSignal();
 				return;
 			}
 
@@ -788,7 +785,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			if (messageContainer.hasMore()) {
 				messageQueue.offer(messageContainer);
 			} else {
-				messageContainer.close();
+				messageContainer.closeFile();
 			}
 
 		}
@@ -800,7 +797,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				return;
 			}
 			if (!success) {
-				lastMessage.nextProgress = -1;
+				lastMessage.fail();
 			}
 			lastMessage.updateProgress();
 		}
@@ -810,18 +807,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 				if (messageContainer.messageNumber != messageNumber) {
 					return;
 				}
-				if (receiverUuid == null) {
-					messageQueue.remove(messageContainer);
-					messageContainer.close();
-					return;
-				}
 				if (messageContainer.receiverUuids == null) {
 					return;
 				}
 				messageContainer.removeReceiver(receiverUuid);
 				if (messageContainer.receiverUuids.isEmpty()) {
 					messageQueue.remove(messageContainer);
-					messageContainer.close();
+					closeMessage(messageContainer);
 				}
 			});
 		}
@@ -839,7 +831,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				messageContainer.removeReceiver(userUuid);
 				if (messageContainer.receiverUuids.isEmpty()) {
 					messageQueue.remove(messageContainer);
-					messageContainer.close();
+					closeMessage(messageContainer);
 				}
 			});
 			users.remove(userUuid);
@@ -849,11 +841,18 @@ public class DmsClient implements DmsMessageReceiverListener {
 			}
 		}
 
+		private synchronized void closeMessage(MessageContainer message) {
+			message.close();
+			if (message.equals(lastMessageRef.get())) {
+				lastMessageRef.set(null);
+			}
+		}
+
 		private synchronized void close() {
 			closed.set(true);
 			MessageContainer messageContainer;
 			while ((messageContainer = messageQueue.poll()) != null) {
-				messageContainer.close();
+				closeMessage(messageContainer);
 			}
 		}
 
@@ -904,20 +903,29 @@ public class DmsClient implements DmsMessageReceiverListener {
 			}
 		}
 
+		private void fail() {
+			health.set(false);
+			nextProgress = -1;
+		}
+
+		private void closeFile() {
+			super.close();
+			if (sendStatus != null) {
+				sendStatuses.remove(sendStatus);
+			}
+		}
+
 		@Override
 		public Chunk next() {
 			checkInTime = System.currentTimeMillis();
-			health.set((sendStatus == null || sendStatus.status.get())
+			health.set(health.get() && (sendStatus == null || sendStatus.status.get())
 					&& (useTimeout == null || checkInTime - startTime < useTimeout));
 			return super.next();
 		}
 
 		@Override
 		public void close() {
-			super.close();
-			if (sendStatus != null) {
-				sendStatuses.remove(sendStatus);
-			}
+			closeFile();
 			if (progressConsumer != null && progressPercent.get() < 100) {
 				progressConsumer.accept(-1, receiverUuids);
 			}
