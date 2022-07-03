@@ -14,28 +14,25 @@ public class MessagePojo {
 	@JsonProperty("c")
 	public List<String> receiverUuids;
 	@JsonProperty("d")
-	public String address;
-	@JsonProperty("e")
 	public ContentType contentType;
-	@JsonProperty("f")
+	@JsonProperty("e")
 	public Long trackingId;
-	@JsonProperty("g")
+	@JsonProperty("f")
 	public Long globalSize;
 
-	@JsonProperty("h")
+	@JsonProperty("g")
 	public InetAddress useLocalAddress;
 
 	public MessagePojo() {
 		super();
 	}
 
-	public MessagePojo(byte[] payload, String senderUuid, List<String> receiverUuids, String address,
-			ContentType contentType, Long trackingId, InetAddress useLocalAddress) {
+	public MessagePojo(byte[] payload, String senderUuid, List<String> receiverUuids, ContentType contentType,
+			Long trackingId, InetAddress useLocalAddress) {
 
 		this.payload = payload;
 		this.senderUuid = senderUuid;
 		this.receiverUuids = receiverUuids;
-		this.address = address;
 		this.contentType = contentType;
 		this.trackingId = trackingId;
 		this.useLocalAddress = useLocalAddress;

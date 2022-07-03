@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ContentType {
 
-	BCON(0), UUID_DISCONNECTED(1), SEND_MORE(2), SEND_NOMORE(3),
+	BCON(0), UUID_DISCONNECTED(1), STATUS_INFO(2),
 
 	MESSAGE(10), TRANSIENT(11),
 

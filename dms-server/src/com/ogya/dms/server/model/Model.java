@@ -85,7 +85,7 @@ public class Model {
 
 	}
 
-	public void localMessageReceived(int messageNumber, byte[] data, String userUuid) {
+	public void localMessageReceived(int messageNumber, String address, byte[] data, String userUuid) {
 
 		LocalUser localUser = localUsers.get(userUuid);
 		if (localUser == null) {
@@ -95,7 +95,7 @@ public class Model {
 			localMappedUsers.put(localUser.mapId, localUser);
 		}
 
-		localUser.messageReceived(messageNumber, data);
+		localUser.messageReceived(messageNumber, address, data);
 
 	}
 
@@ -151,11 +151,11 @@ public class Model {
 		localMappedUsers.remove(user.mapId);
 		cleanMessagesToUuid(uuid, true);
 
-		MessagePojo messagePojo = new MessagePojo(null, uuid, null, null, ContentType.UUID_DISCONNECTED, null, null);
+		MessagePojo messagePojo = new MessagePojo(null, uuid, null, ContentType.UUID_DISCONNECTED, null, null);
 		sendLocalMessageToAll(0, packMessagePojo(messagePojo));
 
-		MessagePojo remoteMessagePojo = new MessagePojo(null, user.mapId, null, null, ContentType.UUID_DISCONNECTED,
-				null, null);
+		MessagePojo remoteMessagePojo = new MessagePojo(null, user.mapId, null, ContentType.UUID_DISCONNECTED, null,
+				null);
 		sendRemoteMessageToAll(0, packMessagePojo(remoteMessagePojo));
 
 	}
@@ -179,8 +179,7 @@ public class Model {
 		String userUuid = user.beacon.uuid;
 		cleanMessagesToUuid(userUuid, false);
 
-		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, null, ContentType.UUID_DISCONNECTED, null,
-				null);
+		MessagePojo messagePojo = new MessagePojo(null, userUuid, null, ContentType.UUID_DISCONNECTED, null, null);
 		sendLocalMessageToAll(0, packMessagePojo(messagePojo));
 
 	}
@@ -202,8 +201,8 @@ public class Model {
 
 	private void sendBeaconToLocalUsers(Beacon beacon) {
 
-		MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(beacon), null, null, null, ContentType.BCON,
-				null, null);
+		MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(beacon), null, null, ContentType.BCON, null,
+				null);
 		List<String> receiverUuids = new ArrayList<String>(localUsers.keySet());
 		receiverUuids.remove(beacon.uuid);
 		sendLocalMessage(0, packMessagePojo(beaconPojo), receiverUuids, null);
@@ -217,16 +216,16 @@ public class Model {
 			if (user.beacon.status == null || Objects.equals(receiverUuid, uuid))
 				return;
 
-			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, null,
-					ContentType.BCON, null, null);
+			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, ContentType.BCON,
+					null, null);
 			sendLocalMessage(0, packMessagePojo(beaconPojo), Collections.singletonList(receiverUuid), null);
 
 		});
 
 		remoteServers.forEach((serverUuid, remoteServer) -> remoteServer.remoteUsers.forEach((uuid, user) -> {
 
-			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, null,
-					ContentType.BCON, null, null);
+			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, ContentType.BCON,
+					null, null);
 			sendLocalMessage(0, packMessagePojo(beaconPojo), Collections.singletonList(receiverUuid), null);
 
 		}));
@@ -246,7 +245,7 @@ public class Model {
 				return;
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packBeaconServerToServer(user.beacon),
-					user.mapId, null, null, ContentType.BCON, null, null);
+					user.mapId, null, ContentType.BCON, null, null);
 			sendRemoteMessage(0, packMessagePojo(beaconPojo), dmsUuid, null, null);
 
 		});
@@ -339,16 +338,16 @@ public class Model {
 			return;
 		}
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, null, ContentType.IPS,
-				null, null);
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, ContentType.IPS, null,
+				null);
 		sendLocalMessage(0, packMessagePojo(messagePojo), Collections.singletonList(receiverUuid), null);
 
 	}
 
 	private void sendRemoteIpsToAllLocalUsers() {
 
-		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, null, ContentType.IPS,
-				null, null);
+		MessagePojo messagePojo = new MessagePojo(DmsPackingFactory.pack(remoteIps), null, null, ContentType.IPS, null,
+				null);
 		sendLocalMessageToAll(0, packMessagePojo(messagePojo));
 
 	}
@@ -455,7 +454,7 @@ public class Model {
 
 		}
 
-		private void messageReceived(int messageNumber, byte[] data) {
+		private void messageReceived(int messageNumber, String address, byte[] data) {
 			int sign = Integer.signum(messageNumber);
 			int absMessageNumber = Math.abs(messageNumber);
 			ByteBuffer messageBuffer = ByteBuffer.wrap(data);
@@ -466,7 +465,6 @@ public class Model {
 						commandReceived(messagePojo);
 						return;
 					}
-					String address = messagePojo.address;
 					boolean local = CommonConstants.DMS_UUID.equals(address);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					RemoteWork remoteWork = null;
@@ -483,7 +481,7 @@ public class Model {
 					if (local) {
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
 					} else {
-						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, remoteWork, sendMore);
+						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, address, remoteWork, sendMore);
 					}
 				} catch (Exception e) {
 
@@ -529,7 +527,7 @@ public class Model {
 				sendBeaconToLocalUsers(localUser.beacon);
 
 				sendRemoteMessageToAll(0, packMessagePojo(new MessagePojo(messagePojo.payload, localUser.mapId, null,
-						null, messagePojo.contentType, null, null)));
+						messagePojo.contentType, null, null)));
 
 				break;
 
@@ -636,7 +634,6 @@ public class Model {
 				throw new Exception();
 			}
 
-			messagePojo.address = null;
 			messagePojo.useLocalAddress = null;
 
 			messagePojo.receiverUuids.removeIf(uuid -> !localUsers.containsKey(uuid));
@@ -648,15 +645,13 @@ public class Model {
 
 		}
 
-		private void remoteMessageReceived(int messageNumber, MessagePojo messagePojo, RemoteWork remoteWork,
-				BiConsumer<Integer, Boolean> sendMore) throws Exception {
+		private void remoteMessageReceived(int messageNumber, MessagePojo messagePojo, String address,
+				RemoteWork remoteWork, BiConsumer<Integer, Boolean> sendMore) throws Exception {
 
 			if (messagePojo.receiverUuids == null) {
 				throw new Exception();
 			}
 
-			String address = messagePojo.address;
-			messagePojo.address = null;
 			messagePojo.useLocalAddress = null;
 
 			DmsServer remoteServer = remoteServers.get(address);
@@ -745,7 +740,7 @@ public class Model {
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								messagePojo.address, messagePojo.receiverUuids, null, null));
+								null, messagePojo.receiverUuids, null, null));
 					}
 					localMessageReceived(sign * mappedMessageNumber, messagePojo);
 				} catch (Exception e) {
