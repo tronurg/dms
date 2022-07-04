@@ -678,8 +678,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	@Override
 	public void cannotReceiveMore(int messageNumber) {
-		sendMessage(DmsPackingFactory.pack(new StatusInfo(null, false)), null, null, ContentType.STATUS_INFO, null,
-				null, null, null);
+		sendMessage(DmsPackingFactory.pack(messageNumber), null, null, ContentType.SEND_NOMORE, null, null, null, null);
 	}
 
 	@Override

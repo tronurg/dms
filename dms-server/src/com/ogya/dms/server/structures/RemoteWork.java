@@ -5,7 +5,8 @@ import java.util.function.BiFunction;
 
 public class RemoteWork {
 
-	public InetAddress useLocalAddress;
+	public final InetAddress useLocalAddress;
+
 	public BiFunction<Integer, byte[], Boolean> sendFunction;
 	public Chunk lastChunk;
 

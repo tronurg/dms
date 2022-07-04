@@ -133,10 +133,10 @@ public class Control implements TcpManagerListener, ModelListener {
 				if (poller.pollin(pollRouter)) {
 
 					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
-					final String messageNumberStr = routerSocket.recvStr(ZMQ.DONTWAIT);
+					String messageNumberStr = routerSocket.recvStr(ZMQ.DONTWAIT);
 					final String address = routerSocket.recvStr(ZMQ.DONTWAIT);
-					byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
-					int messageNumber = Integer.parseInt(messageNumberStr);
+					final byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
+					final int messageNumber = Integer.parseInt(messageNumberStr);
 					taskQueue.execute(() -> model.localMessageReceived(messageNumber, address, data, userUuid));
 
 				} else if (poller.pollin(pollInproc)) {
@@ -159,7 +159,7 @@ public class Control implements TcpManagerListener, ModelListener {
 					}
 
 					if (chunk.sendMore != null) {
-						chunk.sendMore.accept(chunk.messageNumber, true);
+						chunk.sendMore.accept(true);
 					}
 
 				}

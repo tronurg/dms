@@ -2,8 +2,12 @@ package com.ogya.dms.commons.structures;
 
 public class StatusInfo {
 
-	public final String address;
-	public final boolean success;
+	public String address;
+	public boolean success;
+
+	public StatusInfo() {
+		super();
+	}
 
 	public StatusInfo(String address, boolean success) {
 		this.address = address;

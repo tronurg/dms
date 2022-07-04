@@ -437,15 +437,25 @@ public class TcpManager implements TcpServerListener {
 						}
 						success = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
 						if (!success) {
+							if (remoteWork.useLocalAddress != null) {
+								int messageNumber = -Math.abs(chunk.messageNumber);
+								synchronized (connections) {
+									for (Connection connection : connections) {
+										if (connection.tcpConnection.sendMessage(messageNumber, new byte[0])) {
+											break;
+										}
+									}
+								}
+								break;
+							}
 							remoteWork.sendFunction = null;
-							remoteWork.useLocalAddress = null;
 							continue;
 						}
 						remoteWork.lastChunk = chunk;
 					}
 
 					if (chunk.sendMore != null) {
-						chunk.sendMore.accept(chunk.messageNumber, success);
+						chunk.sendMore.accept(success);
 					}
 				} catch (Exception e) {
 
