@@ -15,6 +15,7 @@ public class DownloadPojo {
 	@JsonProperty("c")
 	public Long position;
 	public transient Path path;
+	public final transient AtomicBoolean pausing = new AtomicBoolean();
 	public final transient AtomicBoolean paused = new AtomicBoolean();
 
 	public DownloadPojo() {

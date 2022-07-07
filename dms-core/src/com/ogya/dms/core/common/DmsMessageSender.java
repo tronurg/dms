@@ -108,6 +108,12 @@ public class DmsMessageSender implements AutoCloseable {
 			if (position > Long.MIN_VALUE) {
 				// Already started sending, so send closure byte
 				chunk = new Chunk(ByteBuffer.allocate(0), -1);
+			} else if (messagePojo.contentType == ContentType.UPLOAD) {
+				try {
+					chunk = new Chunk(getPojoData(), -1);
+				} catch (Exception e1) {
+
+				}
 			}
 		}
 		return chunk;

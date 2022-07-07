@@ -163,13 +163,29 @@ public class DmsTest {
 					}
 					downloadId.set(dmsHandle.downloadFile(0L, csh.getSelectedContactIds().get(0)));
 					downloading.set(true);
+					new Thread(() -> {
+						while (true) {
+							dmsHandle.pauseDownload(downloadId.get());
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e1) {
+
+							}
+							dmsHandle.resumeDownload(downloadId.get());
+							try {
+								Thread.sleep(100);
+							} catch (InterruptedException e1) {
+
+							}
+						}
+					}).start();
 				} else if (downloading.get()) {
 					dmsHandle.pauseDownload(downloadId.get());
 					downloading.set(false);
 				} else {
-//					dmsHandle.resumeDownload(downloadId.get());
-//					downloading.set(true);
-					dmsHandle.cancelDownload(downloadId.getAndSet(null));
+					dmsHandle.resumeDownload(downloadId.get());
+					downloading.set(true);
+//					dmsHandle.cancelDownload(downloadId.getAndSet(null));
 				}
 			});
 

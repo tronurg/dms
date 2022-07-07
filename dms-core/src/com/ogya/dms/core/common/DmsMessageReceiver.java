@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.ContentType;
@@ -104,6 +105,8 @@ public class DmsMessageReceiver {
 			MessagePojo messagePojo = DmsPackingFactory.unpack(messageBuffer, MessagePojo.class);
 			if (sign > 0) {
 				attachmentReceivers.put(absMessageNumber, new AttachmentReceiver(messagePojo));
+			} else if (messagePojo.contentType == ContentType.UPLOAD && Objects.equals(messagePojo.globalSize, 0L)) {
+				listener.messageReceived(messagePojo, Files.createTempFile("dms", null), false);
 			} else {
 				listener.messageReceived(messagePojo, null, false);
 			}

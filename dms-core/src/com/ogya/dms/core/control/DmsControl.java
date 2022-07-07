@@ -1267,8 +1267,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						// CHECK DOWNLOADS
 						downloadTaskQueue.execute(() -> {
 							List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
-							waitingDownloads
-									.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
+							waitingDownloads.forEach(downloadPojo -> {
+								downloadPojo.pausing.set(false);
+								dmsClient.sendDownloadRequest(downloadPojo, userUuid);
+							});
 						});
 
 					});
@@ -1398,9 +1400,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			try {
 
-				// If message already received, return
-				if (dbManager.getMessageBySender(remoteUuid, message.getMessageRefId()) != null)
+				// If message already received, feed status and return
+				Message dbMessage = dbManager.getMessageBySender(remoteUuid, message.getMessageRefId());
+				if (dbMessage != null) {
+					dmsClient.feedMessageStatus(
+							Collections.singletonMap(dbMessage.getMessageRefId(), dbMessage.getMessageStatus()),
+							remoteUuid);
 					return;
+				}
 
 				Contact contact = getContact(remoteUuid);
 				if (contact.getViewStatus() != ViewStatus.DEFAULT) {
@@ -1894,6 +1901,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return;
 			}
 			Path path = fileServer.fileRequested(downloadPojo.fileId);
+			if (!Files.exists(path)) {
+				path = null;
+			}
 			if (path == null) {
 				dmsClient.sendFileNotFound(downloadPojo.downloadId, remoteUuid);
 				return;
@@ -1975,8 +1985,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return;
 			}
 
+			downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
+
+			if (path == null) {
+				return;
+			}
+
 			try {
-				if (!(downloadPojo.path == null || path == null)) {
+				if (downloadPojo.path != null) {
 					try (FileChannel fileChannelRead = FileChannel.open(downloadPojo.path, StandardOpenOption.READ);
 							FileChannel fileChannelWrite = FileChannel.open(path, StandardOpenOption.WRITE)) {
 						ByteBuffer buffer = ByteBuffer.allocate(CommonConstants.CHUNK_SIZE);
@@ -1989,16 +2005,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					deleteFile(downloadPojo.path);
 				}
 				if (partial) {
-					if (path != null) {
-						downloadPojo.path = path;
-						downloadPojo.position = Files.size(downloadPojo.path);
-					}
-				} else {
-					downloadPojo.path = moveFileToReceiveFolder(path, fileName);
-					model.removeDownload(downloadId);
-					listenerTaskQueue.execute(() -> dmsDownloadListeners
-							.forEach(listener -> listener.fileDownloaded(downloadId, downloadPojo.path)));
+					downloadPojo.path = path;
+					downloadPojo.position = Files.size(downloadPojo.path);
+					return;
 				}
+				downloadPojo.path = moveFileToReceiveFolder(path, fileName);
+				model.removeDownload(downloadId);
+				listenerTaskQueue.execute(() -> dmsDownloadListeners
+						.forEach(listener -> listener.fileDownloaded(downloadId, downloadPojo.path)));
 			} catch (Exception e) {
 				model.removeDownload(downloadId);
 				deleteFile(path);
@@ -2016,10 +2030,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		downloadTaskQueue.execute(() -> {
 
-			DownloadPojo downloadPojo = model.removeDownload(downloadId);
+			DownloadPojo downloadPojo = model.getDownload(downloadId);
 			if (downloadPojo == null) {
 				return;
 			}
+			downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
+			if (downloadPojo.paused.get()) {
+				return;
+			}
+			model.removeDownload(downloadId);
 			deleteFile(downloadPojo.path);
 			listenerTaskQueue
 					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
@@ -3757,13 +3776,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.getDownload(downloadId);
-			if (downloadPojo == null || downloadPojo.paused.get()) {
+			if (downloadPojo == null || downloadPojo.pausing.get() || downloadPojo.paused.get()) {
 				return;
 			}
+			downloadPojo.pausing.set(true);
 			if (model.isContactOnline(downloadPojo.senderUuid)) {
 				dmsClient.cancelDownloadRequest(downloadId, downloadPojo.senderUuid);
 			}
-			downloadPojo.paused.set(true);
 
 		});
 

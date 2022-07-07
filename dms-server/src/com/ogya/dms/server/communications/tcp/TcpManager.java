@@ -210,6 +210,9 @@ public class TcpManager implements TcpServerListener {
 			}
 			DmsServer dmsServer = dmsServers.get(dmsUuid);
 			if (dmsServer == null) {
+				if (chunk.sendMore != null) {
+					chunk.sendMore.accept(false);
+				}
 				return;
 			}
 			dmsServer.queueMessage(chunk);
@@ -420,39 +423,38 @@ public class TcpManager implements TcpServerListener {
 						remoteWork = new RemoteWork();
 					}
 
-					boolean success = false;
+					boolean sent = false;
+					boolean fail = false;
 
-					while (!success) {
+					while (!sent) {
 						boolean updated = checkSendFunction(remoteWork);
 						if (remoteWork.sendFunction == null) {
 							break;
 						}
 						if (updated && remoteWork.lastChunk != null) {
-							success = remoteWork.sendFunction.apply(remoteWork.lastChunk.messageNumber,
+							sent = remoteWork.sendFunction.apply(remoteWork.lastChunk.messageNumber,
 									remoteWork.lastChunk.data);
-							if (!success) {
+							if (!sent) {
 								remoteWork.sendFunction = null;
 								continue;
 							}
 						}
-						success = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
-						if (!success) {
+						sent = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
+						if (!sent) {
 							if (remoteWork.useLocalAddress != null) {
-								int messageNumber = -Math.abs(chunk.messageNumber);
-								synchronized (connections) {
-									for (Connection connection : connections) {
-										if (connection.tcpConnection.sendMessage(messageNumber, new byte[0])) {
-											break;
-										}
-									}
-								}
-								break;
+								fail = true;
+								remoteWork.useLocalAddress = null;
+								remoteWork.lastChunk = null;
+								chunk.messageNumber = -Math.abs(chunk.messageNumber);
+								chunk.data = new byte[0];
 							}
 							remoteWork.sendFunction = null;
 							continue;
 						}
 						remoteWork.lastChunk = chunk;
 					}
+
+					boolean success = sent && !fail;
 
 					if (chunk.sendMore != null) {
 						chunk.sendMore.accept(success);
