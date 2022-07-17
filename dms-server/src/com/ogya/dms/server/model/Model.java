@@ -673,6 +673,9 @@ public class Model {
 		}
 
 		private void sendStatusInfo(boolean success, int absMessageNumber, String address) {
+			if (absMessageNumber == 0) {
+				return;
+			}
 			if (!success) {
 				messageMap.remove(absMessageNumber);
 			}

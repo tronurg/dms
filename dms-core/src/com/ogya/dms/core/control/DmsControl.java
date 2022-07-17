@@ -2002,21 +2002,17 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadPaused(downloadId)));
 			}
 
-			Path path = tmpPath;
-			if (path == null && !partial) {
-				try {
-					path = Files.createTempFile("dms", null);
-					path.toFile().deleteOnExit();
-				} catch (IOException e) {
-
-				}
-			}
-
-			if (path == null) {
+			if (tmpPath == null && partial) {
 				return;
 			}
 
+			Path path = tmpPath;
+
 			try {
+				if (path == null) {
+					path = Files.createTempFile("dms", null);
+					path.toFile().deleteOnExit();
+				}
 				if (downloadPojo.path != null) {
 					try (FileChannel fileChannelRead = FileChannel.open(downloadPojo.path, StandardOpenOption.READ);
 							FileChannel fileChannelWrite = FileChannel.open(path, StandardOpenOption.WRITE)) {

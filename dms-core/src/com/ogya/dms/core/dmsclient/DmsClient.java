@@ -747,7 +747,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				chunk = messageContainer.next();
 				if (chunk == null) {
-					closeMessage(messageContainer);
+					messageContainer.close();
 					continue;
 				}
 
@@ -799,7 +799,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				messageContainer.removeReceiver(userUuid);
 				if (messageContainer.receiverUuids.isEmpty()) {
 					messageQueue.remove(messageContainer);
-					closeMessage(messageContainer);
+					messageContainer.close();
 				}
 			});
 			users.remove(userUuid);
@@ -809,18 +809,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 			}
 		}
 
-		private synchronized void closeMessage(MessageContainer message) {
-			message.close();
-			if (message.equals(lastMessageRef.get())) {
-				lastMessageRef.set(null);
-			}
-		}
-
 		private synchronized void close() {
 			closed.set(true);
 			MessageContainer messageContainer;
 			while ((messageContainer = messageQueue.poll()) != null) {
-				closeMessage(messageContainer);
+				messageContainer.close();
 			}
 		}
 
@@ -893,8 +886,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 		@Override
 		public void close() {
 			closeFile();
-			if (progressConsumer != null && progressPercent.get() < 100) {
-				progressConsumer.accept(-1, receiverUuids);
+			if (progressPercent.get() < 100) {
+				nextProgress = -1;
+				updateProgress();
 			}
 		}
 
