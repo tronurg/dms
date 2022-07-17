@@ -378,7 +378,19 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void contactDisconnected(final Contact contact) {
 
+		final String userUuid = contact.getUuid();
 		final Long id = contact.getId();
+
+		downloadTaskQueue.execute(() -> {
+			List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
+			waitingDownloads.forEach(downloadPojo -> {
+				downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
+				if (downloadPojo.paused.get()) {
+					listenerTaskQueue.execute(() -> dmsDownloadListeners
+							.forEach(listener -> listener.downloadPaused(downloadPojo.downloadId)));
+				}
+			});
+		});
 
 		try {
 
@@ -1267,10 +1279,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						// CHECK DOWNLOADS
 						downloadTaskQueue.execute(() -> {
 							List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
-							waitingDownloads.forEach(downloadPojo -> {
-								downloadPojo.pausing.set(false);
-								dmsClient.sendDownloadRequest(downloadPojo, userUuid);
-							});
+							waitingDownloads
+									.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
 						});
 
 					});
@@ -1975,17 +1985,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void fileDownloaded(final Long downloadId, final Path path, final String fileName, final boolean partial) {
+	public void fileDownloaded(final Long downloadId, final Path tmpPath, final String fileName,
+			final boolean partial) {
 
 		downloadTaskQueue.execute(() -> {
 
 			DownloadPojo downloadPojo = model.getDownload(downloadId);
 			if (downloadPojo == null) {
-				deleteFile(path);
+				deleteFile(tmpPath);
 				return;
 			}
 
-			downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
+			downloadPojo.paused.set(partial && downloadPojo.pausing.getAndSet(false));
+			if (downloadPojo.paused.get()) {
+				listenerTaskQueue
+						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadPaused(downloadId)));
+			}
+
+			Path path = tmpPath;
+			if (path == null && !partial) {
+				try {
+					path = Files.createTempFile("dms", null);
+					path.toFile().deleteOnExit();
+				} catch (IOException e) {
+
+				}
+			}
 
 			if (path == null) {
 				return;
@@ -2036,6 +2061,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 			downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
 			if (downloadPojo.paused.get()) {
+				listenerTaskQueue
+						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadPaused(downloadId)));
 				return;
 			}
 			model.removeDownload(downloadId);
@@ -3761,7 +3788,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (downloadPojo == null) {
 				return;
 			}
-			if (!downloadPojo.paused.get() && model.isContactOnline(downloadPojo.senderUuid)) {
+			if (!downloadPojo.pausing.get() && !downloadPojo.paused.get()
+					&& model.isContactOnline(downloadPojo.senderUuid)) {
 				dmsClient.cancelDownloadRequest(downloadId, downloadPojo.senderUuid);
 			}
 			deleteFile(downloadPojo.path);

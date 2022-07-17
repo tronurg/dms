@@ -290,6 +290,11 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
+	public void downloadPaused(Long downloadId) {
+		System.out.println(String.format("Download paused [%d]", downloadId));
+	}
+
+	@Override
 	public void downloadFailed(Long downloadId) {
 		System.out.println(String.format("Download failed [%d]", downloadId));
 	}

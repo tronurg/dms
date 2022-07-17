@@ -19,7 +19,7 @@ public class DmsMessageSender implements AutoCloseable {
 	private final MessagePojo messagePojo;
 	private final AttachmentPojo attachmentPojo;
 
-	protected final AtomicBoolean health = new AtomicBoolean(true);
+	protected final AtomicBoolean interrupt = new AtomicBoolean(false);
 	private FileChannel fileChannel;
 	private int pojoSize = 0;
 	private long position = Long.MIN_VALUE;
@@ -89,10 +89,10 @@ public class DmsMessageSender implements AutoCloseable {
 		if (!hasMore()) {
 			return null;
 		}
-		boolean healthy = health.get();
+		boolean interrupted = interrupt.get();
 		Chunk chunk = null;
 		try {
-			if (!healthy) {
+			if (interrupted) {
 				throw new Exception();
 			}
 			ByteBuffer dataBuffer;

@@ -12,6 +12,8 @@ public interface DmsDownloadListener {
 
 	void fileDownloaded(Long downloadId, Path path);
 
+	void downloadPaused(Long downloadId);
+
 	void downloadFailed(Long downloadId);
 
 }

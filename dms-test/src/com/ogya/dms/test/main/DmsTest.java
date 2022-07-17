@@ -179,13 +179,13 @@ public class DmsTest {
 							}
 						}
 					}).start();
-				} else if (downloading.get()) {
-					dmsHandle.pauseDownload(downloadId.get());
-					downloading.set(false);
-				} else {
-					dmsHandle.resumeDownload(downloadId.get());
-					downloading.set(true);
-//					dmsHandle.cancelDownload(downloadId.getAndSet(null));
+//				} else if (downloading.get()) {
+//					dmsHandle.pauseDownload(downloadId.get());
+//					downloading.set(false);
+//				} else {
+//					dmsHandle.resumeDownload(downloadId.get());
+//					downloading.set(true);
+////					dmsHandle.cancelDownload(downloadId.getAndSet(null));
 				}
 			});
 

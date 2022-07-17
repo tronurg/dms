@@ -854,7 +854,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 
 		private boolean isSecondary() {
-			return bigFile && health.get();
+			return bigFile && !interrupt.get();
 		}
 
 		private void updateProgress() {
@@ -874,7 +874,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 
 		private void fail() {
-			health.set(false);
+			interrupt.set(true);
 			nextProgress = -1;
 		}
 
@@ -886,7 +886,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		@Override
 		public Chunk next() {
 			checkInTime = System.currentTimeMillis();
-			health.set(health.get() && (useTimeout == null || checkInTime - startTime < useTimeout));
+			interrupt.set(interrupt.get() || (useTimeout != null && useTimeout < checkInTime - startTime));
 			return super.next();
 		}
 
