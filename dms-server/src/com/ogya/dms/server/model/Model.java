@@ -32,7 +32,6 @@ import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.model.intf.ModelListener;
 import com.ogya.dms.server.structures.LocalChunk;
 import com.ogya.dms.server.structures.RemoteChunk;
-import com.ogya.dms.server.structures.RemoteWork;
 
 public class Model {
 
@@ -86,7 +85,7 @@ public class Model {
 
 	}
 
-	public void localMessageReceived(int messageNumber, String address, byte[] data, String userUuid) {
+	public void localMessageReceived(int messageNumber, int progress, String address, byte[] data, String userUuid) {
 
 		LocalUser localUser = localUsers.get(userUuid);
 		if (localUser == null) {
@@ -96,7 +95,7 @@ public class Model {
 			localMappedUsers.put(localUser.mapId, localUser);
 		}
 
-		localUser.messageReceived(messageNumber, address, data);
+		localUser.messageReceived(messageNumber, progress, address, data);
 
 	}
 
@@ -402,9 +401,9 @@ public class Model {
 		sendLocalMessage(messageNumber, data, new ArrayList<String>(localUsers.keySet()), null);
 	}
 
-	private void sendRemoteMessage(int messageNumber, byte[] data, String receiverAddress, RemoteWork remoteWork,
+	private void sendRemoteMessage(int messageNumber, byte[] data, String receiverAddress, InetAddress useLocalAddress,
 			Consumer<Boolean> sendMore) {
-		listener.sendToRemoteServer(new RemoteChunk(messageNumber, data, remoteWork, sendMore), receiverAddress);
+		listener.sendToRemoteServer(new RemoteChunk(messageNumber, data, useLocalAddress, sendMore), receiverAddress);
 	}
 
 	private void sendRemoteMessageToAll(int messageNumber, byte[] data) {
@@ -455,7 +454,7 @@ public class Model {
 
 		}
 
-		private void messageReceived(int messageNumber, String address, byte[] data) {
+		private void messageReceived(int messageNumber, int progress, String address, byte[] data) {
 			int sign = Integer.signum(messageNumber);
 			int absMessageNumber = Math.abs(messageNumber);
 			ByteBuffer messageBuffer = ByteBuffer.wrap(data);
@@ -468,19 +467,18 @@ public class Model {
 					}
 					boolean local = CommonConstants.DMS_UUID.equals(address);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
-					RemoteWork remoteWork = null;
-					if (!local) {
-						remoteWork = new RemoteWork(messagePojo.useLocalAddress);
-					}
+					InetAddress useLocalAddress = messagePojo.useLocalAddress;
+					messagePojo.useLocalAddress = null;
 					Consumer<Boolean> sendMore = success -> sendStatusInfo(success, absMessageNumber, address);
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								address, messagePojo.receiverUuids, remoteWork, sendMore));
+								messagePojo.receiverUuids, useLocalAddress, sendMore));
 					}
 					if (local) {
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
 					} else {
-						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, address, remoteWork, sendMore);
+						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, address, useLocalAddress,
+								sendMore);
 					}
 				} catch (Exception e) {
 					if (sign > 0) {
@@ -495,12 +493,12 @@ public class Model {
 				sendStatusInfo(false, absMessageNumber, address);
 				return;
 			}
-			if (CommonConstants.DMS_UUID.equals(messageInfo.receiverAddress)) {
+			if (CommonConstants.DMS_UUID.equals(address)) {
 				sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids,
 						messageInfo.sendMore);
 			} else {
-				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverAddress,
-						messageInfo.remoteWork, messageInfo.sendMore);
+				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, address, messageInfo.useLocalAddress,
+						messageInfo.sendMore);
 			}
 			if (sign < 0) {
 				messageMap.remove(absMessageNumber);
@@ -629,8 +627,6 @@ public class Model {
 				throw new Exception();
 			}
 
-			messagePojo.useLocalAddress = null;
-
 			messagePojo.receiverUuids.removeIf(uuid -> !localUsers.containsKey(uuid));
 			if (messagePojo.receiverUuids.isEmpty()) {
 				throw new Exception();
@@ -641,13 +637,11 @@ public class Model {
 		}
 
 		private void remoteMessageReceived(int messageNumber, MessagePojo messagePojo, String address,
-				RemoteWork remoteWork, Consumer<Boolean> sendMore) throws Exception {
+				InetAddress useLocalAddress, Consumer<Boolean> sendMore) throws Exception {
 
 			if (messagePojo.receiverUuids == null) {
 				throw new Exception();
 			}
-
-			messagePojo.useLocalAddress = null;
 
 			DmsServer remoteServer = remoteServers.get(address);
 			if (remoteServer == null) {
@@ -668,7 +662,7 @@ public class Model {
 				}
 				return remoteUser.mapId;
 			});
-			sendRemoteMessage(messageNumber, packMessagePojo(messagePojo), address, remoteWork, sendMore);
+			sendRemoteMessage(messageNumber, packMessagePojo(messagePojo), address, useLocalAddress, sendMore);
 
 		}
 
@@ -737,7 +731,7 @@ public class Model {
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								null, messagePojo.receiverUuids, null, null));
+								messagePojo.receiverUuids, null, null));
 					}
 					localMessageReceived(sign * mappedMessageNumber, messagePojo);
 				} catch (Exception e) {
@@ -898,18 +892,16 @@ public class Model {
 
 		private final int mappedMessageNumber;
 		private final String senderUuid;
-		private final String receiverAddress;
 		private final List<String> receiverUuids;
-		private final RemoteWork remoteWork;
+		private final InetAddress useLocalAddress;
 		private final Consumer<Boolean> sendMore;
 
-		public MessageInfo(int mappedMessageNumber, String senderUuid, String receiverAddress,
-				List<String> receiverUuids, RemoteWork remoteWork, Consumer<Boolean> sendMore) {
+		public MessageInfo(int mappedMessageNumber, String senderUuid, List<String> receiverUuids,
+				InetAddress useLocalAddress, Consumer<Boolean> sendMore) {
 			this.mappedMessageNumber = mappedMessageNumber;
 			this.senderUuid = senderUuid;
-			this.receiverAddress = receiverAddress;
 			this.receiverUuids = receiverUuids;
-			this.remoteWork = remoteWork;
+			this.useLocalAddress = useLocalAddress;
 			this.sendMore = sendMore;
 		}
 

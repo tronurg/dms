@@ -397,8 +397,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 						continue;
 					}
 
-					dmsServer.sendNext((messageNumber, address, dataBuffer) -> {
+					dmsServer.sendNext((messageNumber, progress, address, dataBuffer) -> {
 						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+						dealerSocket.send(String.valueOf(progress), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.send(address, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(dataBuffer, ZMQ.DONTWAIT);
 					});
@@ -756,7 +757,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 					messageNumber = -messageNumber;
 				}
 
-				messageSender.send(messageNumber, uuid, chunk.dataBuffer);
+				messageSender.send(messageNumber, chunk.progress, uuid, chunk.dataBuffer);
 
 				messageContainer.nextProgress = chunk.progress;
 
@@ -896,7 +897,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	private interface MessageSender {
 
-		void send(int messageNumber, String address, ByteBuffer dataBuffer);
+		void send(int messageNumber, int progress, String address, ByteBuffer dataBuffer);
 
 	}
 

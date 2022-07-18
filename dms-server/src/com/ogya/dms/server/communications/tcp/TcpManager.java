@@ -19,7 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 
 import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.common.CommonMethods;
@@ -30,8 +29,8 @@ import com.ogya.dms.server.communications.tcp.net.TcpConnection;
 import com.ogya.dms.server.communications.tcp.net.TcpServer;
 import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
+import com.ogya.dms.server.structures.Chunk;
 import com.ogya.dms.server.structures.RemoteChunk;
-import com.ogya.dms.server.structures.RemoteWork;
 
 public class TcpManager implements TcpServerListener {
 
@@ -403,7 +402,8 @@ public class TcpManager implements TcpServerListener {
 		private final List<Connection> connections = Collections.synchronizedList(new ArrayList<Connection>());
 		private final LinkedBlockingQueue<RemoteChunk> messageQueue = new LinkedBlockingQueue<RemoteChunk>();
 		private final AtomicInteger updateCounter = new AtomicInteger();
-		private BiFunction<Integer, byte[], Boolean> bestSendFunction;
+		private TcpConnection bestConnection;
+		private Chunk lastChunk;
 
 		private DmsServer(String dmsUuid) {
 			this.dmsUuid = dmsUuid;
@@ -418,40 +418,47 @@ public class TcpManager implements TcpServerListener {
 						break;
 					}
 
-					RemoteWork remoteWork = chunk.remoteWork;
-					if (remoteWork == null) {
-						remoteWork = new RemoteWork();
-					}
+					InetAddress useLocalAddress = chunk.useLocalAddress;
 
 					boolean sent = false;
 					boolean fail = false;
 
 					while (!sent) {
-						boolean updated = checkSendFunction(remoteWork);
-						if (remoteWork.sendFunction == null) {
-							break;
-						}
-						if (updated && remoteWork.lastChunk != null) {
-							sent = remoteWork.sendFunction.apply(remoteWork.lastChunk.messageNumber,
-									remoteWork.lastChunk.data);
-							if (!sent) {
-								remoteWork.sendFunction = null;
-								continue;
+						if (useLocalAddress != null) {
+							TcpConnection connection = getConnection(useLocalAddress);
+							if (connection == null) {
+								break;
 							}
-						}
-						sent = remoteWork.sendFunction.apply(chunk.messageNumber, chunk.data);
-						if (!sent) {
-							if (remoteWork.useLocalAddress != null) {
+							sent = connection.sendMessage(chunk.messageNumber, chunk.data);
+							if (!sent) {
 								fail = true;
-								remoteWork.useLocalAddress = null;
-								remoteWork.lastChunk = null;
+								useLocalAddress = null;
 								chunk.messageNumber = -Math.abs(chunk.messageNumber);
 								chunk.data = new byte[0];
 							}
-							remoteWork.sendFunction = null;
-							continue;
+						} else {
+							boolean updated = checkBestConnection();
+							if (bestConnection == null) {
+								break;
+							}
+							if (updated && lastChunk != null && !fail) {
+								sent = bestConnection.sendMessage(lastChunk.messageNumber, lastChunk.data);
+								if (!sent) {
+									bestConnection = null;
+									continue;
+								}
+							}
+							sent = bestConnection.sendMessage(chunk.messageNumber, chunk.data);
+							if (!sent) {
+								bestConnection = null;
+								continue;
+							}
+							if (chunk.messageNumber > 0) {
+								lastChunk = chunk;
+							} else if (!fail) {
+								lastChunk = null;
+							}
 						}
-						remoteWork.lastChunk = chunk;
 					}
 
 					boolean success = sent && !fail;
@@ -473,40 +480,34 @@ public class TcpManager implements TcpServerListener {
 			}
 		}
 
-		private void updateBestSendFunction() {
+		private TcpConnection getConnection(InetAddress useLocalAddress) {
 			synchronized (connections) {
-				connections.sort(CONNECTION_SORTER);
-				if (connections.isEmpty()) {
-					bestSendFunction = null;
-					return;
-				}
-				bestSendFunction = connections.get(0).tcpConnection::sendMessage;
-			}
-		}
-
-		private boolean checkSendFunction(RemoteWork remoteWork) {
-			if (remoteWork.useLocalAddress != null) {
-				if (remoteWork.sendFunction != null) {
-					return false;
-				}
-				synchronized (connections) {
-					for (Connection connection : connections) {
-						if (remoteWork.useLocalAddress.equals(connection.tcpConnection.getLocalAddress())) {
-							remoteWork.sendFunction = connection.tcpConnection::sendMessage;
-							break;
-						}
+				for (Connection connection : connections) {
+					if (useLocalAddress.equals(connection.tcpConnection.getLocalAddress())) {
+						return connection.tcpConnection;
 					}
 				}
-				return false;
 			}
-			if (remoteWork.sendFunction == null || updateCounter.incrementAndGet() > 10) {
+			return null;
+		}
+
+		private boolean checkBestConnection() {
+			boolean updated = false;
+			TcpConnection formerBestConnection = bestConnection;
+			if (bestConnection == null || updateCounter.incrementAndGet() > 10) {
 				updateCounter.set(0);
 			}
 			if (updateCounter.get() == 0) {
-				updateBestSendFunction();
+				synchronized (connections) {
+					connections.sort(CONNECTION_SORTER);
+					if (connections.isEmpty()) {
+						bestConnection = null;
+					} else {
+						bestConnection = connections.get(0).tcpConnection;
+					}
+				}
 			}
-			boolean updated = remoteWork.sendFunction != bestSendFunction;
-			remoteWork.sendFunction = bestSendFunction;
+			updated = formerBestConnection != bestConnection;
 			return updated;
 		}
 
