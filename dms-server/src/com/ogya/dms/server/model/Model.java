@@ -465,7 +465,6 @@ public class Model {
 						commandReceived(messagePojo);
 						return;
 					}
-					boolean local = CommonConstants.DMS_UUID.equals(address);
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					InetAddress useLocalAddress = messagePojo.useLocalAddress;
 					messagePojo.useLocalAddress = null;
@@ -474,7 +473,7 @@ public class Model {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
 								messagePojo.receiverUuids, useLocalAddress, sendMore));
 					}
-					if (local) {
+					if (CommonConstants.DMS_UUID.equals(address)) {
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
 					} else {
 						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, address, useLocalAddress,
