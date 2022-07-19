@@ -18,7 +18,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -81,7 +80,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final DmsMessageReceiver messageReceiver;
 	private final AtomicInteger attachmentCounter = new AtomicInteger(1);
 	private final LinkedBlockingQueue<String> signalQueue = new LinkedBlockingQueue<String>();
-	private final List<MessageContainer> messages = Collections.synchronizedList(new ArrayList<MessageContainer>());
+	private final Map<Integer, MessageContainer> messageMap = Collections
+			.synchronizedMap(new HashMap<Integer, MessageContainer>());
 
 	public DmsClient(String uuid, String commIp, int commPort, DmsClientListener listener) {
 
@@ -156,7 +156,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelMessage(Long trackingId) {
 
-		messages.forEach(message -> {
+		messageMap.forEach((messageNumber, message) -> {
 			if (Objects.equals(message.trackingId, trackingId) && message.contentType == ContentType.MESSAGE) {
 				message.fail();
 			}
@@ -225,7 +225,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelTransientMessage(Long trackingId) {
 
-		messages.forEach(message -> {
+		messageMap.forEach((messageNumber, message) -> {
 			if (Objects.equals(message.trackingId, trackingId) && message.contentType == ContentType.TRANSIENT) {
 				message.fail();
 			}
@@ -274,7 +274,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	public void cancelUpload(String receiverUuid, Long trackingId) {
 
-		messages.forEach(message -> {
+		messageMap.forEach((messageNumber, message) -> {
 			if (Objects.equals(message.trackingId, trackingId) && message.contentType == ContentType.UPLOAD) {
 				message.fail();
 			}
@@ -291,7 +291,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				dmsServer = new DmsServer(LOCAL_SERVER);
 				dmsServers.put(LOCAL_SERVER, dmsServer);
 			}
-			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, contentType, null, null);
+			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, contentType, null, null, null);
 			MessageContainer messageContainer = new MessageContainer(0, messagePojo, attachmentPojo, useTimeout, null);
 			dmsServer.queueMessage(messageContainer, null);
 			return;
@@ -309,10 +309,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 		serverReceiversMap.forEach((dmsServer, uuidList) -> {
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, contentType, trackingId,
-					useLocalAddress);
-			MessageContainer messageContainer = new MessageContainer(getMessageNumber(), messagePojo, attachmentPojo,
+					dmsServer.uuid, useLocalAddress);
+			int messageNumber = getMessageNumber();
+			MessageContainer messageContainer = new MessageContainer(messageNumber, messagePojo, attachmentPojo,
 					useTimeout, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
-			messages.add(messageContainer);
+			messageMap.put(messageNumber, messageContainer);
 			dmsServer.queueMessage(messageContainer, unsuccessfulUuids);
 		});
 		if (!unsuccessfulUuids.isEmpty() && contentType == ContentType.TRANSIENT) {
@@ -356,6 +357,14 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
+	private void raiseSignal(String uuid) {
+		try {
+			signalQueue.put(uuid);
+		} catch (InterruptedException e) {
+
+		}
+	}
+
 	private void dealer() {
 
 		try (ZMQ.Socket dealerSocket = context.createSocket(SocketType.DEALER);
@@ -397,10 +406,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 						continue;
 					}
 
-					dmsServer.sendNext((messageNumber, progress, address, dataBuffer) -> {
+					dmsServer.sendNext((messageNumber, progress, dataBuffer) -> {
 						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.send(String.valueOf(progress), ZMQ.SNDMORE | ZMQ.DONTWAIT);
-						dealerSocket.send(address, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(dataBuffer, ZMQ.DONTWAIT);
 					});
 
@@ -465,11 +473,16 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void statusInfoReceived(StatusInfo statusInfo) {
-		DmsServer dmsServer = dmsServers.get(statusInfo.address);
-		if (dmsServer == null) {
+		MessageContainer message = messageMap.get(statusInfo.messageNumber);
+		if (message == null) {
 			return;
 		}
-		dmsServer.sendMore(statusInfo.success);
+		if (statusInfo.progress < 0) {
+			message.destroy();
+		} else {
+			message.updateProgress(statusInfo.progress);
+		}
+		raiseSignal(message.address);
 	}
 
 	private void updateServerConnStatus(boolean serverConnStatus) {
@@ -699,7 +712,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final Set<String> users = Collections.synchronizedSet(new HashSet<String>());
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, messageSorter);
-		private final AtomicReference<MessageContainer> lastMessageRef = new AtomicReference<MessageContainer>();
 
 		private DmsServer(String uuid) {
 			this.uuid = uuid;
@@ -717,22 +729,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 				nok = messageContainer.receiverUuids.isEmpty();
 			}
 			if (nok) {
-				messageContainer.close();
+				messageContainer.destroy();
 				return;
 			}
 			messageQueue.offer(messageContainer);
-			raiseSignal();
-		}
-
-		private synchronized void raiseSignal() {
-			if (lastMessageRef.get() != null) {
-				return;
-			}
-			try {
-				signalQueue.put(uuid);
-			} catch (InterruptedException e) {
-
-			}
+			raiseSignal(uuid);
 		}
 
 		private synchronized void sendNext(MessageSender messageSender) {
@@ -748,7 +749,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				chunk = messageContainer.next();
 				if (chunk == null) {
-					messageContainer.close();
+					messageContainer.destroy();
 					continue;
 				}
 
@@ -757,34 +758,16 @@ public class DmsClient implements DmsMessageReceiverListener {
 					messageNumber = -messageNumber;
 				}
 
-				messageSender.send(messageNumber, chunk.progress, uuid, chunk.dataBuffer);
-
-				messageContainer.nextProgress = chunk.progress;
-
-				if (messageNumber != 0) {
-					lastMessageRef.set(messageContainer);
-				}
+				messageSender.send(messageNumber, chunk.progress, chunk.dataBuffer);
 
 				if (messageContainer.hasMore()) {
 					messageQueue.offer(messageContainer);
 				} else {
-					messageContainer.closeFile();
+					messageContainer.close();
 				}
 
 			}
 
-		}
-
-		private synchronized void sendMore(boolean success) {
-			MessageContainer lastMessage = lastMessageRef.getAndSet(null);
-			raiseSignal();
-			if (lastMessage == null) {
-				return;
-			}
-			if (!success) {
-				lastMessage.fail();
-			}
-			lastMessage.updateProgress();
 		}
 
 		private synchronized void addUser(String userUuid) {
@@ -800,7 +783,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				messageContainer.removeReceiver(userUuid);
 				if (messageContainer.receiverUuids.isEmpty()) {
 					messageQueue.remove(messageContainer);
-					messageContainer.close();
+					messageContainer.destroy();
 				}
 			});
 			users.remove(userUuid);
@@ -814,7 +797,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			closed.set(true);
 			MessageContainer messageContainer;
 			while ((messageContainer = messageQueue.poll()) != null) {
-				messageContainer.close();
+				messageContainer.destroy();
 			}
 		}
 
@@ -823,38 +806,45 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final class MessageContainer extends DmsMessageSender {
 
 		private final int messageNumber;
-		private final BiConsumer<Integer, List<String>> progressConsumer;
 		private final Long useTimeout;
+		private final BiConsumer<Integer, List<String>> progressConsumer;
 		private final boolean bigFile;
 		private final List<String> receiverUuids;
 		private final ContentType contentType;
 		private final Long trackingId;
+		private final String address;
 
 		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
-		private int nextProgress;
 		private long checkInTime = startTime;
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
 				Long useTimeout, BiConsumer<Integer, List<String>> progressConsumer) {
 			super(messagePojo, attachmentPojo);
 			this.messageNumber = messageNumber;
-			this.progressConsumer = progressConsumer;
 			this.useTimeout = useTimeout;
+			this.progressConsumer = progressConsumer;
 			this.bigFile = getFileSize() > CommonConstants.SMALL_FILE_LIMIT;
 			this.receiverUuids = messagePojo.receiverUuids;
 			this.contentType = messagePojo.contentType;
 			this.trackingId = messagePojo.trackingId;
+			this.address = messagePojo.address;
 		}
 
 		private boolean isSecondary() {
 			return bigFile && !interrupt.get();
 		}
 
-		private void updateProgress() {
-			boolean progressUpdated = nextProgress != progressPercent.getAndSet(nextProgress);
+		private void updateProgress(int progress) {
+			if (this != messageMap.get(messageNumber)) {
+				return;
+			}
+			boolean progressUpdated = progress != progressPercent.getAndSet(progress);
 			if (progressUpdated && progressConsumer != null) {
-				progressConsumer.accept(nextProgress, receiverUuids);
+				progressConsumer.accept(progress, receiverUuids);
+			}
+			if (progress < 0 || progress == 100) {
+				messageMap.remove(messageNumber);
 			}
 		}
 
@@ -869,12 +859,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		private void fail() {
 			interrupt.set(true);
-			nextProgress = -1;
 		}
 
-		private void closeFile() {
-			super.close();
-			messages.remove(this);
+		private void destroy() {
+			close();
+			if (progressPercent.get() < 100) {
+				updateProgress(-1);
+			}
 		}
 
 		@Override
@@ -884,20 +875,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 			return super.next();
 		}
 
-		@Override
-		public void close() {
-			closeFile();
-			if (progressPercent.get() < 100) {
-				nextProgress = -1;
-				updateProgress();
-			}
-		}
-
 	}
 
 	private interface MessageSender {
 
-		void send(int messageNumber, int progress, String address, ByteBuffer dataBuffer);
+		void send(int messageNumber, int progress, ByteBuffer dataBuffer);
 
 	}
 

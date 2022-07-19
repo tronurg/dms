@@ -135,12 +135,10 @@ public class Control implements TcpManagerListener, ModelListener {
 					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
 					String messageNumberStr = routerSocket.recvStr(ZMQ.DONTWAIT);
 					String progressStr = routerSocket.recvStr(ZMQ.DONTWAIT);
-					final String address = routerSocket.recvStr(ZMQ.DONTWAIT);
 					final byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
 					final int messageNumber = Integer.parseInt(messageNumberStr);
 					final int progress = Integer.parseInt(progressStr);
-					taskQueue.execute(
-							() -> model.localMessageReceived(messageNumber, progress, address, data, userUuid));
+					taskQueue.execute(() -> model.localMessageReceived(messageNumber, progress, data, userUuid));
 
 				} else if (poller.pollin(pollInproc)) {
 

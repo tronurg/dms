@@ -2,16 +2,16 @@ package com.ogya.dms.commons.structures;
 
 public class StatusInfo {
 
-	public String address;
-	public boolean success;
+	public int messageNumber;
+	public int progress;
 
 	public StatusInfo() {
 		super();
 	}
 
-	public StatusInfo(String address, boolean success) {
-		this.address = address;
-		this.success = success;
+	public StatusInfo(int messageNumber, int progress) {
+		this.messageNumber = messageNumber;
+		this.progress = progress;
 	}
 
 }
