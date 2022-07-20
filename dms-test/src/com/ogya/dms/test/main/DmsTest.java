@@ -106,10 +106,10 @@ public class DmsTest {
 				} else {
 					try {
 						DmsHandle dmsHandleNew = DmsCore.login("armut", "armut");
-						dmsHandleNew.addListener(new DmsListenerImpl(dmsHandle));
-						dmsHandleNew.addGuiListener(new DmsListenerImpl(dmsHandle));
-						dmsHandleNew.addDownloadListener(new DmsListenerImpl(dmsHandle));
-						dmsHandleNew.registerFileServer(new DmsListenerImpl(dmsHandle));
+						dmsHandleNew.addListener(new DmsListenerImpl(dmsHandleNew));
+						dmsHandleNew.addGuiListener(new DmsListenerImpl(dmsHandleNew));
+						dmsHandleNew.addDownloadListener(new DmsListenerImpl(dmsHandleNew));
+						dmsHandleNew.registerFileServer(new DmsListenerImpl(dmsHandleNew));
 						SwingUtilities.invokeLater(() -> {
 							panel.removeAll();
 							panel.add(dmsHandleNew.getDmsPanel(), BorderLayout.CENTER);
@@ -169,8 +169,8 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = csh.getContactSelectionPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 			JButton btn = new JButton("test");
 			final AtomicReference<Long> downloadId = new AtomicReference<Long>();
 			final AtomicBoolean downloading = new AtomicBoolean();
