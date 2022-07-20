@@ -57,8 +57,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private final String serverIp;
 	private final int dealerPort;
 
-	private final AtomicBoolean serverConnected = new AtomicBoolean(false);
-
 	private final DmsClientListener listener;
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
@@ -115,7 +113,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	public void close() {
-		context.close();
+		signalQueue.clear();
+		raiseSignal(uuid);
 	}
 
 	public void sendBeacon(Beacon beacon) {
@@ -372,7 +371,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			inprocSocket.bind("inproc://dealer");
 
-			dealerSocket.monitor("inproc://monitor", ZMQ.EVENT_HANDSHAKE_PROTOCOL | ZMQ.EVENT_DISCONNECTED);
+			dealerSocket.monitor("inproc://monitor",
+					ZMQ.EVENT_HANDSHAKE_PROTOCOL | ZMQ.EVENT_DISCONNECTED | ZMQ.EVENT_MONITOR_STOPPED);
 
 			dealerSocket.setIdentity(uuid.getBytes(ZMQ.CHARSET));
 			dealerSocket.setSndHWM(0);
@@ -401,6 +401,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 				} else if (poller.pollin(pollInproc)) {
 
 					String serverUuid = inprocSocket.recvStr(ZMQ.DONTWAIT);
+					if (uuid.equals(serverUuid)) {
+						break;
+					}
 					DmsServer dmsServer = dmsServers.get(serverUuid);
 					if (dmsServer == null) {
 						continue;
@@ -430,7 +433,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				inprocSocket.send(signalQueue.take());
+				String signal = signalQueue.take();
+				inprocSocket.send(signal);
+				if (uuid.equals(signal)) {
+					break;
+				}
 
 			}
 
@@ -448,6 +455,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
+				boolean stopped = false;
+
 				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
 
 				switch (event.getEvent()) {
@@ -460,6 +469,14 @@ public class DmsClient implements DmsMessageReceiverListener {
 					updateServerConnStatus(false);
 					break;
 
+				case ZMQ.EVENT_MONITOR_STOPPED:
+					stopped = true;
+					break;
+
+				}
+
+				if (stopped) {
+					break;
 				}
 
 			}
@@ -468,7 +485,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		}
 
-		listener.clientClosed();
+		context.close();
+		updateServerConnStatus(false);
 
 	}
 
@@ -487,8 +505,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	private void updateServerConnStatus(boolean serverConnStatus) {
 
-		serverConnected.set(serverConnStatus);
-		listener.serverConnStatusUpdated(serverConnStatus);
+		listener.serverConnStatusUpdated(serverConnStatus, context.isClosed());
 
 		if (serverConnStatus) {
 			return;

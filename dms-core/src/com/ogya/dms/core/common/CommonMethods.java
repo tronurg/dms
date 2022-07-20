@@ -359,8 +359,6 @@ public class CommonMethods {
 
 		} catch (IOException e) {
 
-			e.printStackTrace();
-
 		}
 
 		return templates;

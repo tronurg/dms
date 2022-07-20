@@ -1094,20 +1094,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void clientClosed() {
-
-		taskQueue.execute(() -> {
-
-			model.getContacts().forEach((id, contact) -> contactDisconnected(contact));
-			dbManager.close();
-			clearMessageProgresses();
-			Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(false));
-
-		});
-
-	}
-
-	@Override
 	public void beaconReceived(final Beacon beacon) {
 
 		taskQueue.execute(() -> {
@@ -1572,7 +1558,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void serverConnStatusUpdated(final boolean connStatus) {
+	public void serverConnStatusUpdated(final boolean connStatus, final boolean logout) {
 
 		taskQueue.execute(() -> {
 
@@ -1595,8 +1581,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			} else {
 
 				model.getContacts().forEach((id, contact) -> contactDisconnected(contact));
-
 				clearMessageProgresses();
+
+				if (logout) {
+					dbManager.close();
+				}
 
 			}
 

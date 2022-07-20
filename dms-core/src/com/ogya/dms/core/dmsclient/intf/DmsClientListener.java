@@ -15,8 +15,6 @@ import com.ogya.dms.core.structures.MessageStatus;
 
 public interface DmsClientListener {
 
-	void clientClosed();
-
 	void beaconReceived(Beacon beacon);
 
 	void remoteIpsReceived(InetAddress[] remoteIps);
@@ -29,7 +27,7 @@ public interface DmsClientListener {
 
 	void userDisconnected(String uuid);
 
-	void serverConnStatusUpdated(boolean connStatus);
+	void serverConnStatusUpdated(boolean connStatus, boolean logout);
 
 	void messageStatusClaimed(Long[] messageIds, String remoteUuid);
 

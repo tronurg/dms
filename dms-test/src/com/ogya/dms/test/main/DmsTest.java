@@ -16,6 +16,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import com.ogya.dms.core.intf.DmsException;
 import com.ogya.dms.core.intf.DmsHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
@@ -103,7 +104,24 @@ public class DmsTest {
 					loggedIn.set(false);
 					DmsCore.logout("armut");
 				} else {
-					//
+					try {
+						DmsHandle dmsHandleNew = DmsCore.login("armut", "armut");
+						dmsHandleNew.addListener(new DmsListenerImpl(dmsHandle));
+						dmsHandleNew.addGuiListener(new DmsListenerImpl(dmsHandle));
+						dmsHandleNew.addDownloadListener(new DmsListenerImpl(dmsHandle));
+						dmsHandleNew.registerFileServer(new DmsListenerImpl(dmsHandle));
+						SwingUtilities.invokeLater(() -> {
+							panel.removeAll();
+							panel.add(dmsHandleNew.getDmsPanel(), BorderLayout.CENTER);
+							panel.add(btn, BorderLayout.SOUTH);
+							panel.revalidate();
+							panel.repaint();
+						});
+					} catch (DmsException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					loggedIn.set(true);
 				}
 			});
 

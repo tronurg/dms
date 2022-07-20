@@ -416,24 +416,30 @@ public class FoldersPane extends BorderPane {
 
 			files.forEach(path -> {
 
-				String fileName = path.getFileName().toString();
+				try {
 
-				FileButton cButton = new FileButton(
-						new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), fileName,
-						getFileSizeStr(path));
+					String fileName = path.getFileName().toString();
 
-				cButton.setTooltip(new Tooltip(fileName));
+					FileButton cButton = new FileButton(
+							new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), fileName,
+							getFileSizeStr(path));
 
-				cButton.setOnAction(e -> {
+					cButton.setTooltip(new Tooltip(fileName));
 
-					Consumer<Path> fileSelectedAction = fileSelectedActionRef.get();
+					cButton.setOnAction(e -> {
 
-					if (fileSelectedAction != null)
-						fileSelectedAction.accept(path);
+						Consumer<Path> fileSelectedAction = fileSelectedActionRef.get();
 
-				});
+						if (fileSelectedAction != null)
+							fileSelectedAction.accept(path);
 
-				getChildren().add(cButton);
+					});
+
+					getChildren().add(cButton);
+
+				} catch (Exception e) {
+
+				}
 
 			});
 
@@ -451,38 +457,28 @@ public class FoldersPane extends BorderPane {
 
 		}
 
-		private String getFileSizeStr(Path path) {
+		private String getFileSizeStr(Path path) throws Exception {
 
-			try {
+			long sizeInB = Files.size(path);
+			double sizeInKB = (double) sizeInB / 1024;
 
-				long sizeInB = Files.size(path);
-				double sizeInKB = (double) sizeInB / 1024;
-
-				if (sizeInKB < 1.0) {
-					return String.format("%d B", sizeInB);
-				}
-
-				double sizeInMB = sizeInKB / 1024;
-
-				if (sizeInMB < 1.0) {
-					return String.format("%.2f KB", sizeInKB);
-				}
-
-				double sizeInGB = sizeInMB / 1024;
-
-				if (sizeInGB < 1.0) {
-					return String.format("%.2f MB", sizeInMB);
-				}
-
-				return String.format("%.2f GB", sizeInGB);
-
-			} catch (IOException e) {
-
-				e.printStackTrace();
-
+			if (sizeInKB < 1.0) {
+				return String.format("%d B", sizeInB);
 			}
 
-			return null;
+			double sizeInMB = sizeInKB / 1024;
+
+			if (sizeInMB < 1.0) {
+				return String.format("%.2f KB", sizeInKB);
+			}
+
+			double sizeInGB = sizeInMB / 1024;
+
+			if (sizeInGB < 1.0) {
+				return String.format("%.2f MB", sizeInMB);
+			}
+
+			return String.format("%.2f GB", sizeInGB);
 
 		}
 
