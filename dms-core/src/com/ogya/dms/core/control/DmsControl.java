@@ -113,7 +113,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private final DmsClient dmsClient;
 
-	private final AudioCenter audioCenter = new AudioCenter();
+	private final AudioCenter audioCenter = new AudioCenter(this);
 	private final SoundPlayer soundPlayer = new SoundPlayer();
 
 	private final List<DmsListener> dmsListeners = Collections.synchronizedList(new ArrayList<DmsListener>());
@@ -187,10 +187,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		reportsDialog = new ReportsDialog(CommonConstants.REPORT_TEMPLATES);
 
 		reportsDialog.addReportsListener(this);
-
-		//
-
-		audioCenter.addAudioCenterListener(this);
 
 		//
 
@@ -378,19 +374,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void contactDisconnected(final Contact contact) {
 
-		final String userUuid = contact.getUuid();
 		final Long id = contact.getId();
-
-		downloadTaskQueue.execute(() -> {
-			List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
-			waitingDownloads.forEach(downloadPojo -> {
-				downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
-				if (downloadPojo.paused.get()) {
-					listenerTaskQueue.execute(() -> dmsDownloadListeners
-							.forEach(listener -> listener.downloadPaused(downloadPojo.downloadId)));
-				}
-			});
-		});
 
 		try {
 
@@ -446,19 +430,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			e.printStackTrace();
 
 		}
-
-	}
-
-	private void clearMessageProgresses() {
-
-		Long messageId = model.getDetailedGroupMessageId();
-
-		Map<Long, Integer> groupMessageProgresses = model.getGroupMessageProgresses(messageId);
-		if (groupMessageProgresses != null)
-			groupMessageProgresses.forEach((contactId, progress) -> Platform
-					.runLater(() -> dmsPanel.updateDetailedMessageProgress(contactId, -1)));
-
-		model.clearGroupMessageProgresses();
 
 	}
 
@@ -1058,7 +1029,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Dgroup getGroup(Long id) {
+	private Dgroup getGroup(Long id) throws Exception {
 
 		Dgroup group = model.getGroup(id);
 
@@ -1069,7 +1040,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private Dgroup getRemoteGroup(String ownerUuid, Long groupRefId) {
+	private Dgroup getRemoteGroup(String ownerUuid, Long groupRefId) throws Exception {
 
 		Dgroup group = model.getRemoteGroup(ownerUuid, groupRefId);
 
@@ -1581,10 +1552,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			} else {
 
 				model.getContacts().forEach((id, contact) -> contactDisconnected(contact));
-				clearMessageProgresses();
 
 				if (logout) {
-					dbManager.close();
+					logout();
 				}
 
 			}
@@ -1592,6 +1562,28 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			Platform.runLater(() -> dmsPanel.serverConnStatusUpdated(connStatus));
 
 		});
+
+	}
+
+	private void logout() {
+
+		audioCenter.close();
+		soundPlayer.close();
+
+		dmsListeners.clear();
+		dmsGuiListeners.clear();
+		dmsDownloadListeners.clear();
+		dmsFileServer.set(null);
+
+		taskQueue.shutdown();
+		downloadTaskQueue.shutdown();
+		listenerTaskQueue.shutdown();
+
+		try {
+			dbManager.close();
+		} catch (Exception e) {
+
+		}
 
 	}
 
@@ -2425,19 +2417,27 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			EntityId entityId = model.getOpenEntityId();
 
-			Dgroup group = entityId == null || !entityId.isGroup() ? null : getGroup(entityId.getId());
+			try {
 
-			model.setGroupToBeUpdated(group);
+				Dgroup group = entityId == null || !entityId.isGroup() ? null : getGroup(entityId.getId());
 
-			if (group == null) {
-				// New group
+				model.setGroupToBeUpdated(group);
 
-				Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(null, true));
+				if (group == null) {
+					// New group
 
-			} else {
-				// Update group
+					Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(null, true));
 
-				Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(group, false));
+				} else {
+					// Update group
+
+					Platform.runLater(() -> dmsPanel.showAddUpdateGroupPane(group, false));
+
+				}
+
+			} catch (Exception e) {
+
+				e.printStackTrace();
 
 			}
 
@@ -3538,12 +3538,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	@Override
 	public GroupHandle getGroupHandle(Long groupId) {
 
-		Dgroup group = getGroup(groupId);
+		try {
+			Dgroup group = getGroup(groupId);
+			if (group != null) {
+				return new GroupHandleImpl(group);
+			}
+		} catch (Exception e) {
 
-		if (group == null)
-			return null;
+		}
 
-		return new GroupHandleImpl(group);
+		return null;
 
 	}
 
@@ -3704,7 +3708,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			return false;
 		}
 
-		Dgroup group = getGroup(groupId);
+		Dgroup group = null;
+		try {
+			group = getGroup(groupId);
+		} catch (Exception e) {
+
+		}
 
 		if (group == null) {
 			return false;

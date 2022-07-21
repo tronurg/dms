@@ -57,6 +57,10 @@ public class SoundPlayer {
 
 	}
 
+	public void close() {
+		taskQueue.shutdown();
+	}
+
 	private Clip getDuoToneClip() {
 
 		if (duoToneClip == null || !duoToneClip.isOpen()) {

@@ -453,9 +453,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			monitorSocket.connect("inproc://monitor");
 
-			while (!Thread.currentThread().isInterrupted()) {
+			boolean stopped = false;
 
-				boolean stopped = false;
+			while (!Thread.currentThread().isInterrupted()) {
 
 				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
 
@@ -487,6 +487,20 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		context.close();
 		updateServerConnStatus(false);
+		taskQueue.shutdown();
+
+	}
+
+	private void updateServerConnStatus(boolean serverConnStatus) {
+
+		if (!serverConnStatus) {
+			taskQueue.execute(() -> messageReceiver.close());
+			userServerMap.clear();
+			dmsServers.forEach((serverUuid, dmsServer) -> dmsServer.close());
+			dmsServers.clear();
+		}
+
+		taskQueue.execute(() -> listener.serverConnStatusUpdated(serverConnStatus, context.isClosed()));
 
 	}
 
@@ -501,21 +515,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 			message.updateProgress(statusInfo.progress);
 		}
 		raiseSignal(message.address);
-	}
-
-	private void updateServerConnStatus(boolean serverConnStatus) {
-
-		listener.serverConnStatusUpdated(serverConnStatus, context.isClosed());
-
-		if (serverConnStatus) {
-			return;
-		}
-
-		taskQueue.execute(() -> messageReceiver.close());
-		userServerMap.clear();
-		dmsServers.forEach((serverUuid, dmsServer) -> dmsServer.close());
-		dmsServers.clear();
-
 	}
 
 	@Override

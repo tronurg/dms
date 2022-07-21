@@ -1,9 +1,6 @@
 package com.ogya.dms.core.common;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -19,24 +16,17 @@ import com.ogya.dms.core.factory.DmsFactory;
 
 public class AudioCenter {
 
+	private final AudioCenterListener listener;
+
 	private final AudioFormat audioFormat = new AudioFormat(AudioFormat.Encoding.PCM_UNSIGNED, 8000, 8, 1, 1, 8000,
 			true);
 
 	private final AtomicReference<TargetDataLine> targetLineRef = new AtomicReference<TargetDataLine>();
 
-	private final List<AudioCenterListener> listeners = Collections
-			.synchronizedList(new ArrayList<AudioCenterListener>());
-
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	public AudioCenter() {
-
-	}
-
-	public void addAudioCenterListener(AudioCenterListener listener) {
-
-		listeners.add(listener);
-
+	public AudioCenter(AudioCenterListener listener) {
+		this.listener = listener;
 	}
 
 	public void prepareRecording() throws Exception {
@@ -78,7 +68,7 @@ public class AudioCenter {
 
 			}
 
-			listeners.forEach(listener -> listener.recordingStopped(entityId, path, refId));
+			listener.recordingStopped(entityId, path, refId);
 
 		});
 
@@ -95,6 +85,10 @@ public class AudioCenter {
 		line.drain();
 		line.close();
 
+	}
+
+	public void close() {
+		taskQueue.shutdown();
 	}
 
 	public static interface AudioCenterListener {

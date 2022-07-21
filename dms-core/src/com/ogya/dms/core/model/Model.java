@@ -477,12 +477,6 @@ public class Model {
 
 	}
 
-	public void clearGroupMessageProgresses() {
-
-		groupMessageProgresses.clear();
-
-	}
-
 	public DownloadPojo registerDownload(String contactUuid, Long fileId) {
 
 		Long downloadId = downloadIdCounter.getAndIncrement();
