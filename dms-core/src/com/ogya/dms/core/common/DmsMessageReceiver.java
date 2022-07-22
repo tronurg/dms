@@ -1,5 +1,6 @@
 package com.ogya.dms.core.common;
 
+import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -75,6 +76,23 @@ public class DmsMessageReceiver {
 			} else {
 				attachmentReceiver.destroy();
 			}
+		});
+		messageNumbersToRemove.forEach(messageNumber -> attachmentReceivers.remove(messageNumber));
+	}
+
+	public void checkInterfacedMessagesFrom(String senderUuid, Map<InetAddress, InetAddress> localRemoteServerIps) {
+		if (senderUuid == null || localRemoteServerIps == null) {
+			return;
+		}
+		List<Integer> messageNumbersToRemove = new ArrayList<Integer>();
+		attachmentReceivers.forEach((messageNumber, attachmentReceiver) -> {
+			MessagePojo messagePojo = attachmentReceiver.messagePojo;
+			if (messagePojo == null || messagePojo.useLocalAddress == null || !senderUuid.equals(messagePojo.senderUuid)
+					|| localRemoteServerIps.containsValue(messagePojo.useLocalAddress)) {
+				return;
+			}
+			messageNumbersToRemove.add(messageNumber);
+			attachmentReceiver.destroy();
 		});
 		messageNumbersToRemove.forEach(messageNumber -> attachmentReceivers.remove(messageNumber));
 	}

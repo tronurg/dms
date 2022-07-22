@@ -308,7 +308,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 		serverReceiversMap.forEach((dmsServer, uuidList) -> {
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, contentType, trackingId,
-					dmsServer.uuid, useLocalAddress);
+					useLocalAddress, dmsServer.uuid);
 			int messageNumber = getMessageNumber();
 			MessageContainer messageContainer = new MessageContainer(messageNumber, messagePojo, attachmentPojo,
 					useTimeout, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
@@ -544,6 +544,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				}
 				dmsServer.addUser(userUuid);
 				listener.beaconReceived(beacon);
+				messageReceiver.checkInterfacedMessagesFrom(userUuid, beacon.localRemoteServerIps);
 
 				break;
 

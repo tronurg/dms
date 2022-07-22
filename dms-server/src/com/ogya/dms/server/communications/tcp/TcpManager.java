@@ -418,50 +418,42 @@ public class TcpManager implements TcpServerListener {
 						break;
 					}
 
-					InetAddress useLocalAddress = chunk.useLocalAddress;
+					boolean success = false;
 
-					boolean sent = false;
-					boolean fail = false;
-
-					while (!sent) {
-						if (useLocalAddress != null) {
-							TcpConnection connection = getConnection(useLocalAddress);
+					while (!success) {
+						if (chunk.useLocalAddress != null) {
+							TcpConnection connection = getConnection(chunk.useLocalAddress);
 							if (connection == null) {
 								break;
 							}
-							sent = connection.sendMessage(chunk.messageNumber, chunk.data);
-							if (!sent) {
-								fail = true;
-								useLocalAddress = null;
-								chunk.messageNumber = -Math.abs(chunk.messageNumber);
-								chunk.data = new byte[0];
+							success = connection.sendMessage(chunk.messageNumber, chunk.data);
+							if (!success) {
+								break;
 							}
 						} else {
 							boolean updated = checkBestConnection();
 							if (bestConnection == null) {
 								break;
 							}
-							if (updated && lastChunk != null && !fail) {
-								sent = bestConnection.sendMessage(lastChunk.messageNumber, lastChunk.data);
-								if (!sent) {
+							if (updated && lastChunk != null) {
+								success = bestConnection.sendMessage(lastChunk.messageNumber, lastChunk.data);
+								if (!success) {
 									bestConnection = null;
 									continue;
 								}
 							}
-							sent = bestConnection.sendMessage(chunk.messageNumber, chunk.data);
-							if (!sent) {
+							success = bestConnection.sendMessage(chunk.messageNumber, chunk.data);
+							if (!success) {
 								bestConnection = null;
 								continue;
 							}
 							if (chunk.messageNumber > 0) {
 								lastChunk = chunk;
-							} else if (!fail) {
+							} else {
 								lastChunk = null;
 							}
 						}
 					}
-
-					boolean success = sent && !fail;
 
 					if (chunk.sendMore != null) {
 						chunk.sendMore.accept(success);

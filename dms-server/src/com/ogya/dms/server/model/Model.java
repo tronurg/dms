@@ -133,6 +133,7 @@ public class Model {
 
 		dmsServer.localRemoteIps.clear();
 		dmsServer.localRemoteIps.putAll(localRemoteIps);
+		dmsServer.checkInterfacedMessages();
 
 		// This block is added upon a half-open connection error.
 		if (beaconsRequested)
@@ -463,24 +464,20 @@ public class Model {
 					}
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					String address = messagePojo.address;
-					InetAddress useLocalAddress = messagePojo.useLocalAddress;
 					messagePojo.address = null;
-					messagePojo.useLocalAddress = null;
 					Consumer<Boolean> sendMore = success -> sendStatusInfo(absMessageNumber, success, progress);
-					if (sign > 0) {
-						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								messagePojo.receiverUuids, address, useLocalAddress));
-					}
 					if (CommonConstants.DMS_UUID.equals(address)) {
+						messagePojo.useLocalAddress = null;
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
 					} else {
-						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, address, useLocalAddress,
-								sendMore);
+						remoteMessageReceived(sign * mappedMessageNumber, messagePojo, address,
+								messagePojo.useLocalAddress, sendMore);
+					}
+					if (sign > 0) {
+						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
+								messagePojo.receiverUuids, address, messagePojo.useLocalAddress));
 					}
 				} catch (Exception e) {
-					if (sign > 0) {
-						messageMap.remove(absMessageNumber);
-					}
 					sendStatusInfo(absMessageNumber, false, progress);
 				}
 				return;
@@ -727,14 +724,13 @@ public class Model {
 						return;
 					}
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
+					localMessageReceived(sign * mappedMessageNumber, messagePojo);
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								messagePojo.receiverUuids, null, null));
+								messagePojo.receiverUuids, null, messagePojo.useLocalAddress));
 					}
-					localMessageReceived(sign * mappedMessageNumber, messagePojo);
 				} catch (Exception e) {
 					if (sign > 0) {
-						messageMap.remove(absMessageNumber);
 						cannotReceiveMore(absMessageNumber);
 					}
 				}
@@ -882,6 +878,14 @@ public class Model {
 		private void cleanMessagesToUuid(String uuid) {
 			messageMap.forEach((messageNumber, messageInfo) -> messageInfo.receiverUuids.remove(uuid));
 			messageMap.entrySet().removeIf(e -> e.getValue().receiverUuids.isEmpty());
+		}
+
+		private void checkInterfacedMessages() {
+			messageMap.entrySet().removeIf(e -> {
+				MessageInfo messageInfo = e.getValue();
+				return !(messageInfo.useLocalAddress == null
+						|| localRemoteIps.containsValue(messageInfo.useLocalAddress));
+			});
 		}
 
 	}

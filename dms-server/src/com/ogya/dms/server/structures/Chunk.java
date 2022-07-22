@@ -4,8 +4,8 @@ import java.util.function.Consumer;
 
 public abstract class Chunk {
 
-	public int messageNumber;
-	public byte[] data;
+	public final int messageNumber;
+	public final byte[] data;
 	public final Consumer<Boolean> sendMore;
 
 	public Chunk() {
