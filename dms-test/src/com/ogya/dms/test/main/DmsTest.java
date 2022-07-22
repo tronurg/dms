@@ -85,7 +85,9 @@ public class DmsTest {
 
 		try {
 
+			AtomicReference<DmsHandle> handleRef = new AtomicReference<DmsHandle>();
 			DmsHandle dmsHandle = DmsCore.login("armut", "armut");
+			handleRef.set(dmsHandle);
 			JPanel panel = new JPanel(new BorderLayout());
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
@@ -102,10 +104,11 @@ public class DmsTest {
 			btn.addActionListener(e -> {
 				if (loggedIn.get()) {
 					loggedIn.set(false);
-					DmsCore.logout("armut");
+					handleRef.get().logout();
 				} else {
 					try {
 						DmsHandle dmsHandleNew = DmsCore.login("armut", "armut");
+						handleRef.set(dmsHandleNew);
 						dmsHandleNew.addListener(new DmsListenerImpl(dmsHandleNew));
 						dmsHandleNew.addGuiListener(new DmsListenerImpl(dmsHandleNew));
 						dmsHandleNew.addDownloadListener(new DmsListenerImpl(dmsHandleNew));

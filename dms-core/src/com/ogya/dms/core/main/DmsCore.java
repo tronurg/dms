@@ -18,23 +18,13 @@ public class DmsCore {
 		DmsControl dmsControl = INSTANCES.get(username);
 		if (dmsControl == null) {
 			try {
-				dmsControl = new DmsControl(username, password);
+				dmsControl = new DmsControl(username, password, () -> INSTANCES.remove(username));
 				INSTANCES.put(username, dmsControl);
 			} catch (Exception e) {
 				throw new DmsException(e);
 			}
 		}
 		return dmsControl;
-
-	}
-
-	public static void logout(String username) {
-
-		DmsControl dmsControl = INSTANCES.remove(username);
-		if (dmsControl == null) {
-			return;
-		}
-		dmsControl.close();
 
 	}
 

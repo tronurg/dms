@@ -27,6 +27,8 @@ public interface DmsHandle {
 
 	JComponent getDmsPanel();
 
+	void logout();
+
 	void addListener(DmsListener listener);
 
 	void removeListener(DmsListener listener);

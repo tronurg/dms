@@ -99,6 +99,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private static final Object FILE_SYNC = new Object();
 
+	private final Runnable logoutListener;
+
 	private final DbManager dbManager;
 
 	private final Model model;
@@ -126,7 +128,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private final ExecutorService downloadTaskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final ExecutorService listenerTaskQueue = DmsFactory.newSingleThreadExecutorService();
 
-	public DmsControl(String username, String password) throws Exception {
+	public DmsControl(String username, String password, Runnable logoutListener) throws Exception {
+
+		this.logoutListener = logoutListener;
 
 		dbManager = new DbManager(username, password);
 
@@ -194,10 +198,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
 
-	}
-
-	public void close() {
-		dmsClient.close();
 	}
 
 	private void initDbModelAndGui() throws Exception {
@@ -1554,7 +1554,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				model.getContacts().forEach((id, contact) -> contactDisconnected(contact));
 
 				if (logout) {
-					logout();
+					closeSession();
 				}
 
 			}
@@ -1565,7 +1565,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void logout() {
+	private void closeSession() {
+
+		clearAllDownloads();
 
 		audioCenter.close();
 		soundPlayer.close();
@@ -1585,6 +1587,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		}
 
+	}
+
+	private void clearAllDownloads() {
+		downloadTaskQueue.execute(() -> {
+			model.getAllDownloads().forEach(downloadPojo -> deleteFile(downloadPojo.path));
+			model.clearAllDownloads();
+		});
 	}
 
 	@Override
@@ -3317,6 +3326,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public JComponent getDmsPanel() {
 
 		return dmsPanelSwing;
+
+	}
+
+	@Override
+	public void logout() {
+
+		logoutListener.run();
+		dmsClient.close();
 
 	}
 

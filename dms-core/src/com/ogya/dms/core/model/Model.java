@@ -516,9 +516,17 @@ public class Model {
 
 	}
 
-	public Map<Long, DownloadPojo> getAllDownloads() {
+	public List<DownloadPojo> getAllDownloads() {
 
-		return downloadMap;
+		List<DownloadPojo> downloadList = new ArrayList<DownloadPojo>();
+		downloadMap.forEach((downloadId, downloadPojo) -> downloadList.add(downloadPojo));
+		return downloadList;
+
+	}
+
+	public void clearAllDownloads() {
+
+		downloadMap.clear();
 
 	}
 
