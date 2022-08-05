@@ -65,10 +65,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 		public int compare(MessageContainer m1, MessageContainer m2) {
 			int result = Boolean.compare(m1.isSecondary(), m2.isSecondary());
 			if (result == 0 && m1.isSecondary()) {
-				result = Long.compare(m1.checkInTime, m2.checkInTime);
+				result = Long.signum(m1.checkInNano - m2.checkInNano);
 			}
 			if (result == 0) {
-				result = Integer.compare(m1.messageNumber, m2.messageNumber);
+				result = Integer.signum(m1.messageNumber - m2.messageNumber);
 			}
 			return result;
 		}
@@ -771,17 +771,14 @@ public class DmsClient implements DmsMessageReceiverListener {
 				}
 
 				int messageNumber = messageContainer.messageNumber;
-				if (!messageContainer.hasMore()) {
-					messageNumber = -messageNumber;
-				}
-
-				messageSender.send(messageNumber, chunk.progress, chunk.dataBuffer);
-
 				if (messageContainer.hasMore()) {
 					messageQueue.offer(messageContainer);
 				} else {
+					messageNumber = -messageNumber;
 					messageContainer.close();
 				}
+
+				messageSender.send(messageNumber, chunk.progress, chunk.dataBuffer);
 
 			}
 
@@ -833,7 +830,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
-		private long checkInTime = startTime;
+		private long checkInNano = System.nanoTime();
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
 				Long useTimeout, BiConsumer<Integer, List<String>> progressConsumer) {
@@ -887,8 +884,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		@Override
 		public Chunk next() {
-			checkInTime = System.currentTimeMillis();
-			interrupt.set(interrupt.get() || (useTimeout != null && useTimeout < checkInTime - startTime));
+			checkInNano = System.nanoTime();
+			long currentTime = System.currentTimeMillis();
+			interrupt.set(interrupt.get() || (useTimeout != null && useTimeout < currentTime - startTime));
 			return super.next();
 		}
 
