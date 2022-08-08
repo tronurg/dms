@@ -288,7 +288,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			// Message destined to the local server
 			DmsServer dmsServer = dmsServers.get(LOCAL_SERVER);
 			if (dmsServer == null) {
-				dmsServer = new DmsServer(LOCAL_SERVER);
+				dmsServer = new DmsServer(LOCAL_SERVER, true);
 				dmsServers.put(LOCAL_SERVER, dmsServer);
 			}
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, contentType, null, null, null);
@@ -312,7 +312,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 					useLocalAddress, dmsServer.uuid);
 			int messageNumber = getMessageNumber();
 			MessageContainer messageContainer = new MessageContainer(messageNumber, messagePojo, attachmentPojo,
-					useTimeout, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
+					useTimeout, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType),
+					dmsServer.fairnessCounter);
 			messageMap.put(messageNumber, messageContainer);
 			dmsServer.queueMessage(messageContainer, unsuccessfulUuids);
 		});
@@ -540,7 +541,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				}
 				DmsServer dmsServer = dmsServers.get(serverUuid);
 				if (dmsServer == null) {
-					dmsServer = new DmsServer(serverUuid);
+					dmsServer = new DmsServer(serverUuid, false);
 					dmsServers.put(serverUuid, dmsServer);
 				}
 				dmsServer.addUser(userUuid);
@@ -730,9 +731,15 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final Set<String> users = Collections.synchronizedSet(new HashSet<String>());
 		private final PriorityBlockingQueue<MessageContainer> messageQueue = new PriorityBlockingQueue<MessageContainer>(
 				11, messageSorter);
+		private final AtomicInteger fairnessCounter;
 
-		private DmsServer(String uuid) {
+		private DmsServer(String uuid, boolean local) {
 			this.uuid = uuid;
+			if (local) {
+				this.fairnessCounter = null;
+			} else {
+				this.fairnessCounter = new AtomicInteger(0);
+			}
 		}
 
 		private synchronized void queueMessage(MessageContainer messageContainer, List<String> unsuccessfulUuids) {
@@ -760,13 +767,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			while (chunk == null) {
 
-				MessageContainer messageContainer = messageQueue.poll();
-				if (messageContainer == null) {
+				if (fairnessCounter != null && fairnessCounter.get() > FAIRNESS) {
 					break;
 				}
 
-				if (messageContainer.sendCount.get() > FAIRNESS) {
-					messageQueue.offer(messageContainer);
+				MessageContainer messageContainer = messageQueue.poll();
+				if (messageContainer == null) {
 					break;
 				}
 
@@ -786,7 +792,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 				messageSender.send(messageNumber, chunk.progress, chunk.dataBuffer);
 
-				if (messageContainer.sendCount.getAndIncrement() < FAIRNESS) {
+				if (fairnessCounter != null && fairnessCounter.getAndIncrement() < FAIRNESS) {
 					chunk = null;
 				}
 
@@ -838,7 +844,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final Long trackingId;
 		private final String address;
 
-		private final AtomicInteger sendCount = new AtomicInteger(0);
+		private final AtomicInteger fairnessCounter;
 
 		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
@@ -846,6 +852,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
 				Long useTimeout, BiConsumer<Integer, List<String>> progressConsumer) {
+			this(messageNumber, messagePojo, attachmentPojo, useTimeout, progressConsumer, null);
+		}
+
+		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
+				Long useTimeout, BiConsumer<Integer, List<String>> progressConsumer, AtomicInteger fairnessCounter) {
 			super(messagePojo, attachmentPojo);
 			this.messageNumber = messageNumber;
 			this.useTimeout = useTimeout;
@@ -855,6 +866,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			this.contentType = messagePojo.contentType;
 			this.trackingId = messagePojo.trackingId;
 			this.address = messagePojo.address;
+			this.fairnessCounter = fairnessCounter;
 		}
 
 		private boolean isSecondary() {
@@ -862,11 +874,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 
 		private void updateProgress(int progress) {
+			if (fairnessCounter != null && fairnessCounter.decrementAndGet() < 0) {
+				fairnessCounter.set(0);
+			}
 			if (this != messageMap.get(messageNumber)) {
 				return;
-			}
-			if (sendCount.decrementAndGet() < 0) {
-				sendCount.set(0);
 			}
 			boolean progressUpdated = progress != progressPercent.getAndSet(progress);
 			if (progressUpdated && progressConsumer != null) {
