@@ -49,6 +49,7 @@ import com.ogya.dms.core.structures.MessageStatus;
 public class DmsClient implements DmsMessageReceiverListener {
 
 	private static final String LOCAL_SERVER = "";
+	private static final int FAIRNESS = 1;
 
 	private final String uuid;
 
@@ -764,6 +765,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 					break;
 				}
 
+				if (messageContainer.sendCount.get() > FAIRNESS) {
+					messageQueue.offer(messageContainer);
+					break;
+				}
+
 				chunk = messageContainer.next();
 				if (chunk == null) {
 					messageContainer.destroy();
@@ -779,6 +785,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 				}
 
 				messageSender.send(messageNumber, chunk.progress, chunk.dataBuffer);
+
+				if (messageContainer.sendCount.getAndIncrement() < FAIRNESS) {
+					chunk = null;
+				}
 
 			}
 
@@ -828,6 +838,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final Long trackingId;
 		private final String address;
 
+		private final AtomicInteger sendCount = new AtomicInteger(0);
+
 		private final long startTime = System.currentTimeMillis();
 		private final AtomicInteger progressPercent = new AtomicInteger(-1);
 		private long checkInNano = System.nanoTime();
@@ -852,6 +864,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private void updateProgress(int progress) {
 			if (this != messageMap.get(messageNumber)) {
 				return;
+			}
+			if (sendCount.decrementAndGet() < 0) {
+				sendCount.set(0);
 			}
 			boolean progressUpdated = progress != progressPercent.getAndSet(progress);
 			if (progressUpdated && progressConsumer != null) {
