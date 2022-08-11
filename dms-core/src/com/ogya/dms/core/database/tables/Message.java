@@ -63,9 +63,9 @@ public class Message {
 	@JsonProperty("c")
 	private String content;
 
-	@Column(name = "attachment", updatable = false, length = Integer.MAX_VALUE)
+	@Column(name = "attachment_name", updatable = false, length = Integer.MAX_VALUE)
 	@JsonProperty("d")
-	private String attachment;
+	private String attachmentName;
 
 	@Column(name = "update_type", updatable = false)
 	@Convert(converter = UpdateTypeConverter.class)
@@ -105,6 +105,10 @@ public class Message {
 	@Column(name = "date", nullable = false, updatable = false)
 	@JsonIgnore
 	private Date date;
+
+	@Column(name = "attachment_path", length = Integer.MAX_VALUE)
+	@JsonIgnore
+	private String attachmentPath;
 
 	@Column(name = "local", nullable = false, updatable = false)
 	@JsonIgnore
@@ -177,7 +181,7 @@ public class Message {
 		this.id = message.id;
 		this.messageRefId = message.messageRefId;
 		this.content = message.content;
-		this.attachment = message.attachment;
+		this.attachmentName = message.attachmentName;
 		this.updateType = message.updateType;
 		this.attachmentType = message.attachmentType;
 		this.refMessage = message.refMessage;
@@ -187,6 +191,7 @@ public class Message {
 		this.messageCode = message.messageCode;
 		this.forwardCount = message.forwardCount;
 		this.date = message.date;
+		this.attachmentPath = message.attachmentPath;
 		this.local = message.local;
 		this.done = message.done;
 		this.messageStatus = message.messageStatus;
@@ -221,12 +226,12 @@ public class Message {
 		this.content = content;
 	}
 
-	public String getAttachment() {
-		return attachment;
+	public String getAttachmentName() {
+		return attachmentName;
 	}
 
-	public void setAttachment(String attachment) {
-		this.attachment = attachment;
+	public void setAttachmentName(String attachmentName) {
+		this.attachmentName = attachmentName;
 	}
 
 	public UpdateType getUpdateType() {
@@ -299,6 +304,14 @@ public class Message {
 
 	public void setDate(Date date) {
 		this.date = date;
+	}
+
+	public String getAttachmentPath() {
+		return attachmentPath;
+	}
+
+	public void setAttachmentPath(String attachmentPath) {
+		this.attachmentPath = attachmentPath;
 	}
 
 	public boolean isLocal() {

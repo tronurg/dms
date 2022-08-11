@@ -1057,7 +1057,7 @@ class MessagePane extends BorderPane {
 
 		referenceBalloon.getChildren().add(nameLabel);
 
-		if (messageInfo.attachment != null) {
+		if (messageInfo.attachmentType != null) {
 
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
@@ -1069,8 +1069,7 @@ class MessagePane extends BorderPane {
 
 			} else {
 
-				Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
-						ViewFactory.newAttachGraph(0.4));
+				Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.4));
 				attachmentLabel.getStyleClass().add("dim-label");
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
@@ -1364,7 +1363,7 @@ class MessagePane extends BorderPane {
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setEffect(shadow);
 
-			if (messageInfo.attachment != null)
+			if (messageInfo.attachmentType != null)
 				messagePane.add(getAttachmentArea(), 0, 2);
 
 			if (messageInfo.content != null)
@@ -1403,10 +1402,9 @@ class MessagePane extends BorderPane {
 		private Node getAttachmentArea() {
 
 			if (messageInfo.attachmentType == AttachmentType.AUDIO)
-				return new DmsMediaPlayer(Paths.get(messageInfo.attachment));
+				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 
-			Label attachmentLabel = new Label(Paths.get(messageInfo.attachment).getFileName().toString(),
-					ViewFactory.newAttachGraph(0.5));
+			Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.5));
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
@@ -1756,7 +1754,8 @@ class MessagePane extends BorderPane {
 
 		final Long messageId;
 		final String content;
-		final String attachment;
+		final String attachmentName;
+		final String attachmentPath;
 		final Long ownerId;
 		final boolean isOutgoing;
 		final String senderName;
@@ -1773,7 +1772,8 @@ class MessagePane extends BorderPane {
 
 			this.messageId = message.getId();
 			this.content = message.getContent();
-			this.attachment = message.getAttachment();
+			this.attachmentName = message.getAttachmentName();
+			this.attachmentPath = message.getAttachmentPath();
 			this.ownerId = message.getOwner().getId();
 			this.isOutgoing = message.isLocal();
 			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
