@@ -656,12 +656,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (!copyMessage.isLocal() && Boolean.TRUE.equals(copyMessage.getSenderGroupOwner()))
 			copyMessage.setContactRefId(copyMessage.getContact().getId());
 
-		Path path = null;
-		if (copyMessage.getAttachmentPath() != null) {
-			path = Paths.get(copyMessage.getAttachmentPath());
-		}
-
-		dmsClient.sendMessage(copyMessage, path, receiverUuids, message.getId());
+		dmsClient.sendMessage(copyMessage, receiverUuids, message.getId());
 
 	}
 
@@ -757,6 +752,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (Files.notExists(dstFolder))
 			Files.createDirectories(dstFolder);
 
+		if (fileName == null) {
+			fileName = String.valueOf(System.currentTimeMillis());
+		}
+
 		int lastDotIndex = fileName.lastIndexOf('.');
 		String fileNameBase = lastDotIndex < 0 ? fileName : fileName.substring(0, lastDotIndex);
 		String extension = lastDotIndex < 0 ? "" : fileName.substring(lastDotIndex);
@@ -777,9 +776,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private Path copyFileToSendFolder(Path srcFile) throws IOException {
 
-		Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+		Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER);
 
-		if (Objects.equals(dstFolder, srcFile.getParent())) {
+		if (Objects.equals(dstFolder.normalize().toAbsolutePath(), srcFile.normalize().toAbsolutePath().getParent())) {
 			return srcFile;
 		}
 
@@ -1057,7 +1056,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private Path moveFileToReceiveFolder(Path path, String fileName) throws IOException {
 		synchronized (FILE_SYNC) {
-			Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER).normalize().toAbsolutePath();
+			Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER);
 			Path dstFile = getDstFile(dstFolder, fileName);
 			if (path == null) {
 				Files.createFile(dstFile);
@@ -1444,7 +1443,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				if (message.getAttachmentName() != null) {
+				if (message.getAttachmentType() != null) {
 					message.setAttachmentPath(
 							moveFileToReceiveFolder(attachment, message.getAttachmentName()).toString());
 				}
@@ -2978,7 +2977,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				String fileName = String.format("audio_%s.wav",
 						CommonConstants.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
-				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER);
 
 				Path dstFile = getDstFile(dstFolder, fileName);
 
@@ -3060,7 +3059,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				try {
 
-					Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER).normalize().toAbsolutePath();
+					Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER);
 
 					Path dstFile = getDstFile(dstFolder, fileName);
 

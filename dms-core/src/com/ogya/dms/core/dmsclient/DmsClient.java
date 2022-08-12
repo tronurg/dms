@@ -3,6 +3,7 @@ package com.ogya.dms.core.dmsclient;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -142,11 +143,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	}
 
-	public void sendMessage(Message message, Path attachmentPath, List<String> receiverUuids, Long messageId) {
+	public void sendMessage(Message message, List<String> receiverUuids, Long messageId) {
 
 		AttachmentPojo attachmentPojo = null;
-		if (attachmentPath != null) {
-			attachmentPojo = new AttachmentPojo(attachmentPath, null);
+		String attachmentPathStr = message.getAttachmentPath();
+		if (attachmentPathStr != null) {
+			attachmentPojo = new AttachmentPojo(Paths.get(attachmentPathStr), null);
 		}
 
 		sendMessage(DmsPackingFactory.pack(message), uuid, receiverUuids, ContentType.MESSAGE, messageId, null, null,
