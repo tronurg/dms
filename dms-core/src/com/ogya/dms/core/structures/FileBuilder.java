@@ -1,21 +1,20 @@
 package com.ogya.dms.core.structures;
 
 import java.nio.file.Path;
-import java.util.function.Supplier;
 
 public class FileBuilder {
 
 	private final String fileName;
 	private final AttachmentType attachmentType;
 	private final Integer fileCode;
-	private final Supplier<Path> fileBuilder;
+	private final PathSupplier pathSupplier;
 
-	public FileBuilder(String fileName, AttachmentType attachmentType, Integer fileCode, Supplier<Path> fileBuilder) {
+	public FileBuilder(String fileName, AttachmentType attachmentType, Integer fileCode, PathSupplier pathSupplier) {
 
 		this.fileName = fileName;
 		this.attachmentType = attachmentType;
 		this.fileCode = fileCode;
-		this.fileBuilder = fileBuilder;
+		this.pathSupplier = pathSupplier;
 
 	}
 
@@ -37,9 +36,15 @@ public class FileBuilder {
 
 	}
 
-	public Path buildAndGet() {
+	public Path buildAndGet() throws Exception {
 
-		return fileBuilder.get();
+		return pathSupplier.get();
+
+	}
+
+	public static interface PathSupplier {
+
+		Path get() throws Exception;
 
 	}
 

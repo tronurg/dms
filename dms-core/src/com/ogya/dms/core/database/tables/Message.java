@@ -160,13 +160,10 @@ public class Message {
 		super();
 	}
 
-	public Message(String content, UpdateType updateType, AttachmentType attachmentType, Message refMessage,
-			Integer messageCode, MessageStatus messageStatus, Contact contact, Contact owner, Dgroup dgroup,
-			Boolean apiFlag) {
+	public Message(String content, Message refMessage, Integer messageCode, MessageStatus messageStatus,
+			Contact contact, Contact owner, Dgroup dgroup, Boolean apiFlag) {
 		super();
 		this.content = content;
-		this.updateType = updateType;
-		this.attachmentType = attachmentType;
 		this.refMessage = refMessage;
 		this.messageCode = messageCode;
 		this.messageStatus = messageStatus;
