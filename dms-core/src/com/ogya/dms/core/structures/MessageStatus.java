@@ -11,8 +11,9 @@ import javafx.scene.paint.Color;
 
 public enum MessageStatus {
 
-	FRESH(0, Color.TRANSPARENT, Color.TRANSPARENT), SENT(1, Color.DARKGRAY, Color.TRANSPARENT),
-	RECEIVED(2, Color.DARKGRAY, Color.DARKGRAY), READ(3, Color.DEEPSKYBLUE, Color.DEEPSKYBLUE);
+	PREP(-1, Color.TRANSPARENT, Color.TRANSPARENT), FRESH(0, Color.TRANSPARENT, Color.TRANSPARENT),
+	SENT(1, Color.DARKGRAY, Color.TRANSPARENT), RECEIVED(2, Color.DARKGRAY, Color.DARKGRAY),
+	READ(3, Color.DEEPSKYBLUE, Color.DEEPSKYBLUE);
 
 	private static final Map<Integer, MessageStatus> INDEX_MAP = Collections
 			.synchronizedMap(new HashMap<Integer, MessageStatus>());

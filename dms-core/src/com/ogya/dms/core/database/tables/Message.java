@@ -413,16 +413,19 @@ public class Message {
 	@PrePersist
 	protected void prePersist() {
 		date = new Date();
-		if (updateType == null && viewStatus == null)
+		if (updateType == null && viewStatus == null) {
 			viewStatus = ViewStatus.DEFAULT;
-		if (owner == null)
+		}
+		if (owner == null) {
 			owner = contact;
+		}
 	}
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Message))
+		if (!(obj instanceof Message)) {
 			return false;
+		}
 		Message message = (Message) obj;
 		return Objects.equals(this.id, message.id);
 	}

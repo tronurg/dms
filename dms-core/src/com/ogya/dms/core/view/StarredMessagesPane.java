@@ -17,6 +17,7 @@ import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
+import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.component.ImSearchField;
@@ -29,8 +30,10 @@ import javafx.animation.Transition;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -408,11 +411,20 @@ class StarredMessagesPane extends BorderPane {
 
 	private void updateMessage(Message message) {
 
-		if (message.getViewStatus() == ViewStatus.ARCHIVED)
+		if (message.getViewStatus() != ViewStatus.ARCHIVED) {
+			deleteMessage(message);
+			removeSearchHit(message);
+			return;
+		}
+
+		Long messageId = message.getId();
+
+		MessageBalloon messageBalloon = messageBalloons.get(messageId);
+
+		if (messageBalloon == null)
 			return;
 
-		deleteMessage(message);
-		removeSearchHit(message);
+		messageBalloon.messageInfo.statusProperty.set(message.getMessageStatus());
 
 	}
 
@@ -829,13 +841,16 @@ class StarredMessagesPane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (messageInfo.attachmentType == AttachmentType.AUDIO)
+			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
+			}
 
 			Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.5));
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
+
+			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
 
 			attachmentLabel.cursorProperty().bind(Bindings.createObjectBinding(
 					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
@@ -924,6 +939,7 @@ class StarredMessagesPane extends BorderPane {
 		final LocalDateTime localDateTime;
 		final AttachmentType attachmentType;
 		final Color nameColor;
+		final ObjectProperty<MessageStatus> statusProperty = new SimpleObjectProperty<MessageStatus>();
 
 		MessageInfo(Message message) {
 
@@ -940,6 +956,7 @@ class StarredMessagesPane extends BorderPane {
 			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
 			this.attachmentType = message.getAttachmentType();
 			this.nameColor = ViewFactory.getColorForUuid(message.getOwner().getUuid());
+			this.statusProperty.set(message.getMessageStatus());
 
 		}
 

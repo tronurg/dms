@@ -438,7 +438,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			AttachmentType attachmentType, Message refMessage, Integer messageCode, Contact contact, Dgroup group,
 			Set<StatusReport> statusReports, Boolean apiFlag) throws Exception {
 
-		Message outgoingMessage = new Message(content, refMessage, messageCode, MessageStatus.FRESH, contact,
+		MessageStatus messageStatus = MessageStatus.FRESH;
+		if (attachmentType != null && attachmentPath == null) {
+			messageStatus = MessageStatus.PREP;
+		}
+
+		Message outgoingMessage = new Message(content, refMessage, messageCode, messageStatus, contact,
 				model.getIdentity(), group, apiFlag);
 
 		outgoingMessage.setLocal(true);
@@ -976,14 +981,16 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		newMessages.forEach(message -> {
 			updateMessageInPane(message);
-			if (message.getId() < model.getMinArchivedMessageId())
+			if (message.getId() < model.getMinArchivedMessageId()) {
 				return;
+			}
 			Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(message));
 		});
 
-		if (!deletedMessageIds.isEmpty())
+		if (!deletedMessageIds.isEmpty()) {
 			listenerTaskQueue.execute(() -> dmsGuiListeners
 					.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds.toArray(new Long[0]))));
+		}
 
 	}
 
@@ -1605,7 +1612,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		dmsDownloadListeners.clear();
 		dmsFileServer.set(null);
 
-		taskQueue.shutdown();
+		auxTaskQueue.execute(() -> taskQueue.shutdown());
+		auxTaskQueue.shutdown();
 		downloadTaskQueue.shutdown();
 		listenerTaskQueue.shutdown();
 
@@ -2394,10 +2402,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (message.getViewStatus() == ViewStatus.DELETED) {
 					return;
 				}
+				message.setMessageStatus(MessageStatus.FRESH);
 				message.setAttachmentPath(attachmentPath.toString());
 				Message newMessage = dbManager.addUpdateMessage(message);
 				model.registerMessage(newMessage);
 				updateMessageInPane(newMessage);
+				if (newMessage.getViewStatus() == ViewStatus.ARCHIVED) {
+					Platform.runLater(() -> dmsPanel.addUpdateArchivedMessage(newMessage));
+				}
 				if (groupId != null) {
 					sendGroupMessage(newMessage);
 				} else {
@@ -2832,6 +2844,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				dbManager.getMessagesById(messageIds).forEach(message -> {
 
+					if (message.getViewStatus() == ViewStatus.DELETED) {
+						return;
+					}
+
 					try {
 
 						Message outgoingMessage = new Message(message.getContent(), null, message.getMessageCode(),
@@ -2844,15 +2860,18 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 						outgoingMessage.setAttachmentName(message.getAttachmentName());
 						outgoingMessage.setAttachmentPath(message.getAttachmentPath());
 
-						if (group != null)
+						if (group != null) {
 							createStatusReports(group)
 									.forEach(statusReport -> outgoingMessage.addStatusReport(statusReport));
+						}
 
 						outgoingMessage.setForwardCount(message.getForwardCount());
-						if (outgoingMessage.getForwardCount() == null)
+						if (outgoingMessage.getForwardCount() == null) {
 							outgoingMessage.setForwardCount(0);
-						if (!message.isLocal())
+						}
+						if (!message.isLocal()) {
 							outgoingMessage.setForwardCount(outgoingMessage.getForwardCount() + 1);
+						}
 
 						Message newMessage = dbManager.addUpdateMessage(outgoingMessage);
 						model.registerMessage(newMessage);
@@ -2883,11 +2902,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				});
 
-				if (!forwardedMessages.isEmpty())
+				if (!forwardedMessages.isEmpty()) {
 					Platform.runLater(() -> {
 						dmsPanel.showMessagePane(entityId);
 						dmsPanel.scrollPaneToMessage(entityId, forwardedMessages.get(0).getId());
 					});
+				}
 
 			} catch (Exception e) {
 

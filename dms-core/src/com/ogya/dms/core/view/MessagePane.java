@@ -1401,13 +1401,16 @@ class MessagePane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (messageInfo.attachmentType == AttachmentType.AUDIO)
+			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
+			}
 
 			Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.5));
 
 			attachmentLabel.getStyleClass().add("dim-label");
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
+
+			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
 
 			attachmentLabel.cursorProperty().bind(Bindings.createObjectBinding(
 					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
