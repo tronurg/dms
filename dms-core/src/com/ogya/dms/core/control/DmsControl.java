@@ -2302,29 +2302,29 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 		}
 
-		final Message newMessage = createOutgoingMessage(content, attachmentName, attachmentPath, attachmentType,
-				refMessage, messageCode, contact, null, null, apiFlag);
+		Message message = createOutgoingMessage(content, attachmentName, attachmentPath, attachmentType, refMessage,
+				messageCode, contact, null, null, apiFlag);
 
-		addMessageToPane(newMessage, true);
+		addMessageToPane(message, true);
 
-		Long messageId = newMessage.getId();
+		Long messageId = message.getId();
 
 		if (onePass || fileBuilder == null) {
-			sendPrivateMessage(newMessage);
-			messageSentToListeners(newMessage, attachmentPath, contactId, null);
+			sendPrivateMessage(message);
+			messageSentToListeners(message, attachmentPath, contactId, null);
 			return messageId;
 		}
 
 		auxTaskQueue.execute(() -> {
 			try {
 				Path newAttachmentPath = fileBuilder.buildAndGet();
-				updatePathAndSend(newMessage, newAttachmentPath, contactId, null);
+				updatePathAndSend(messageId, newAttachmentPath, contactId, null);
 				return;
 			} catch (Exception e) {
 
 			}
 			try {
-				deleteMessages(Collections.singletonList(newMessage));
+				deleteMessages(Collections.singletonList(message));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -2354,29 +2354,29 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 		}
 
-		final Message newMessage = createOutgoingMessage(content, attachmentName, attachmentPath, attachmentType,
-				refMessage, messageCode, group.getOwner(), group, createStatusReports(group), apiFlag);
+		Message message = createOutgoingMessage(content, attachmentName, attachmentPath, attachmentType, refMessage,
+				messageCode, group.getOwner(), group, createStatusReports(group), apiFlag);
 
-		addMessageToPane(newMessage, true);
+		addMessageToPane(message, true);
 
-		Long messageId = newMessage.getId();
+		Long messageId = message.getId();
 
 		if (onePass || fileBuilder == null) {
-			sendGroupMessage(newMessage);
-			messageSentToListeners(newMessage, attachmentPath, null, groupId);
+			sendGroupMessage(message);
+			messageSentToListeners(message, attachmentPath, null, groupId);
 			return messageId;
 		}
 
 		auxTaskQueue.execute(() -> {
 			try {
 				Path newAttachmentPath = fileBuilder.buildAndGet();
-				updatePathAndSend(newMessage, newAttachmentPath, null, groupId);
+				updatePathAndSend(messageId, newAttachmentPath, null, groupId);
 				return;
 			} catch (Exception e) {
 
 			}
 			try {
-				deleteMessages(Collections.singletonList(newMessage));
+				deleteMessages(Collections.singletonList(message));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -2386,10 +2386,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void updatePathAndSend(final Message message, final Path attachmentPath, final Long contactId,
+	private void updatePathAndSend(final Long messageId, final Path attachmentPath, final Long contactId,
 			final Long groupId) {
 		taskQueue.execute(() -> {
 			try {
+				Message message = dbManager.getMessageById(messageId);
+				if (message.getViewStatus() == ViewStatus.DELETED) {
+					return;
+				}
 				message.setAttachmentPath(attachmentPath.toString());
 				Message newMessage = dbManager.addUpdateMessage(message);
 				model.registerMessage(newMessage);
