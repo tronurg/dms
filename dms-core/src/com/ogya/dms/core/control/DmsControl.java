@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -115,6 +116,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private final DmsClient dmsClient;
 
+	private final Semaphore sessionLock = new Semaphore(1);
+
 	private final AudioCenter audioCenter = new AudioCenter(this);
 	private final SoundPlayer soundPlayer = new SoundPlayer();
 
@@ -198,6 +201,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		initDbModelAndGui();
 
 		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
+
+		//
+
+		sessionLock.acquireUninterruptibly();
 
 	}
 
@@ -1625,6 +1632,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				} catch (Exception e) {
 
 				}
+				//
+				sessionLock.release();
 			});
 			taskQueue.shutdown();
 		});
@@ -3463,6 +3472,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		logoutListener.run();
 		dmsClient.close();
+		sessionLock.acquireUninterruptibly();
 
 	}
 

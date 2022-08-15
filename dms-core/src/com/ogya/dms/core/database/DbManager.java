@@ -44,37 +44,53 @@ public class DbManager {
 		if (name.length() > 40)
 			throw new Exception("Name too long, cannot exceed 40 characters.");
 
+		try {
+
+			lock();
+
+			String dbPath = CommonConstants.DB_PATH + File.separator + dbName;
+
+			factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
+					.setProperty("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
+					.setProperty("hibernate.connection.username", dbName)
+					.setProperty("hibernate.connection.password", dbPassword)
+					.setProperty("hibernate.search.backend.directory.root", dbPath)
+					.setProperty("hibernate.search.backend.lucene_version", "LUCENE_8_7_0")
+					.setProperty("hibernate.search.backend.analysis.configurer",
+							"class:" + DmsAnalysisConfigurer.class.getName())
+					.addAnnotatedClass(Contact.class).addAnnotatedClass(ContactRef.class)
+					.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Message.class)
+					.addAnnotatedClass(StatusReport.class).buildSessionFactory();
+
+			Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
+
+		} catch (Exception e) {
+			unlock();
+			throw e;
+		}
+
+	}
+
+	private void lock() {
 		Semaphore lock = LOCKS.get(name);
 		if (lock == null) {
 			lock = new Semaphore(1);
 			LOCKS.put(name, lock);
 		}
-		lock.acquire();
-
-		String dbPath = CommonConstants.DB_PATH + File.separator + dbName;
-
-		factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
-				.setProperty("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
-				.setProperty("hibernate.connection.username", dbName)
-				.setProperty("hibernate.connection.password", dbPassword)
-				.setProperty("hibernate.search.backend.directory.root", dbPath)
-				.setProperty("hibernate.search.backend.lucene_version", "LUCENE_8_7_0")
-				.setProperty("hibernate.search.backend.analysis.configurer",
-						"class:" + DmsAnalysisConfigurer.class.getName())
-				.addAnnotatedClass(Contact.class).addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class)
-				.addAnnotatedClass(Message.class).addAnnotatedClass(StatusReport.class).buildSessionFactory();
-
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
-
+		lock.acquireUninterruptibly();
 	}
 
-	public void close() {
-		factory.close();
+	private void unlock() {
 		Semaphore lock = LOCKS.remove(name);
 		if (lock == null) {
 			return;
 		}
 		lock.release();
+	}
+
+	public void close() {
+		factory.close();
+		unlock();
 	}
 
 	public Contact getIdentity() throws HibernateException {
