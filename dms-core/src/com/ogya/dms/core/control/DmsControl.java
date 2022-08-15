@@ -1602,34 +1602,39 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private void closeSession() {
 
-		clearAllDownloads();
+		auxTaskQueue.execute(() -> {
+			taskQueue.execute(() -> {
+				audioCenter.close();
+				soundPlayer.close();
+				//
+				downloadTaskQueue.execute(() -> {
+					dmsFileServer.set(null);
+					clearAllDownloads();
+				});
+				downloadTaskQueue.shutdown();
+				//
+				listenerTaskQueue.execute(() -> {
+					dmsListeners.clear();
+					dmsGuiListeners.clear();
+					dmsDownloadListeners.clear();
+				});
+				listenerTaskQueue.shutdown();
+				//
+				try {
+					dbManager.close();
+				} catch (Exception e) {
 
-		audioCenter.close();
-		soundPlayer.close();
-
-		dmsListeners.clear();
-		dmsGuiListeners.clear();
-		dmsDownloadListeners.clear();
-		dmsFileServer.set(null);
-
-		auxTaskQueue.execute(() -> taskQueue.shutdown());
+				}
+			});
+			taskQueue.shutdown();
+		});
 		auxTaskQueue.shutdown();
-		downloadTaskQueue.shutdown();
-		listenerTaskQueue.shutdown();
-
-		try {
-			dbManager.close();
-		} catch (Exception e) {
-
-		}
 
 	}
 
 	private void clearAllDownloads() {
-		downloadTaskQueue.execute(() -> {
-			model.getAllDownloads().forEach(downloadPojo -> deleteFile(downloadPojo.path));
-			model.clearAllDownloads();
-		});
+		model.getAllDownloads().forEach(downloadPojo -> deleteFile(downloadPojo.path));
+		model.clearAllDownloads();
 	}
 
 	@Override
@@ -2399,7 +2404,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		taskQueue.execute(() -> {
 			try {
 				Message message = dbManager.getMessageById(messageId);
-				if (message.getViewStatus() == ViewStatus.DELETED) {
+				if (message == null || message.getViewStatus() == ViewStatus.DELETED) {
 					return;
 				}
 				message.setMessageStatus(MessageStatus.FRESH);

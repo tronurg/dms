@@ -3,8 +3,11 @@ package com.ogya.dms.core.database;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
@@ -28,6 +31,8 @@ import com.ogya.dms.core.structures.ViewStatus;
 
 public class DbManager {
 
+	private static final Map<String, Semaphore> LOCKS = Collections.synchronizedMap(new HashMap<String, Semaphore>());
+
 	private final String name;
 
 	private final SessionFactory factory;
@@ -38,6 +43,13 @@ public class DbManager {
 
 		if (name.length() > 40)
 			throw new Exception("Name too long, cannot exceed 40 characters.");
+
+		Semaphore lock = LOCKS.get(name);
+		if (lock == null) {
+			lock = new Semaphore(1);
+			LOCKS.put(name, lock);
+		}
+		lock.acquire();
 
 		String dbPath = CommonConstants.DB_PATH + File.separator + dbName;
 
@@ -58,6 +70,11 @@ public class DbManager {
 
 	public void close() {
 		factory.close();
+		Semaphore lock = LOCKS.remove(name);
+		if (lock == null) {
+			return;
+		}
+		lock.release();
 	}
 
 	public Contact getIdentity() throws HibernateException {

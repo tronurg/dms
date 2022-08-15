@@ -464,7 +464,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
+			if (messageInfo.attachmentType == AttachmentType.AUDIO && messageInfo.attachmentPath != null) {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 

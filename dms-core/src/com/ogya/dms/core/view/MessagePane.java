@@ -663,6 +663,8 @@ class MessagePane extends BorderPane {
 
 	private void initSendBtn() {
 
+		sendBtn.visibleProperty().bind(recordBtn.visibleProperty().not());
+
 		sendBtn.setOnAction(e -> {
 			String messageAreaText = imPane.getMessage().trim();
 			final String mesajTxt = messageAreaText.isEmpty() ? null : messageAreaText;
@@ -1401,7 +1403,7 @@ class MessagePane extends BorderPane {
 
 		private Node getAttachmentArea() {
 
-			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
+			if (messageInfo.attachmentType == AttachmentType.AUDIO && messageInfo.attachmentPath != null) {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 
