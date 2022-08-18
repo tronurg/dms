@@ -474,7 +474,7 @@ public class Model {
 					}
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								messagePojo.receiverUuids, address, messagePojo.useLocalAddress));
+								messagePojo.receiverUuids, messagePojo.useLocalAddress));
 					}
 				} catch (Exception e) {
 					sendStatusInfo(address, absMessageNumber, false, progress);
@@ -487,11 +487,11 @@ public class Model {
 				return;
 			}
 			Consumer<Boolean> sendMore = success -> sendStatusInfo(address, absMessageNumber, success, progress);
-			if (CommonConstants.DMS_UUID.equals(messageInfo.address)) {
+			if (CommonConstants.DMS_UUID.equals(address)) {
 				sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids, sendMore);
 			} else {
-				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.address,
-						messageInfo.useLocalAddress, sendMore);
+				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, address, messageInfo.useLocalAddress,
+						sendMore);
 			}
 			if (sign < 0) {
 				messageMap.remove(absMessageNumber);
@@ -727,7 +727,7 @@ public class Model {
 					localMessageReceived(sign * mappedMessageNumber, messagePojo);
 					if (sign > 0) {
 						messageMap.put(absMessageNumber, new MessageInfo(mappedMessageNumber, messagePojo.senderUuid,
-								messagePojo.receiverUuids, null, messagePojo.useLocalAddress));
+								messagePojo.receiverUuids, messagePojo.useLocalAddress));
 					}
 				} catch (Exception e) {
 					if (sign > 0) {
@@ -895,15 +895,13 @@ public class Model {
 		private final int mappedMessageNumber;
 		private final String senderUuid;
 		private final List<String> receiverUuids;
-		private final String address;
 		private final InetAddress useLocalAddress;
 
-		public MessageInfo(int mappedMessageNumber, String senderUuid, List<String> receiverUuids, String address,
+		public MessageInfo(int mappedMessageNumber, String senderUuid, List<String> receiverUuids,
 				InetAddress useLocalAddress) {
 			this.mappedMessageNumber = mappedMessageNumber;
 			this.senderUuid = senderUuid;
 			this.receiverUuids = receiverUuids;
-			this.address = address;
 			this.useLocalAddress = useLocalAddress;
 		}
 
