@@ -2,6 +2,7 @@ package com.ogya.dms.commons.structures;
 
 public class StatusInfo {
 
+	public String address;
 	public int messageNumber;
 	public int progress;
 
@@ -9,7 +10,8 @@ public class StatusInfo {
 		super();
 	}
 
-	public StatusInfo(int messageNumber, int progress) {
+	public StatusInfo(String address, int messageNumber, int progress) {
+		this.address = address;
 		this.messageNumber = messageNumber;
 		this.progress = progress;
 	}

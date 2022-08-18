@@ -85,7 +85,7 @@ public class Model {
 
 	}
 
-	public void localMessageReceived(int messageNumber, int progress, byte[] data, String userUuid) {
+	public void localMessageReceived(String address, int messageNumber, int progress, byte[] data, String userUuid) {
 
 		LocalUser localUser = localUsers.get(userUuid);
 		if (localUser == null) {
@@ -95,7 +95,7 @@ public class Model {
 			localMappedUsers.put(localUser.mapId, localUser);
 		}
 
-		localUser.messageReceived(messageNumber, progress, data);
+		localUser.messageReceived(address, messageNumber, progress, data);
 
 	}
 
@@ -451,7 +451,7 @@ public class Model {
 
 		}
 
-		private void messageReceived(int messageNumber, int progress, byte[] data) {
+		private void messageReceived(String address, int messageNumber, int progress, byte[] data) {
 			int sign = Integer.signum(messageNumber);
 			int absMessageNumber = Math.abs(messageNumber);
 			ByteBuffer messageBuffer = ByteBuffer.wrap(data);
@@ -463,9 +463,8 @@ public class Model {
 						return;
 					}
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
-					String address = messagePojo.address;
-					messagePojo.address = null;
-					Consumer<Boolean> sendMore = success -> sendStatusInfo(absMessageNumber, success, progress);
+					Consumer<Boolean> sendMore = success -> sendStatusInfo(address, absMessageNumber, success,
+							progress);
 					if (CommonConstants.DMS_UUID.equals(address)) {
 						messagePojo.useLocalAddress = null;
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
@@ -478,16 +477,16 @@ public class Model {
 								messagePojo.receiverUuids, address, messagePojo.useLocalAddress));
 					}
 				} catch (Exception e) {
-					sendStatusInfo(absMessageNumber, false, progress);
+					sendStatusInfo(address, absMessageNumber, false, progress);
 				}
 				return;
 			}
 			MessageInfo messageInfo = messageMap.get(absMessageNumber);
 			if (messageInfo == null) {
-				sendStatusInfo(absMessageNumber, false, progress);
+				sendStatusInfo(address, absMessageNumber, false, progress);
 				return;
 			}
-			Consumer<Boolean> sendMore = success -> sendStatusInfo(absMessageNumber, success, progress);
+			Consumer<Boolean> sendMore = success -> sendStatusInfo(address, absMessageNumber, success, progress);
 			if (CommonConstants.DMS_UUID.equals(messageInfo.address)) {
 				sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids, sendMore);
 			} else {
@@ -660,7 +659,7 @@ public class Model {
 
 		}
 
-		private void sendStatusInfo(int absMessageNumber, boolean success, int progress) {
+		private void sendStatusInfo(String address, int absMessageNumber, boolean success, int progress) {
 			if (absMessageNumber == 0) {
 				return;
 			}
@@ -668,8 +667,9 @@ public class Model {
 				progress = -1;
 				messageMap.remove(absMessageNumber);
 			}
-			MessagePojo statusPojo = new MessagePojo(DmsPackingFactory.pack(new StatusInfo(absMessageNumber, progress)),
-					null, null, ContentType.STATUS_INFO, null);
+			MessagePojo statusPojo = new MessagePojo(
+					DmsPackingFactory.pack(new StatusInfo(address, absMessageNumber, progress)), null, null,
+					ContentType.STATUS_INFO, null);
 			sendLocalMessage(0, packMessagePojo(statusPojo), Collections.singletonList(beacon.uuid), null);
 		}
 

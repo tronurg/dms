@@ -22,9 +22,6 @@ public class MessagePojo {
 	@JsonProperty("g")
 	public InetAddress useLocalAddress;
 
-	@JsonProperty("h")
-	public String address;
-
 	public MessagePojo() {
 		super();
 	}
@@ -41,11 +38,10 @@ public class MessagePojo {
 	}
 
 	public MessagePojo(byte[] payload, String senderUuid, List<String> receiverUuids, ContentType contentType,
-			Long trackingId, InetAddress useLocalAddress, String address) {
+			Long trackingId, InetAddress useLocalAddress) {
 
 		this(payload, senderUuid, receiverUuids, contentType, trackingId);
 		this.useLocalAddress = useLocalAddress;
-		this.address = address;
 
 	}
 

@@ -293,7 +293,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 				dmsServer = new DmsServer(LOCAL_SERVER, true);
 				dmsServers.put(LOCAL_SERVER, dmsServer);
 			}
-			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, contentType, null, null, null);
+			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, null, contentType, null, null);
 			MessageContainer messageContainer = new MessageContainer(0, messagePojo, attachmentPojo, useTimeout, null);
 			dmsServer.queueMessage(messageContainer, null);
 			return;
@@ -311,11 +311,10 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 		serverReceiversMap.forEach((dmsServer, uuidList) -> {
 			MessagePojo messagePojo = new MessagePojo(payload, senderUuid, uuidList, contentType, trackingId,
-					useLocalAddress, dmsServer.uuid);
+					useLocalAddress);
 			int messageNumber = getMessageNumber();
 			MessageContainer messageContainer = new MessageContainer(messageNumber, messagePojo, attachmentPojo,
-					useTimeout, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType),
-					dmsServer.fairnessCounter);
+					useTimeout, (progress, uuids) -> sendProgress(uuids, progress, trackingId, contentType));
 			messageMap.put(messageNumber, messageContainer);
 			dmsServer.queueMessage(messageContainer, unsuccessfulUuids);
 		});
@@ -363,7 +362,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 	private void raiseSignal(String uuid) {
 		try {
 			signalQueue.put(uuid);
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 
 		}
 	}
@@ -413,7 +412,8 @@ public class DmsClient implements DmsMessageReceiverListener {
 						continue;
 					}
 
-					dmsServer.sendNext((messageNumber, progress, dataBuffer) -> {
+					dmsServer.sendNext((address, messageNumber, progress, dataBuffer) -> {
+						dealerSocket.send(address, ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.send(String.valueOf(messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.send(String.valueOf(progress), ZMQ.SNDMORE | ZMQ.DONTWAIT);
 						dealerSocket.sendByteBuffer(dataBuffer, ZMQ.DONTWAIT);
@@ -509,6 +509,11 @@ public class DmsClient implements DmsMessageReceiverListener {
 	}
 
 	private void statusInfoReceived(StatusInfo statusInfo) {
+		DmsServer dmsServer = dmsServers.get(statusInfo.address);
+		if (dmsServer != null) {
+			dmsServer.checkin();
+			raiseSignal(dmsServer.uuid);
+		}
 		MessageContainer message = messageMap.get(statusInfo.messageNumber);
 		if (message == null) {
 			return;
@@ -518,7 +523,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 		} else {
 			message.updateProgress(statusInfo.progress);
 		}
-		raiseSignal(message.address);
 	}
 
 	@Override
@@ -792,7 +796,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 					messageContainer.close();
 				}
 
-				messageSender.send(messageNumber, chunk.progress, chunk.dataBuffer);
+				messageSender.send(uuid, messageNumber, chunk.progress, chunk.dataBuffer);
 
 				if (fairnessCounter != null && fairnessCounter.getAndIncrement() < FAIRNESS) {
 					chunk = null;
@@ -800,6 +804,12 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			}
 
+		}
+
+		private synchronized void checkin() {
+			if (fairnessCounter != null && fairnessCounter.decrementAndGet() < 0) {
+				fairnessCounter.set(0);
+			}
 		}
 
 		private synchronized void addUser(String userUuid) {
@@ -844,21 +854,13 @@ public class DmsClient implements DmsMessageReceiverListener {
 		private final List<String> receiverUuids;
 		private final ContentType contentType;
 		private final Long trackingId;
-		private final String address;
-
-		private final AtomicInteger fairnessCounter;
 
 		private final long startTime = System.currentTimeMillis();
-		private final AtomicInteger progressPercent = new AtomicInteger(-1);
+		private final AtomicInteger progressPercent = new AtomicInteger(Integer.MIN_VALUE);
 		private long checkInNano = System.nanoTime();
 
 		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
 				Long useTimeout, BiConsumer<Integer, List<String>> progressConsumer) {
-			this(messageNumber, messagePojo, attachmentPojo, useTimeout, progressConsumer, null);
-		}
-
-		private MessageContainer(int messageNumber, MessagePojo messagePojo, AttachmentPojo attachmentPojo,
-				Long useTimeout, BiConsumer<Integer, List<String>> progressConsumer, AtomicInteger fairnessCounter) {
 			super(messagePojo, attachmentPojo);
 			this.messageNumber = messageNumber;
 			this.useTimeout = useTimeout;
@@ -867,8 +869,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 			this.receiverUuids = messagePojo.receiverUuids;
 			this.contentType = messagePojo.contentType;
 			this.trackingId = messagePojo.trackingId;
-			this.address = messagePojo.address;
-			this.fairnessCounter = fairnessCounter;
 		}
 
 		private boolean isSecondary() {
@@ -876,9 +876,6 @@ public class DmsClient implements DmsMessageReceiverListener {
 		}
 
 		private void updateProgress(int progress) {
-			if (fairnessCounter != null && fairnessCounter.decrementAndGet() < 0) {
-				fairnessCounter.set(0);
-			}
 			if (this != messageMap.get(messageNumber)) {
 				return;
 			}
@@ -923,7 +920,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	private interface MessageSender {
 
-		void send(int messageNumber, int progress, ByteBuffer dataBuffer);
+		void send(String address, int messageNumber, int progress, ByteBuffer dataBuffer);
 
 	}
 
