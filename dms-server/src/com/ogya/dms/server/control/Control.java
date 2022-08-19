@@ -133,7 +133,7 @@ public class Control implements TcpManagerListener, ModelListener {
 				if (poller.pollin(pollRouter)) {
 
 					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
-					String address = routerSocket.recvStr(ZMQ.DONTWAIT);
+					final String address = routerSocket.recvStr(ZMQ.DONTWAIT);
 					String messageNumberStr = routerSocket.recvStr(ZMQ.DONTWAIT);
 					String progressStr = routerSocket.recvStr(ZMQ.DONTWAIT);
 					final byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
