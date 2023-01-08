@@ -581,6 +581,7 @@ class MessagePane extends BorderPane {
 
 	private void initImPane() {
 
+		GridPane.setHgrow(imPane, Priority.ALWAYS);
 		imPane.disableProperty().bind(recordBtn.pressedProperty());
 		imPane.visibleProperty().bind(activeProperty);
 

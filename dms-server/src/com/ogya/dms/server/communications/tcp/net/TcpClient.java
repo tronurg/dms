@@ -79,8 +79,8 @@ public final class TcpClient implements Runnable {
 	@Override
 	public void run() {
 
-		try (Socket socket = DmsSecurity.newSecureSocket(serverIp, serverPort, localIp, localPort)) {
-			TcpConnection tcpConnection = new TcpConnection(socket, this::messageReceivedToListeners);
+		try (Socket socket = DmsSecurity.newSecureSocket(serverIp, serverPort, localIp, localPort);
+				TcpConnection tcpConnection = new TcpConnection(socket, this::messageReceivedToListeners)) {
 			connectedToListeners(tcpConnection);
 			tcpConnection.listen();
 			disconnectedToListeners();

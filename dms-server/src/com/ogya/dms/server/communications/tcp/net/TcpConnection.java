@@ -58,7 +58,7 @@ public final class TcpConnection implements AutoCloseable {
 				Thread.sleep(HEARTBEAT_MS);
 				sendHeartbeat();
 			} catch (Exception e) {
-
+				close();
 			}
 
 		}
@@ -125,7 +125,7 @@ public final class TcpConnection implements AutoCloseable {
 			return true;
 
 		} catch (Exception e) {
-
+			close();
 		}
 
 		return false;
