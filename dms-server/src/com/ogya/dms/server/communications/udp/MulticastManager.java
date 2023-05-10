@@ -92,7 +92,7 @@ public class MulticastManager {
 				}
 
 			} catch (Exception e) {
-
+				System.out.println("Unable to send data packet, possibly due to an encryption failure.");
 			}
 
 		});
@@ -196,9 +196,7 @@ public class MulticastManager {
 				listeners.forEach(listener -> listener.udpMessageReceived(remoteAddress, dataStr, isUnicast));
 
 			} catch (Exception e) {
-
-				e.printStackTrace();
-
+				System.out.println("Unable to receive data packet, possibly from an unrecognized entity.");
 			}
 
 		}

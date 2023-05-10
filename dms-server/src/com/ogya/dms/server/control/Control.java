@@ -128,43 +128,47 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				poller.poll();
+				try {
+					poller.poll();
 
-				if (poller.pollin(pollRouter)) {
+					if (poller.pollin(pollRouter)) {
 
-					final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
-					final String address = routerSocket.recvStr(ZMQ.DONTWAIT);
-					String messageNumberStr = routerSocket.recvStr(ZMQ.DONTWAIT);
-					String progressStr = routerSocket.recvStr(ZMQ.DONTWAIT);
-					final byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
-					final int messageNumber = Integer.parseInt(messageNumberStr);
-					final int progress = Integer.parseInt(progressStr);
-					taskQueue.execute(
-							() -> model.localMessageReceived(address, messageNumber, progress, data, userUuid));
+						final String userUuid = routerSocket.recvStr(ZMQ.DONTWAIT);
+						final String address = routerSocket.recvStr(ZMQ.DONTWAIT);
+						String messageNumberStr = routerSocket.recvStr(ZMQ.DONTWAIT);
+						String progressStr = routerSocket.recvStr(ZMQ.DONTWAIT);
+						final byte[] data = routerSocket.recv(ZMQ.DONTWAIT);
+						final int messageNumber = Integer.parseInt(messageNumberStr);
+						final int progress = Integer.parseInt(progressStr);
+						taskQueue.execute(
+								() -> model.localMessageReceived(address, messageNumber, progress, data, userUuid));
 
-				} else if (poller.pollin(pollInproc)) {
+					} else if (poller.pollin(pollInproc)) {
 
-					inprocSocket.recv(ZMQ.DONTWAIT);
-					LocalChunk chunk = messageQueue.poll();
+						inprocSocket.recv(ZMQ.DONTWAIT);
+						LocalChunk chunk = messageQueue.poll();
 
-					if (chunk == null) {
-						continue;
-					}
-
-					for (String uuid : chunk.receiverUuids) {
-						try {
-							routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
-							routerSocket.send(String.valueOf(chunk.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
-							routerSocket.send(chunk.data, ZMQ.DONTWAIT);
-						} catch (ZMQException e) {
-							model.localUuidDisconnected(uuid);
+						if (chunk == null) {
+							continue;
 						}
-					}
 
-					if (chunk.sendMore != null) {
-						chunk.sendMore.accept(true);
-					}
+						for (String uuid : chunk.receiverUuids) {
+							try {
+								routerSocket.send(uuid, ZMQ.SNDMORE | ZMQ.DONTWAIT);
+								routerSocket.send(String.valueOf(chunk.messageNumber), ZMQ.SNDMORE | ZMQ.DONTWAIT);
+								routerSocket.send(chunk.data, ZMQ.DONTWAIT);
+							} catch (ZMQException e) {
+								model.localUuidDisconnected(uuid);
+							}
+						}
 
+						if (chunk.sendMore != null) {
+							chunk.sendMore.accept(true);
+						}
+
+					}
+				} catch (Exception e) {
+					System.out.println("Message received from a mismatched client.");
 				}
 
 			}
