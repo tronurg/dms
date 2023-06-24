@@ -172,8 +172,8 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-			JComponent mcPanel = dmsHandle.getDmsPanel();
-//			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = csh.getContactSelectionPanel();
 			JButton btn = new JButton("test");
 			final AtomicReference<Long> downloadId = new AtomicReference<Long>();
 			final AtomicBoolean downloading = new AtomicBoolean();
@@ -184,29 +184,29 @@ public class DmsTest {
 					}
 					downloadId.set(dmsHandle.downloadFile(0L, csh.getSelectedContactIds().get(0)));
 					downloading.set(true);
-					new Thread(() -> {
-						while (true) {
-							dmsHandle.pauseDownload(downloadId.get());
-							try {
-								Thread.sleep(100);
-							} catch (InterruptedException e1) {
-
-							}
-							dmsHandle.resumeDownload(downloadId.get());
-							try {
-								Thread.sleep(100);
-							} catch (InterruptedException e1) {
-
-							}
-						}
-					}).start();
-//				} else if (downloading.get()) {
-//					dmsHandle.pauseDownload(downloadId.get());
-//					downloading.set(false);
-//				} else {
-//					dmsHandle.resumeDownload(downloadId.get());
-//					downloading.set(true);
-////					dmsHandle.cancelDownload(downloadId.getAndSet(null));
+//					new Thread(() -> {
+//						while (true) {
+//							dmsHandle.pauseDownload(downloadId.get());
+//							try {
+//								Thread.sleep(100);
+//							} catch (InterruptedException e1) {
+//
+//							}
+//							dmsHandle.resumeDownload(downloadId.get());
+//							try {
+//								Thread.sleep(100);
+//							} catch (InterruptedException e1) {
+//
+//							}
+//						}
+//					}).start();
+				} else if (downloading.get()) {
+					dmsHandle.pauseDownload(downloadId.get());
+					downloading.set(false);
+				} else {
+					dmsHandle.resumeDownload(downloadId.get());
+					downloading.set(true);
+//					dmsHandle.cancelDownload(downloadId.getAndSet(null));
 				}
 			});
 
