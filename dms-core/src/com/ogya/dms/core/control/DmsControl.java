@@ -1130,8 +1130,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
-				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
+				List<Dgroup> updatedGroups = new ArrayList<Dgroup>();
 
 				final Long contactId = newContact.getId();
 
@@ -1152,8 +1151,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 								Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-								listenerTaskQueue.execute(() -> dmsListeners
-										.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
+								updatedGroups.add(newGroup);
 
 							} catch (Exception e) {
 
@@ -1169,121 +1167,118 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					}
 
-					taskQueue.execute(() -> {
+					List<Long> messageIds = new ArrayList<Long>();
 
-						if (!model.isContactOnline(userUuid)) {
-							return;
-						}
+					// CHECK PRIVATE MESSAGES
+					try {
 
-						List<Long> messageIds = new ArrayList<Long>();
+						for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(contactId)) {
 
-						// CHECK PRIVATE MESSAGES
-						try {
+							switch (waitingMessage.getMessageStatus()) {
 
-							for (Message waitingMessage : dbManager.getPrivateMessagesWaitingToContact(contactId)) {
+							case FRESH:
 
-								switch (waitingMessage.getMessageStatus()) {
+								sendPrivateMessage(waitingMessage);
 
-								case FRESH:
+								break;
 
-									sendPrivateMessage(waitingMessage);
+							case SENT:
+							case RECEIVED:
 
-									break;
+								messageIds.add(waitingMessage.getId());
 
-								case SENT:
-								case RECEIVED:
+								break;
 
-									messageIds.add(waitingMessage.getId());
+							default:
 
-									break;
-
-								default:
-
-									break;
-
-								}
+								break;
 
 							}
 
-						} catch (Exception e) {
+						}
 
-							e.printStackTrace();
+					} catch (Exception e) {
+
+						e.printStackTrace();
+
+					}
+
+					// CHECK GROUP MESSAGES
+					try {
+
+						for (Message waitingMessage : dbManager.getGroupMessagesWaitingToContact(contactId)) {
+
+							waitingMessage.getStatusReports().stream()
+									.filter(statusReport -> Objects.equals(statusReport.getContactId(), contactId))
+									.forEach(statusReport -> {
+
+										switch (statusReport.getMessageStatus()) {
+
+										case FRESH:
+
+											sendGroupMessage(waitingMessage, userUuid);
+
+											break;
+
+										case SENT:
+										case RECEIVED:
+
+											messageIds.add(waitingMessage.getId());
+
+											break;
+
+										default:
+
+											break;
+
+										}
+
+									});
 
 						}
 
-						// CHECK GROUP MESSAGES
-						try {
+					} catch (Exception e) {
 
-							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToContact(contactId)) {
+						e.printStackTrace();
 
-								waitingMessage.getStatusReports().stream()
-										.filter(statusReport -> Objects.equals(statusReport.getContactId(), contactId))
-										.forEach(statusReport -> {
+					}
 
-											switch (statusReport.getMessageStatus()) {
+					if (!messageIds.isEmpty())
+						dmsClient.claimMessageStatus(messageIds.toArray(new Long[0]), userUuid);
 
-											case FRESH:
+					// CHECK STATUS REPORTS
+					try {
 
-												sendGroupMessage(waitingMessage, userUuid);
+						messageIds.clear();
 
-												break;
+						for (Message waitingMessage : dbManager.getGroupMessagesWaitingToItsGroup(contactId)) {
 
-											case SENT:
-											case RECEIVED:
-
-												messageIds.add(waitingMessage.getId());
-
-												break;
-
-											default:
-
-												break;
-
-											}
-
-										});
-
-							}
-
-						} catch (Exception e) {
-
-							e.printStackTrace();
+							messageIds.add(waitingMessage.getId());
 
 						}
 
 						if (!messageIds.isEmpty())
-							dmsClient.claimMessageStatus(messageIds.toArray(new Long[0]), userUuid);
+							dmsClient.claimStatusReport(messageIds.toArray(new Long[0]), userUuid);
 
-						// CHECK STATUS REPORTS
-						try {
+					} catch (Exception e) {
 
-							messageIds.clear();
+						e.printStackTrace();
 
-							for (Message waitingMessage : dbManager.getGroupMessagesWaitingToItsGroup(contactId)) {
+					}
 
-								messageIds.add(waitingMessage.getId());
-
-							}
-
-							if (!messageIds.isEmpty())
-								dmsClient.claimStatusReport(messageIds.toArray(new Long[0]), userUuid);
-
-						} catch (Exception e) {
-
-							e.printStackTrace();
-
-						}
-
-						// CHECK DOWNLOADS
-						downloadTaskQueue.execute(() -> {
-							List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
-							waitingDownloads
-									.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
-						});
-
+					// CHECK DOWNLOADS
+					downloadTaskQueue.execute(() -> {
+						List<DownloadPojo> waitingDownloads = model.getWaitingDownloads(userUuid);
+						waitingDownloads.forEach(downloadPojo -> dmsClient.sendDownloadRequest(downloadPojo, userUuid));
 					});
 
 				}
+
+				listenerTaskQueue.execute(() -> dmsListeners
+						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
+
+				updatedGroups.forEach(group -> listenerTaskQueue.execute(
+						() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(group)))));
 
 			} catch (Exception e) {
 
