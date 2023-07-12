@@ -35,6 +35,7 @@ public class DmsTest {
 		try {
 
 			DmsHandle dmsHandle = DmsCore.login("elma", "elma");
+			dmsHandle.switchAudio(false);
 			dmsHandle.addRemoteIps(InetAddress.getByName("192.168.1.88"), InetAddress.getByName("192.168.1.89"),
 					InetAddress.getByName("192.168.1.90"));
 			dmsHandle.clearRemoteIps();
@@ -87,6 +88,7 @@ public class DmsTest {
 
 			AtomicReference<DmsHandle> handleRef = new AtomicReference<DmsHandle>();
 			DmsHandle dmsHandle = DmsCore.login("armut", "armut");
+			dmsHandle.switchAudio(false);
 			handleRef.set(dmsHandle);
 			JPanel panel = new JPanel(new BorderLayout());
 
@@ -164,6 +166,7 @@ public class DmsTest {
 		try {
 
 			DmsHandle dmsHandle = DmsCore.login("kiraz", "kiraz");
+			dmsHandle.switchAudio(false);
 
 			dmsHandle.addListener(new DmsListenerImpl(dmsHandle));
 			dmsHandle.addGuiListener(new DmsListenerImpl(dmsHandle));

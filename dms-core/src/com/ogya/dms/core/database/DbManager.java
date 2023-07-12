@@ -13,7 +13,13 @@ import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
+import org.hibernate.boot.Metadata;
+import org.hibernate.boot.MetadataBuilder;
+import org.hibernate.boot.MetadataSources;
+import org.hibernate.boot.SessionFactoryBuilder;
+import org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl;
+import org.hibernate.boot.registry.StandardServiceRegistry;
+import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import org.hibernate.query.Query;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
@@ -50,17 +56,23 @@ public class DbManager {
 
 			String dbPath = CommonConstants.DB_PATH + File.separator + dbName;
 
-			factory = new Configuration().configure("/resources/hibernate.cfg/dms.cfg.xml")
-					.setProperty("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
-					.setProperty("hibernate.connection.username", dbName)
-					.setProperty("hibernate.connection.password", dbPassword)
-					.setProperty("hibernate.search.backend.directory.root", dbPath)
-					.setProperty("hibernate.search.backend.lucene_version", "LUCENE_8_7_0")
-					.setProperty("hibernate.search.backend.analysis.configurer",
+			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
+					.configure("/resources/hibernate.cfg/dms.cfg.xml")
+					.applySetting("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
+					.applySetting("hibernate.connection.username", dbName)
+					.applySetting("hibernate.connection.password", dbPassword)
+					.applySetting("hibernate.search.backend.directory.root", dbPath)
+					.applySetting("hibernate.search.backend.lucene_version", "LUCENE_8_7_0")
+					.applySetting("hibernate.search.backend.analysis.configurer",
 							"class:" + DmsAnalysisConfigurer.class.getName())
-					.addAnnotatedClass(Contact.class).addAnnotatedClass(ContactRef.class)
-					.addAnnotatedClass(Dgroup.class).addAnnotatedClass(Message.class)
-					.addAnnotatedClass(StatusReport.class).buildSessionFactory();
+					.build();
+			MetadataBuilder metadataBuilder = new MetadataSources(standardRegistry).addAnnotatedClass(Contact.class)
+					.addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class)
+					.addAnnotatedClass(Message.class).addAnnotatedClass(StatusReport.class).getMetadataBuilder();
+			Metadata metadata = metadataBuilder
+					.applyImplicitNamingStrategy(ImplicitNamingStrategyJpaCompliantImpl.INSTANCE).build();
+			SessionFactoryBuilder sessionFactoryBuilder = metadata.getSessionFactoryBuilder();
+			factory = sessionFactoryBuilder.build();
 
 			Runtime.getRuntime().addShutdownHook(new Thread(() -> close()));
 
