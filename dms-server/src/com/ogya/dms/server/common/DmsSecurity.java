@@ -2,6 +2,7 @@ package com.ogya.dms.server.common;
 
 import java.io.InputStream;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -56,15 +57,21 @@ public class DmsSecurity {
 
 	public static ServerSocket newSecureServerSocket(int port) throws Exception {
 
-		return getSSLContext().getServerSocketFactory().createServerSocket(port);
+		ServerSocket serverSocket = getSSLContext().getServerSocketFactory().createServerSocket();
+		serverSocket.setReuseAddress(true);
+		serverSocket.bind(new InetSocketAddress(port));
+
+		return serverSocket;
 
 	}
 
 	public static Socket newSecureSocket(InetAddress serverIp, int serverPort, InetAddress localIp, int localPort)
 			throws Exception {
 
-		SSLSocket sslSocket = (SSLSocket) getSSLContext().getSocketFactory().createSocket(serverIp, serverPort, localIp,
-				localPort);
+		SSLSocket sslSocket = (SSLSocket) getSSLContext().getSocketFactory().createSocket();
+		sslSocket.setReuseAddress(true);
+		sslSocket.bind(new InetSocketAddress(localIp, localPort));
+		sslSocket.connect(new InetSocketAddress(serverIp, serverPort));
 		sslSocket.startHandshake();
 
 		return sslSocket;

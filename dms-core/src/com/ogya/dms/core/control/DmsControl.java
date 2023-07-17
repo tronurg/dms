@@ -1946,7 +1946,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return;
 			}
 			Path path = fileServer.fileRequested(downloadPojo.fileId);
-			if (!Files.exists(path)) {
+			if (path != null && !Files.exists(path)) {
 				path = null;
 			}
 			if (path == null) {
