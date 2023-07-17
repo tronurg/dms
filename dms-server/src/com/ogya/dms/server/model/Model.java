@@ -67,9 +67,6 @@ public class Model {
 
 			for (InetAddress ip : (InetAddress[]) ois.readObject()) {
 
-				if (ip.isAnyLocalAddress() || ip.isLoopbackAddress())
-					continue;
-
 				remoteIps.add(ip);
 
 			}
@@ -197,7 +194,11 @@ public class Model {
 	public Set<InetAddress> getRemoteAddresses() {
 
 		remoteAddresses.clear();
-		remoteIps.forEach(remoteIp -> remoteAddresses.add(remoteIp));
+		remoteIps.forEach(remoteIp -> {
+			if (remoteIp.isAnyLocalAddress() || remoteIp.isLoopbackAddress())
+				return;
+			remoteAddresses.add(remoteIp);
+		});
 		return remoteAddresses;
 
 	}
@@ -261,9 +262,6 @@ public class Model {
 		for (InetAddress ip : ips) {
 
 			if (remoteIps.contains(ip))
-				continue;
-
-			if (ip.isAnyLocalAddress() || ip.isLoopbackAddress())
 				continue;
 
 			changed = true;
