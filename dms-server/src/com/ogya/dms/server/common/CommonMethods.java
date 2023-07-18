@@ -54,41 +54,22 @@ public class CommonMethods {
 
 	}
 
-	static String getMulticastIp() {
+	static int getBeaconPort() {
 
-		String multicastIp = "";
+		int beaconPort = -1;
 
 		try {
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/MULTICAST_IP")
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/BEACON_PORT")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			multicastIp = node.getTextContent();
+			beaconPort = Integer.parseInt(node.getTextContent());
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return multicastIp;
-
-	}
-
-	static int getMulticastPort() {
-
-		int multicastPort = -1;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/MULTICAST_PORT")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			multicastPort = Integer.parseInt(node.getTextContent());
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return multicastPort;
+		return beaconPort;
 
 	}
 

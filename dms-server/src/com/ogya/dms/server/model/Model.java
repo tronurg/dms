@@ -194,11 +194,7 @@ public class Model {
 	public Set<InetAddress> getRemoteAddresses() {
 
 		remoteAddresses.clear();
-		remoteIps.forEach(remoteIp -> {
-			if (remoteIp.isAnyLocalAddress() || remoteIp.isLoopbackAddress())
-				return;
-			remoteAddresses.add(remoteIp);
-		});
+		remoteIps.forEach(remoteIp -> remoteAddresses.add(remoteIp));
 		return remoteAddresses;
 
 	}

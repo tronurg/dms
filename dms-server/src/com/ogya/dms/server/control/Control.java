@@ -15,7 +15,7 @@ import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
-import com.ogya.dms.server.communications.udp.MulticastManager;
+import com.ogya.dms.server.communications.udp.UdpManager;
 import com.ogya.dms.server.factory.DmsFactory;
 import com.ogya.dms.server.model.Model;
 import com.ogya.dms.server.model.intf.ModelListener;
@@ -28,8 +28,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	private static final byte[] SIGNAL = new byte[0];
 
 	private static final int routerPort = CommonConstants.INTERCOM_PORT;
-	private static final String multicastGroup = CommonConstants.MULTICAST_IP;
-	private static final int multicastPort = CommonConstants.MULTICAST_PORT;
+	private static final int beaconPort = CommonConstants.BEACON_PORT;
 	private static final int beaconIntervalMs = CommonConstants.BEACON_INTERVAL_MS;
 	private static final int serverPort = CommonConstants.SERVER_PORT;
 	private static final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
@@ -39,8 +38,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final Model model = new Model(this);
 
-	private final MulticastManager multicastManager = new MulticastManager(multicastGroup, multicastPort,
-			this::receiveUdpMessage);
+	private final UdpManager udpManager = new UdpManager(beaconPort, this::receiveUdpMessage);
 	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 	private final ZContext context = new ZContext();
 	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
@@ -82,7 +80,7 @@ public class Control implements TcpManagerListener, ModelListener {
 				if (model.isLive()) {
 					Set<InetAddress> remoteAddresses = model.getRemoteAddresses();
 					remoteAddresses.removeAll(tcpManager.getConnectedAddresses());
-					multicastManager.send(DMS_UUID, remoteAddresses);
+					udpManager.send(DMS_UUID, remoteAddresses);
 				}
 
 				try {
