@@ -62,7 +62,7 @@ public class DbManager {
 					.applySetting("hibernate.connection.username", dbName)
 					.applySetting("hibernate.connection.password", dbPassword)
 					.applySetting("hibernate.search.backend.directory.root", dbPath)
-					.applySetting("hibernate.search.backend.lucene_version", "LUCENE_8_7_0")
+					.applySetting("hibernate.search.backend.lucene_version", "LUCENE_8_11_2")
 					.applySetting("hibernate.search.backend.analysis.configurer",
 							"class:" + DmsAnalysisConfigurer.class.getName())
 					.build();
