@@ -2,44 +2,43 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/jackson-annotations-2.12.1.jar"/>
-	<classpathentry kind="lib" path="lib/jeromq-0.5.2.jar"/>
-	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.21.jar"/>
-	<classpathentry kind="lib" path="lib/db/h2/h2-1.4.199.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-annotations-2.13.4.jar"/>
+	<classpathentry kind="lib" path="lib/jeromq-0.5.3.jar"/>
+	<classpathentry kind="lib" path="lib/pdfbox-app-2.0.29.jar"/>
+	<classpathentry kind="lib" path="lib/db/h2/h2-2.2.220.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/antlr-2.7.7.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/byte-buddy-1.10.22.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/byte-buddy-1.12.18.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/c3p0-0.9.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/classmate-1.5.1.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/dom4j-2.1.3.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/FastInfoset-1.2.15.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-c3p0-5.4.32.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-c3p0-5.6.15.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-commons-annotations-5.1.2.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-core-5.4.32.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-core-5.6.15.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/istack-commons-runtime-3.0.7.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/jandex-2.2.3.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/javassist-3.27.0-GA.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/jandex-2.4.2.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/javax.activation-api-1.2.0.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/javax.persistence-api-2.2.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jaxb-api-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jaxb-runtime-2.3.1.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-logging-3.4.1.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-logging-3.4.3.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-transaction-api_1.2_spec-1.1.1.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/mchange-commons-java-0.2.19.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/stax-ex-1.8.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/txw2-2.3.1.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-backend-lucene-6.0.3.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-engine-6.0.3.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-mapper-orm-6.0.3.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-mapper-pojo-base-6.0.3.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-util-common-6.0.3.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-backend-lucene-6.2.0.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-engine-6.2.0.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-mapper-orm-6.2.0.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-mapper-pojo-base-6.2.0.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-util-common-6.2.0.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/lucene/hppc-0.8.1.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-analyzers-common-8.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-core-8.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-facet-8.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-join-8.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-queries-8.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-queryparser-8.7.0.jar"/>
-	<classpathentry kind="lib" path="lib/db/lucene/lucene-sandbox-8.7.0.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-analyzers-common-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-core-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-facet-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-highlighter-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-join-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-memory-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-queries-8.11.2.jar"/>
+	<classpathentry kind="lib" path="lib/db/lucene/lucene-queryparser-8.11.2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/dms-commons"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

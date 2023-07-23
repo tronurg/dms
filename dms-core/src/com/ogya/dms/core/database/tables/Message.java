@@ -58,12 +58,12 @@ public class Message {
 	@JsonProperty("b")
 	private Long messageRefId;
 
-	@Column(name = "content", updatable = false, length = Integer.MAX_VALUE)
+	@Column(name = "content", updatable = false, length = 1000000000)
 	@FullTextField(analyzer = "messageContentAnalyzer")
 	@JsonProperty("c")
 	private String content;
 
-	@Column(name = "attachment_name", updatable = false, length = Integer.MAX_VALUE)
+	@Column(name = "attachment_name", updatable = false, length = 1000000000)
 	@JsonProperty("d")
 	private String attachmentName;
 
@@ -106,7 +106,7 @@ public class Message {
 	@JsonIgnore
 	private Date date;
 
-	@Column(name = "attachment_path", length = Integer.MAX_VALUE)
+	@Column(name = "attachment_path", length = 1000000000)
 	@JsonIgnore
 	private String attachmentPath;
 

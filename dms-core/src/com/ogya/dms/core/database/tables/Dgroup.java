@@ -45,7 +45,7 @@ public class Dgroup extends EntityBase {
 	@Column(name = "name", nullable = false)
 	private String name;
 
-	@Column(name = "comment", length = Integer.MAX_VALUE)
+	@Column(name = "comment", length = 1000000000)
 	private String comment;
 
 	@Column(name = "status", nullable = false)
