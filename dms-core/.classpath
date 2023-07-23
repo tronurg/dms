@@ -8,12 +8,12 @@
 	<classpathentry kind="lib" path="lib/db/h2/h2-2.2.220.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/antlr-2.7.7.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/byte-buddy-1.12.18.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/c3p0-0.9.5.5.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/classmate-1.5.1.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/FastInfoset-1.2.15.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-c3p0-5.6.15.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-commons-annotations-5.1.2.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-core-5.6.15.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/hibernate-hikaricp-5.6.15.Final.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/HikariCP-3.2.0.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/istack-commons-runtime-3.0.7.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jandex-2.4.2.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/javax.activation-api-1.2.0.jar"/>
@@ -22,7 +22,8 @@
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jaxb-runtime-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-logging-3.4.3.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-transaction-api_1.2_spec-1.1.1.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/mchange-commons-java-0.2.19.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/slf4j-api-1.7.25.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/slf4j-simple-1.7.25.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/stax-ex-1.8.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/txw2-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-backend-lucene-6.2.0.Final.jar"/>
