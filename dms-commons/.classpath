@@ -2,10 +2,10 @@
 <classpath>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/jackson-annotations-2.12.1.jar"/>
-	<classpathentry kind="lib" path="lib/jackson-core-2.12.1.jar"/>
-	<classpathentry kind="lib" path="lib/jackson-databind-2.12.1.jar"/>
-	<classpathentry kind="lib" path="lib/jackson-dataformat-msgpack-0.8.22.jar"/>
-	<classpathentry kind="lib" path="lib/msgpack-core-0.8.22.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-annotations-2.15.2.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-core-2.15.2.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-databind-2.15.2.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-dataformat-msgpack-0.9.4.jar"/>
+	<classpathentry kind="lib" path="lib/msgpack-core-0.9.4.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
