@@ -22,8 +22,8 @@
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jaxb-runtime-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-logging-3.4.3.Final.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/jboss-transaction-api_1.2_spec-1.1.1.Final.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/slf4j-api-1.7.25.jar"/>
-	<classpathentry kind="lib" path="lib/db/hibernate/orm/slf4j-simple-1.7.25.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/slf4j-api-2.0.7.jar"/>
+	<classpathentry kind="lib" path="lib/db/hibernate/orm/slf4j-simple-2.0.7.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/stax-ex-1.8.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/orm/txw2-2.3.1.jar"/>
 	<classpathentry kind="lib" path="lib/db/hibernate/search/hibernate-search-backend-lucene-6.2.0.Final.jar"/>
