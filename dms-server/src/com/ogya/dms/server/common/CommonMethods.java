@@ -54,6 +54,25 @@ public class CommonMethods {
 
 	}
 
+	static String getMulticastGroup() {
+
+		String multicastIp = "";
+
+		try {
+
+			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/MULTICAST_GROUP")
+					.evaluate(getConfDoc(), XPathConstants.NODE);
+
+			multicastIp = node.getTextContent();
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return multicastIp;
+
+	}
+
 	static int getBeaconPort() {
 
 		int beaconPort = -1;

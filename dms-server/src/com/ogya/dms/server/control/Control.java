@@ -28,6 +28,7 @@ public class Control implements TcpManagerListener, ModelListener {
 	private static final byte[] SIGNAL = new byte[0];
 
 	private static final int routerPort = CommonConstants.INTERCOM_PORT;
+	private static final String multicastGroup = CommonConstants.MULTICAST_GROUP;
 	private static final int beaconPort = CommonConstants.BEACON_PORT;
 	private static final int beaconIntervalMs = CommonConstants.BEACON_INTERVAL_MS;
 	private static final int serverPort = CommonConstants.SERVER_PORT;
@@ -38,7 +39,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private final Model model = new Model(this);
 
-	private final UdpManager udpManager = new UdpManager(beaconPort, this::receiveUdpMessage);
+	private final UdpManager udpManager = new UdpManager(multicastGroup, beaconPort, this::receiveUdpMessage);
 	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 	private final ZContext context = new ZContext();
 	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();

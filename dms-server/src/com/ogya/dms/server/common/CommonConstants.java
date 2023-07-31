@@ -9,6 +9,7 @@ public class CommonConstants {
 	public static final String DMS_UUID = UUID.randomUUID().toString();
 
 	public static final int INTERCOM_PORT = CommonMethods.getIntercomPort();
+	public static final String MULTICAST_GROUP = CommonMethods.getMulticastGroup();
 	public static final int BEACON_PORT = CommonMethods.getBeaconPort();
 	public static final int SERVER_PORT = CommonMethods.getServerPort();
 	public static final int CLIENT_PORT_FROM = CommonMethods.getClientPortFrom();

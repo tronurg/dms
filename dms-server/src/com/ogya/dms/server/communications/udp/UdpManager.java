@@ -3,11 +3,8 @@ package com.ogya.dms.server.communications.udp;
 import java.io.IOException;
 import java.net.BindException;
 import java.net.DatagramPacket;
-import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
+import java.net.MulticastSocket;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -26,24 +23,27 @@ public class UdpManager {
 
 	private static final Charset CHARSET = StandardCharsets.UTF_8;
 
-	private static final byte HEADER_BROADCAST = 0;
+	private static final byte HEADER_MULTICAST = 0;
 	private static final byte HEADER_UNICAST = 1;
 
 	private static final int PACKET_SIZE = 128;
+	private static final int TTL = 32;
 	private static final int SNDBUF_SIZE = (int) Math.pow(2, 13);
 	private static final int RCVBUF_SIZE = (int) Math.pow(2, 21);
 
+	private final String multicastGroup;
 	private final int udpPort;
 
 	private final List<UdpManagerListener> listeners = Collections
 			.synchronizedList(new ArrayList<UdpManagerListener>());
 
-	private DatagramSocket datagramSocket;
+	private MulticastSocket multicastSocket;
 
 	private final BlockingQueue<DatagramPacket> receiveQueue = new LinkedBlockingQueue<DatagramPacket>();
 
-	public UdpManager(int udpPort, UdpManagerListener listener) {
+	public UdpManager(String multicastGroup, int udpPort, UdpManagerListener listener) {
 
+		this.multicastGroup = multicastGroup;
 		this.udpPort = udpPort;
 
 		listeners.add(listener);
@@ -59,20 +59,14 @@ public class UdpManager {
 
 			byte[] dataBytes = dataStr.getBytes(CHARSET);
 
-			ByteBuffer broadcastDataBuffer = ByteBuffer.allocate(dataBytes.length + 1).put(HEADER_BROADCAST)
+			ByteBuffer multicastDataBuffer = ByteBuffer.allocate(dataBytes.length + 1).put(HEADER_MULTICAST)
 					.put(dataBytes);
-			byte[] encryptedBroadcastData = DmsSecurity.encrypt(broadcastDataBuffer.array());
+			byte[] encryptedMulticastData = DmsSecurity.encrypt(multicastDataBuffer.array());
 
-			for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-				for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
-					if (ia.getBroadcast() == null || ia.getAddress().isAnyLocalAddress()
-							|| ia.getAddress().isLoopbackAddress())
-						continue;
-					DatagramPacket sendPacket = new DatagramPacket(encryptedBroadcastData,
-							encryptedBroadcastData.length, ia.getBroadcast(), udpPort);
-					send(sendPacket);
-				}
-			}
+			DatagramPacket sendPacket = new DatagramPacket(encryptedMulticastData, encryptedMulticastData.length,
+					InetAddress.getByName(multicastGroup), udpPort);
+
+			send(sendPacket);
 
 			if (unicastIps.isEmpty())
 				return;
@@ -83,7 +77,7 @@ public class UdpManager {
 			for (InetAddress unicastIp : unicastIps) {
 
 				DatagramPacket unicastSendPacket = new DatagramPacket(encryptedUnicastData, encryptedUnicastData.length,
-						new InetSocketAddress(unicastIp, udpPort));
+						unicastIp, udpPort);
 
 				send(unicastSendPacket);
 
@@ -101,13 +95,13 @@ public class UdpManager {
 
 		try {
 
-			getDatagramSocket().send(packet);
+			getMulticastSocket().send(packet);
 
 		} catch (BindException e) {
 
 		} catch (IOException e) {
 
-			closeDatagramSocket();
+			closeMulticastSocket();
 
 			throw e;
 
@@ -115,29 +109,31 @@ public class UdpManager {
 
 	}
 
-	private synchronized DatagramSocket getDatagramSocket() throws IOException {
+	private synchronized MulticastSocket getMulticastSocket() throws IOException {
 
-		if (datagramSocket == null) {
+		if (multicastSocket == null) {
 
-			datagramSocket = new DatagramSocket(udpPort);
+			multicastSocket = new MulticastSocket(udpPort);
 
-			datagramSocket.setBroadcast(true);
-			datagramSocket.setSendBufferSize(SNDBUF_SIZE);
-			datagramSocket.setReceiveBufferSize(RCVBUF_SIZE);
+			multicastSocket.setLoopbackMode(true);
+			multicastSocket.setTimeToLive(TTL);
+			multicastSocket.setSendBufferSize(SNDBUF_SIZE);
+			multicastSocket.setReceiveBufferSize(RCVBUF_SIZE);
+			multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
 
 		}
 
-		return datagramSocket;
+		return multicastSocket;
 
 	}
 
-	private synchronized void closeDatagramSocket() {
+	private synchronized void closeMulticastSocket() {
 
-		if (datagramSocket != null) {
+		if (multicastSocket != null) {
 
-			datagramSocket.close();
+			multicastSocket.close();
 
-			datagramSocket = null;
+			multicastSocket = null;
 
 		}
 
@@ -151,13 +147,13 @@ public class UdpManager {
 
 				DatagramPacket receivePacket = new DatagramPacket(new byte[PACKET_SIZE], PACKET_SIZE);
 
-				getDatagramSocket().receive(receivePacket);
+				getMulticastSocket().receive(receivePacket);
 
 				receiveQueue.offer(receivePacket);
 
 			} catch (IOException e) {
 
-				closeDatagramSocket();
+				closeMulticastSocket();
 
 				try {
 
