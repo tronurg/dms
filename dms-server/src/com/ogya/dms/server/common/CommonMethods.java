@@ -56,20 +56,20 @@ public class CommonMethods {
 
 	static String getMulticastGroup() {
 
-		String multicastIp = "";
+		String multicastGroup = "";
 
 		try {
 
 			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS_SERVER/MULTICAST_GROUP")
 					.evaluate(getConfDoc(), XPathConstants.NODE);
 
-			multicastIp = node.getTextContent();
+			multicastGroup = node.getTextContent();
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		return multicastIp;
+		return multicastGroup;
 
 	}
 
