@@ -3,10 +3,7 @@ package com.ogya.dms.server.model;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +26,7 @@ import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.commons.structures.StatusInfo;
 import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.model.intf.ModelListener;
 import com.ogya.dms.server.structures.LocalChunk;
 import com.ogya.dms.server.structures.RemoteChunk;
@@ -431,23 +429,9 @@ public class Model {
 
 			super(userUuid, mapId);
 
-			try {
-
-				Map<InetAddress, InetAddress> localRemoteIps = new HashMap<InetAddress, InetAddress>();
-				for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-					for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
-						if ((ia instanceof Inet4Address) && !ia.isLoopbackAddress())
-							localRemoteIps.put(ia, ia);
-					}
-				}
-
-				beacon.localRemoteServerIps = localRemoteIps;
-
-			} catch (SocketException e) {
-
-				e.printStackTrace();
-
-			}
+			Map<InetAddress, InetAddress> localRemoteIps = new HashMap<InetAddress, InetAddress>();
+			CommonMethods.getLocalIPv4Addresses().forEach(addr -> localRemoteIps.put(addr, addr));
+			beacon.localRemoteServerIps = localRemoteIps;
 
 		}
 

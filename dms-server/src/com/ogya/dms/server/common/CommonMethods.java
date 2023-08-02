@@ -2,11 +2,15 @@ package com.ogya.dms.server.common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,6 +27,26 @@ import org.xml.sax.SAXException;
 public class CommonMethods {
 
 	private static Document confDoc;
+
+	public static List<InetAddress> getLocalIPv4Addresses() {
+
+		List<InetAddress> addrs = new ArrayList<InetAddress>();
+
+		try {
+			for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+				for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
+					if ((ia instanceof Inet4Address) && !ia.isLoopbackAddress()) {
+						addrs.add(ia);
+					}
+				}
+			}
+		} catch (SocketException e) {
+			e.printStackTrace();
+		}
+
+		return addrs;
+
+	}
 
 	public static int getLocalAddressPriority(InetAddress localAddress) {
 

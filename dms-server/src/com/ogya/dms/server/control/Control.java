@@ -27,19 +27,18 @@ public class Control implements TcpManagerListener, ModelListener {
 	private static final String DMS_UUID = CommonConstants.DMS_UUID;
 	private static final byte[] SIGNAL = new byte[0];
 
-	private static final int routerPort = CommonConstants.INTERCOM_PORT;
-	private static final String multicastGroup = CommonConstants.MULTICAST_GROUP;
-	private static final int beaconPort = CommonConstants.BEACON_PORT;
-	private static final int beaconIntervalMs = CommonConstants.BEACON_INTERVAL_MS;
-	private static final int serverPort = CommonConstants.SERVER_PORT;
-	private static final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
-	private static final int clientPortTo = CommonConstants.CLIENT_PORT_TO;
-
 	private static Control instance;
+
+	private final int routerPort = CommonConstants.INTERCOM_PORT;
+	private final String multicastGroup = CommonConstants.MULTICAST_GROUP;
+	private final int beaconPort = CommonConstants.BEACON_PORT;
+	private final int beaconIntervalMs = CommonConstants.BEACON_INTERVAL_MS;
+	private final int serverPort = CommonConstants.SERVER_PORT;
+	private final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
+	private final int clientPortTo = CommonConstants.CLIENT_PORT_TO;
 
 	private final Model model = new Model(this);
 
-	private final UdpManager udpManager = new UdpManager(multicastGroup, beaconPort, this::receiveUdpMessage);
 	private final TcpManager tcpManager = new TcpManager(serverPort, clientPortFrom, clientPortTo, this);
 	private final ZContext context = new ZContext();
 	private final LinkedBlockingQueue<byte[]> signalQueue = new LinkedBlockingQueue<byte[]>();
@@ -74,24 +73,37 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private void publishDmsUuid() {
 
-		while (!Thread.currentThread().isInterrupted()) {
+		try {
 
-			synchronized (publishSyncObj) {
+			InetAddress multicastGroup = InetAddress.getByName(this.multicastGroup);
+			if (!multicastGroup.isMulticastAddress()) {
+				throw new Exception();
+			}
 
-				if (model.isLive()) {
-					Set<InetAddress> remoteAddresses = model.getRemoteAddresses();
-					remoteAddresses.removeAll(tcpManager.getConnectedAddresses());
-					udpManager.send(DMS_UUID, remoteAddresses);
-				}
+			UdpManager udpManager = new UdpManager(multicastGroup, beaconPort, this::receiveUdpMessage);
 
-				try {
-					publishSyncObj.wait(beaconIntervalMs);
-				} catch (InterruptedException e) {
+			while (!Thread.currentThread().isInterrupted()) {
+
+				synchronized (publishSyncObj) {
+
+					if (model.isLive()) {
+						Set<InetAddress> remoteAddresses = model.getRemoteAddresses();
+						remoteAddresses.removeAll(tcpManager.getConnectedAddresses());
+						udpManager.send(DMS_UUID, remoteAddresses);
+					}
+
+					try {
+						publishSyncObj.wait(beaconIntervalMs);
+					} catch (InterruptedException e) {
+
+					}
 
 				}
 
 			}
 
+		} catch (Exception e) {
+			exitWithMessage(String.format("Multicast group (%s) not recognized! Program will exit.", multicastGroup));
 		}
 
 	}
@@ -173,12 +185,8 @@ public class Control implements TcpManagerListener, ModelListener {
 			}
 
 		} catch (Exception e) {
-
-			System.out.println(
-					"Port (" + routerPort + ") in use. Unable to communicate with clients! Program will exit.");
-
-			System.exit(-1);
-
+			exitWithMessage(String.format("Port (%d) in use. Unable to communicate with clients! Program will exit.",
+					routerPort));
 		}
 
 	}
@@ -232,6 +240,11 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		}
 
+	}
+
+	private void exitWithMessage(String message) {
+		System.out.println(message);
+		System.exit(-1);
 	}
 
 	@Override
