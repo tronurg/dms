@@ -89,7 +89,7 @@ public class UdpManager {
 
 	}
 
-	private void sendUnicast(final byte[] data, final Set<InetAddress> unicastIps) throws Exception {
+	private void sendUnicast(final byte[] data, final Set<InetAddress> addrs) throws Exception {
 
 		ByteBuffer dataBuffer = ByteBuffer.allocate(data.length + 1).put(HEADER_UNICAST).put(data);
 		byte[] encryptedData = DmsSecurity.encrypt(dataBuffer.array());
@@ -97,7 +97,7 @@ public class UdpManager {
 		try (DatagramSocket socket = new DatagramSocket(null)) {
 			socket.setReuseAddress(true);
 			socket.bind(new InetSocketAddress(udpPort));
-			for (InetAddress addr : unicastIps) {
+			for (InetAddress addr : addrs) {
 				DatagramPacket packet = new DatagramPacket(encryptedData, encryptedData.length, addr, udpPort);
 				try {
 					socket.send(packet);

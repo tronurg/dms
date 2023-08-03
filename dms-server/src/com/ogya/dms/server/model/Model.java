@@ -881,7 +881,7 @@ public class Model {
 		private final List<String> receiverUuids;
 		private final InetAddress useLocalAddress;
 
-		public MessageInfo(int mappedMessageNumber, String senderUuid, List<String> receiverUuids,
+		private MessageInfo(int mappedMessageNumber, String senderUuid, List<String> receiverUuids,
 				InetAddress useLocalAddress) {
 			this.mappedMessageNumber = mappedMessageNumber;
 			this.senderUuid = senderUuid;

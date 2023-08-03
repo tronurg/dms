@@ -4,9 +4,11 @@ import com.ogya.dms.server.control.Control;
 
 public class DmsServer {
 
-	public static void main(String[] args) {
-
+	static {
 		System.setProperty("java.net.preferIPv4Stack", "true");
+	}
+
+	public static void main(String[] args) {
 
 		Control.getInstance().start();
 
