@@ -15,6 +15,8 @@ import com.ogya.dms.server.common.DmsSecurity;
 
 public final class TcpServer implements Runnable {
 
+	private static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
+
 	private final int port;
 
 	private final AtomicInteger idRef = new AtomicInteger(0);
@@ -46,7 +48,7 @@ public final class TcpServer implements Runnable {
 
 	public void start() {
 
-		new Thread(this).start();
+		THREAD_POOL.execute(this);
 
 	}
 
@@ -93,7 +95,7 @@ public final class TcpServer implements Runnable {
 
 		while (!Thread.currentThread().isInterrupted()) {
 			final Socket socket = serverSocket.accept();
-			new Thread(() -> connectionEstablished(socket)).start();
+			THREAD_POOL.execute(() -> connectionEstablished(socket));
 		}
 
 	}

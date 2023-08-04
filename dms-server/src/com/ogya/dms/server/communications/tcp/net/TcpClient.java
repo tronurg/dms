@@ -13,6 +13,8 @@ import com.ogya.dms.server.common.DmsSecurity;
 
 public final class TcpClient implements Runnable {
 
+	private static final ExecutorService THREAD_POOL = Executors.newCachedThreadPool();
+
 	private final InetAddress serverIp;
 	private final int serverPort;
 	private final InetAddress localIp;
@@ -48,7 +50,7 @@ public final class TcpClient implements Runnable {
 
 	public void connect() {
 
-		new Thread(this).start();
+		THREAD_POOL.execute(this);
 
 	}
 
@@ -70,7 +72,7 @@ public final class TcpClient implements Runnable {
 
 	}
 
-	public void messageReceivedToListeners(final int messageNumber, final byte[] message) {
+	private void messageReceivedToListeners(final int messageNumber, final byte[] message) {
 
 		taskQueue.execute(() -> listeners.forEach(listener -> listener.messageReceived(messageNumber, message)));
 
