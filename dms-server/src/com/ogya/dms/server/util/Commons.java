@@ -64,10 +64,10 @@ public class Commons {
 
 	public static int getLocalAddressPriority(InetAddress localAddress) {
 
-		int priority = Commons.PREFERRED_IPS.indexOf(localAddress);
+		int priority = PREFERRED_IPS.indexOf(localAddress);
 
 		if (priority < 0)
-			priority = Commons.PREFERRED_IPS.size();
+			priority = PREFERRED_IPS.size();
 
 		return priority;
 
