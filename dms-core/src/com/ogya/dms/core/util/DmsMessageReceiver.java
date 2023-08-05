@@ -1,4 +1,4 @@
-package com.ogya.dms.core.common;
+package com.ogya.dms.core.util;
 
 import java.net.InetAddress;
 import java.nio.ByteBuffer;

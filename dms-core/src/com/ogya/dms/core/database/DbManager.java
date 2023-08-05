@@ -24,7 +24,6 @@ import org.hibernate.query.Query;
 import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 
-import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.search.DmsAnalysisConfigurer;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.ContactRef;
@@ -34,6 +33,7 @@ import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 
 public class DbManager {
 
@@ -54,7 +54,7 @@ public class DbManager {
 
 			lock();
 
-			String dbPath = CommonConstants.DB_PATH + File.separator + dbName;
+			String dbPath = Commons.DB_PATH + File.separator + dbName;
 
 			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
 					.configure("/resources/hibernate.cfg/dms.cfg.xml")

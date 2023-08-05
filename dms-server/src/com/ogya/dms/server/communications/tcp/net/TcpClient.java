@@ -9,7 +9,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-import com.ogya.dms.server.common.DmsSecurity;
+import com.ogya.dms.server.util.DmsSecurity;
 
 public final class TcpClient implements Runnable {
 

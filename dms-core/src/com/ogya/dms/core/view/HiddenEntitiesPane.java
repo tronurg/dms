@@ -1,10 +1,10 @@
 package com.ogya.dms.core.view;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -28,7 +28,7 @@ public class HiddenEntitiesPane extends BorderPane {
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final Button backBtn;
-	private final Label headingLabel = new Label(CommonMethods.translate("HIDDEN_CONVERSATIONS"));
+	private final Label headingLabel = new Label(Commons.translate("HIDDEN_CONVERSATIONS"));
 
 	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase(false);
 

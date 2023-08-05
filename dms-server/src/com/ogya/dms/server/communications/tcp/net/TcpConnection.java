@@ -15,11 +15,11 @@ import java.util.function.BiConsumer;
 
 import com.github.luben.zstd.ZstdInputStream;
 import com.github.luben.zstd.ZstdOutputStream;
-import com.ogya.dms.server.common.CommonConstants;
+import com.ogya.dms.server.util.Commons;
 
 public final class TcpConnection implements AutoCloseable {
 
-	private static final long HEARTBEAT_MS = (long) CommonConstants.BEACON_INTERVAL_MS;
+	private static final long HEARTBEAT_MS = (long) Commons.BEACON_INTERVAL_MS;
 	private static final long HEALTH_CONTROL_NS = (long) (2e6 * HEARTBEAT_MS);
 
 	private final Socket socket;

@@ -9,13 +9,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
@@ -67,7 +67,7 @@ class EntitiesPaneBase extends BorderPane {
 		}
 	};
 	private final Popup removeEntityPopup = new Popup();
-	private final Button removeEntityBtn = new Button(CommonMethods.translate("REMOVE_COMPLETELY"));
+	private final Button removeEntityBtn = new Button(Commons.translate("REMOVE_COMPLETELY"));
 
 	private final Map<EntityId, EntityPane> entityIdPane = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityPane>());

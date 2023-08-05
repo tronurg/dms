@@ -3,7 +3,7 @@ package com.ogya.dms.core.view;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -90,7 +90,7 @@ public class SettingsPane extends BorderPane {
 		scrollableContent.setPadding(new Insets(3 * GAP));
 
 		// SEARCH_IN_ALL_MESSAGES
-		Label searchInAllMessagesLbl = new Label(CommonMethods.translate("SEARCH_IN_ALL_MESSAGES"));
+		Label searchInAllMessagesLbl = new Label(Commons.translate("SEARCH_IN_ALL_MESSAGES"));
 		searchInAllMessagesLbl.getStyleClass().add("link-label");
 		searchInAllMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		searchInAllMessagesLbl.setOnMouseClicked(e -> {
@@ -102,7 +102,7 @@ public class SettingsPane extends BorderPane {
 		scrollableContent.getChildren().add(searchInAllMessagesLbl);
 
 		// STARRED_MESSAGES
-		Label starredMessagesLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
+		Label starredMessagesLbl = new Label(Commons.translate("STARRED_MESSAGES"));
 		starredMessagesLbl.getStyleClass().add("link-label");
 		starredMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		starredMessagesLbl.setOnMouseClicked(e -> {
@@ -114,7 +114,7 @@ public class SettingsPane extends BorderPane {
 		scrollableContent.getChildren().add(starredMessagesLbl);
 
 		// HIDDEN_CONVERSATIONS
-		Label hiddenConversationsLbl = new Label(CommonMethods.translate("HIDDEN_CONVERSATIONS"));
+		Label hiddenConversationsLbl = new Label(Commons.translate("HIDDEN_CONVERSATIONS"));
 		hiddenConversationsLbl.getStyleClass().add("link-label");
 		hiddenConversationsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		hiddenConversationsLbl.setOnMouseClicked(e -> {
@@ -126,7 +126,7 @@ public class SettingsPane extends BorderPane {
 		scrollableContent.getChildren().add(hiddenConversationsLbl);
 
 		// EDIT_REMOTE_IPS
-		Label editRemoteIpsLbl = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
+		Label editRemoteIpsLbl = new Label(Commons.translate("EDIT_REMOTE_IPS"));
 		editRemoteIpsLbl.getStyleClass().add("link-label");
 		editRemoteIpsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		editRemoteIpsLbl.setOnMouseClicked(e -> {

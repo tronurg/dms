@@ -20,8 +20,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.net.TcpClient;
 import com.ogya.dms.server.communications.tcp.net.TcpClientListener;
@@ -31,6 +29,7 @@ import com.ogya.dms.server.communications.tcp.net.TcpServerListener;
 import com.ogya.dms.server.factory.DmsFactory;
 import com.ogya.dms.server.structures.Chunk;
 import com.ogya.dms.server.structures.RemoteChunk;
+import com.ogya.dms.server.util.Commons;
 
 public class TcpManager implements TcpServerListener {
 
@@ -137,7 +136,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							tcpConnection.sendMessage(-1, CommonConstants.DMS_UUID.getBytes(CHARSET));
+							tcpConnection.sendMessage(-1, Commons.DMS_UUID.getBytes(CHARSET));
 
 							Connection connection = new Connection(tcpConnection, -1);
 							connections.put(address, connection);
@@ -382,7 +381,7 @@ public class TcpManager implements TcpServerListener {
 
 		private Connection(TcpConnection tcpConnection, int id) {
 			this.order = CONNECTION_ORDER.getAndIncrement();
-			this.priority = CommonMethods.getLocalAddressPriority(tcpConnection.getLocalAddress());
+			this.priority = Commons.getLocalAddressPriority(tcpConnection.getLocalAddress());
 			this.tcpConnection = tcpConnection;
 			this.id = id;
 		}

@@ -9,12 +9,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
@@ -531,9 +531,9 @@ class SearchInAllMessagesPane extends BorderPane {
 			this.attachmentName = message.getAttachmentName();
 			this.attachmentPath = message.getAttachmentPath();
 			this.isOutgoing = message.isLocal();
-			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
+			this.senderName = isOutgoing ? Commons.translate("YOU") : message.getOwner().getName();
 			this.receiverName = message.getDgroup() == null
-					? (isOutgoing ? message.getContact().getName() : CommonMethods.translate("YOU"))
+					? (isOutgoing ? message.getContact().getName() : Commons.translate("YOU"))
 					: message.getDgroup().getName();
 			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
 			this.attachmentType = message.getAttachmentType();

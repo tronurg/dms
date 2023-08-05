@@ -18,8 +18,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import com.ogya.dms.core.common.CommonConstants;
-import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
@@ -59,7 +58,7 @@ public class FoldersPane extends BorderPane {
 		}
 	};
 	private final Button backBtn;
-	private final Label headingLbl = new Label(CommonMethods.translate("FILE_EXPLORER"));
+	private final Label headingLbl = new Label(Commons.translate("FILE_EXPLORER"));
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 
 	private final Map<Path, FolderView> folderViews = Collections.synchronizedMap(new HashMap<Path, FolderView>());
@@ -383,7 +382,7 @@ public class FoldersPane extends BorderPane {
 						folders.add(path);
 					else
 						try {
-							if (Files.size(path) <= CommonConstants.MAX_FILE_LENGTH)
+							if (Files.size(path) <= Commons.MAX_FILE_LENGTH)
 								files.add(path);
 						} catch (Exception e) {
 

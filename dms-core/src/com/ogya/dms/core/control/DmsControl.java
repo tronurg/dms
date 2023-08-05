@@ -36,11 +36,6 @@ import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.commons.DmsPackingFactory;
 import com.ogya.dms.commons.structures.Beacon;
-import com.ogya.dms.core.common.AudioCenter;
-import com.ogya.dms.core.common.AudioCenter.AudioCenterListener;
-import com.ogya.dms.core.common.CommonConstants;
-import com.ogya.dms.core.common.CommonMethods;
-import com.ogya.dms.core.common.SoundPlayer;
 import com.ogya.dms.core.database.DbManager;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.ContactRef;
@@ -85,6 +80,10 @@ import com.ogya.dms.core.structures.GroupUpdate;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.AudioCenter;
+import com.ogya.dms.core.util.AudioCenter.AudioCenterListener;
+import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.util.SoundPlayer;
 import com.ogya.dms.core.view.DmsPanel;
 import com.ogya.dms.core.view.ReportsDialog;
 import com.ogya.dms.core.view.ReportsPane.ReportsListener;
@@ -192,7 +191,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		//
 
-		reportsDialog = new ReportsDialog(CommonConstants.REPORT_TEMPLATES);
+		reportsDialog = new ReportsDialog(Commons.REPORT_TEMPLATES);
 
 		reportsDialog.addReportsListener(this);
 
@@ -200,7 +199,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		initDbModelAndGui();
 
-		dmsClient = new DmsClient(identity.getUuid(), CommonConstants.SERVER_IP, CommonConstants.SERVER_PORT, this);
+		dmsClient = new DmsClient(identity.getUuid(), Commons.SERVER_IP, Commons.SERVER_PORT, this);
 
 		//
 
@@ -810,7 +809,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private Path copyFileToSendFolder(Path srcFile) throws IOException {
 
-		Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER);
+		Path dstFolder = Paths.get(Commons.SEND_FOLDER);
 
 		if (Objects.equals(dstFolder.normalize().toAbsolutePath(), srcFile.normalize().toAbsolutePath().getParent())) {
 			return srcFile;
@@ -1094,7 +1093,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	private Path moveFileToReceiveFolder(Path path, String fileName) throws IOException {
 		synchronized (FILE_SYNC) {
-			Path dstFolder = Paths.get(CommonConstants.RECEIVE_FOLDER);
+			Path dstFolder = Paths.get(Commons.RECEIVE_FOLDER);
 			Path dstFile = getDstFile(dstFolder, fileName);
 			if (path == null) {
 				Files.createFile(dstFile);
@@ -2051,7 +2050,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				if (downloadPojo.path != null) {
 					try (FileChannel fileChannelRead = FileChannel.open(downloadPojo.path, StandardOpenOption.READ);
 							FileChannel fileChannelWrite = FileChannel.open(path, StandardOpenOption.WRITE)) {
-						ByteBuffer buffer = ByteBuffer.allocate(CommonConstants.CHUNK_SIZE);
+						ByteBuffer buffer = ByteBuffer.allocate(Commons.CHUNK_SIZE);
 						while (fileChannelRead.read(buffer) > 0) {
 							buffer.flip();
 							fileChannelWrite.write(buffer);
@@ -2748,7 +2747,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				Path file = Paths.get(attachmentPath);
 
-				if (CommonConstants.AUTO_OPEN_FILE) {
+				if (Commons.AUTO_OPEN_FILE) {
 
 					new ProcessBuilder().directory(file.getParent().toFile())
 							.command("cmd", "/C", file.getFileName().toString()).start();
@@ -3104,8 +3103,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				String fileName = String.format("audio_%s.wav",
-						CommonConstants.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
-				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER);
+						Commons.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
+				Path dstFolder = Paths.get(Commons.SEND_FOLDER);
 
 				Path dstFile = getDstFile(dstFolder, fileName);
 
@@ -3183,15 +3182,15 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			reportsDialog.hideAndReset();
 
 			final String fileName = String.format("%s_%s.pdf", reportHeading,
-					CommonConstants.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
+					Commons.DATE_TIME_FORMATTER.format(LocalDateTime.now()));
 
 			dmsPanel.addAttachment(new FileBuilder(fileName, AttachmentType.REPORT, reportId, () -> {
 
-				Path dstFolder = Paths.get(CommonConstants.SEND_FOLDER);
+				Path dstFolder = Paths.get(Commons.SEND_FOLDER);
 
 				Path dstFile = getDstFile(dstFolder, fileName);
 
-				CommonMethods.writeReport(dstFile, reportHeading, reportParagraphs);
+				Commons.writeReport(dstFile, reportHeading, reportParagraphs);
 
 				if (dstFile != null && Files.exists(dstFile))
 					return dstFile;

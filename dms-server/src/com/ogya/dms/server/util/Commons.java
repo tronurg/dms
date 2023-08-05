@@ -1,4 +1,4 @@
-package com.ogya.dms.server.common;
+package com.ogya.dms.server.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -24,7 +25,20 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class CommonMethods {
+public class Commons {
+
+	public static final String DMS_UUID = UUID.randomUUID().toString();
+
+	public static final int INTERCOM_PORT = getIntercomPort();
+	public static final String MULTICAST_GROUP = getMulticastGroup();
+	public static final int BEACON_PORT = getBeaconPort();
+	public static final int SERVER_PORT = getServerPort();
+	public static final int CLIENT_PORT_FROM = getClientPortFrom();
+	public static final int CLIENT_PORT_TO = getClientPortTo();
+	public static final int BEACON_INTERVAL_MS = getBeaconIntervalMs();
+	public static final List<InetAddress> PREFERRED_IPS = getPreferredIps();
+
+	public static final int CONN_TIMEOUT_MS = 5000;
 
 	private static Document confDoc;
 
@@ -50,16 +64,32 @@ public class CommonMethods {
 
 	public static int getLocalAddressPriority(InetAddress localAddress) {
 
-		int priority = CommonConstants.PREFERRED_IPS.indexOf(localAddress);
+		int priority = Commons.PREFERRED_IPS.indexOf(localAddress);
 
 		if (priority < 0)
-			priority = CommonConstants.PREFERRED_IPS.size();
+			priority = Commons.PREFERRED_IPS.size();
 
 		return priority;
 
 	}
 
-	static int getIntercomPort() {
+	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
+
+		if (confDoc == null) {
+
+			try (InputStream is = Files.newInputStream(Paths.get("./conf/dms_server.xml"))) {
+
+				confDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(is));
+
+			}
+
+		}
+
+		return confDoc;
+
+	}
+
+	private static int getIntercomPort() {
 
 		int intercomPort = -1;
 
@@ -78,7 +108,7 @@ public class CommonMethods {
 
 	}
 
-	static String getMulticastGroup() {
+	private static String getMulticastGroup() {
 
 		String multicastGroup = "";
 
@@ -97,7 +127,7 @@ public class CommonMethods {
 
 	}
 
-	static int getBeaconPort() {
+	private static int getBeaconPort() {
 
 		int beaconPort = -1;
 
@@ -116,7 +146,7 @@ public class CommonMethods {
 
 	}
 
-	static int getServerPort() {
+	private static int getServerPort() {
 
 		int serverPort = -1;
 
@@ -135,7 +165,7 @@ public class CommonMethods {
 
 	}
 
-	static int getClientPortFrom() {
+	private static int getClientPortFrom() {
 
 		int clientPortFrom = -1;
 
@@ -154,7 +184,7 @@ public class CommonMethods {
 
 	}
 
-	static int getClientPortTo() {
+	private static int getClientPortTo() {
 
 		int clientPortTo = -1;
 
@@ -173,7 +203,7 @@ public class CommonMethods {
 
 	}
 
-	static int getBeaconIntervalMs() {
+	private static int getBeaconIntervalMs() {
 
 		int beaconIntervalMs = 5000;
 
@@ -197,7 +227,7 @@ public class CommonMethods {
 
 	}
 
-	static List<InetAddress> getPreferredIps() {
+	private static List<InetAddress> getPreferredIps() {
 
 		List<InetAddress> preferredIps = new ArrayList<InetAddress>();
 
@@ -220,22 +250,6 @@ public class CommonMethods {
 		}
 
 		return preferredIps;
-
-	}
-
-	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
-
-		if (confDoc == null) {
-
-			try (InputStream is = Files.newInputStream(Paths.get("./conf/dms_server.xml"))) {
-
-				confDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(is));
-
-			}
-
-		}
-
-		return confDoc;
 
 	}
 

@@ -1,4 +1,4 @@
-package com.ogya.dms.core.common;
+package com.ogya.dms.core.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -8,6 +8,7 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -31,18 +32,32 @@ import org.xml.sax.SAXException;
 
 import com.ogya.dms.core.view.ReportsPane.ReportTemplate;
 
-public class CommonMethods {
+public class Commons {
+
+	public static final String SERVER_IP = getServerIp();
+	public static final int SERVER_PORT = getServerPort();
+	public static final String DB_PATH = getDbPath();
+	public static final String FILE_EXPLORER_PATH = getFileExplorerPath();
+	public static final long MAX_FILE_LENGTH = getMaxFileLength();
+	public static final long SMALL_FILE_LIMIT = getSmallFileLimit();
+	public static final String SEND_FOLDER = getSendFolder();
+	public static final String RECEIVE_FOLDER = getReceiveFolder();
+	public static final boolean AUTO_OPEN_FILE = getAutoOpenFile();
+
+	public static final List<ReportTemplate> REPORT_TEMPLATES = getReportTemplates();
+
+	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
+
+	public static final int CHUNK_SIZE = 8192;
 
 	private static Document confDoc;
-
 	private static ResourceBundle langFile;
 
 	public static void writeReport(Path path, String header, List<String> paragraphs) {
 
 		try (PDDocument document = new PDDocument()) {
 
-			PDFont font = PDType0Font.load(document,
-					CommonMethods.class.getResourceAsStream("/resources/font/arial.ttf"));
+			PDFont font = PDType0Font.load(document, Commons.class.getResourceAsStream("/resources/font/arial.ttf"));
 
 			final float fontSize = 12f;
 
@@ -130,7 +145,40 @@ public class CommonMethods {
 
 	}
 
-	static String getServerIp() {
+	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
+
+		if (confDoc == null) {
+
+			try (InputStream is = Files.newInputStream(Paths.get("./plugins/dms/conf/dms.xml"))) {
+
+				confDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(is));
+
+			}
+
+		}
+
+		return confDoc;
+
+	}
+
+	private static ResourceBundle getLangFile() throws IOException {
+
+		if (langFile == null) {
+
+			try (Reader reader = Files.newBufferedReader(Paths.get(
+					"./plugins/dms/lang/dms_" + Locale.getDefault().getLanguage().toUpperCase() + ".properties"))) {
+
+				langFile = new PropertyResourceBundle(reader);
+
+			}
+
+		}
+
+		return langFile;
+
+	}
+
+	private static String getServerIp() {
 
 		String serverIp = "localhost";
 
@@ -151,7 +199,7 @@ public class CommonMethods {
 
 	}
 
-	static int getServerPort() {
+	private static int getServerPort() {
 
 		int serverPort = -1;
 
@@ -170,7 +218,7 @@ public class CommonMethods {
 
 	}
 
-	static String getDbPath() {
+	private static String getDbPath() {
 
 		String dbPath = "./dms_db";
 
@@ -191,7 +239,7 @@ public class CommonMethods {
 
 	}
 
-	static String getFileExplorerPath() {
+	private static String getFileExplorerPath() {
 
 		String fileExplorerPath = "./";
 
@@ -212,7 +260,7 @@ public class CommonMethods {
 
 	}
 
-	static long getMaxFileLength() {
+	private static long getMaxFileLength() {
 
 		long maxFileLength = 1000000;
 
@@ -233,7 +281,7 @@ public class CommonMethods {
 
 	}
 
-	static long getSmallFileLimit() {
+	private static long getSmallFileLimit() {
 
 		long smallFileLimit = Long.MAX_VALUE;
 
@@ -254,7 +302,7 @@ public class CommonMethods {
 
 	}
 
-	static String getSendFolder() {
+	private static String getSendFolder() {
 
 		String sendFolder = "./sent";
 
@@ -275,7 +323,7 @@ public class CommonMethods {
 
 	}
 
-	static String getReceiveFolder() {
+	private static String getReceiveFolder() {
 
 		String receiveFolder = "./received";
 
@@ -296,7 +344,7 @@ public class CommonMethods {
 
 	}
 
-	static boolean getAutoOpenFile() {
+	private static boolean getAutoOpenFile() {
 
 		boolean autoOpenFile = true;
 
@@ -317,7 +365,7 @@ public class CommonMethods {
 
 	}
 
-	static List<ReportTemplate> getReportTemplates() {
+	private static List<ReportTemplate> getReportTemplates() {
 
 		final List<ReportTemplate> templates = new ArrayList<ReportTemplate>();
 
@@ -362,22 +410,6 @@ public class CommonMethods {
 		}
 
 		return templates;
-
-	}
-
-	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
-
-		if (confDoc == null) {
-
-			try (InputStream is = Files.newInputStream(Paths.get("./plugins/dms/conf/dms.xml"))) {
-
-				confDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(is));
-
-			}
-
-		}
-
-		return confDoc;
 
 	}
 
@@ -449,23 +481,6 @@ public class CommonMethods {
 	private static float getStringWidth(String str, PDFont font, float fontSize) throws IOException {
 
 		return font.getStringWidth(str) * fontSize / 1000;
-
-	}
-
-	private static ResourceBundle getLangFile() throws IOException {
-
-		if (langFile == null) {
-
-			try (Reader reader = Files.newBufferedReader(Paths.get(
-					"./plugins/dms/lang/dms_" + Locale.getDefault().getLanguage().toUpperCase() + ".properties"))) {
-
-				langFile = new PropertyResourceBundle(reader);
-
-			}
-
-		}
-
-		return langFile;
 
 	}
 

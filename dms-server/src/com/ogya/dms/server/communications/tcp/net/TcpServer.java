@@ -10,8 +10,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.DmsSecurity;
+import com.ogya.dms.server.util.Commons;
+import com.ogya.dms.server.util.DmsSecurity;
 
 public final class TcpServer implements Runnable {
 
@@ -82,7 +82,7 @@ public final class TcpServer implements Runnable {
 			}
 
 			try {
-				Thread.sleep(CommonConstants.CONN_TIMEOUT_MS);
+				Thread.sleep(Commons.CONN_TIMEOUT_MS);
 			} catch (InterruptedException e) {
 
 			}

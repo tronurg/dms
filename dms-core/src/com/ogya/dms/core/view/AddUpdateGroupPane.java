@@ -9,11 +9,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -74,7 +74,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	private final SearchField searchField = new SearchField(true);
 
 	private final Button addUpdateGroupBtn = new Button();
-	private final Button deleteGroupBtn = new Button(CommonMethods.translate("DELETE_GROUP"));
+	private final Button deleteGroupBtn = new Button(Commons.translate("DELETE_GROUP"));
 
 	private final Map<Long, ContactGroup> idContactGroups = Collections
 			.synchronizedMap(new HashMap<Long, ContactGroup>());
@@ -210,9 +210,8 @@ public class AddUpdateGroupPane extends BorderPane {
 		notAddedContactsBorderPane.setTop(searchField);
 		notAddedContactsBorderPane.setCenter(notAddedContactsPane);
 
-		TitledPane addedContactsTitledPane = new TitledPane(CommonMethods.translate("ADDED_CONTACTS"),
-				addedContactsPane);
-		TitledPane notAddedContactsTitledPane = new TitledPane(CommonMethods.translate("ALL_CONTACTS"),
+		TitledPane addedContactsTitledPane = new TitledPane(Commons.translate("ADDED_CONTACTS"), addedContactsPane);
+		TitledPane notAddedContactsTitledPane = new TitledPane(Commons.translate("ALL_CONTACTS"),
 				notAddedContactsBorderPane);
 
 		addedContactsTitledPane.setCollapsible(false);
@@ -231,8 +230,9 @@ public class AddUpdateGroupPane extends BorderPane {
 		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
 
 		addUpdateGroupBtn.textProperty()
-				.bind(Bindings.createStringBinding(() -> updateMode.get() ? CommonMethods.translate("UPDATE_GROUP")
-						: CommonMethods.translate("CREATE_GROUP"), updateMode));
+				.bind(Bindings.createStringBinding(
+						() -> updateMode.get() ? Commons.translate("UPDATE_GROUP") : Commons.translate("CREATE_GROUP"),
+						updateMode));
 
 		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		addUpdateGroupBtn.setMnemonicParsing(false);
@@ -262,7 +262,7 @@ public class AddUpdateGroupPane extends BorderPane {
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
 		groupNameTextField.setPadding(Insets.EMPTY);
-		groupNameTextField.setPromptText(CommonMethods.translate("TYPE_GROUP_NAME"));
+		groupNameTextField.setPromptText(Commons.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
 		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 

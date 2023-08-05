@@ -11,7 +11,6 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
-import com.ogya.dms.server.common.CommonConstants;
 import com.ogya.dms.server.communications.intf.TcpManagerListener;
 import com.ogya.dms.server.communications.tcp.TcpConnectionType;
 import com.ogya.dms.server.communications.tcp.TcpManager;
@@ -21,21 +20,22 @@ import com.ogya.dms.server.model.Model;
 import com.ogya.dms.server.model.intf.ModelListener;
 import com.ogya.dms.server.structures.LocalChunk;
 import com.ogya.dms.server.structures.RemoteChunk;
+import com.ogya.dms.server.util.Commons;
 
 public class Control implements TcpManagerListener, ModelListener {
 
-	private static final String DMS_UUID = CommonConstants.DMS_UUID;
+	private static final String DMS_UUID = Commons.DMS_UUID;
 	private static final byte[] SIGNAL = new byte[0];
 
 	private static Control instance;
 
-	private final int routerPort = CommonConstants.INTERCOM_PORT;
-	private final String multicastGroup = CommonConstants.MULTICAST_GROUP;
-	private final int beaconPort = CommonConstants.BEACON_PORT;
-	private final int beaconIntervalMs = CommonConstants.BEACON_INTERVAL_MS;
-	private final int serverPort = CommonConstants.SERVER_PORT;
-	private final int clientPortFrom = CommonConstants.CLIENT_PORT_FROM;
-	private final int clientPortTo = CommonConstants.CLIENT_PORT_TO;
+	private final int routerPort = Commons.INTERCOM_PORT;
+	private final String multicastGroup = Commons.MULTICAST_GROUP;
+	private final int beaconPort = Commons.BEACON_PORT;
+	private final int beaconIntervalMs = Commons.BEACON_INTERVAL_MS;
+	private final int serverPort = Commons.SERVER_PORT;
+	private final int clientPortFrom = Commons.CLIENT_PORT_FROM;
+	private final int clientPortTo = Commons.CLIENT_PORT_TO;
 
 	private final Model model = new Model(this);
 

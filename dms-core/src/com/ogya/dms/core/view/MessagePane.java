@@ -16,7 +16,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
@@ -25,6 +24,7 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.component.ImPane;
 import com.ogya.dms.core.view.component.ImPane.ImListener;
@@ -149,8 +149,8 @@ class MessagePane extends BorderPane {
 
 	private final Popup deleteSelectedPopup = new Popup();
 	private final Popup clearConversationPopup = new Popup();
-	private final Button deleteSelectedBtn = new Button(CommonMethods.translate("DELETE_SELECTED"));
-	private final Button clearConversationBtn = new Button(CommonMethods.translate("CLEAR_CONVERSATION"));
+	private final Button deleteSelectedBtn = new Button(Commons.translate("DELETE_SELECTED"));
+	private final Button clearConversationBtn = new Button(Commons.translate("CLEAR_CONVERSATION"));
 
 	private final HBox referencePane = new HBox();
 	private final Button closeReferenceBtn = ViewFactory.newCancelBtn();
@@ -1464,7 +1464,7 @@ class MessagePane extends BorderPane {
 
 			if (messageInfo.fwdCount > 1)
 				Tooltip.install(fwdGraph,
-						new Tooltip(String.format(CommonMethods.translate("FORWARDED_N_TIMES"), messageInfo.fwdCount)));
+						new Tooltip(String.format(Commons.translate("FORWARDED_N_TIMES"), messageInfo.fwdCount)));
 
 			return fwdGraph;
 
@@ -1782,7 +1782,7 @@ class MessagePane extends BorderPane {
 			this.attachmentPath = message.getAttachmentPath();
 			this.ownerId = message.getOwner().getId();
 			this.isOutgoing = message.isLocal();
-			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
+			this.senderName = isOutgoing ? Commons.translate("YOU") : message.getOwner().getName();
 			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
 			this.attachmentType = message.getAttachmentType();
 			this.infoAvailable = entityId.isGroup() && isOutgoing;

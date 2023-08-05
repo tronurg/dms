@@ -31,10 +31,6 @@ import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.commons.structures.StatusInfo;
-import com.ogya.dms.core.common.CommonConstants;
-import com.ogya.dms.core.common.DmsMessageReceiver;
-import com.ogya.dms.core.common.DmsMessageReceiver.DmsMessageReceiverListener;
-import com.ogya.dms.core.common.DmsMessageSender;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.database.tables.StatusReport;
 import com.ogya.dms.core.dmsclient.intf.DmsClientListener;
@@ -46,6 +42,10 @@ import com.ogya.dms.core.structures.Chunk;
 import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.util.DmsMessageReceiver;
+import com.ogya.dms.core.util.DmsMessageSender;
+import com.ogya.dms.core.util.DmsMessageReceiver.DmsMessageReceiverListener;
 
 public class DmsClient implements DmsMessageReceiverListener {
 
@@ -865,7 +865,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 			this.messageNumber = messageNumber;
 			this.useTimeout = useTimeout;
 			this.progressConsumer = progressConsumer;
-			this.bigFile = getFileSize() > CommonConstants.SMALL_FILE_LIMIT;
+			this.bigFile = getFileSize() > Commons.SMALL_FILE_LIMIT;
 			this.receiverUuids = messagePojo.receiverUuids;
 			this.contentType = messagePojo.contentType;
 			this.trackingId = messagePojo.trackingId;

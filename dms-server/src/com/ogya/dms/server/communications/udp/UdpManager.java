@@ -15,10 +15,9 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.CommonMethods;
-import com.ogya.dms.server.common.DmsSecurity;
 import com.ogya.dms.server.communications.intf.UdpManagerListener;
+import com.ogya.dms.server.util.Commons;
+import com.ogya.dms.server.util.DmsSecurity;
 
 public class UdpManager {
 
@@ -78,7 +77,7 @@ public class UdpManager {
 
 		DatagramPacket packet = new DatagramPacket(encryptedData, encryptedData.length, multicastGroup, udpPort);
 
-		for (InetAddress addr : CommonMethods.getLocalIPv4Addresses()) {
+		for (InetAddress addr : Commons.getLocalIPv4Addresses()) {
 			try (MulticastSocket socket = new MulticastSocket(new InetSocketAddress(addr, udpPort))) {
 				socket.setTimeToLive(TTL);
 				socket.send(packet);
@@ -132,7 +131,7 @@ public class UdpManager {
 			}
 
 			try {
-				Thread.sleep(CommonConstants.CONN_TIMEOUT_MS);
+				Thread.sleep(Commons.CONN_TIMEOUT_MS);
 			} catch (InterruptedException e) {
 
 			}

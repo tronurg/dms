@@ -1,4 +1,4 @@
-package com.ogya.dms.core.common;
+package com.ogya.dms.core.util;
 
 import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;

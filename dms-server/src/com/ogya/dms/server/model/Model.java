@@ -25,11 +25,10 @@ import com.ogya.dms.commons.structures.Beacon;
 import com.ogya.dms.commons.structures.ContentType;
 import com.ogya.dms.commons.structures.MessagePojo;
 import com.ogya.dms.commons.structures.StatusInfo;
-import com.ogya.dms.server.common.CommonConstants;
-import com.ogya.dms.server.common.CommonMethods;
 import com.ogya.dms.server.model.intf.ModelListener;
 import com.ogya.dms.server.structures.LocalChunk;
 import com.ogya.dms.server.structures.RemoteChunk;
+import com.ogya.dms.server.util.Commons;
 
 public class Model {
 
@@ -88,7 +87,7 @@ public class Model {
 		LocalUser localUser = localUsers.get(userUuid);
 		if (localUser == null) {
 			localUser = new LocalUser(userUuid, String.valueOf(MAP_ID.getAndIncrement()));
-			localUser.beacon.serverUuid = CommonConstants.DMS_UUID;
+			localUser.beacon.serverUuid = Commons.DMS_UUID;
 			localUsers.put(userUuid, localUser);
 			localMappedUsers.put(localUser.mapId, localUser);
 		}
@@ -430,7 +429,7 @@ public class Model {
 			super(userUuid, mapId);
 
 			Map<InetAddress, InetAddress> localRemoteIps = new HashMap<InetAddress, InetAddress>();
-			CommonMethods.getLocalIPv4Addresses().forEach(addr -> localRemoteIps.put(addr, addr));
+			Commons.getLocalIPv4Addresses().forEach(addr -> localRemoteIps.put(addr, addr));
 			beacon.localRemoteServerIps = localRemoteIps;
 
 		}
@@ -449,7 +448,7 @@ public class Model {
 					int mappedMessageNumber = mapMessageNumber(absMessageNumber);
 					Consumer<Boolean> sendMore = success -> sendStatusInfo(address, absMessageNumber, success,
 							progress);
-					if (CommonConstants.DMS_UUID.equals(address)) {
+					if (Commons.DMS_UUID.equals(address)) {
 						messagePojo.useLocalAddress = null;
 						localMessageReceived(sign * mappedMessageNumber, messagePojo, sendMore);
 					} else {
@@ -471,7 +470,7 @@ public class Model {
 				return;
 			}
 			Consumer<Boolean> sendMore = success -> sendStatusInfo(address, absMessageNumber, success, progress);
-			if (CommonConstants.DMS_UUID.equals(address)) {
+			if (Commons.DMS_UUID.equals(address)) {
 				sendLocalMessage(sign * messageInfo.mappedMessageNumber, data, messageInfo.receiverUuids, sendMore);
 			} else {
 				sendRemoteMessage(sign * messageInfo.mappedMessageNumber, data, address, messageInfo.useLocalAddress,

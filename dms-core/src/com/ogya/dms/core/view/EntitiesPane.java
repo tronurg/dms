@@ -1,10 +1,10 @@
 package com.ogya.dms.core.view;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.geometry.Insets;
@@ -41,7 +41,7 @@ class EntitiesPane extends BorderPane {
 
 		createGroupBtn.getStyleClass().add("dim-label");
 		createGroupBtn.setMnemonicParsing(false);
-		createGroupBtn.setText(CommonMethods.translate("CREATE_GROUP"));
+		createGroupBtn.setText(Commons.translate("CREATE_GROUP"));
 		createGroupBtn.setPadding(new Insets(2 * GAP));
 
 	}

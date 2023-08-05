@@ -1,6 +1,6 @@
 package com.ogya.dms.core.view.component;
 
-import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -54,7 +54,7 @@ public class SearchField extends HBox {
 
 		HBox.setHgrow(searchTextField, Priority.ALWAYS);
 
-		searchTextField.setPromptText(CommonMethods.translate("FIND"));
+		searchTextField.setPromptText(Commons.translate("FIND"));
 		searchTextField.setFocusTraversable(false);
 
 	}

@@ -3,7 +3,7 @@ package com.ogya.dms.core.view;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
-import com.ogya.dms.core.common.CommonMethods;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.IpField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -36,7 +36,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private final VBox centerPane = new VBox();
 
 	private final Button backBtn;
-	private final Label headingLabel = new Label(CommonMethods.translate("EDIT_REMOTE_IPS"));
+	private final Label headingLabel = new Label(Commons.translate("EDIT_REMOTE_IPS"));
 
 	private final HBox addIpPane = new HBox(2 * GAP);
 

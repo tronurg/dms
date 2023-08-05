@@ -1,4 +1,4 @@
-package com.ogya.dms.server.common;
+package com.ogya.dms.server.util;
 
 import java.io.InputStream;
 import java.net.InetAddress;

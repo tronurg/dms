@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.animation.Interpolator;
@@ -112,7 +112,7 @@ class IdentityPane extends GridPane {
 		if (!commentTextField.isEditable())
 			commentTextField.setText(identity.getComment());
 		coordinatesLbl.setText(identity.getLatitude() == null || identity.getLongitude() == null ? ""
-				: CommonMethods.convertDoubleToCoordinates(identity.getLatitude(), identity.getLongitude()));
+				: Commons.convertDoubleToCoordinates(identity.getLatitude(), identity.getLongitude()));
 
 	}
 
@@ -275,7 +275,7 @@ class IdentityPane extends GridPane {
 		commentTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
 
-		commentTextField.setPromptText(CommonMethods.translate("TYPE_COMMENT"));
+		commentTextField.setPromptText(Commons.translate("TYPE_COMMENT"));
 		commentTextField.setFocusTraversable(false);
 		commentTextField.setEditable(false);
 

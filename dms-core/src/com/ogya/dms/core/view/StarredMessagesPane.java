@@ -13,12 +13,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
@@ -100,13 +100,13 @@ class StarredMessagesPane extends BorderPane {
 	private final VBox centerPane = new VBox(GAP);
 
 	private final Button backBtn;
-	private final Label titleLbl = new Label(CommonMethods.translate("STARRED_MESSAGES"));
+	private final Label titleLbl = new Label(Commons.translate("STARRED_MESSAGES"));
 	private final ImSearchField imSearchField = new ImSearchField();
 	private final Button searchBtn = ViewFactory.newSearchBtn();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button starBtn = ViewFactory.newStarBtn(1.0);
 
-	private final Button loadBtn = new Button(CommonMethods.translate("SHOW_MORE"));
+	private final Button loadBtn = new Button(Commons.translate("SHOW_MORE"));
 
 	private final ScrollPane scrollPane = new ScrollPane(centerPaneWithLoadBtn) {
 		@Override
@@ -949,9 +949,9 @@ class StarredMessagesPane extends BorderPane {
 			this.attachmentName = message.getAttachmentName();
 			this.attachmentPath = message.getAttachmentPath();
 			this.isOutgoing = message.isLocal();
-			this.senderName = isOutgoing ? CommonMethods.translate("YOU") : message.getOwner().getName();
+			this.senderName = isOutgoing ? Commons.translate("YOU") : message.getOwner().getName();
 			this.receiverName = message.getDgroup() == null
-					? (isOutgoing ? message.getContact().getName() : CommonMethods.translate("YOU"))
+					? (isOutgoing ? message.getContact().getName() : Commons.translate("YOU"))
 					: message.getDgroup().getName();
 			this.localDateTime = LocalDateTime.ofInstant(message.getDate().toInstant(), ZoneId.systemDefault());
 			this.attachmentType = message.getAttachmentType();

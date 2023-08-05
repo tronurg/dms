@@ -1,8 +1,8 @@
 package com.ogya.dms.core.view;
 
-import com.ogya.dms.core.common.CommonMethods;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.structures.Availability;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -182,7 +182,7 @@ class EntityPaneBase extends GridPane {
 		nameLbl.setText(name);
 		commentLbl.setText(entity.getComment());
 		coordinatesLbl.setText(entity.getLatitude() == null || entity.getLongitude() == null ? ""
-				: CommonMethods.convertDoubleToCoordinates(entity.getLatitude(), entity.getLongitude()));
+				: Commons.convertDoubleToCoordinates(entity.getLatitude(), entity.getLongitude()));
 		groupSign.setVisible(entity.getEntityId().isGroup());
 
 		if (commentLbl.textProperty().getValueSafe().isEmpty()) {

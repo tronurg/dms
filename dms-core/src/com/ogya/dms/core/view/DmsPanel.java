@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.UIManager;
 
-import com.ogya.dms.core.common.CommonConstants;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.EntityBase;
@@ -20,6 +19,7 @@ import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
 
@@ -50,7 +50,7 @@ public class DmsPanel extends StackPane
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(
-			Paths.get(CommonConstants.FILE_EXPLORER_PATH).normalize().toAbsolutePath(), unreadProperty);
+			Paths.get(Commons.FILE_EXPLORER_PATH).normalize().toAbsolutePath(), unreadProperty);
 	private final AddUpdateGroupPane addUpdateGroupPane = new AddUpdateGroupPane(unreadProperty);
 	private final StatusInfoPane statusInfoPane = new StatusInfoPane(unreadProperty);
 	private final SettingsPane settingsPane = new SettingsPane(unreadProperty);
