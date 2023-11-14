@@ -82,6 +82,7 @@ import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.AudioCenter;
 import com.ogya.dms.core.util.AudioCenter.AudioCenterListener;
+import com.ogya.dms.core.util.CheckedSingleThreadExecutorService;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.util.SoundPlayer;
 import com.ogya.dms.core.view.DmsPanel;
@@ -129,7 +130,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final ExecutorService auxTaskQueue = DmsFactory.newSingleThreadExecutorService();
 	private final ExecutorService downloadTaskQueue = DmsFactory.newSingleThreadExecutorService();
-	private final ExecutorService listenerTaskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final CheckedSingleThreadExecutorService listenerTaskQueue = new CheckedSingleThreadExecutorService();
 
 	public DmsControl(String username, String password, Runnable logoutListener) throws Exception {
 
@@ -1944,7 +1945,12 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				dmsClient.sendServerNotFound(downloadPojo.downloadId, remoteUuid);
 				return;
 			}
-			Path path = fileServer.fileRequested(downloadPojo.fileId);
+			Path path = null;
+			try {
+				path = fileServer.fileRequested(downloadPojo.fileId);
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
 			if (path != null && !Files.exists(path)) {
 				path = null;
 			}
