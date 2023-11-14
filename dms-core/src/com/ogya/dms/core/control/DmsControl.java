@@ -401,8 +401,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-					listenerTaskQueue.execute(() -> dmsListeners
-							.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
+					dmsListeners.forEach(listener -> listenerTaskQueue
+							.execute(() -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
 
 				} catch (Exception e) {
 
@@ -430,8 +430,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			Platform.runLater(() -> dmsPanel.updateContact(newContact));
 
-			listenerTaskQueue.execute(
-					() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
+			dmsListeners.forEach(listener -> listenerTaskQueue
+					.execute(() -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
 		} catch (Exception e) {
 
@@ -560,8 +560,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Platform.runLater(() -> dmsPanel.updateGroup(newGroup));
 
-		listenerTaskQueue
-				.execute(() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
+		dmsListeners.forEach(
+				listener -> listenerTaskQueue.execute(() -> listener.groupUpdated(new GroupHandleImpl(newGroup))));
 
 		return newGroup;
 
@@ -920,8 +920,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		}
 
 		if (message.getUpdateType() == null) {
-			contactIds.forEach(contactId -> listenerTaskQueue.execute(() -> dmsGuiListeners
-					.forEach(listener -> listener.guiMessageStatusUpdated(message.getId(), messageStatus, contactId))));
+			contactIds.forEach(contactId -> dmsGuiListeners.forEach(listener -> listenerTaskQueue
+					.execute(() -> listener.guiMessageStatusUpdated(message.getId(), messageStatus, contactId))));
 		}
 
 	}
@@ -995,8 +995,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		});
 
 		if (!deletedMessageIds.isEmpty()) {
-			listenerTaskQueue.execute(() -> dmsGuiListeners
-					.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds.toArray(new Long[0]))));
+			dmsGuiListeners.forEach(listener -> listenerTaskQueue
+					.execute(() -> listener.guiMessagesDeleted(deletedMessageIds.toArray(new Long[0]))));
 		}
 
 	}
@@ -1062,8 +1062,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			contact = newContact;
 			model.addUpdateContact(newContact);
 			Platform.runLater(() -> dmsPanel.updateContact(newContact));
-			listenerTaskQueue.execute(
-					() -> dmsListeners.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
+			dmsListeners.forEach(listener -> listenerTaskQueue
+					.execute(() -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 		}
 
 		return contact;
@@ -1274,11 +1274,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				}
 
-				listenerTaskQueue.execute(() -> dmsListeners
-						.forEach(listener -> listener.contactUpdated(new ContactHandleImpl(newContact))));
+				dmsListeners.forEach(listener -> listenerTaskQueue
+						.execute(() -> listener.contactUpdated(new ContactHandleImpl(newContact))));
 
-				updatedGroups.forEach(group -> listenerTaskQueue.execute(
-						() -> dmsListeners.forEach(listener -> listener.groupUpdated(new GroupHandleImpl(group)))));
+				updatedGroups.forEach(group -> dmsListeners.forEach(listener -> listenerTaskQueue
+						.execute(() -> listener.groupUpdated(new GroupHandleImpl(group)))));
 
 			} catch (Exception e) {
 
@@ -1388,8 +1388,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 			if (progress < 0) {
-				listenerTaskQueue
-						.execute(() -> dmsListeners.forEach(listener -> listener.messageFailed(trackingId, remoteIds)));
+				dmsListeners.forEach(
+						listener -> listenerTaskQueue.execute(() -> listener.messageFailed(trackingId, remoteIds)));
 			}
 
 		});
@@ -1499,37 +1499,36 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 							soundPlayer.playDuoTone();
 					}
 
-					listenerTaskQueue.execute(() -> {
+					dmsGuiListeners.forEach(listener -> listenerTaskQueue.execute(() -> {
 
 						if (newMessage.getAttachmentType() == null) {
 
-							dmsGuiListeners.forEach(listener -> listener.guiMessageReceived(newMessage.getId(),
-									newMessage.getContent(), newMessage.getContact().getId(),
-									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							listener.guiMessageReceived(newMessage.getId(), newMessage.getContent(),
+									newMessage.getContact().getId(),
+									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId());
 
 						} else if (newMessage.getAttachmentType() == AttachmentType.FILE) {
 
-							dmsGuiListeners.forEach(
-									listener -> listener.guiFileReceived(newMessage.getId(), newMessage.getContent(),
-											Paths.get(newMessage.getAttachmentPath()), newMessage.getContact().getId(),
-											newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							listener.guiFileReceived(newMessage.getId(), newMessage.getContent(),
+									Paths.get(newMessage.getAttachmentPath()), newMessage.getContact().getId(),
+									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId());
 
 						} else if (newMessage.getAttachmentType() == AttachmentType.AUDIO) {
 
-							dmsGuiListeners.forEach(listener -> listener.guiAudioReceived(newMessage.getId(),
-									Paths.get(newMessage.getAttachmentPath()), newMessage.getContact().getId(),
-									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							listener.guiAudioReceived(newMessage.getId(), Paths.get(newMessage.getAttachmentPath()),
+									newMessage.getContact().getId(),
+									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId());
 
 						} else if (newMessage.getAttachmentType() == AttachmentType.REPORT) {
 
-							dmsGuiListeners.forEach(listener -> listener.guiReportReceived(newMessage.getId(),
-									newMessage.getContent(), newMessage.getMessageCode(),
-									Paths.get(newMessage.getAttachmentPath()), newMessage.getContact().getId(),
-									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId()));
+							listener.guiReportReceived(newMessage.getId(), newMessage.getContent(),
+									newMessage.getMessageCode(), Paths.get(newMessage.getAttachmentPath()),
+									newMessage.getContact().getId(),
+									newMessage.getDgroup() == null ? null : newMessage.getDgroup().getId());
 
 						}
 
-					});
+					}));
 
 				}
 
@@ -1896,8 +1895,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 							moveFileToReceiveFolder(attachment, fileHandle.getFileName())));
 				}
 
-				listenerTaskQueue
-						.execute(() -> dmsListeners.forEach(listener -> listener.messageReceived(message, contactId)));
+				dmsListeners.forEach(
+						listener -> listenerTaskQueue.execute(() -> listener.messageReceived(message, contactId)));
 
 				if (trackingId != null) {
 					dmsClient.sendTransientMessageStatus(trackingId, remoteUuid);
@@ -1922,8 +1921,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				final Long contactId = getContact(remoteUuid).getId();
 
-				listenerTaskQueue.execute(
-						() -> dmsListeners.forEach(listener -> listener.messageTransmitted(trackingId, contactId)));
+				dmsListeners.forEach(listener -> listenerTaskQueue
+						.execute(() -> listener.messageTransmitted(trackingId, contactId)));
 
 			} catch (Exception e) {
 
@@ -1985,8 +1984,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return;
 			}
 			deleteFile(downloadPojo.path);
-			listenerTaskQueue
-					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.fileServerNotFound(downloadId)));
+			dmsDownloadListeners
+					.forEach(listener -> listenerTaskQueue.execute(() -> listener.fileServerNotFound(downloadId)));
 
 		});
 
@@ -2002,8 +2001,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				return;
 			}
 			deleteFile(downloadPojo.path);
-			listenerTaskQueue
-					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.fileNotFound(downloadId)));
+			dmsDownloadListeners
+					.forEach(listener -> listenerTaskQueue.execute(() -> listener.fileNotFound(downloadId)));
 
 		});
 
@@ -2017,8 +2016,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			if (!model.isDownloadActive(downloadId)) {
 				return;
 			}
-			listenerTaskQueue.execute(
-					() -> dmsDownloadListeners.forEach(listener -> listener.downloadingFile(downloadId, progress)));
+			dmsDownloadListeners.forEach(
+					listener -> listenerTaskQueue.execute(() -> listener.downloadingFile(downloadId, progress)));
 
 		});
 
@@ -2038,8 +2037,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			downloadPojo.paused.set(partial && downloadPojo.pausing.getAndSet(false));
 			if (downloadPojo.paused.get()) {
-				listenerTaskQueue
-						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadPaused(downloadId)));
+				dmsDownloadListeners
+						.forEach(listener -> listenerTaskQueue.execute(() -> listener.downloadPaused(downloadId)));
 			}
 
 			if (tmpPath == null && partial) {
@@ -2072,14 +2071,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				}
 				downloadPojo.path = moveFileToReceiveFolder(path, fileName);
 				model.removeDownload(downloadId);
-				listenerTaskQueue.execute(() -> dmsDownloadListeners
-						.forEach(listener -> listener.fileDownloaded(downloadId, downloadPojo.path)));
+				dmsDownloadListeners.forEach(listener -> listenerTaskQueue
+						.execute(() -> listener.fileDownloaded(downloadId, downloadPojo.path)));
 			} catch (Exception e) {
 				model.removeDownload(downloadId);
 				deleteFile(path);
 				deleteFile(downloadPojo.path);
-				listenerTaskQueue
-						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
+				dmsDownloadListeners
+						.forEach(listener -> listenerTaskQueue.execute(() -> listener.downloadFailed(downloadId)));
 			}
 
 		});
@@ -2097,14 +2096,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 			downloadPojo.paused.set(downloadPojo.pausing.getAndSet(false));
 			if (downloadPojo.paused.get()) {
-				listenerTaskQueue
-						.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadPaused(downloadId)));
+				dmsDownloadListeners
+						.forEach(listener -> listenerTaskQueue.execute(() -> listener.downloadPaused(downloadId)));
 				return;
 			}
 			model.removeDownload(downloadId);
 			deleteFile(downloadPojo.path);
-			listenerTaskQueue
-					.execute(() -> dmsDownloadListeners.forEach(listener -> listener.downloadFailed(downloadId)));
+			dmsDownloadListeners
+					.forEach(listener -> listenerTaskQueue.execute(() -> listener.downloadFailed(downloadId)));
 
 		});
 
@@ -2439,34 +2438,32 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	private void messageSentToListeners(final Message message, final Path attachment, final Long contactId,
 			final Long groupId) {
 
-		listenerTaskQueue.execute(() -> {
+		dmsGuiListeners.forEach(listener -> listenerTaskQueue.execute(() -> {
 
-			final Long messageId = message.getId();
-			final String messageTxt = message.getContent();
-			final Integer messageCode = message.getMessageCode();
-			final AttachmentType attachmentType = message.getAttachmentType();
+			Long messageId = message.getId();
+			String messageTxt = message.getContent();
+			Integer messageCode = message.getMessageCode();
+			AttachmentType attachmentType = message.getAttachmentType();
 
 			if (attachmentType == null) {
 
-				dmsGuiListeners.forEach(listener -> listener.guiMessageSent(messageId, messageTxt, contactId, groupId));
+				listener.guiMessageSent(messageId, messageTxt, contactId, groupId);
 
 			} else if (attachmentType == AttachmentType.FILE) {
 
-				dmsGuiListeners.forEach(
-						listener -> listener.guiFileSent(messageId, messageTxt, attachment, contactId, groupId));
+				listener.guiFileSent(messageId, messageTxt, attachment, contactId, groupId);
 
 			} else if (attachmentType == AttachmentType.AUDIO) {
 
-				dmsGuiListeners.forEach(listener -> listener.guiAudioSent(messageId, attachment, contactId, groupId));
+				listener.guiAudioSent(messageId, attachment, contactId, groupId);
 
 			} else if (attachmentType == AttachmentType.REPORT) {
 
-				dmsGuiListeners.forEach(listener -> listener.guiReportSent(messageId, messageTxt, messageCode,
-						attachment, contactId, groupId));
+				listener.guiReportSent(messageId, messageTxt, messageCode, attachment, contactId, groupId);
 
 			}
 
-		});
+		}));
 
 	}
 
@@ -2760,7 +2757,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				} else {
 
-					listenerTaskQueue.execute(() -> dmsListeners.forEach(listener -> listener.fileClicked(file)));
+					dmsListeners.forEach(listener -> listenerTaskQueue.execute(() -> listener.fileClicked(file)));
 
 				}
 
@@ -2967,8 +2964,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				final Long[] deletedMessageIds = deleteMessages(messages);
 
 				if (deletedMessageIds.length > 0) {
-					listenerTaskQueue.execute(
-							() -> dmsGuiListeners.forEach(listener -> listener.guiMessagesDeleted(deletedMessageIds)));
+					dmsGuiListeners.forEach(listener -> listenerTaskQueue
+							.execute(() -> listener.guiMessagesDeleted(deletedMessageIds)));
 				}
 
 			} catch (Exception e) {
@@ -3018,8 +3015,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		final Long[] deletedMessageIds = deleteMessages(deletableMessages);
 
 		if (deletedMessageIds.length > 0) {
-			listenerTaskQueue.execute(() -> dmsGuiListeners
-					.forEach(listener -> listener.guiPrivateConversationCleared(id, deletedMessageIds)));
+			dmsGuiListeners.forEach(listener -> listenerTaskQueue
+					.execute(() -> listener.guiPrivateConversationCleared(id, deletedMessageIds)));
 		}
 
 	}
@@ -3033,8 +3030,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		final Long[] deletedMessageIds = deleteMessages(deletableMessages);
 
 		if (deletedMessageIds.length > 0) {
-			listenerTaskQueue.execute(() -> dmsGuiListeners
-					.forEach(listener -> listener.guiGroupConversationCleared(id, deletedMessageIds)));
+			dmsGuiListeners.forEach(listener -> listenerTaskQueue
+					.execute(() -> listener.guiGroupConversationCleared(id, deletedMessageIds)));
 		}
 
 	}
@@ -3279,14 +3276,14 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					List<Message> deletableMessages = dbManager.getAllDeletableGroupMessages(id);
 					final Long[] deletedMessageIds = deletableMessages.isEmpty() ? new Long[0]
 							: deleteMessages(deletableMessages);
-					listenerTaskQueue.execute(() -> dmsGuiListeners
-							.forEach(listener -> listener.guiGroupConversationDeleted(id, deletedMessageIds)));
+					dmsGuiListeners.forEach(listener -> listenerTaskQueue
+							.execute(() -> listener.guiGroupConversationDeleted(id, deletedMessageIds)));
 				} else {
 					List<Message> deletableMessages = dbManager.getAllDeletablePrivateMessages(id);
 					final Long[] deletedMessageIds = deletableMessages.isEmpty() ? new Long[0]
 							: deleteMessages(deletableMessages);
-					listenerTaskQueue.execute(() -> dmsGuiListeners
-							.forEach(listener -> listener.guiPrivateConversationDeleted(id, deletedMessageIds)));
+					dmsGuiListeners.forEach(listener -> listenerTaskQueue
+							.execute(() -> listener.guiPrivateConversationDeleted(id, deletedMessageIds)));
 				}
 
 				updateViewStatusRequested(entityId, ViewStatus.DELETED);
