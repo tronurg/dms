@@ -71,11 +71,11 @@ public class TcpManager implements TcpServerListener {
 
 	private final TcpServer tcpServer;
 
-	private final Map<Integer, InetAddress> serverIdAddress = Collections
-			.synchronizedMap(new HashMap<Integer, InetAddress>());
+	private final Map<Integer, AddressPair> serverIdAddress = Collections
+			.synchronizedMap(new HashMap<Integer, AddressPair>());
 	private final Map<String, DmsServer> dmsServers = Collections.synchronizedMap(new HashMap<String, DmsServer>());
-	private final Map<InetAddress, Connection> connections = Collections
-			.synchronizedMap(new HashMap<InetAddress, Connection>());
+	private final Map<AddressPair, Connection> connections = Collections
+			.synchronizedMap(new HashMap<AddressPair, Connection>());
 	private final Set<InetAddress> connectedAddresses = new HashSet<InetAddress>();
 
 	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
@@ -99,14 +99,16 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			if (connections.containsKey(address) || connectionType == TcpConnectionType.SERVER)
+			final AddressPair addrPair = new AddressPair(address, null);
+
+			if (connections.containsKey(addrPair) || connectionType == TcpConnectionType.SERVER)
 				return;
 
 			try {
 
 				int port = claimPort();
 
-				connections.put(address, null);
+				connections.put(addrPair, null);
 
 				TcpClient tcpClient = new TcpClient(address, serverPort, null, port);
 
@@ -117,7 +119,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							Connection connection = connections.get(address);
+							Connection connection = connections.get(addrPair);
 							if (connection == null)
 								return;
 
@@ -139,7 +141,7 @@ public class TcpManager implements TcpServerListener {
 							tcpConnection.sendMessage(-1, Commons.DMS_UUID.getBytes(CHARSET));
 
 							Connection connection = new Connection(tcpConnection, -1);
-							connections.put(address, connection);
+							connections.put(addrPair, connection);
 
 							DmsServer dmsServer = dmsServers.get(dmsUuid);
 							if (dmsServer == null) {
@@ -159,7 +161,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							connections.remove(address);
+							connections.remove(addrPair);
 
 						});
 
@@ -170,7 +172,7 @@ public class TcpManager implements TcpServerListener {
 
 						taskQueue.execute(() -> {
 
-							Connection connection = connections.remove(address);
+							Connection connection = connections.remove(addrPair);
 							if (connection == null)
 								return;
 
@@ -222,10 +224,10 @@ public class TcpManager implements TcpServerListener {
 	public Set<InetAddress> getConnectedAddresses() {
 
 		connectedAddresses.clear();
-		connections.forEach((address, connection) -> {
+		connections.forEach((addrPair, connection) -> {
 			if (connection == null)
 				return;
-			connectedAddresses.add(address);
+			connectedAddresses.add(addrPair.remoteAddress);
 		});
 		return connectedAddresses;
 
@@ -284,17 +286,17 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			InetAddress address = serverIdAddress.remove(id);
+			AddressPair addrPair = serverIdAddress.remove(id);
 
-			if (address == null)
+			if (addrPair == null)
 				return;
 
-			Connection connection = connections.get(address);
+			Connection connection = connections.get(addrPair);
 
 			if (connection == null || connection.id != id)
 				return;
 
-			connections.remove(address);
+			connections.remove(addrPair);
 
 			DmsServer dmsServer = connection.dmsServer;
 
@@ -311,11 +313,11 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			InetAddress address = tcpConnection.getRemoteAddress();
+			AddressPair addrPair = new AddressPair(tcpConnection.getRemoteAddress(), tcpConnection.getLocalAddress());
 
-			serverIdAddress.put(id, address);
+			serverIdAddress.put(id, addrPair);
 
-			Connection connection = connections.get(address);
+			Connection connection = connections.get(addrPair);
 			DmsServer dmsServer = null;
 
 			if (connection != null) {
@@ -326,7 +328,7 @@ public class TcpManager implements TcpServerListener {
 				serverConnectionsUpdated(dmsServer, false);
 			}
 
-			connections.put(address, new Connection(tcpConnection, id));
+			connections.put(addrPair, new Connection(tcpConnection, id));
 
 		});
 
@@ -337,12 +339,12 @@ public class TcpManager implements TcpServerListener {
 
 		taskQueue.execute(() -> {
 
-			InetAddress address = serverIdAddress.get(id);
+			AddressPair addrPair = serverIdAddress.get(id);
 
-			if (address == null)
+			if (addrPair == null)
 				return;
 
-			Connection connection = connections.get(address);
+			Connection connection = connections.get(addrPair);
 
 			if (connection == null)
 				return;
@@ -508,6 +510,33 @@ public class TcpManager implements TcpServerListener {
 			} catch (InterruptedException e) {
 
 			}
+		}
+
+	}
+
+	private class AddressPair {
+
+		private final InetAddress remoteAddress;
+		private final InetAddress localAddress;
+
+		private AddressPair(InetAddress remoteAddress, InetAddress localAddress) {
+			this.remoteAddress = remoteAddress;
+			this.localAddress = localAddress;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (!(obj instanceof AddressPair)) {
+				return false;
+			}
+			AddressPair addrPair = (AddressPair) obj;
+			return Objects.equals(this.remoteAddress, addrPair.remoteAddress)
+					&& Objects.equals(this.localAddress, addrPair.localAddress);
+		}
+
+		@Override
+		public int hashCode() {
+			return Objects.hash(remoteAddress, localAddress);
 		}
 
 	}
