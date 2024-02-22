@@ -49,7 +49,7 @@ public class Commons {
 		try {
 			for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
 				for (InetAddress ia : Collections.list(ni.getInetAddresses())) {
-					if ((ia instanceof Inet4Address) && !ia.isLoopbackAddress()) {
+					if (isAddressAllowed(ia)) {
 						addrs.add(ia);
 					}
 				}
@@ -60,6 +60,14 @@ public class Commons {
 
 		return addrs;
 
+	}
+
+	public static boolean isAddressAllowed(InetAddress addr) {
+		if (!(addr instanceof Inet4Address)) {
+			return false;
+		}
+		return !(addr.isAnyLocalAddress() || addr.isLinkLocalAddress() || addr.isLoopbackAddress()
+				|| addr.isMulticastAddress());
 	}
 
 	public static int getLocalAddressPriority(InetAddress localAddress) {
