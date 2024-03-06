@@ -2177,25 +2177,31 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 			model.entityOpened(entityId);
 
-			Set<Message> unreadMessagesOfEntity = model.getUnreadMessagesOfEntity(entityId);
-
-			if (unreadMessagesOfEntity == null)
-				return;
-
-			try {
-
-				if (entityId.isGroup())
-					groupMessagesRead(entityId, unreadMessagesOfEntity);
-				else
-					privateMessagesRead(entityId, unreadMessagesOfEntity);
-
-			} catch (Exception e) {
-
-				e.printStackTrace();
-
-			}
+			messagesRead(entityId);
 
 		});
+
+	}
+
+	private void messagesRead(final EntityId entityId) {
+
+		Set<Message> unreadMessagesOfEntity = model.getUnreadMessagesOfEntity(entityId);
+
+		if (unreadMessagesOfEntity == null)
+			return;
+
+		try {
+
+			if (entityId.isGroup())
+				groupMessagesRead(entityId, unreadMessagesOfEntity);
+			else
+				privateMessagesRead(entityId, unreadMessagesOfEntity);
+
+		} catch (Exception e) {
+
+			e.printStackTrace();
+
+		}
 
 	}
 
@@ -4061,36 +4067,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	@Override
-	public void clearGuiPrivateConversation(final Long id) {
-
-		taskQueue.execute(() -> {
-
-			try {
-				clearPrivateConversationRequested(id);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		});
-
-	}
-
-	@Override
-	public void clearGuiGroupConversation(final Long id) {
-
-		taskQueue.execute(() -> {
-
-			try {
-				clearGroupConversationRequested(id);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		});
-
-	}
-
 	private <T> Future<T> newUncancellableFuture(Future<T> future) {
 
 		return new Future<T>() {
@@ -4121,6 +4097,66 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			}
 
 		};
+
+	}
+
+	@Override
+	public void clearGuiPrivateConversation(final Long id) {
+
+		taskQueue.execute(() -> {
+
+			try {
+				clearPrivateConversationRequested(id);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		});
+
+	}
+
+	@Override
+	public void clearGuiGroupConversation(final Long id) {
+
+		taskQueue.execute(() -> {
+
+			try {
+				clearGroupConversationRequested(id);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		});
+
+	}
+
+	@Override
+	public void markPrivateMessagesAsRead(Long contactId) {
+
+		taskQueue.execute(() -> {
+
+			try {
+				messagesRead(getContact(contactId).getEntityId());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		});
+
+	}
+
+	@Override
+	public void markGroupMessagesAsRead(Long groupId) {
+
+		taskQueue.execute(() -> {
+
+			try {
+				messagesRead(getGroup(groupId).getEntityId());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		});
 
 	}
 

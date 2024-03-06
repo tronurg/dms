@@ -149,6 +149,12 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 		System.out.println(String.format("Message #%d received from %s/%s: %s\n", messageId,
 				contact == null ? null : contact.getName(), group == null ? null : group.getName(), message));
 
+//		if (groupId != null) {
+//			dmsHandle.markGroupMessagesAsRead(groupId);
+//		} else {
+//			dmsHandle.markPrivateMessagesAsRead(contactId);
+//		}
+
 	}
 
 	@Override

@@ -125,6 +125,10 @@ public interface DmsHandle {
 
 	void clearGuiGroupConversation(Long id);
 
+	void markPrivateMessagesAsRead(Long contactId);
+
+	void markGroupMessagesAsRead(Long groupId);
+
 	void switchAudio(boolean on);
 
 	boolean isServerConnected();
