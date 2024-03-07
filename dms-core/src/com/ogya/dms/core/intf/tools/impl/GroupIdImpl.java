@@ -28,4 +28,18 @@ public class GroupIdImpl implements GroupId {
 		return value.toString();
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof GroupIdImpl)) {
+			return false;
+		}
+		GroupIdImpl groupId = (GroupIdImpl) obj;
+		return this.value.equals(groupId.value);
+	}
+
+	@Override
+	public int hashCode() {
+		return value.hashCode();
+	}
+
 }

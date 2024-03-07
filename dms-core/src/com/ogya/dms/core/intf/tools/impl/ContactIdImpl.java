@@ -28,4 +28,18 @@ public class ContactIdImpl implements ContactId {
 		return value.toString();
 	}
 
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof ContactIdImpl)) {
+			return false;
+		}
+		ContactIdImpl contactId = (ContactIdImpl) obj;
+		return this.value.equals(contactId.value);
+	}
+
+	@Override
+	public int hashCode() {
+		return value.hashCode();
+	}
+
 }
