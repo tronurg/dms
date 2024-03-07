@@ -6,11 +6,13 @@ import java.util.Map;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.intf.handles.ContactHandle;
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.impl.ContactIdImpl;
 import com.ogya.dms.core.structures.Availability;
 
 public class ContactHandleImpl implements ContactHandle {
 
-	private final Long id;
+	private final ContactId id;
 	private final String uuid;
 	private final String name;
 	private final String comment;
@@ -22,7 +24,7 @@ public class ContactHandleImpl implements ContactHandle {
 
 	public ContactHandleImpl(Contact contact) {
 
-		this.id = contact.getId();
+		this.id = ContactIdImpl.of(contact.getId());
 		this.uuid = contact.getUuid();
 		this.name = contact.getName();
 		this.comment = contact.getComment();
@@ -35,7 +37,7 @@ public class ContactHandleImpl implements ContactHandle {
 	}
 
 	@Override
-	public Long getId() {
+	public ContactId getId() {
 
 		return id;
 

@@ -21,6 +21,8 @@ import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.impl.ContactIdImpl;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.DownloadPojo;
 import com.ogya.dms.core.structures.MessageStatus;
@@ -201,7 +203,7 @@ public class Model {
 
 	}
 
-	public List<Long> getIdsByServerIp(InetAddress remoteServerIp) {
+	public List<ContactId> getIdsByServerIp(InetAddress remoteServerIp) {
 
 		if (remoteServerIp.isLoopbackAddress()) {
 			try {
@@ -213,18 +215,18 @@ public class Model {
 
 		final InetAddress ip = remoteServerIp;
 
-		List<Long> ids = new ArrayList<Long>();
+		List<ContactId> contactIds = new ArrayList<ContactId>();
 
 		idContacts.forEach((id, contact) -> {
 			if (contact.getLocalRemoteServerIps().containsValue(ip))
-				ids.add(id);
+				contactIds.add(ContactIdImpl.of(id));
 		});
 
-		return ids;
+		return contactIds;
 
 	}
 
-	public List<Long> getIdsByServerIpAndName(InetAddress remoteServerIp, final String name) {
+	public List<ContactId> getIdsByServerIpAndName(InetAddress remoteServerIp, final String name) {
 
 		if (remoteServerIp.isLoopbackAddress()) {
 			try {
@@ -236,18 +238,18 @@ public class Model {
 
 		final InetAddress ip = remoteServerIp;
 
-		List<Long> ids = new ArrayList<Long>();
+		List<ContactId> contactIds = new ArrayList<ContactId>();
 
 		idContacts.forEach((id, contact) -> {
 			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getName(), name))
-				ids.add(id);
+				contactIds.add(ContactIdImpl.of(id));
 		});
 
-		return ids;
+		return contactIds;
 
 	}
 
-	public List<Long> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, final String secretId) {
+	public List<ContactId> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, final String secretId) {
 
 		if (remoteServerIp.isLoopbackAddress()) {
 			try {
@@ -259,14 +261,14 @@ public class Model {
 
 		final InetAddress ip = remoteServerIp;
 
-		List<Long> ids = new ArrayList<Long>();
+		List<ContactId> contactIds = new ArrayList<ContactId>();
 
 		idContacts.forEach((id, contact) -> {
 			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getSecretId(), secretId))
-				ids.add(id);
+				contactIds.add(ContactIdImpl.of(id));
 		});
 
-		return ids;
+		return contactIds;
 
 	}
 

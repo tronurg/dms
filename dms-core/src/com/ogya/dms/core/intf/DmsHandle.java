@@ -20,6 +20,8 @@ import com.ogya.dms.core.intf.listeners.DmsDownloadListener;
 import com.ogya.dms.core.intf.listeners.DmsFileServer;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.GroupId;
 import com.ogya.dms.core.intf.tools.MessageRules;
 import com.ogya.dms.core.structures.Availability;
 
@@ -63,9 +65,9 @@ public interface DmsHandle {
 
 	ContactSelectionHandle getActiveContactsHandle();
 
-	ContactHandle getContactHandle(Long contactId);
+	ContactHandle getContactHandle(ContactId contactId);
 
-	GroupHandle getGroupHandle(Long groupId);
+	GroupHandle getGroupHandle(GroupId groupId);
 
 	List<ContactHandle> getAllContactHandles();
 
@@ -75,11 +77,11 @@ public interface DmsHandle {
 
 	List<GroupHandle> getGroupHandles(Predicate<GroupHandle> filter);
 
-	List<Long> getIdsByServerIp(InetAddress remoteServerIp);
+	List<ContactId> getIdsByServerIp(InetAddress remoteServerIp);
 
-	List<Long> getIdsByServerIpAndName(InetAddress remoteServerIp, String name);
+	List<ContactId> getIdsByServerIpAndName(InetAddress remoteServerIp, String name);
 
-	List<Long> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, String secretId);
+	List<ContactId> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, String secretId);
 
 	MessageHandle createMessageHandle(String message, Integer messageCode);
 
@@ -91,17 +93,17 @@ public interface DmsHandle {
 
 	MessageRules createMessageRules();
 
-	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds);
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<ContactId> contactIds);
 
-	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId);
+	boolean sendMessageToGroup(MessageHandle messageHandle, GroupId groupId);
 
-	boolean sendMessageToContacts(MessageHandle messageHandle, List<Long> contactIds, MessageRules messageRules);
+	boolean sendMessageToContacts(MessageHandle messageHandle, List<ContactId> contactIds, MessageRules messageRules);
 
-	boolean sendMessageToGroup(MessageHandle messageHandle, Long groupId, MessageRules messageRules);
+	boolean sendMessageToGroup(MessageHandle messageHandle, GroupId groupId, MessageRules messageRules);
 
 	void cancelMessage(Long trackingId);
 
-	Long downloadFile(Long fileId, Long contactId);
+	Long downloadFile(Long fileId, ContactId contactId);
 
 	void cancelDownload(Long downloadId);
 
@@ -109,25 +111,25 @@ public interface DmsHandle {
 
 	void resumeDownload(Long downloadId);
 
-	Future<Long> sendGuiMessageToContact(String message, Long contactId);
+	Future<Long> sendGuiMessageToContact(String message, ContactId contactId);
 
-	Future<Long> sendGuiMessageToGroup(String message, Long groupId);
+	Future<Long> sendGuiMessageToGroup(String message, GroupId groupId);
 
-	Future<Long> sendGuiFileToContact(String message, Path path, Long contactId);
+	Future<Long> sendGuiFileToContact(String message, Path path, ContactId contactId);
 
-	Future<Long> sendGuiFileToGroup(String message, Path path, Long groupId);
+	Future<Long> sendGuiFileToGroup(String message, Path path, GroupId groupId);
 
-	Future<Long> sendGuiReportToContact(String message, Integer reportId, Path path, Long contactId);
+	Future<Long> sendGuiReportToContact(String message, Integer reportId, Path path, ContactId contactId);
 
-	Future<Long> sendGuiReportToGroup(String message, Integer reportId, Path path, Long groupId);
+	Future<Long> sendGuiReportToGroup(String message, Integer reportId, Path path, GroupId groupId);
 
-	void clearGuiPrivateConversation(Long id);
+	void clearGuiPrivateConversation(ContactId contactId);
 
-	void clearGuiGroupConversation(Long id);
+	void clearGuiGroupConversation(GroupId groupId);
 
-	void markPrivateMessagesAsRead(Long contactId);
+	void markPrivateMessagesAsRead(ContactId contactId);
 
-	void markGroupMessagesAsRead(Long groupId);
+	void markGroupMessagesAsRead(GroupId groupId);
 
 	void switchAudio(boolean on);
 

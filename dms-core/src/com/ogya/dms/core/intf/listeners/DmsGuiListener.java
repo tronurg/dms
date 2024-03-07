@@ -2,36 +2,40 @@ package com.ogya.dms.core.intf.listeners;
 
 import java.nio.file.Path;
 
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.GroupId;
 import com.ogya.dms.core.structures.MessageStatus;
 
 public interface DmsGuiListener {
 
-	void guiMessageSent(Long messageId, String message, Long contactId, Long groupId);
+	void guiMessageSent(Long messageId, String message, ContactId contactId, GroupId groupId);
 
-	void guiMessageReceived(Long messageId, String message, Long contactId, Long groupId);
+	void guiMessageReceived(Long messageId, String message, ContactId contactId, GroupId groupId);
 
-	void guiFileSent(Long messageId, String message, Path path, Long contactId, Long groupId);
+	void guiFileSent(Long messageId, String message, Path path, ContactId contactId, GroupId groupId);
 
-	void guiFileReceived(Long messageId, String message, Path path, Long contactId, Long groupId);
+	void guiFileReceived(Long messageId, String message, Path path, ContactId contactId, GroupId groupId);
 
-	void guiReportSent(Long messageId, String message, Integer reportId, Path path, Long contactId, Long groupId);
+	void guiReportSent(Long messageId, String message, Integer reportId, Path path, ContactId contactId,
+			GroupId groupId);
 
-	void guiReportReceived(Long messageId, String message, Integer reportId, Path path, Long contactId, Long groupId);
+	void guiReportReceived(Long messageId, String message, Integer reportId, Path path, ContactId contactId,
+			GroupId groupId);
 
-	void guiAudioSent(Long messageId, Path path, Long contactId, Long groupId);
+	void guiAudioSent(Long messageId, Path path, ContactId contactId, GroupId groupId);
 
-	void guiAudioReceived(Long messageId, Path path, Long contactId, Long groupId);
+	void guiAudioReceived(Long messageId, Path path, ContactId contactId, GroupId groupId);
 
-	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId);
+	void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, ContactId contactId);
 
 	void guiMessagesDeleted(Long[] messageIds);
 
-	void guiPrivateConversationCleared(Long contactId, Long[] deletedMessageIds);
+	void guiPrivateConversationCleared(ContactId contactId, Long[] deletedMessageIds);
 
-	void guiGroupConversationCleared(Long groupId, Long[] deletedMessageIds);
+	void guiGroupConversationCleared(GroupId groupId, Long[] deletedMessageIds);
 
-	void guiPrivateConversationDeleted(Long contactId, Long[] deletedMessageIds);
+	void guiPrivateConversationDeleted(ContactId contactId, Long[] deletedMessageIds);
 
-	void guiGroupConversationDeleted(Long groupId, Long[] deletedMessageIds);
+	void guiGroupConversationDeleted(GroupId groupId, Long[] deletedMessageIds);
 
 }

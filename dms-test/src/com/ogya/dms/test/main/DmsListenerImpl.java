@@ -19,6 +19,8 @@ import com.ogya.dms.core.intf.listeners.DmsDownloadListener;
 import com.ogya.dms.core.intf.listeners.DmsFileServer;
 import com.ogya.dms.core.intf.listeners.DmsGuiListener;
 import com.ogya.dms.core.intf.listeners.DmsListener;
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.GroupId;
 import com.ogya.dms.core.structures.MessageStatus;
 
 public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownloadListener, DmsFileServer {
@@ -66,7 +68,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void messageReceived(MessageHandle messageHandle, Long contactId) {
+	public void messageReceived(MessageHandle messageHandle, ContactId contactId) {
 
 		System.out.println(String.format("%s: Message received from: %s\nContent: %s\n", myName,
 				dmsHandle.getContactHandle(contactId).getName(), messageHandle.getMessage()));
@@ -105,7 +107,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void messageTransmitted(Long trackingId, Long contactId) {
+	public void messageTransmitted(Long trackingId, ContactId contactId) {
 
 		System.out.println(String.format("%s: Message #%d transmitted to %s\n", myName, trackingId,
 				dmsHandle.getContactHandle(contactId).getName()));
@@ -113,7 +115,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void messageFailed(Long trackingId, List<Long> contactIds) {
+	public void messageFailed(Long trackingId, List<ContactId> contactIds) {
 
 		System.out.println(String.format("%s: Message #%d failed to %s\n", myName, trackingId,
 				contactIds.stream().map(contactId -> dmsHandle.getContactHandle(contactId).getName())
@@ -122,7 +124,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, Long contactId) {
+	public void guiMessageStatusUpdated(Long messageId, MessageStatus messageStatus, ContactId contactId) {
 
 		System.out.println(String.format("%s: %s -> message #%d status: %s\n", myName,
 				dmsHandle.getContactHandle(contactId).getName(), messageId, messageStatus));
@@ -130,7 +132,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiMessageSent(Long messageId, String message, Long contactId, Long groupId) {
+	public void guiMessageSent(Long messageId, String message, ContactId contactId, GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -141,7 +143,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiMessageReceived(Long messageId, String message, Long contactId, Long groupId) {
+	public void guiMessageReceived(Long messageId, String message, ContactId contactId, GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -158,7 +160,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiFileSent(Long messageId, String message, Path path, Long contactId, Long groupId) {
+	public void guiFileSent(Long messageId, String message, Path path, ContactId contactId, GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -170,7 +172,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiFileReceived(Long messageId, String message, Path path, Long contactId, Long groupId) {
+	public void guiFileReceived(Long messageId, String message, Path path, ContactId contactId, GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -182,8 +184,8 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiReportSent(Long messageId, String message, Integer reportId, Path path, Long contactId,
-			Long groupId) {
+	public void guiReportSent(Long messageId, String message, Integer reportId, Path path, ContactId contactId,
+			GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -195,8 +197,8 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiReportReceived(Long messageId, String message, Integer reportId, Path path, Long contactId,
-			Long groupId) {
+	public void guiReportReceived(Long messageId, String message, Integer reportId, Path path, ContactId contactId,
+			GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -208,7 +210,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiAudioSent(Long messageId, Path path, Long contactId, Long groupId) {
+	public void guiAudioSent(Long messageId, Path path, ContactId contactId, GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -220,7 +222,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiAudioReceived(Long messageId, Path path, Long contactId, Long groupId) {
+	public void guiAudioReceived(Long messageId, Path path, ContactId contactId, GroupId groupId) {
 
 		ContactHandle contact = dmsHandle.getContactHandle(contactId);
 		GroupHandle group = dmsHandle.getGroupHandle(groupId);
@@ -239,7 +241,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiPrivateConversationDeleted(Long contactId, Long[] deletedMessageIds) {
+	public void guiPrivateConversationDeleted(ContactId contactId, Long[] deletedMessageIds) {
 
 		System.out.println(String.format("Private conversation deleted: %s\nDeleted messages: %s\n",
 				dmsHandle.getContactHandle(contactId).getName(), Arrays.toString(deletedMessageIds)));
@@ -247,7 +249,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiGroupConversationDeleted(Long groupId, Long[] deletedMessageIds) {
+	public void guiGroupConversationDeleted(GroupId groupId, Long[] deletedMessageIds) {
 
 		System.out.println(String.format("Group conversation deleted: %s\nDeleted messages: %s\n",
 				dmsHandle.getGroupHandle(groupId).getName(), Arrays.toString(deletedMessageIds)));
@@ -255,7 +257,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiPrivateConversationCleared(Long contactId, Long[] deletedMessageIds) {
+	public void guiPrivateConversationCleared(ContactId contactId, Long[] deletedMessageIds) {
 
 		System.out.println(String.format("Private conversation cleared: %s\nDeleted messages: %s\n",
 				dmsHandle.getContactHandle(contactId).getName(), Arrays.toString(deletedMessageIds)));
@@ -263,7 +265,7 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
-	public void guiGroupConversationCleared(Long groupId, Long[] deletedMessageIds) {
+	public void guiGroupConversationCleared(GroupId groupId, Long[] deletedMessageIds) {
 
 		System.out.println(String.format("Group conversation cleared: %s\nDeleted messages: %s\n",
 				dmsHandle.getGroupHandle(groupId).getName(), Arrays.toString(deletedMessageIds)));

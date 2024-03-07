@@ -2,6 +2,7 @@ package com.ogya.dms.core.intf.handles.impl;
 
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -9,6 +10,8 @@ import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.ContactSelectionHandle;
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.impl.ContactIdImpl;
 import com.ogya.dms.core.view.ActiveContactsPane;
 
 import javafx.application.Platform;
@@ -89,9 +92,10 @@ public class ActiveContactsHandleImpl implements ContactSelectionHandle {
 	}
 
 	@Override
-	public List<Long> getSelectedContactIds() {
+	public List<ContactId> getSelectedContactIds() {
 
-		return activeContactsPane.getSelectedEntityIds();
+		return activeContactsPane.getSelectedEntityIds().stream().map(id -> ContactIdImpl.of(id))
+				.collect(Collectors.toList());
 
 	}
 

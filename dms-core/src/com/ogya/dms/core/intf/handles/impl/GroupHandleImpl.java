@@ -5,46 +5,50 @@ import java.util.List;
 
 import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.intf.handles.GroupHandle;
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.GroupId;
+import com.ogya.dms.core.intf.tools.impl.ContactIdImpl;
+import com.ogya.dms.core.intf.tools.impl.GroupIdImpl;
 import com.ogya.dms.core.structures.Availability;
 
 public class GroupHandleImpl implements GroupHandle {
 
-	private final Long groupId;
-	private final Long groupRefId;
-	private final Long ownerId;
+	private final GroupId groupId;
+	private final GroupId groupRefId;
+	private final ContactId ownerId;
 	private final String name;
 	private final String comment;
-	private final List<Long> contactIds = new ArrayList<Long>();
+	private final List<ContactId> contactIds = new ArrayList<ContactId>();
 	private final Availability availability;
 
 	public GroupHandleImpl(Dgroup group) {
 
-		this.groupId = group.getId();
-		this.groupRefId = group.getGroupRefId();
-		this.ownerId = group.getOwner().getId();
+		this.groupId = GroupIdImpl.of(group.getId());
+		this.groupRefId = GroupIdImpl.of(group.getGroupRefId());
+		this.ownerId = ContactIdImpl.of(group.getOwner().getId());
 		this.name = group.getName();
 		this.comment = group.getComment();
-		group.getMembers().forEach(contact -> contactIds.add(contact.getId()));
+		group.getMembers().forEach(contact -> contactIds.add(ContactIdImpl.of(contact.getId())));
 		this.availability = group.getStatus();
 
 	}
 
 	@Override
-	public Long getGroupId() {
+	public GroupId getGroupId() {
 
 		return groupId;
 
 	}
 
 	@Override
-	public Long getGroupRefId() {
+	public GroupId getGroupRefId() {
 
 		return groupRefId;
 
 	}
 
 	@Override
-	public Long getOwnerId() {
+	public ContactId getOwnerId() {
 
 		return ownerId;
 
@@ -65,7 +69,7 @@ public class GroupHandleImpl implements GroupHandle {
 	}
 
 	@Override
-	public List<Long> getContactIds() {
+	public List<ContactId> getContactIds() {
 
 		return contactIds;
 

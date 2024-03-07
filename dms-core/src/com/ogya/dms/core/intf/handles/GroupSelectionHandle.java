@@ -4,13 +4,15 @@ import java.util.function.Predicate;
 
 import javax.swing.JComponent;
 
+import com.ogya.dms.core.intf.tools.GroupId;
+
 public interface GroupSelectionHandle {
 
 	JComponent getGroupSelectionPanel();
 
 	JComponent getGroupSelectionPanel(Predicate<GroupHandle> filter);
 
-	Long getSelectedGroupId();
+	GroupId getSelectedGroupId();
 
 	void resetSelection();
 

@@ -2,21 +2,23 @@ package com.ogya.dms.core.intf.handles;
 
 import java.util.List;
 
+import com.ogya.dms.core.intf.tools.ContactId;
+import com.ogya.dms.core.intf.tools.GroupId;
 import com.ogya.dms.core.structures.Availability;
 
 public interface GroupHandle {
 
-	Long getGroupId();
+	GroupId getGroupId();
 
-	Long getGroupRefId();
+	GroupId getGroupRefId();
 
-	Long getOwnerId();
+	ContactId getOwnerId();
 
 	String getName();
 
 	String getComment();
 
-	List<Long> getContactIds();
+	List<ContactId> getContactIds();
 
 	Availability getAvailability();
 

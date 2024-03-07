@@ -8,6 +8,8 @@ import javax.swing.event.AncestorListener;
 
 import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.GroupSelectionHandle;
+import com.ogya.dms.core.intf.tools.GroupId;
+import com.ogya.dms.core.intf.tools.impl.GroupIdImpl;
 import com.ogya.dms.core.view.ActiveGroupsPane;
 
 import javafx.application.Platform;
@@ -88,9 +90,9 @@ public class ActiveGroupsHandleImpl implements GroupSelectionHandle {
 	}
 
 	@Override
-	public Long getSelectedGroupId() {
+	public GroupId getSelectedGroupId() {
 
-		return activeGroupsPane.getSelectedId();
+		return GroupIdImpl.of(activeGroupsPane.getSelectedId());
 
 	}
 
