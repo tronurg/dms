@@ -10,8 +10,10 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -35,6 +38,7 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -321,7 +325,7 @@ public class FoldersPane extends BorderPane {
 
 	private class FileButton extends Button {
 
-		private FileButton(ImageView icon, String name, String size) {
+		private FileButton(ImageView icon, String name, String date, String size) {
 
 			super();
 
@@ -330,16 +334,23 @@ public class FoldersPane extends BorderPane {
 			setMaxWidth(Double.MAX_VALUE);
 			setPadding(new Insets(GAP));
 
-			HBox hBox = new HBox(GAP);
+			GridPane grid = new GridPane();
+			grid.setHgap(GAP);
 			Label nameLbl = new Label(name);
+			Label dateLbl = new Label(date);
 			Label sizeLbl = new Label(size);
-			hBox.setAlignment(Pos.CENTER_LEFT);
-			HBox.setHgrow(nameLbl, Priority.ALWAYS);
-			nameLbl.setMaxWidth(Double.MAX_VALUE);
+			dateLbl.setMinWidth(Region.USE_PREF_SIZE);
+			dateLbl.setOpacity(0.5);
 			sizeLbl.setMinWidth(Region.USE_PREF_SIZE);
 			sizeLbl.setOpacity(0.5);
-			hBox.getChildren().addAll(icon, nameLbl, sizeLbl);
-			setGraphic(hBox);
+			GridPane.setHgrow(dateLbl, Priority.ALWAYS);
+			GridPane.setHalignment(sizeLbl, HPos.RIGHT);
+			grid.add(icon, 0, 0, 1, 2);
+			grid.add(nameLbl, 1, 0, 2, 1);
+			grid.add(dateLbl, 1, 1, 1, 1);
+			grid.add(sizeLbl, 2, 1, 1, 1);
+
+			setGraphic(grid);
 
 		}
 
@@ -396,20 +407,26 @@ public class FoldersPane extends BorderPane {
 
 			folders.forEach(path -> {
 
-				FileButton cButton = new FileButton(
-						new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))),
-						path.getFileName().toString(), null);
+				try {
 
-				cButton.setOnAction(e -> {
+					FileButton cButton = new FileButton(
+							new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))),
+							path.getFileName().toString(), getFileDateStr(path), null);
 
-					Consumer<Path> folderSelectedAction = folderSelectedActionRef.get();
+					cButton.setOnAction(e -> {
 
-					if (folderSelectedAction != null)
-						folderSelectedAction.accept(path);
+						Consumer<Path> folderSelectedAction = folderSelectedActionRef.get();
 
-				});
+						if (folderSelectedAction != null)
+							folderSelectedAction.accept(path);
 
-				getChildren().add(cButton);
+					});
+
+					getChildren().add(cButton);
+
+				} catch (Exception e) {
+
+				}
 
 			});
 
@@ -421,7 +438,7 @@ public class FoldersPane extends BorderPane {
 
 					FileButton cButton = new FileButton(
 							new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), fileName,
-							getFileSizeStr(path));
+							getFileDateStr(path), getFileSizeStr(path));
 
 					cButton.setTooltip(new Tooltip(fileName));
 
@@ -453,6 +470,12 @@ public class FoldersPane extends BorderPane {
 		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
 
 			fileSelectedActionRef.set(fileSelectedAction);
+
+		}
+
+		private String getFileDateStr(Path path) throws Exception {
+
+			return SimpleDateFormat.getInstance().format(new Date(Files.getLastModifiedTime(path).toMillis()));
 
 		}
 
