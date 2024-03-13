@@ -146,7 +146,7 @@ class StarredMessagesPane extends BorderPane {
 			MessageBalloon group0 = (MessageBalloon) arg0;
 			MessageBalloon group1 = (MessageBalloon) arg1;
 
-			return group1.messageInfo.messageId.compareTo(group0.messageInfo.messageId);
+			return Long.compare(group1.messageInfo.messageId, group0.messageInfo.messageId);
 
 		}
 

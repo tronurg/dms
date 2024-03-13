@@ -1,5 +1,6 @@
 package com.ogya.dms.core.view;
 
+import java.text.Collator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -87,6 +88,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private final Comparator<Node> contactsSorter = new Comparator<Node>() {
 
+		private final Collator collator = Collator.getInstance();
+
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
@@ -96,7 +99,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			AddRemoveContactBox box0 = (AddRemoveContactBox) arg0;
 			AddRemoveContactBox box1 = (AddRemoveContactBox) arg1;
 
-			return box0.getName().toLowerCase().compareTo(box1.getName().toLowerCase());
+			return collator.compare(box0.getName(), box1.getName());
 
 		}
 

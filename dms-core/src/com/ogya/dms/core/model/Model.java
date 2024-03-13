@@ -2,6 +2,7 @@ package com.ogya.dms.core.model;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -57,17 +58,25 @@ public class Model {
 			.synchronizedMap(new HashMap<Long, Map<Long, Integer>>());
 
 	private final Comparator<Contact> contactSorter = new Comparator<Contact>() {
+
+		private final Collator collator = Collator.getInstance();
+
 		@Override
 		public int compare(Contact arg0, Contact arg1) {
-			return arg0.getName().toLowerCase().compareTo(arg1.getName().toLowerCase());
+			return collator.compare(arg0.getName(), arg1.getName());
 		}
+
 	};
 
 	private final Comparator<String> caseInsensitiveStringSorter = new Comparator<String>() {
+
+		private final Collator collator = Collator.getInstance();
+
 		@Override
 		public int compare(String arg0, String arg1) {
-			return arg0.toLowerCase().compareTo(arg1.toLowerCase());
+			return collator.compare(arg0, arg1);
 		}
+
 	};
 
 	private final Comparator<Message> messageSorter = new Comparator<Message>() {

@@ -1,5 +1,6 @@
 package com.ogya.dms.core.view;
 
+import java.text.Collator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,6 +55,8 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private final Comparator<Node> entitiesSorter = new Comparator<Node>() {
 
+		private final Collator collator = Collator.getInstance();
+
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
@@ -63,13 +66,15 @@ public class ActiveGroupsPane extends BorderPane {
 			EntityPaneBase entity0 = (EntityPaneBase) arg0;
 			EntityPaneBase entity1 = (EntityPaneBase) arg1;
 
-			return entity0.getName().toLowerCase().compareTo(entity1.getName().toLowerCase());
+			return collator.compare(entity0.getName(), entity1.getName());
 
 		}
 
 	};
 
 	private final Comparator<Node> membersSorter = new Comparator<Node>() {
+
+		private final Collator collator = Collator.getInstance();
 
 		@Override
 		public int compare(Node arg0, Node arg1) {
@@ -80,7 +85,7 @@ public class ActiveGroupsPane extends BorderPane {
 			MemberCard card0 = (MemberCard) arg0;
 			MemberCard card1 = (MemberCard) arg1;
 
-			return card0.getText().toLowerCase().compareTo(card1.getText().toLowerCase());
+			return collator.compare(card0.getText(), card1.getText());
 
 		}
 

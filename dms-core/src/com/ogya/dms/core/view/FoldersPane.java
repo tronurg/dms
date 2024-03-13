@@ -10,12 +10,12 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
+import java.text.Collator;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -25,9 +25,11 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -69,6 +71,59 @@ public class FoldersPane extends BorderPane {
 
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
+
+	private final Comparator<Node> sorterByName = new Comparator<Node>() {
+
+		private final Collator collator = Collator.getInstance();
+
+		@Override
+		public int compare(Node arg0, Node arg1) {
+
+			if (!(arg0 instanceof FileButton && arg1 instanceof FileButton)) {
+				return 0;
+			}
+
+			FileButton btn0 = (FileButton) arg0;
+			FileButton btn1 = (FileButton) arg1;
+
+			int val = Boolean.compare(btn0.isFile, btn1.isFile);
+			if (val == 0) {
+				val = collator.compare(btn0.name, btn1.name);
+			}
+
+			return val;
+
+		}
+
+	};
+
+	private final Comparator<Node> sorterByDate = new Comparator<Node>() {
+
+		private final Collator collator = Collator.getInstance();
+
+		@Override
+		public int compare(Node arg0, Node arg1) {
+
+			if (!(arg0 instanceof FileButton && arg1 instanceof FileButton)) {
+				return 0;
+			}
+
+			FileButton btn0 = (FileButton) arg0;
+			FileButton btn1 = (FileButton) arg1;
+
+			int val = Boolean.compare(btn0.isFile, btn1.isFile);
+			if (val == 0) {
+				val = btn1.date.compareTo(btn0.date);
+			}
+			if (val == 0) {
+				val = collator.compare(btn0.name, btn1.name);
+			}
+
+			return val;
+
+		}
+
+	};
 
 	private WatchService watchService;
 
@@ -325,9 +380,29 @@ public class FoldersPane extends BorderPane {
 
 	private class FileButton extends Button {
 
-		private FileButton(ImageView icon, String name, String date, String size) {
+		private final String name;
+		private final Date date;
+		private final boolean isFile;
+
+		private FileButton(ImageView icon, Path path) throws Exception {
 
 			super();
+
+			this.name = path.getFileName().toString();
+			this.date = new Date(Files.getLastModifiedTime(path).toMillis());
+			this.isFile = !Files.isDirectory(path);
+
+			init(icon, path);
+
+		}
+
+		private void init(ImageView icon, Path path) throws Exception {
+
+			String dateStr = SimpleDateFormat.getInstance().format(date);
+			String sizeStr = null;
+			if (isFile) {
+				sizeStr = getFileSizeStr(path);
+			}
 
 			getStyleClass().add("file-button");
 
@@ -337,8 +412,8 @@ public class FoldersPane extends BorderPane {
 			GridPane grid = new GridPane();
 			grid.setHgap(GAP);
 			Label nameLbl = new Label(name);
-			Label dateLbl = new Label(date);
-			Label sizeLbl = new Label(size);
+			Label dateLbl = new Label(dateStr);
+			Label sizeLbl = new Label(sizeStr);
 			dateLbl.setMinWidth(Region.USE_PREF_SIZE);
 			dateLbl.setOpacity(0.5);
 			sizeLbl.setMinWidth(Region.USE_PREF_SIZE);
@@ -351,6 +426,35 @@ public class FoldersPane extends BorderPane {
 			grid.add(sizeLbl, 2, 1, 1, 1);
 
 			setGraphic(grid);
+
+			if (isFile) {
+				setTooltip(new Tooltip(name));
+			}
+
+		}
+
+		private String getFileSizeStr(Path path) throws Exception {
+
+			long sizeInB = Files.size(path);
+			double sizeInKB = (double) sizeInB / 1024;
+
+			if (sizeInKB < 1.0) {
+				return String.format("%d B", sizeInB);
+			}
+
+			double sizeInMB = sizeInKB / 1024;
+
+			if (sizeInMB < 1.0) {
+				return String.format("%.2f KB", sizeInKB);
+			}
+
+			double sizeInGB = sizeInMB / 1024;
+
+			if (sizeInGB < 1.0) {
+				return String.format("%.2f MB", sizeInMB);
+			}
+
+			return String.format("%.2f GB", sizeInGB);
 
 		}
 
@@ -382,82 +486,75 @@ public class FoldersPane extends BorderPane {
 
 			getChildren().clear();
 
-			List<Path> folders = new ArrayList<Path>();
-			List<Path> files = new ArrayList<Path>();
-
 			try {
 
 				Files.list(mainFolder).forEach(path -> {
-
-					if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
-						folders.add(path);
-					else
-						try {
-							if (Files.size(path) <= Commons.MAX_FILE_LENGTH)
-								files.add(path);
-						} catch (Exception e) {
-
-						}
-
+					if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+						addFolder(path);
+					} else {
+						addFile(path);
+					}
 				});
 
 			} catch (Exception e) {
 
 			}
 
-			folders.forEach(path -> {
+			FXCollections.sort(getChildren(), sorterByName);
 
-				try {
+		}
 
-					FileButton cButton = new FileButton(
-							new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))),
-							path.getFileName().toString(), getFileDateStr(path), null);
+		private void addFile(Path path) {
 
-					cButton.setOnAction(e -> {
+			try {
 
-						Consumer<Path> folderSelectedAction = folderSelectedActionRef.get();
-
-						if (folderSelectedAction != null)
-							folderSelectedAction.accept(path);
-
-					});
-
-					getChildren().add(cButton);
-
-				} catch (Exception e) {
-
+				if (Files.size(path) > Commons.MAX_FILE_LENGTH) {
+					return;
 				}
 
-			});
+				FileButton cButton = new FileButton(
+						new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), path);
 
-			files.forEach(path -> {
+				cButton.setOnAction(e -> {
 
-				try {
+					Consumer<Path> fileSelectedAction = fileSelectedActionRef.get();
 
-					String fileName = path.getFileName().toString();
+					if (fileSelectedAction != null) {
+						fileSelectedAction.accept(path);
+					}
 
-					FileButton cButton = new FileButton(
-							new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), fileName,
-							getFileDateStr(path), getFileSizeStr(path));
+				});
 
-					cButton.setTooltip(new Tooltip(fileName));
+				getChildren().add(cButton);
 
-					cButton.setOnAction(e -> {
+			} catch (Exception e) {
 
-						Consumer<Path> fileSelectedAction = fileSelectedActionRef.get();
+			}
 
-						if (fileSelectedAction != null)
-							fileSelectedAction.accept(path);
+		}
 
-					});
+		private void addFolder(Path path) {
 
-					getChildren().add(cButton);
+			try {
 
-				} catch (Exception e) {
+				FileButton cButton = new FileButton(
+						new ImageView(new Image(getClass().getResourceAsStream(FOLDER_ICO_PATH))), path);
 
-				}
+				cButton.setOnAction(e -> {
 
-			});
+					Consumer<Path> folderSelectedAction = folderSelectedActionRef.get();
+
+					if (folderSelectedAction != null) {
+						folderSelectedAction.accept(path);
+					}
+
+				});
+
+				getChildren().add(cButton);
+
+			} catch (Exception e) {
+
+			}
 
 		}
 
@@ -470,37 +567,6 @@ public class FoldersPane extends BorderPane {
 		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
 
 			fileSelectedActionRef.set(fileSelectedAction);
-
-		}
-
-		private String getFileDateStr(Path path) throws Exception {
-
-			return SimpleDateFormat.getInstance().format(new Date(Files.getLastModifiedTime(path).toMillis()));
-
-		}
-
-		private String getFileSizeStr(Path path) throws Exception {
-
-			long sizeInB = Files.size(path);
-			double sizeInKB = (double) sizeInB / 1024;
-
-			if (sizeInKB < 1.0) {
-				return String.format("%d B", sizeInB);
-			}
-
-			double sizeInMB = sizeInKB / 1024;
-
-			if (sizeInMB < 1.0) {
-				return String.format("%.2f KB", sizeInKB);
-			}
-
-			double sizeInGB = sizeInMB / 1024;
-
-			if (sizeInGB < 1.0) {
-				return String.format("%.2f MB", sizeInMB);
-			}
-
-			return String.format("%.2f GB", sizeInGB);
 
 		}
 

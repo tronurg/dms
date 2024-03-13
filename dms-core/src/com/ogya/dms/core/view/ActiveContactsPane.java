@@ -1,5 +1,6 @@
 package com.ogya.dms.core.view;
 
+import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,6 +47,8 @@ public class ActiveContactsPane extends BorderPane {
 
 	private final Comparator<Node> entitiesSorter = new Comparator<Node>() {
 
+		private final Collator collator = Collator.getInstance();
+
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
@@ -55,7 +58,7 @@ public class ActiveContactsPane extends BorderPane {
 			EntityPaneBase entity0 = (EntityPaneBase) arg0;
 			EntityPaneBase entity1 = (EntityPaneBase) arg1;
 
-			return entity0.getName().toLowerCase().compareTo(entity1.getName().toLowerCase());
+			return collator.compare(entity0.getName(), entity1.getName());
 
 		}
 
