@@ -130,20 +130,20 @@ public class DmsTest {
 				}
 			});
 
-			new Thread(() -> {
-
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-
-				UIManager.put("Panel.background", Color.DARK_GRAY);
-				UIManager.put("Panel.foreground", Color.LIGHT_GRAY);
-
-				SwingUtilities.invokeLater(() -> SwingUtilities.updateComponentTreeUI(mcPanel));
-
-			}).start();
+//			new Thread(() -> {
+//
+//				try {
+//					Thread.sleep(5000);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
+//
+//				UIManager.put("Panel.background", Color.DARK_GRAY);
+//				UIManager.put("Panel.foreground", Color.LIGHT_GRAY);
+//
+//				SwingUtilities.invokeLater(() -> SwingUtilities.updateComponentTreeUI(mcPanel));
+//
+//			}).start();
 
 			JFrame frame = new JFrame();
 			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

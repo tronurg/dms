@@ -3,7 +3,6 @@ package com.ogya.dms.core.util;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,8 +10,6 @@ import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -165,12 +162,7 @@ public class Commons {
 
 		if (langFile == null) {
 
-			try (Reader reader = Files.newBufferedReader(Paths.get(
-					"./plugins/dms/lang/dms_" + Locale.getDefault().getLanguage().toUpperCase() + ".properties"))) {
-
-				langFile = new PropertyResourceBundle(reader);
-
-			}
+			langFile = ResourceBundle.getBundle("resources/lang/dms");
 
 		}
 

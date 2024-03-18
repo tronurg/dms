@@ -24,15 +24,22 @@ import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -49,6 +56,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
 
@@ -65,7 +73,8 @@ public class FoldersPane extends BorderPane {
 	};
 	private final Button backBtn;
 	private final Label headingLbl = new Label(Commons.translate("FILE_EXPLORER"));
-	private final Button cancelBtn = ViewFactory.newCancelBtn();
+	private final Button menuBtn = ViewFactory.newSettingsMenuBtn();
+	private final ContextMenu contextMenu = new ContextMenu();
 
 	private final Map<Path, FolderView> folderViews = Collections.synchronizedMap(new HashMap<Path, FolderView>());
 
@@ -169,9 +178,9 @@ public class FoldersPane extends BorderPane {
 
 		initBackBtn();
 		initHeadingLbl();
-		initCancelBtn();
+		initMenuBtn();
 
-		topPane.getChildren().addAll(backBtn, headingLbl, cancelBtn);
+		topPane.getChildren().addAll(backBtn, headingLbl, menuBtn);
 
 	}
 
@@ -186,17 +195,14 @@ public class FoldersPane extends BorderPane {
 	private void initBackBtn() {
 
 		backBtn.setOnAction(e -> {
-
 			if (centerPane.getChildren().size() > 1) {
 				backInFolders();
 				return;
 			}
-
 			Runnable backAction = backActionRef.get();
 			if (backAction != null) {
 				backAction.run();
 			}
-
 		});
 
 	}
@@ -210,17 +216,47 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private void initCancelBtn() {
+	private void initMenuBtn() {
 
-		cancelBtn.setOnAction(e -> {
+		HBox.setMargin(menuBtn, new Insets(-GAP, 0, -GAP, 0));
+		menuBtn.setMaxHeight(Double.MAX_VALUE);
 
+		menuBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> menuBtn.isHover() || contextMenu.isShowing() ? 1.0 : 0.5,
+						menuBtn.hoverProperty(), contextMenu.showingProperty()));
+		menuBtn.setOnAction(e -> contextMenu.show(menuBtn, Side.BOTTOM, menuBtn.getWidth() + GAP, 0.0));
+
+		initContextMenu();
+
+	}
+
+	private void initContextMenu() {
+
+		contextMenu.getStyleClass().add("folders-menu");
+		contextMenu.setAnchorLocation(AnchorLocation.CONTENT_TOP_RIGHT);
+
+		ToggleGroup orderGroup = new ToggleGroup();
+
+		RadioMenuItem orderByNameItem = new RadioMenuItem(Commons.translate("ORDER_BY_NAME"));
+		orderByNameItem.getStyleClass().add("folders-menu-item");
+		orderByNameItem.setToggleGroup(orderGroup);
+
+		RadioMenuItem orderByDateItem = new RadioMenuItem(Commons.translate("ORDER_BY_DATE"));
+		orderByDateItem.getStyleClass().add("folders-menu-item");
+		orderByDateItem.setToggleGroup(orderGroup);
+
+		orderGroup.selectToggle(orderByNameItem);
+
+		MenuItem goBackItem = new MenuItem(Commons.translate("GO_BACK"));
+		goBackItem.getStyleClass().add("folders-menu-item");
+		goBackItem.setOnAction(e -> {
 			Runnable backAction = backActionRef.get();
-
 			if (backAction != null) {
 				backAction.run();
 			}
-
 		});
+
+		contextMenu.getItems().addAll(orderByNameItem, orderByDateItem, new SeparatorMenuItem(), goBackItem);
 
 	}
 

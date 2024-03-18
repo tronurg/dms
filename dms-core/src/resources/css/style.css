@@ -101,3 +101,17 @@
 	-fx-font-weight: bold;
 	-fx-text-fill: black;
 }
+.folders-menu {
+	-fx-background-color: -fx-background;
+	-fx-padding: 0;
+}
+.folders-menu-item {
+	-fx-background-color: transparent;
+	-fx-font-weight: bold;
+}
+.folders-menu-item .label {
+	-fx-text-fill: -text-fill;
+}
+.folders-menu-item:hover .label {
+	-fx-text-fill: dodgerblue;
+}

@@ -391,6 +391,28 @@ public class ViewFactory {
 
 	}
 
+	public static Button newSettingsMenuBtn() {
+
+		Button btn = new Button();
+
+		Circle circle = new Circle(12.0 * VIEW_FACTOR, Color.TRANSPARENT);
+		circle.setStroke(Color.WHITE);
+		circle.setStrokeWidth(2.0 * VIEW_FACTOR);
+		Circle point0 = new Circle(-6.0 * VIEW_FACTOR, 0.0, 2.0 * VIEW_FACTOR);
+		point0.setFill(Color.WHITE);
+		Circle point1 = new Circle(2.0 * VIEW_FACTOR);
+		point1.setFill(Color.WHITE);
+		Circle point2 = new Circle(6.0 * VIEW_FACTOR, 0.0, 2.0 * VIEW_FACTOR);
+		point2.setFill(Color.WHITE);
+		Group group = new Group(circle, point0, point1, point2);
+		btn.setGraphic(group);
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		return btn;
+
+	}
+
 	public static Button newSelectionBtn() {
 
 		Button btn = new Button();
