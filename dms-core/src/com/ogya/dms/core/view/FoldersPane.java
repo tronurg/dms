@@ -29,8 +29,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.geometry.Side;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -224,7 +224,10 @@ public class FoldersPane extends BorderPane {
 		menuBtn.opacityProperty()
 				.bind(Bindings.createDoubleBinding(() -> menuBtn.isHover() || contextMenu.isShowing() ? 1.0 : 0.5,
 						menuBtn.hoverProperty(), contextMenu.showingProperty()));
-		menuBtn.setOnAction(e -> contextMenu.show(menuBtn, Side.BOTTOM, menuBtn.getWidth() + GAP, 0.0));
+		menuBtn.setOnAction(e -> {
+			Point2D point = menuBtn.localToScreen(menuBtn.getWidth() + GAP, menuBtn.getHeight());
+			contextMenu.show(menuBtn, point.getX(), point.getY());
+		});
 
 		initContextMenu();
 
@@ -238,17 +241,14 @@ public class FoldersPane extends BorderPane {
 		ToggleGroup orderGroup = new ToggleGroup();
 
 		RadioMenuItem orderByNameItem = new RadioMenuItem(Commons.translate("ORDER_BY_NAME"));
-		orderByNameItem.getStyleClass().add("folders-menu-item");
 		orderByNameItem.setToggleGroup(orderGroup);
 
 		RadioMenuItem orderByDateItem = new RadioMenuItem(Commons.translate("ORDER_BY_DATE"));
-		orderByDateItem.getStyleClass().add("folders-menu-item");
 		orderByDateItem.setToggleGroup(orderGroup);
 
 		orderGroup.selectToggle(orderByNameItem);
 
 		MenuItem goBackItem = new MenuItem(Commons.translate("GO_BACK"));
-		goBackItem.getStyleClass().add("folders-menu-item");
 		goBackItem.setOnAction(e -> {
 			Runnable backAction = backActionRef.get();
 			if (backAction != null) {

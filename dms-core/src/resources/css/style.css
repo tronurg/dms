@@ -105,13 +105,19 @@
 	-fx-background-color: -fx-background;
 	-fx-padding: 0;
 }
-.folders-menu-item {
+.folders-menu .menu-item {
 	-fx-background-color: transparent;
 	-fx-font-weight: bold;
 }
-.folders-menu-item .label {
+.folders-menu .menu-item .label {
 	-fx-text-fill: -text-fill;
 }
-.folders-menu-item:hover .label {
+.folders-menu .menu-item:hover .label {
 	-fx-text-fill: dodgerblue;
+}
+.folders-menu .radio-menu-item .radio {
+	-fx-background-color: -text-fill;
+}
+.folders-menu .radio-menu-item:hover .radio {
+	-fx-background-color: dodgerblue;
 }
