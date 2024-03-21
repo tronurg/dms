@@ -26,6 +26,9 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -133,6 +136,8 @@ public class FoldersPane extends BorderPane {
 		}
 
 	};
+
+	private final ObjectProperty<Comparator<Node>> selectedSorter = new SimpleObjectProperty<Comparator<Node>>();
 
 	private WatchService watchService;
 
@@ -246,6 +251,17 @@ public class FoldersPane extends BorderPane {
 		RadioMenuItem orderByDateItem = new RadioMenuItem(Commons.translate("ORDER_BY_DATE"));
 		orderByDateItem.setToggleGroup(orderGroup);
 
+		orderGroup.selectedToggleProperty().addListener((e0, e1, e2) -> {
+			if (e2 == null) {
+				orderGroup.selectToggle(orderByNameItem);
+				return;
+			}
+			if (e2 == orderByNameItem) {
+				selectedSorter.set(sorterByName);
+			} else if (e2 == orderByDateItem) {
+				selectedSorter.set(sorterByDate);
+			}
+		});
 		orderGroup.selectToggle(orderByNameItem);
 
 		MenuItem goBackItem = new MenuItem(Commons.translate("GO_BACK"));
@@ -503,16 +519,25 @@ public class FoldersPane extends BorderPane {
 
 		private final Path mainFolder;
 
+		private final BooleanProperty sortable = new SimpleBooleanProperty();
+
 		private final AtomicReference<Consumer<Path>> folderSelectedActionRef = new AtomicReference<Consumer<Path>>();
 		private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
+		private final AtomicReference<Comparator<Node>> localSorter = new AtomicReference<Comparator<Node>>();
 
 		FolderView(Path mainFolder) {
-
 			super();
-
 			this.mainFolder = mainFolder;
+			init();
+		}
+
+		private void init() {
 
 			managedProperty().bind(visibleProperty());
+			sortable.bind(visibleProperty().and(parentProperty().isNotNull()));
+
+			sortable.addListener((e0, e1, e2) -> sort());
+			selectedSorter.addListener((e0, e1, e2) -> sort());
 
 			populate();
 
@@ -521,6 +546,7 @@ public class FoldersPane extends BorderPane {
 		void populate() {
 
 			getChildren().clear();
+			localSorter.set(null);
 
 			try {
 
@@ -536,7 +562,19 @@ public class FoldersPane extends BorderPane {
 
 			}
 
-			FXCollections.sort(getChildren(), sorterByName);
+			sort();
+
+		}
+
+		void setOnFolderSelectedAction(Consumer<Path> folderSelectedAction) {
+
+			folderSelectedActionRef.set(folderSelectedAction);
+
+		}
+
+		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
+
+			fileSelectedActionRef.set(fileSelectedAction);
 
 		}
 
@@ -594,15 +632,17 @@ public class FoldersPane extends BorderPane {
 
 		}
 
-		void setOnFolderSelectedAction(Consumer<Path> folderSelectedAction) {
+		private void sort() {
 
-			folderSelectedActionRef.set(folderSelectedAction);
-
-		}
-
-		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
-
-			fileSelectedActionRef.set(fileSelectedAction);
+			if (!sortable.get()) {
+				return;
+			}
+			Comparator<Node> sorter = selectedSorter.get();
+			Comparator<Node> oldSorter = localSorter.getAndSet(sorter);
+			if (sorter == oldSorter || sorter == null) {
+				return;
+			}
+			FXCollections.sort(getChildren(), sorter);
 
 		}
 
