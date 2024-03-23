@@ -44,8 +44,8 @@ import com.ogya.dms.core.structures.GroupMessageStatus;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.util.DmsMessageReceiver;
-import com.ogya.dms.core.util.DmsMessageSender;
 import com.ogya.dms.core.util.DmsMessageReceiver.DmsMessageReceiverListener;
+import com.ogya.dms.core.util.DmsMessageSender;
 
 public class DmsClient implements DmsMessageReceiverListener {
 
@@ -61,7 +61,7 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 	private final DmsClientListener listener;
 
-	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutor();
 	private final Comparator<MessageContainer> messageSorter = new Comparator<MessageContainer>() {
 		@Override
 		public int compare(MessageContainer m1, MessageContainer m2) {

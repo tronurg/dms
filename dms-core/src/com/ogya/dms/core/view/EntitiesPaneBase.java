@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -229,8 +230,9 @@ class EntitiesPaneBase extends BorderPane {
 			entityPane.managedProperty().bind(entityPane.visibleProperty());
 
 			entityPane.visibleProperty().bind(entityPane.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || entityPane.getName().toLowerCase().startsWith(searchContactStr);
+				String searchContactStr = searchField.getText().toLowerCase(Locale.getDefault());
+				return searchContactStr.isEmpty()
+						|| entityPane.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
 			}, searchField.textProperty(), entityPane.nameProperty()))
 					.and(searchField.filterOnlineProperty().not().or(entityPane.onlineProperty())));
 

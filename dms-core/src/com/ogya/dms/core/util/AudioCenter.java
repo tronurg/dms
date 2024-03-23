@@ -23,7 +23,7 @@ public class AudioCenter {
 
 	private final AtomicReference<TargetDataLine> targetLineRef = new AtomicReference<TargetDataLine>();
 
-	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutor();
 
 	public AudioCenter(AudioCenterListener listener) {
 		this.listener = listener;

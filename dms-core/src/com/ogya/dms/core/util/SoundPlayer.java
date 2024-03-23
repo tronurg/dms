@@ -13,7 +13,7 @@ public class SoundPlayer {
 	private Clip duoToneClip;
 	private Clip triToneClip;
 
-	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutor();
 
 	public void playDuoTone() {
 

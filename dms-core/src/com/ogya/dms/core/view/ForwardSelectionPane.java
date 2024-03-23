@@ -3,6 +3,7 @@ package com.ogya.dms.core.view;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
@@ -200,8 +201,9 @@ public class ForwardSelectionPane extends GridPane {
 			entityCard = fEntityCard;
 
 			fEntityCard.visibleProperty().bind(fEntityCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || fEntityCard.getName().toLowerCase().startsWith(searchContactStr);
+				String searchContactStr = searchField.getText().toLowerCase(Locale.getDefault());
+				return searchContactStr.isEmpty()
+						|| fEntityCard.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
 			}, searchField.textProperty(), fEntityCard.nameProperty()))
 					.and(searchField.filterOnlineProperty().not().or(fEntityCard.onlineProperty())));
 

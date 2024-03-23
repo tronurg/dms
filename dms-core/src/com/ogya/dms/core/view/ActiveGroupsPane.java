@@ -4,6 +4,7 @@ import java.text.Collator;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -197,8 +198,9 @@ public class ActiveGroupsPane extends BorderPane {
 			groupCard = fGroupCard;
 
 			fGroupCard.visibleProperty().bind(fGroupCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || fGroupCard.getName().toLowerCase().startsWith(searchContactStr);
+				String searchContactStr = searchField.getText().toLowerCase(Locale.getDefault());
+				return searchContactStr.isEmpty()
+						|| fGroupCard.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
 			}, searchField.textProperty(), fGroupCard.nameProperty())));
 
 			fGroupCard.managedProperty().bind(fGroupCard.visibleProperty());

@@ -131,9 +131,9 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			.synchronizedList(new ArrayList<DmsDownloadListener>());
 	private final AtomicReference<DmsFileServer> dmsFileServer = new AtomicReference<DmsFileServer>();
 
-	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutorService();
-	private final ExecutorService auxTaskQueue = DmsFactory.newSingleThreadExecutorService();
-	private final ExecutorService downloadTaskQueue = DmsFactory.newSingleThreadExecutorService();
+	private final ExecutorService taskQueue = DmsFactory.newSingleThreadExecutor();
+	private final ExecutorService auxTaskQueue = DmsFactory.newSingleThreadExecutor();
+	private final ExecutorService downloadTaskQueue = DmsFactory.newSingleThreadExecutor();
 	private final CheckedSingleThreadExecutorService listenerTaskQueue = new CheckedSingleThreadExecutorService();
 
 	public DmsControl(String username, String password, Runnable logoutListener) throws Exception {

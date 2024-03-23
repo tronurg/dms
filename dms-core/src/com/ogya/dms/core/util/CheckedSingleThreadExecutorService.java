@@ -6,7 +6,7 @@ import com.ogya.dms.core.factory.DmsFactory;
 
 public class CheckedSingleThreadExecutorService {
 
-	private final ExecutorService executorService = DmsFactory.newSingleThreadExecutorService();
+	private final ExecutorService executorService = DmsFactory.newSingleThreadExecutor();
 
 	public CheckedSingleThreadExecutorService() {
 		super();

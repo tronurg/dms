@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -365,7 +366,7 @@ public class Commons {
 
 			Files.list(Paths.get("./plugins/dms/templates")).forEach(path -> {
 
-				if (Files.isDirectory(path) || !path.toString().toLowerCase().endsWith(".txt"))
+				if (Files.isDirectory(path) || !path.toString().toLowerCase(Locale.getDefault()).endsWith(".txt"))
 					return;
 
 				try (BufferedReader reader = Files.newBufferedReader(path)) {

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -476,8 +477,9 @@ public class AddUpdateGroupPane extends BorderPane {
 			BooleanBinding addContactBinding = Bindings.createBooleanBinding(() -> selectedIds.contains(id),
 					selectedIds);
 			BooleanBinding searchContactBinding = Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || addContactBox.getName().toLowerCase().startsWith(searchContactStr);
+				String searchContactStr = searchField.getText().toLowerCase(Locale.getDefault());
+				return searchContactStr.isEmpty()
+						|| addContactBox.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
 			}, searchField.textProperty(), addContactBox.nameProperty());
 			BooleanBinding filterOnlineProperty = searchField.filterOnlineProperty().not().or(onlineProperty);
 

@@ -3,6 +3,7 @@ package com.ogya.dms.core.view;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -106,7 +107,7 @@ class IdentityPane extends GridPane {
 	void setIdentity(Contact identity) {
 
 		availabilityProperty.set(identity.getStatus());
-		profileLbl.setText(identity.getName().substring(0, 1).toUpperCase());
+		profileLbl.setText(identity.getName().substring(0, 1).toUpperCase(Locale.getDefault()));
 
 		nameLbl.setText(identity.getName());
 		if (!commentTextField.isEditable())

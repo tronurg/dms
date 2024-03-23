@@ -94,7 +94,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 					try {
 						publishSyncObj.wait(beaconIntervalMs);
-					} catch (InterruptedException e) {
+					} catch (Exception e) {
 
 					}
 

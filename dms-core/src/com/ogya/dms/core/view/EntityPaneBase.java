@@ -1,5 +1,7 @@
 package com.ogya.dms.core.view;
 
+import java.util.Locale;
+
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.util.Commons;
@@ -178,7 +180,7 @@ class EntityPaneBase extends GridPane {
 
 		statusCircle.setStroke(entity.getStatus().getStatusColor());
 		if (!(name == null || name.isEmpty()))
-			initialLbl.setText(name.substring(0, 1).toUpperCase());
+			initialLbl.setText(name.substring(0, 1).toUpperCase(Locale.getDefault()));
 		nameLbl.setText(name);
 		commentLbl.setText(entity.getComment());
 		coordinatesLbl.setText(entity.getLatitude() == null || entity.getLongitude() == null ? ""

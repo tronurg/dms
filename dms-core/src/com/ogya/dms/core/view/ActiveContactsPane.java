@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
 
@@ -157,8 +158,9 @@ public class ActiveContactsPane extends BorderPane {
 			contactCard = fContactCard;
 
 			fContactCard.visibleProperty().bind(fContactCard.activeProperty().and(Bindings.createBooleanBinding(() -> {
-				String searchContactStr = searchField.getText().toLowerCase();
-				return searchContactStr.isEmpty() || fContactCard.getName().toLowerCase().startsWith(searchContactStr);
+				String searchContactStr = searchField.getText().toLowerCase(Locale.getDefault());
+				return searchContactStr.isEmpty()
+						|| fContactCard.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
 			}, searchField.textProperty(), fContactCard.nameProperty())));
 
 			fContactCard.managedProperty().bind(fContactCard.visibleProperty());
