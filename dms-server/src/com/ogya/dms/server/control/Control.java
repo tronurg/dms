@@ -86,14 +86,16 @@ public class Control implements TcpManagerListener, ModelListener {
 
 				synchronized (publishSyncObj) {
 
-					if (model.isLive()) {
-						Set<InetAddress> remoteAddresses = model.getRemoteAddresses();
-						remoteAddresses.removeAll(tcpManager.getConnectedAddresses());
-						udpManager.send(DMS_UUID, remoteAddresses);
-					}
-
 					try {
+
+						if (model.isLive()) {
+							Set<InetAddress> remoteAddresses = model.getRemoteAddresses();
+							remoteAddresses.removeAll(tcpManager.getConnectedAddresses());
+							udpManager.send(DMS_UUID, remoteAddresses);
+						}
+
 						publishSyncObj.wait(beaconIntervalMs);
+
 					} catch (Exception e) {
 
 					}
@@ -282,7 +284,7 @@ public class Control implements TcpManagerListener, ModelListener {
 
 		synchronized (publishSyncObj) {
 
-			publishSyncObj.notify();
+			publishSyncObj.notifyAll();
 
 		}
 

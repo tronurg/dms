@@ -225,8 +225,9 @@ public class TcpManager implements TcpServerListener {
 
 		connectedAddresses.clear();
 		connections.forEach((addrPair, connection) -> {
-			if (connection == null)
+			if (connection == null) {
 				return;
+			}
 			connectedAddresses.add(addrPair.remoteAddress);
 		});
 		return connectedAddresses;

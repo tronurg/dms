@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -55,7 +56,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -66,12 +71,19 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
+	private static final int MAX_SEARCH_HIT = 50;
+
+	private final Border notificationBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
+	private final Background notificationBackground = new Background(
+			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final StackPane centerPane = new StackPane();
@@ -94,8 +106,6 @@ public class FoldersPane extends BorderPane {
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
 	private final AtomicReference<SearchView> searchViewRef = new AtomicReference<SearchView>();
-
-	private final ExecutorService searchPool = DmsFactory.newCachedThreadPool();
 
 	private final Comparator<Node> sorterByName = new Comparator<Node>() {
 
@@ -257,34 +267,10 @@ public class FoldersPane extends BorderPane {
 				final String filter = fulltext.trim().replace(".", "\\.").replace("*", ".*").replace("?", ".?")
 						.toLowerCase(Locale.getDefault());
 				SearchView searchView = searchViewRef.get();
-				if (searchView == null || filter.equals(searchView.getFilter())) {
+				if (searchView == null) {
 					return;
 				}
-				searchView.setFilter(filter);
-				searchView.clear();
-				searchPool.execute(() -> {
-					try (Stream<Path> stream = Files.find(searchView.getSearchFolder(), Integer.MAX_VALUE,
-							(e0, e1) -> e1.isRegularFile()
-									&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
-						Iterator<Path> iter = stream.iterator();
-						while (!Thread.currentThread().isInterrupted()) {
-							try {
-								if (!iter.hasNext()) {
-									break;
-								}
-								final Path file = iter.next();
-								if (!filter.equals(searchView.getFilter())) {
-									break;
-								}
-								Platform.runLater(() -> searchView.addFile(file, filter));
-							} catch (Exception e) {
-
-							}
-						}
-					} catch (Exception e) {
-
-					}
-				});
+				searchView.search(filter);
 			}
 
 			@Override
@@ -638,7 +624,7 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private class FileView extends VBox {
+	private abstract class FileView extends VBox {
 
 		private static final String FILE_ICO_PATH = "/resources/icon/file.png";
 
@@ -654,7 +640,7 @@ public class FoldersPane extends BorderPane {
 
 		}
 
-		void addFile(Path path) {
+		protected void addFile(Path path) {
 
 			try {
 
@@ -790,6 +776,8 @@ public class FoldersPane extends BorderPane {
 
 	private class SearchView extends FileView {
 
+		private final ExecutorService searchPool = DmsFactory.newCachedThreadPool();
+
 		private final Path searchFolder;
 
 		private String filter;
@@ -797,29 +785,62 @@ public class FoldersPane extends BorderPane {
 		SearchView(Path searchFolder) {
 			super();
 			this.searchFolder = searchFolder;
+			setAlignment(Pos.CENTER);
 		}
 
-		Path getSearchFolder() {
-			return searchFolder;
-		}
-
-		String getFilter() {
-			return filter;
-		}
-
-		void setFilter(String filter) {
-			this.filter = filter;
-		}
-
-		void addFile(Path path, String filter) {
-			if (this.filter != filter) {
+		private void addFile(Path path, String filter) {
+			if (!okToContinue(filter)) {
+				return;
+			}
+			if (getChildren().size() == MAX_SEARCH_HIT) {
+				addNotification();
 				return;
 			}
 			addFile(path);
 		}
 
-		void clear() {
+		private void addNotification() {
+			Label notLabel = new Label(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
+			notLabel.setTextAlignment(TextAlignment.CENTER);
+			notLabel.setWrapText(true);
+			notLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
+			notLabel.setFont(Font.font(null, FontWeight.BOLD, notLabel.getFont().getSize()));
+			notLabel.setTextFill(Color.GRAY);
+			notLabel.setBorder(notificationBorder);
+			notLabel.setBackground(notificationBackground);
+			VBox.setMargin(notLabel, new Insets(GAP, 0.0, GAP, 0.0));
+			getChildren().add(notLabel);
+		}
+
+		private boolean okToContinue(String filter) {
+			return this.filter == filter && !(getChildren().size() > MAX_SEARCH_HIT);
+		}
+
+		void search(String filter) {
+			if (Objects.equals(this.filter, filter)) {
+				return;
+			}
+			this.filter = filter;
 			getChildren().clear();
+			searchPool.execute(() -> {
+				try (Stream<Path> stream = Files.find(searchFolder, Integer.MAX_VALUE, (e0, e1) -> e1.isRegularFile()
+						&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
+					Iterator<Path> iter = stream.iterator();
+					while (okToContinue(filter)) {
+						try {
+							if (!iter.hasNext()) {
+								break;
+							}
+							final Path file = iter.next();
+							Platform.runLater(() -> addFile(file, filter));
+						} catch (Exception e) {
+
+						}
+					}
+				} catch (Exception e) {
+
+				}
+			});
 		}
 
 	}

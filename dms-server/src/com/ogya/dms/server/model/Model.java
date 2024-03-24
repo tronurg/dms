@@ -191,7 +191,12 @@ public class Model {
 	public Set<InetAddress> getRemoteAddresses() {
 
 		remoteAddresses.clear();
-		remoteIps.stream().filter(addr -> Commons.isAddressAllowed(addr)).forEach(addr -> remoteAddresses.add(addr));
+		remoteIps.forEach(addr -> {
+			if (!Commons.isAddressAllowed(addr)) {
+				return;
+			}
+			remoteAddresses.add(addr);
+		});
 		return remoteAddresses;
 
 	}
