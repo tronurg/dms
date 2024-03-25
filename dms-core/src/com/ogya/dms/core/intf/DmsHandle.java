@@ -83,6 +83,8 @@ public interface DmsHandle {
 
 	List<ContactId> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, String secretId);
 
+	int getUnreadMessagesCount();
+
 	MessageHandle createMessageHandle(String message, Integer messageCode);
 
 	FileHandle createFileHandle(Path path, Integer fileCode);

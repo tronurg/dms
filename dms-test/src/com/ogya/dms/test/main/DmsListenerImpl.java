@@ -234,6 +234,14 @@ public class DmsListenerImpl implements DmsListener, DmsGuiListener, DmsDownload
 	}
 
 	@Override
+	public void guiMessagesRead(Long[] messageIds) {
+
+		System.out
+				.println(String.format("Okunan: %d, kalan: %d", messageIds.length, dmsHandle.getUnreadMessagesCount()));
+
+	}
+
+	@Override
 	public void guiMessagesDeleted(Long[] messageIds) {
 
 		System.out.println(String.format("Messages deleted: %s\n", Arrays.toString(messageIds)));

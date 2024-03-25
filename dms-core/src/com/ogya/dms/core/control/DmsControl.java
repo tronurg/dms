@@ -2192,15 +2192,25 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		Set<Message> unreadMessagesOfEntity = model.getUnreadMessagesOfEntity(entityId);
 
-		if (unreadMessagesOfEntity == null)
+		if (unreadMessagesOfEntity == null) {
 			return;
+		}
 
 		try {
 
-			if (entityId.isGroup())
-				groupMessagesRead(entityId, unreadMessagesOfEntity);
-			else
-				privateMessagesRead(entityId, unreadMessagesOfEntity);
+			Long[] readMessageIds = null;
+
+			if (entityId.isGroup()) {
+				readMessageIds = groupMessagesRead(entityId, unreadMessagesOfEntity);
+			} else {
+				readMessageIds = privateMessagesRead(entityId, unreadMessagesOfEntity);
+			}
+
+			if (readMessageIds != null) {
+				final Long[] messageIds = readMessageIds;
+				dmsGuiListeners
+						.forEach(listener -> listenerTaskQueue.execute(() -> listener.guiMessagesRead(messageIds)));
+			}
 
 		} catch (Exception e) {
 
@@ -2210,7 +2220,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 	}
 
-	private void privateMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity)
+	private Long[] privateMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity)
 			throws Exception {
 
 		Contact contact = getContact(entityId.getId());
@@ -2219,7 +2229,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 				.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
 
 		if (newMessages.isEmpty())
-			return;
+			return null;
 
 		model.registerMessages(newMessages);
 
@@ -2238,21 +2248,23 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 		if (!messageIdStatusMap.isEmpty())
 			dmsClient.feedMessageStatus(messageIdStatusMap, contact.getUuid());
 
+		return newMessages.stream().map(message -> message.getId()).toArray(Long[]::new);
+
 	}
 
-	private void groupMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity)
+	private Long[] groupMessagesRead(final EntityId entityId, final Set<Message> unreadMessagesOfEntity)
 			throws Exception {
 
 		Dgroup group = getGroup(entityId.getId());
 
 		if (group == null)
-			return;
+			return null;
 
 		List<Message> newMessages = dbManager.addUpdateMessages(unreadMessagesOfEntity.stream()
 				.peek(message -> message.setMessageStatus(MessageStatus.READ)).collect(Collectors.toList()));
 
 		if (newMessages.isEmpty())
-			return;
+			return null;
 
 		model.registerMessages(newMessages);
 
@@ -2273,6 +2285,8 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 		contactUuidMessageIdStatusMap.forEach(
 				(contactUuid, messageIdStatusMap) -> dmsClient.feedMessageStatus(messageIdStatusMap, contactUuid));
+
+		return newMessages.stream().map(message -> message.getId()).toArray(Long[]::new);
 
 	}
 
@@ -3787,6 +3801,13 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	public List<ContactId> getIdsByServerIpAndSecretId(InetAddress remoteServerIp, String secretId) {
 
 		return model.getIdsByServerIpAndSecretId(remoteServerIp, secretId);
+
+	}
+
+	@Override
+	public int getUnreadMessagesCount() {
+
+		return model.getUnreadMessagesCount();
 
 	}
 

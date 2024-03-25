@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -385,6 +386,16 @@ public class Model {
 	public Set<Message> getUnreadMessagesOfEntity(EntityId entityId) {
 
 		return unreadMessages.get(entityId);
+
+	}
+
+	public int getUnreadMessagesCount() {
+
+		final AtomicInteger countRef = new AtomicInteger(0);
+
+		unreadMessages.forEach((e0, e1) -> countRef.addAndGet(e1.size()));
+
+		return countRef.get();
 
 	}
 

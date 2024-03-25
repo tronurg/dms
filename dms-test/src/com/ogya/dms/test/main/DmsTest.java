@@ -175,8 +175,8 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-//			JComponent mcPanel = dmsHandle.getDmsPanel();
-			JComponent mcPanel = csh.getContactSelectionPanel();
+			JComponent mcPanel = dmsHandle.getDmsPanel();
+//			JComponent mcPanel = csh.getContactSelectionPanel();
 			JButton btn = new JButton("test");
 			final AtomicReference<Long> downloadId = new AtomicReference<Long>();
 			final AtomicBoolean downloading = new AtomicBoolean();
@@ -235,7 +235,7 @@ public class DmsTest {
 
 	}
 
-	private void testTwo() {
+	private static void testTwo() {
 
 		JFrame frame = new JFrame("DMS");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
