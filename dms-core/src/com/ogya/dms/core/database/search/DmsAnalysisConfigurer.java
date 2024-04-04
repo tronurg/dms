@@ -10,10 +10,8 @@ public class DmsAnalysisConfigurer implements LuceneAnalysisConfigurer {
 
 	@Override
 	public void configure(LuceneAnalysisConfigurationContext context) {
-
 		context.analyzer("messageContentAnalyzer").custom().tokenizer(StandardTokenizerFactory.class)
 				.tokenFilter(LowerCaseFilterFactory.class).tokenFilter(ASCIIFoldingFilterFactory.class);
-
 	}
 
 }

@@ -21,36 +21,24 @@ import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
-import org.hibernate.search.engine.backend.types.Sortable;
-import org.hibernate.search.mapper.pojo.automaticindexing.ReindexOnUpdate;
-import org.hibernate.search.mapper.pojo.bridge.mapping.annotation.RoutingBinderRef;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.FullTextField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.GenericField;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.Indexed;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexedEmbedded;
-import org.hibernate.search.mapper.pojo.mapping.definition.annotation.IndexingDependency;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ogya.dms.core.database.converters.AttachmentTypeConverter;
 import com.ogya.dms.core.database.converters.MessageStatusConverter;
 import com.ogya.dms.core.database.converters.UpdateTypeConverter;
 import com.ogya.dms.core.database.converters.ViewStatusConverter;
-import com.ogya.dms.core.database.search.MessageRoutingBinder;
 import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.UpdateType;
 import com.ogya.dms.core.structures.ViewStatus;
 
 @Entity
-@Indexed(routingBinder = @RoutingBinderRef(type = MessageRoutingBinder.class))
 @Table(name = "message")
 public class Message {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "message_gen")
 	@SequenceGenerator(name = "message_gen", sequenceName = "message_seq", initialValue = 1, allocationSize = 1)
-	@GenericField(sortable = Sortable.YES)
 	@JsonProperty("a")
 	private Long id;
 
@@ -59,7 +47,6 @@ public class Message {
 	private Long messageRefId;
 
 	@Column(name = "content", updatable = false, length = 1000000000)
-	@FullTextField(analyzer = "messageContentAnalyzer")
 	@JsonProperty("c")
 	private String content;
 
@@ -125,14 +112,11 @@ public class Message {
 
 	@Column(name = "view_status")
 	@Convert(converter = ViewStatusConverter.class)
-	@GenericField
 	@JsonIgnore
 	private ViewStatus viewStatus;
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "contact_id", nullable = false, updatable = false)
-	@IndexedEmbedded(includePaths = { "id" })
-	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.NO)
 	@JsonIgnore
 	private Contact contact;
 
@@ -143,8 +127,6 @@ public class Message {
 
 	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "dgroup_id", updatable = false)
-	@IndexedEmbedded(includePaths = { "id" })
-	@IndexingDependency(reindexOnUpdate = ReindexOnUpdate.NO)
 	@JsonIgnore
 	private Dgroup dgroup;
 

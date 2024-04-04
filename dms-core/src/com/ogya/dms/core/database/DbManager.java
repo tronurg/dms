@@ -25,6 +25,7 @@ import org.hibernate.search.mapper.orm.Search;
 import org.hibernate.search.mapper.orm.session.SearchSession;
 
 import com.ogya.dms.core.database.search.DmsAnalysisConfigurer;
+import com.ogya.dms.core.database.search.DmsMappingConfigurer;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.database.tables.ContactRef;
 import com.ogya.dms.core.database.tables.Dgroup;
@@ -65,6 +66,9 @@ public class DbManager {
 					.applySetting("hibernate.search.backend.lucene_version", "LUCENE_8_11_2")
 					.applySetting("hibernate.search.backend.analysis.configurer",
 							"class:" + DmsAnalysisConfigurer.class.getName())
+					.applySetting("hibernate.search.mapping.process_annotations", false)
+					.applySetting("hibernate.search.mapping.configurer",
+							"class:" + DmsMappingConfigurer.class.getName())
 					.build();
 			MetadataBuilder metadataBuilder = new MetadataSources(standardRegistry).addAnnotatedClass(Contact.class)
 					.addAnnotatedClass(ContactRef.class).addAnnotatedClass(Dgroup.class)
