@@ -37,6 +37,8 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -259,6 +261,13 @@ public class FoldersPane extends BorderPane {
 		imSearchField.managedProperty().bind(imSearchField.visibleProperty());
 
 		imSearchField.setNavigationDisabled(true);
+
+		imSearchField.textProperty().addListener(new ChangeListener<String>() {
+			@Override
+			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
+				imSearchField.setTextFieldStyle(null);
+			}
+		});
 
 		imSearchField.addImSearchListener(new ImSearchListener() {
 
@@ -826,6 +835,7 @@ public class FoldersPane extends BorderPane {
 				try (Stream<Path> stream = Files.find(searchFolder, Integer.MAX_VALUE, (e0, e1) -> e1.isRegularFile()
 						&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
 					Iterator<Path> iter = stream.iterator();
+					int hitCount = 0;
 					while (okToContinue(filter)) {
 						try {
 							if (!iter.hasNext()) {
@@ -833,9 +843,15 @@ public class FoldersPane extends BorderPane {
 							}
 							final Path file = iter.next();
 							Platform.runLater(() -> addFile(file, filter));
+							++hitCount;
 						} catch (Exception e) {
 
 						}
+					}
+					if (hitCount == 0) {
+						imSearchField.setTextFieldStyle("-fx-text-fill: red;");
+					} else {
+						imSearchField.setTextFieldStyle(null);
 					}
 				} catch (Exception e) {
 
