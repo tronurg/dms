@@ -4,10 +4,6 @@
 		<attributes>
 			<attribute name="maven.pomderived" value="true"/>
 		</attributes>
-		<accessrules>
-			<accessrule kind="accessible" pattern="javafx/**"/>
-			<accessrule kind="accessible" pattern="com/sun/javafx/**"/>
-		</accessrules>
 	</classpathentry>
 	<classpathentry including="**/*.java" kind="src" output="target/classes" path="src">
 		<attributes>
