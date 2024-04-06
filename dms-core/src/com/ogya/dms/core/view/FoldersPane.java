@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -826,9 +825,6 @@ public class FoldersPane extends BorderPane {
 		}
 
 		void search(String filter) {
-			if (Objects.equals(this.filter, filter)) {
-				return;
-			}
 			this.filter = filter;
 			getChildren().clear();
 			searchPool.execute(() -> {
@@ -847,6 +843,9 @@ public class FoldersPane extends BorderPane {
 						} catch (Exception e) {
 
 						}
+					}
+					if (!okToContinue(filter)) {
+						return;
 					}
 					if (hitCount == 0) {
 						imSearchField.setTextFieldStyle("-fx-text-fill: red;");

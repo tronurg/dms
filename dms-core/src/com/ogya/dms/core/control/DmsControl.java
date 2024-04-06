@@ -3389,10 +3389,10 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 				if (entityId.isGroup()) {
 					List<Message> hits = dbManager.searchInGroupConversation(id, fulltext);
-					Platform.runLater(() -> dmsPanel.showSearchResults(hits));
+					Platform.runLater(() -> dmsPanel.showSearchResults(fulltext, hits));
 				} else {
 					List<Message> hits = dbManager.searchInPrivateConversation(id, fulltext);
-					Platform.runLater(() -> dmsPanel.showSearchResults(hits));
+					Platform.runLater(() -> dmsPanel.showSearchResults(fulltext, hits));
 				}
 
 			} catch (Exception e) {

@@ -544,11 +544,11 @@ public class DmsPanel extends StackPane
 
 	}
 
-	public void showSearchResults(List<Message> hits) {
+	public void showSearchResults(String fulltext, List<Message> hits) {
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
 		if (messagePaneOnScreen != null)
-			messagePaneOnScreen.showSearchResults(hits);
+			messagePaneOnScreen.showSearchResults(fulltext, hits);
 
 	}
 
