@@ -45,15 +45,11 @@ public class ReportsPane extends GridPane {
 	private final List<ReportsListener> reportListeners = Collections
 			.synchronizedList(new ArrayList<ReportsListener>());
 
-	ReportsPane(List<ReportTemplate> templates) {
-
+	ReportsPane() {
 		super();
-
-		init(templates);
-
 	}
 
-	private void init(List<ReportTemplate> templates) {
+	void init(List<ReportTemplate> templates) {
 
 		setPadding(new Insets(2 * GAP));
 		setHgap(2 * GAP);

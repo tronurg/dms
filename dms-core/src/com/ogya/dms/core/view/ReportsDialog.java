@@ -27,22 +27,20 @@ public class ReportsDialog extends JDialog {
 	private final JFXPanel reportsPaneSwing = new JFXPanel();
 
 	public ReportsDialog(List<ReportTemplate> templates) {
-
 		super();
-
-		reportsPane = new ReportsPane(templates);
-
-		init();
-
+		reportsPane = new ReportsPane();
+		init(templates);
 	}
 
-	private void init() {
+	private void init(final List<ReportTemplate> templates) {
 
 		reportsPane.setOnCancelAction(this::hideAndReset);
 
 		initMobility();
 
 		Platform.runLater(() -> {
+
+			reportsPane.init(templates);
 
 			Scene scene = new Scene(reportsPane);
 			scene.getStylesheets().add("/resources/css/style.css");

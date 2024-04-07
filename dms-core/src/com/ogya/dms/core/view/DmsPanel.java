@@ -23,6 +23,7 @@ import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -76,7 +77,7 @@ public class DmsPanel extends StackPane
 
 		super();
 
-		init();
+		Platform.runLater(this::init);
 
 	}
 
