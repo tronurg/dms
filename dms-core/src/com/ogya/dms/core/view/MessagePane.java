@@ -166,7 +166,6 @@ class MessagePane extends BorderPane {
 
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
-	private final AtomicReference<String> searchText = new AtomicReference<String>();
 	private final ObservableList<Message> searchHits = FXCollections.observableArrayList();
 	private final IntegerProperty searchHitIndex = new SimpleIntegerProperty(0);
 
@@ -347,7 +346,6 @@ class MessagePane extends BorderPane {
 				imSearchField.setTextFieldStyle(null);
 				searchHits.clear();
 				searchHitIndex.set(0);
-				searchText.set(null);
 			}
 
 		});
@@ -356,7 +354,7 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void searchRequested(String fulltext) {
-				searchText.set(fulltext);
+				imSearchField.setTextFieldStyle(null);
 				listeners.forEach(listener -> listener.searchRequested(fulltext));
 			}
 
@@ -1003,7 +1001,7 @@ class MessagePane extends BorderPane {
 		searchHits.addAll(hits);
 		searchHitIndex.set(0);
 
-		if (fulltext != searchText.getAndSet(null)) {
+		if (!Objects.equals(fulltext, imSearchField.getFulltext())) {
 			return;
 		}
 

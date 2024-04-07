@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -272,13 +273,12 @@ public class FoldersPane extends BorderPane {
 
 			@Override
 			public void searchRequested(String fulltext) {
-				final String filter = fulltext.trim().replace(".", "\\.").replace("*", ".*").replace("?", ".?")
-						.toLowerCase(Locale.getDefault());
+				imSearchField.setTextFieldStyle(null);
 				SearchView searchView = searchViewRef.get();
 				if (searchView == null) {
 					return;
 				}
-				searchView.search(filter);
+				searchView.search(fulltext);
 			}
 
 			@Override
@@ -824,7 +824,9 @@ public class FoldersPane extends BorderPane {
 			return this.filter == filter && !(getChildren().size() > MAX_SEARCH_HIT);
 		}
 
-		void search(String filter) {
+		void search(final String fulltext) {
+			final String filter = fulltext.trim().replace(".", "\\.").replace("*", ".*").replace("?", ".?")
+					.toLowerCase(Locale.getDefault());
 			this.filter = filter;
 			getChildren().clear();
 			searchPool.execute(() -> {
@@ -844,7 +846,7 @@ public class FoldersPane extends BorderPane {
 
 						}
 					}
-					if (!okToContinue(filter)) {
+					if (!Objects.equals(fulltext, imSearchField.getFulltext())) {
 						return;
 					}
 					if (hitCount == 0) {

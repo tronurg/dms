@@ -51,8 +51,9 @@ public class ImSearchField extends HBox {
 		HBox.setHgrow(searchTextField, Priority.ALWAYS);
 		searchTextField.setMaxWidth(Double.MAX_VALUE);
 		searchTextField.setOnKeyPressed(e -> {
-			if (e.getCode() == KeyCode.ENTER)
+			if (e.getCode() == KeyCode.ENTER) {
 				searchBtn.fire();
+			}
 		});
 
 	}
@@ -74,9 +75,10 @@ public class ImSearchField extends HBox {
 	private void initSearchBtn() {
 
 		searchBtn.setOnAction(e -> {
-			String fulltext = searchTextField.textProperty().getValueSafe().trim();
-			if (!fulltext.isEmpty())
+			String fulltext = getFulltext();
+			if (!fulltext.isEmpty()) {
 				listeners.forEach(listener -> listener.searchRequested(fulltext));
+			}
 		});
 
 	}
@@ -85,6 +87,11 @@ public class ImSearchField extends HBox {
 
 		listeners.add(listener);
 
+	}
+
+	public String getFulltext() {
+		String fulltext = searchTextField.textProperty().getValueSafe().trim();
+		return fulltext;
 	}
 
 	public void fireSearchUp() {
