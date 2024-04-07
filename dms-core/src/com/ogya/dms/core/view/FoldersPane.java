@@ -833,7 +833,7 @@ public class FoldersPane extends BorderPane {
 				try (Stream<Path> stream = Files.find(searchFolder, Integer.MAX_VALUE, (e0, e1) -> e1.isRegularFile()
 						&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
 					Iterator<Path> iter = stream.iterator();
-					int hitCount = 0;
+					int count = 0;
 					while (okToContinue(filter)) {
 						try {
 							if (!iter.hasNext()) {
@@ -841,19 +841,22 @@ public class FoldersPane extends BorderPane {
 							}
 							final Path file = iter.next();
 							Platform.runLater(() -> addFile(file, filter));
-							++hitCount;
+							++count;
 						} catch (Exception e) {
 
 						}
 					}
-					if (!Objects.equals(fulltext, imSearchField.getFulltext())) {
-						return;
-					}
-					if (hitCount == 0) {
-						imSearchField.setTextFieldStyle("-fx-text-fill: red;");
-					} else {
-						imSearchField.setTextFieldStyle(null);
-					}
+					final int hitCount = count;
+					Platform.runLater(() -> {
+						if (!Objects.equals(fulltext, imSearchField.getFulltext())) {
+							return;
+						}
+						if (hitCount == 0) {
+							imSearchField.setTextFieldStyle("-fx-text-fill: red;");
+						} else {
+							imSearchField.setTextFieldStyle(null);
+						}
+					});
 				} catch (Exception e) {
 
 				}
