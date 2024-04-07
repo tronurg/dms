@@ -95,8 +95,9 @@ public class SettingsPane extends BorderPane {
 		searchInAllMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		searchInAllMessagesLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
-			if (settingsClickedAction != null)
+			if (settingsClickedAction != null) {
 				settingsClickedAction.accept(Settings.SEARCH_IN_ALL_MESSAGES);
+			}
 		});
 
 		scrollableContent.getChildren().add(searchInAllMessagesLbl);
@@ -107,8 +108,9 @@ public class SettingsPane extends BorderPane {
 		starredMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		starredMessagesLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
-			if (settingsClickedAction != null)
+			if (settingsClickedAction != null) {
 				settingsClickedAction.accept(Settings.STARRED_MESSAGES);
+			}
 		});
 
 		scrollableContent.getChildren().add(starredMessagesLbl);
@@ -119,8 +121,9 @@ public class SettingsPane extends BorderPane {
 		hiddenConversationsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		hiddenConversationsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
-			if (settingsClickedAction != null)
+			if (settingsClickedAction != null) {
 				settingsClickedAction.accept(Settings.HIDDEN_CONVERSATIONS);
+			}
 		});
 
 		scrollableContent.getChildren().add(hiddenConversationsLbl);
@@ -131,8 +134,9 @@ public class SettingsPane extends BorderPane {
 		editRemoteIpsLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		editRemoteIpsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
-			if (settingsClickedAction != null)
+			if (settingsClickedAction != null) {
 				settingsClickedAction.accept(Settings.EDIT_REMOTE_IPS);
+			}
 		});
 
 		scrollableContent.getChildren().add(editRemoteIpsLbl);

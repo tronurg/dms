@@ -28,8 +28,9 @@ public class EntityId {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof EntityId))
+		if (!(obj instanceof EntityId)) {
 			return false;
+		}
 		EntityId entityId = (EntityId) obj;
 		return Objects.equals(this.uid, entityId.uid);
 	}

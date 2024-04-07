@@ -377,8 +377,9 @@ public class Message {
 
 	public MessageStatus getOverallStatus() {
 
-		if (statusReports.size() == 0)
+		if (statusReports.size() == 0) {
 			return MessageStatus.READ;
+		}
 
 		int minOrder = Integer.MAX_VALUE;
 

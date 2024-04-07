@@ -11,8 +11,9 @@ public class ViewStatusConverter implements AttributeConverter<ViewStatus, Integ
 	@Override
 	public Integer convertToDatabaseColumn(ViewStatus arg0) {
 
-		if (arg0 == null)
+		if (arg0 == null) {
 			return null;
+		}
 
 		return arg0.index();
 

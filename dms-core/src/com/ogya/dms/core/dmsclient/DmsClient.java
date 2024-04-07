@@ -530,8 +530,9 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 		try {
 
-			if (Objects.equals(uuid, messagePojo.senderUuid))
+			if (Objects.equals(uuid, messagePojo.senderUuid)) {
 				return;
+			}
 
 			byte[] payload = messagePojo.payload;
 

@@ -11,8 +11,9 @@ public class MessageStatusConverter implements AttributeConverter<MessageStatus,
 	@Override
 	public Integer convertToDatabaseColumn(MessageStatus arg0) {
 
-		if (arg0 == null)
+		if (arg0 == null) {
 			return null;
+		}
 
 		return arg0.index();
 

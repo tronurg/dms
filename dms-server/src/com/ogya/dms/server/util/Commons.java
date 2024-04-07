@@ -74,8 +74,9 @@ public class Commons {
 
 		int priority = PREFERRED_IPS.indexOf(localAddress);
 
-		if (priority < 0)
+		if (priority < 0) {
 			priority = PREFERRED_IPS.size();
+		}
 
 		return priority;
 
@@ -222,8 +223,9 @@ public class Commons {
 
 			beaconIntervalMs = Integer.parseInt(node.getTextContent());
 
-			if (beaconIntervalMs < 1000)
+			if (beaconIntervalMs < 1000) {
 				beaconIntervalMs = 1000;
+			}
 
 		} catch (NullPointerException e) {
 			System.out.println(String.format("BEACON_INTERVAL_MS set to default: %d", beaconIntervalMs));

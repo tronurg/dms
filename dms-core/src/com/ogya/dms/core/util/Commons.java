@@ -366,15 +366,17 @@ public class Commons {
 
 			Files.list(Paths.get("./plugins/dms/templates")).forEach(path -> {
 
-				if (Files.isDirectory(path) || !path.toString().toLowerCase(Locale.getDefault()).endsWith(".txt"))
+				if (Files.isDirectory(path) || !path.toString().toLowerCase(Locale.getDefault()).endsWith(".txt")) {
 					return;
+				}
 
 				try (BufferedReader reader = Files.newBufferedReader(path)) {
 
 					String firstLine = reader.readLine().replace("\uFEFF", "");
 
-					if (!firstLine.startsWith("#"))
+					if (!firstLine.startsWith("#")) {
 						return;
+					}
 
 					Integer reportId = Integer.parseInt(firstLine.substring(1));
 
@@ -452,8 +454,9 @@ public class Commons {
 
 				}
 
-				if (word.isEmpty() && lineBuffer.length() == 0 && lines.size() > 0)
+				if (word.isEmpty() && lineBuffer.length() == 0 && lines.size() > 0) {
 					continue;
+				}
 
 				lineBuffer.append(word);
 				lineBuffer.append(space);
@@ -464,8 +467,9 @@ public class Commons {
 
 		}
 
-		if (lineBuffer.length() > 0)
+		if (lineBuffer.length() > 0) {
 			lines.add(lineBuffer.toString());
+		}
 
 		return lines;
 

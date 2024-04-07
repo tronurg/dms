@@ -41,20 +41,24 @@ public class TcpManager implements TcpServerListener {
 
 		@Override
 		public int compare(Connection arg0, Connection arg1) {
-			if (Objects.equals(arg0, arg1))
+			if (Objects.equals(arg0, arg1)) {
 				return 0;
+			}
 			int healthPriority0 = arg0.tcpConnection.isHealthy() ? 0 : 1;
 			int healthPriority1 = arg1.tcpConnection.isHealthy() ? 0 : 1;
-			if (healthPriority0 != healthPriority1)
+			if (healthPriority0 != healthPriority1) {
 				return Integer.compare(healthPriority0, healthPriority1);
+			}
 			int connectionPriority0 = arg0.priority;
 			int connectionPriority1 = arg1.priority;
-			if (connectionPriority0 != connectionPriority1)
+			if (connectionPriority0 != connectionPriority1) {
 				return Integer.compare(connectionPriority0, connectionPriority1);
+			}
 			long latency0 = arg0.tcpConnection.getLatency();
 			long latency1 = arg1.tcpConnection.getLatency();
-			if (latency0 != latency1)
+			if (latency0 != latency1) {
 				return Long.compare(latency0, latency1);
+			}
 			return Integer.compare(arg0.order, arg1.order);
 		}
 
@@ -101,8 +105,9 @@ public class TcpManager implements TcpServerListener {
 
 			final AddressPair addrPair = new AddressPair(address, null);
 
-			if (connections.containsKey(addrPair) || connectionType == TcpConnectionType.SERVER)
+			if (connections.containsKey(addrPair) || connectionType == TcpConnectionType.SERVER) {
 				return;
+			}
 
 			try {
 
@@ -120,12 +125,14 @@ public class TcpManager implements TcpServerListener {
 						taskQueue.execute(() -> {
 
 							Connection connection = connections.get(addrPair);
-							if (connection == null)
+							if (connection == null) {
 								return;
+							}
 
 							DmsServer dmsServer = connection.dmsServer;
-							if (dmsServer == null)
+							if (dmsServer == null) {
 								return;
+							}
 
 							listener.messageReceivedFromRemoteServer(messageNumber, message, dmsUuid);
 
@@ -173,12 +180,14 @@ public class TcpManager implements TcpServerListener {
 						taskQueue.execute(() -> {
 
 							Connection connection = connections.remove(addrPair);
-							if (connection == null)
+							if (connection == null) {
 								return;
+							}
 
 							DmsServer dmsServer = dmsServers.get(dmsUuid);
-							if (dmsServer == null)
+							if (dmsServer == null) {
 								return;
+							}
 
 							if (dmsServer.connections.remove(connection)) {
 								serverConnectionsUpdated(dmsServer, false);
@@ -250,13 +259,15 @@ public class TcpManager implements TcpServerListener {
 			}
 
 			++port;
-			if (port > clientPortTo)
+			if (port > clientPortTo) {
 				port = clientPortFrom;
+			}
 
 		}
 
-		if (!isPortFound)
+		if (!isPortFound) {
 			throw new NoAvailablePortException();
+		}
 
 		int portFound = port;
 
@@ -289,13 +300,15 @@ public class TcpManager implements TcpServerListener {
 
 			AddressPair addrPair = serverIdAddress.remove(id);
 
-			if (addrPair == null)
+			if (addrPair == null) {
 				return;
+			}
 
 			Connection connection = connections.get(addrPair);
 
-			if (connection == null || connection.id != id)
+			if (connection == null || connection.id != id) {
 				return;
+			}
 
 			connections.remove(addrPair);
 
@@ -342,13 +355,15 @@ public class TcpManager implements TcpServerListener {
 
 			AddressPair addrPair = serverIdAddress.get(id);
 
-			if (addrPair == null)
+			if (addrPair == null) {
 				return;
+			}
 
 			Connection connection = connections.get(addrPair);
 
-			if (connection == null)
+			if (connection == null) {
 				return;
+			}
 
 			if (connection.dmsServer == null) {
 				try {
@@ -391,8 +406,9 @@ public class TcpManager implements TcpServerListener {
 
 		@Override
 		public boolean equals(Object obj) {
-			if (obj == null || !(obj instanceof Connection))
+			if (obj == null || !(obj instanceof Connection)) {
 				return false;
+			}
 			return ((Connection) obj).order == order;
 		}
 

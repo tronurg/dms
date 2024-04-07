@@ -140,8 +140,9 @@ class StarredMessagesPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof MessageBalloon && arg1 instanceof MessageBalloon))
+			if (!(arg0 instanceof MessageBalloon && arg1 instanceof MessageBalloon)) {
 				return 0;
+			}
 
 			MessageBalloon group0 = (MessageBalloon) arg0;
 			MessageBalloon group1 = (MessageBalloon) arg1;
@@ -165,8 +166,9 @@ class StarredMessagesPane extends BorderPane {
 	private void init() {
 
 		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (!searchModeProperty.get())
+			if (!searchModeProperty.get()) {
 				return;
+			}
 			if (e.getCode() == KeyCode.UP) {
 				imSearchField.fireSearchUp();
 				e.consume();
@@ -235,8 +237,9 @@ class StarredMessagesPane extends BorderPane {
 				imSearchField.clear();
 			} else {
 				Runnable backAction = backActionRef.get();
-				if (backAction == null)
+				if (backAction == null) {
 					return;
+				}
 				backAction.run();
 			}
 		});
@@ -286,8 +289,9 @@ class StarredMessagesPane extends BorderPane {
 			@Override
 			public void upRequested() {
 				int hitIndex = searchHitIndex.get();
-				if (searchHits.isEmpty() || hitIndex == 0)
+				if (searchHits.isEmpty() || hitIndex == 0) {
 					return;
+				}
 				scrollNodeToBottom.set(true);
 				if (hitIndex < 0) {
 					hitIndex = -(hitIndex + 1) - 1;
@@ -301,8 +305,9 @@ class StarredMessagesPane extends BorderPane {
 			@Override
 			public void downRequested() {
 				int hitIndex = searchHitIndex.get();
-				if (searchHits.isEmpty() || hitIndex == searchHits.size() - 1)
+				if (searchHits.isEmpty() || hitIndex == searchHits.size() - 1) {
 					return;
+				}
 				if (hitIndex < 0) {
 					hitIndex = -(hitIndex + 1);
 				} else {
@@ -395,8 +400,9 @@ class StarredMessagesPane extends BorderPane {
 			return;
 		}
 
-		if (message.getViewStatus() != ViewStatus.ARCHIVED)
+		if (message.getViewStatus() != ViewStatus.ARCHIVED) {
 			return;
+		}
 
 		MessageBalloon messageBalloon = newMessageBalloon(message);
 
@@ -421,8 +427,9 @@ class StarredMessagesPane extends BorderPane {
 
 		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (messageBalloon == null)
+		if (messageBalloon == null) {
 			return;
+		}
 
 		messageBalloon.messageInfo.statusProperty.set(message.getMessageStatus());
 
@@ -434,8 +441,9 @@ class StarredMessagesPane extends BorderPane {
 
 		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
 
-		if (messageBalloon != null)
+		if (messageBalloon != null) {
 			centerPane.getChildren().remove(messageBalloon);
+		}
 
 	}
 
@@ -443,8 +451,9 @@ class StarredMessagesPane extends BorderPane {
 
 		for (int i = 0; i < searchHits.size(); ++i) {
 			Long hitId = searchHits.get(i).getId();
-			if (!Objects.equals(hitId, message.getId()))
+			if (!Objects.equals(hitId, message.getId())) {
 				continue;
+			}
 			searchHits.remove(i);
 			if (searchHitIndex.get() == i) {
 				searchHitIndex.set(-searchHitIndex.get() - 1);
@@ -460,8 +469,9 @@ class StarredMessagesPane extends BorderPane {
 
 		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (messageBalloon == null)
+		if (messageBalloon == null) {
 			return;
+		}
 
 		scrollPane(messageBalloon, GAP);
 
@@ -477,17 +487,19 @@ class StarredMessagesPane extends BorderPane {
 
 	private void goToMessage(Long messageId) {
 
-		if (messageBalloons.containsKey(messageId))
+		if (messageBalloons.containsKey(messageId)) {
 			scrollPaneToMessage(messageId);
-		else
+		} else {
 			listeners.forEach(listener -> listener.archivedMessagesClaimed(minMessageId.get(), messageId));
+		}
 
 	}
 
 	void showSearchResults(List<Message> hits) {
 
-		if (!searchModeProperty.get())
+		if (!searchModeProperty.get()) {
 			return;
+		}
 
 		searchHits.clear();
 		searchHits.addAll(hits);
@@ -584,22 +596,25 @@ class StarredMessagesPane extends BorderPane {
 		boolean scrollToBottom = scrollNodeToBottom.getAndSet(false);
 
 		Parent parent = getParent();
-		if (parent == null)
+		if (parent == null) {
 			return;
+		}
 
 		parent.applyCss();
 		parent.layout();
 
 		Bounds nodeBoundsInScene = nodeToScrollTo.localToScene(nodeToScrollTo.getLayoutBounds());
 
-		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene))
+		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene)) {
 			return;
+		}
 
 		Double centerPaneWithLoadBtnHeight = centerPaneWithLoadBtn.getHeight();
 		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
 
-		if (centerPaneWithLoadBtnHeight < scrollPaneViewportHeight)
+		if (centerPaneWithLoadBtnHeight < scrollPaneViewportHeight) {
 			return;
+		}
 
 		Double scrollY = centerPaneWithLoadBtn.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
 		if (scrollToBottom) {
@@ -618,19 +633,23 @@ class StarredMessagesPane extends BorderPane {
 
 		MessageBalloon messageBalloon = new MessageBalloon(messageInfo);
 
-		if (message.getRefMessage() != null)
+		if (message.getRefMessage() != null) {
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
+		}
 
 		final Long messageId = messageInfo.messageId;
 
 		messageBalloon.backgroundProperty().bind(Bindings.createObjectBinding(() -> {
 			int index = searchHitIndex.get();
-			if (index < 0)
+			if (index < 0) {
 				return null;
-			if (!(index < searchHits.size()))
+			}
+			if (!(index < searchHits.size())) {
 				return null;
-			if (!Objects.equals(messageId, searchHits.get(index).getId()))
+			}
+			if (!Objects.equals(messageId, searchHits.get(index).getId())) {
 				return null;
+			}
 			return searchHitBackground;
 		}, searchHits, searchHitIndex));
 
@@ -642,11 +661,13 @@ class StarredMessagesPane extends BorderPane {
 
 			} else if (selectionModeProperty.get()) {
 
-				if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType()))
+				if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType())) {
 					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
+				}
 
-				if (!MouseEvent.MOUSE_EXITED_TARGET.equals(e.getEventType()))
+				if (!MouseEvent.MOUSE_EXITED_TARGET.equals(e.getEventType())) {
 					e.consume();
+				}
 
 			} else if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType())) {
 
@@ -660,13 +681,15 @@ class StarredMessagesPane extends BorderPane {
 
 				longPressTimer.stop();
 
-				if (!e.isStillSincePress())
+				if (!e.isStillSincePress()) {
 					e.consume();
+				}
 
 			} else if (MouseEvent.MOUSE_CLICKED.equals(e.getEventType())) {
 
-				if (!e.isStillSincePress())
+				if (!e.isStillSincePress()) {
 					e.consume();
+				}
 
 			}
 
@@ -704,10 +727,11 @@ class StarredMessagesPane extends BorderPane {
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.localDateTime));
 
 			selectedProperty.addListener((e0, e1, e2) -> {
-				if (e2)
+				if (e2) {
 					selectedBalloons.add(this);
-				else
+				} else {
 					selectedBalloons.remove(this);
+				}
 			});
 
 			init();
@@ -737,8 +761,9 @@ class StarredMessagesPane extends BorderPane {
 
 		void blink() {
 
-			if (!Color.TRANSPARENT.equals(shadow.getColor()))
+			if (!Color.TRANSPARENT.equals(shadow.getColor())) {
 				return;
+			}
 
 			new Transition() {
 
@@ -777,11 +802,13 @@ class StarredMessagesPane extends BorderPane {
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setEffect(shadow);
 
-			if (messageInfo.attachmentType != null)
+			if (messageInfo.attachmentType != null) {
 				messagePane.add(getAttachmentArea(), 0, 2);
+			}
 
-			if (messageInfo.content != null)
+			if (messageInfo.content != null) {
 				messagePane.add(getContentArea(), 0, 3);
+			}
 
 			initHeaderPane();
 			initStatusPane();
@@ -909,13 +936,15 @@ class StarredMessagesPane extends BorderPane {
 
 		@Override
 		public void handle(long arg0) {
-			if (arg0 - startTime < 500e6)
+			if (arg0 - startTime < 500e6) {
 				return;
+			}
 			stop();
 			selectionModeProperty.set(true);
 			MessageBalloon messageBalloon = messageBalloonRef.getAndSet(null);
-			if (messageBalloon != null)
+			if (messageBalloon != null) {
 				messageBalloon.selectedProperty.set(true);
+			}
 		}
 
 		public void start(MessageBalloon messageBalloon) {

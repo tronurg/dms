@@ -104,8 +104,9 @@ public class StatusInfoPane extends BorderPane {
 
 		Card card = cards.get(contact.getId());
 
-		if (card == null)
+		if (card == null) {
 			return;
+		}
 
 		card.setStatusColor(contact.getStatus().getStatusColor());
 		card.setName(contact.getName());
@@ -116,8 +117,9 @@ public class StatusInfoPane extends BorderPane {
 
 		Card card = cards.get(contactId);
 
-		if (card == null)
+		if (card == null) {
 			return;
+		}
 
 		card.updateMessageStatus(messageStatus);
 
@@ -127,8 +129,9 @@ public class StatusInfoPane extends BorderPane {
 
 		Card card = cards.get(contactId);
 
-		if (card == null)
+		if (card == null) {
 			return;
+		}
 
 		card.setProgress(progress);
 
@@ -179,8 +182,9 @@ public class StatusInfoPane extends BorderPane {
 
 		void updateMessageStatus(MessageStatus messageStatus) {
 
-			if (messageStatus == MessageStatus.FRESH)
+			if (messageStatus == MessageStatus.FRESH) {
 				setProgress(-1);
+			}
 
 			infoGrp.setVisible(messageStatus != MessageStatus.FRESH);
 

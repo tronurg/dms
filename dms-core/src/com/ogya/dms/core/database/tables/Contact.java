@@ -161,21 +161,24 @@ public class Contact extends EntityBase {
 
 	public void setLocalRemoteServerIps(Map<InetAddress, InetAddress> localRemoteServerIps) {
 		this.localRemoteServerIps.clear();
-		if (localRemoteServerIps != null)
+		if (localRemoteServerIps != null) {
 			this.localRemoteServerIps.putAll(localRemoteServerIps);
+		}
 	}
 
 	@PrePersist
 	protected void prePersist() {
-		if (name == null || name.isEmpty())
+		if (name == null || name.isEmpty()) {
 			name = uuid;
+		}
 		preUpdate();
 	}
 
 	@PreUpdate
 	protected void preUpdate() {
-		if (viewStatus == null || status != Availability.OFFLINE)
+		if (viewStatus == null || status != Availability.OFFLINE) {
 			viewStatus = ViewStatus.DEFAULT;
+		}
 	}
 
 	@Override
@@ -185,8 +188,9 @@ public class Contact extends EntityBase {
 
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof Contact))
+		if (!(obj instanceof Contact)) {
 			return false;
+		}
 		Contact contact = (Contact) obj;
 		return Objects.equals(this.uuid, contact.uuid);
 	}

@@ -432,8 +432,9 @@ public class FoldersPane extends BorderPane {
 
 		FolderView folderView = folderViews.remove(path);
 
-		if (folderView == null)
+		if (folderView == null) {
 			return;
+		}
 
 		removeView(folderView);
 
@@ -451,8 +452,9 @@ public class FoldersPane extends BorderPane {
 
 		Consumer<Path> fileSelectedAction = fileSelectedActionRef.get();
 
-		if (fileSelectedAction != null)
+		if (fileSelectedAction != null) {
 			fileSelectedAction.accept(file);
+		}
 
 		scrollPane.setVvalue(0.0);
 
@@ -492,8 +494,9 @@ public class FoldersPane extends BorderPane {
 
 	private void registerFolder(Path folder) {
 
-		if (watchService == null)
+		if (watchService == null) {
 			return;
+		}
 
 		try {
 
@@ -510,8 +513,9 @@ public class FoldersPane extends BorderPane {
 
 	private void processWatchServiceEvents() {
 
-		if (watchService == null)
+		if (watchService == null) {
 			return;
+		}
 
 		while (!Thread.currentThread().isInterrupted()) {
 
@@ -527,14 +531,17 @@ public class FoldersPane extends BorderPane {
 
 					Kind<?> kind = watchEvent.kind();
 
-					if (StandardWatchEventKinds.OVERFLOW.equals(kind))
+					if (StandardWatchEventKinds.OVERFLOW.equals(kind)) {
 						continue;
+					}
 
-					if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind))
+					if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
 						Platform.runLater(() -> removeFolderView(dir.resolve((Path) watchEvent.context())));
+					}
 
-					if (folderView != null)
+					if (folderView != null) {
 						Platform.runLater(() -> folderView.populate());
+					}
 
 				}
 

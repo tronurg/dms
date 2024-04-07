@@ -74,11 +74,8 @@ public class DmsPanel extends StackPane
 	private final AtomicReference<Long[]> fwdMessageIds = new AtomicReference<Long[]>();
 
 	public DmsPanel() {
-
 		super();
-
 		Platform.runLater(this::init);
-
 	}
 
 	private void init() {
@@ -98,20 +95,23 @@ public class DmsPanel extends StackPane
 
 				Node topNode = null;
 
-				if (!nodeList.isEmpty())
+				if (!nodeList.isEmpty()) {
 					topNode = nodeList.get(nodeList.size() - 1);
+				}
 
 				messagePaneOnScreenRef.set(null);
 
-				if (topNode == null)
+				if (topNode == null) {
 					return;
+				}
 
 				topNode.setVisible(true);
 
-				if (topNode == mainPane)
+				if (topNode == mainPane) {
 					unreadEntityIds.clear();
-				else if (topNode instanceof MessagePane)
+				} else if (topNode instanceof MessagePane) {
 					messagePaneOnScreenRef.set((MessagePane) topNode);
+				}
 
 			}
 
@@ -281,8 +281,9 @@ public class DmsPanel extends StackPane
 			hiddenEntitiesPane.moveEntityToTop(entityId);
 		}
 
-		if (getChildren().size() == 1 || message.isLocal() || message.getMessageStatus() == MessageStatus.READ)
+		if (getChildren().size() == 1 || message.isLocal() || message.getMessageStatus() == MessageStatus.READ) {
 			return;
+		}
 
 		unreadEntityIds.add(entityId);
 
@@ -315,8 +316,9 @@ public class DmsPanel extends StackPane
 	public void addAttachment(FileBuilder fileBuilder) {
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
+		if (messagePaneOnScreen != null) {
 			messagePaneOnScreen.addAttachment(fileBuilder);
+		}
 
 	}
 
@@ -371,8 +373,9 @@ public class DmsPanel extends StackPane
 	public void recordingStopped() {
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
+		if (messagePaneOnScreen != null) {
 			messagePaneOnScreen.recordingStopped();
+		}
 
 	}
 
@@ -396,8 +399,9 @@ public class DmsPanel extends StackPane
 
 		setDisable(!connStatus);
 
-		if (!connStatus)
+		if (!connStatus) {
 			remoteIpSettingsPane.clearAll();
+		}
 
 	}
 
@@ -548,8 +552,9 @@ public class DmsPanel extends StackPane
 	public void showSearchResults(String fulltext, List<Message> hits) {
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
+		if (messagePaneOnScreen != null) {
 			messagePaneOnScreen.showSearchResults(fulltext, hits);
+		}
 
 	}
 
@@ -597,8 +602,9 @@ public class DmsPanel extends StackPane
 	public void hideMessagePaneClicked() {
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
+		if (messagePaneOnScreen != null) {
 			getChildren().remove(messagePaneOnScreen);
+		}
 
 	}
 
@@ -695,8 +701,9 @@ public class DmsPanel extends StackPane
 	public void recordEventTriggered(final Long refMessageId) {
 
 		MessagePane messagePaneOnScreen = messagePaneOnScreenRef.get();
-		if (messagePaneOnScreen != null)
+		if (messagePaneOnScreen != null) {
 			listeners.forEach(listener -> listener.recordEventTriggered(refMessageId));
+		}
 
 	}
 

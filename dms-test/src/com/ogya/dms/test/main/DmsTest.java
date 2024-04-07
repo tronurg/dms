@@ -247,8 +247,9 @@ public class DmsTest {
 			@Override
 			public void keyTyped(KeyEvent arg0) {
 
-				if (arg0.getKeyChar() != KeyEvent.VK_ENTER)
+				if (arg0.getKeyChar() != KeyEvent.VK_ENTER) {
 					return;
+				}
 
 				frame.setVisible(false);
 

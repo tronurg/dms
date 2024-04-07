@@ -110,8 +110,9 @@ class IdentityPane extends GridPane {
 		profileLbl.setText(identity.getName().substring(0, 1).toUpperCase(Locale.getDefault()));
 
 		nameLbl.setText(identity.getName());
-		if (!commentTextField.isEditable())
+		if (!commentTextField.isEditable()) {
 			commentTextField.setText(identity.getComment());
+		}
 		coordinatesLbl.setText(identity.getLatitude() == null || identity.getLongitude() == null ? ""
 				: Commons.convertDoubleToCoordinates(identity.getLatitude(), identity.getLongitude()));
 
@@ -121,8 +122,9 @@ class IdentityPane extends GridPane {
 
 		commentEditable.set(editable);
 
-		if (!editable)
+		if (!editable) {
 			commentTextField.setEditable(false);
+		}
 
 	}
 
@@ -219,8 +221,9 @@ class IdentityPane extends GridPane {
 
 		profilePicture.setOnMouseClicked(e -> {
 
-			if (e.getButton() != MouseButton.PRIMARY)
+			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
+			}
 
 			mainTransition.play();
 
@@ -282,11 +285,13 @@ class IdentityPane extends GridPane {
 
 		commentTextField.setOnMouseClicked(e -> {
 
-			if (!commentEditable.get() || commentTextField.isEditable())
+			if (!commentEditable.get() || commentTextField.isEditable()) {
 				return;
+			}
 
-			if (e.getButton() != MouseButton.PRIMARY)
+			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
+			}
 
 			lastComment.set(commentTextField.getText());
 			commentTextField.setEditable(true);
@@ -295,15 +300,18 @@ class IdentityPane extends GridPane {
 
 		commentTextField.setOnKeyPressed(e -> {
 
-			if (!commentEditable.get())
+			if (!commentEditable.get()) {
 				return;
+			}
 
 			KeyCode code = e.getCode();
-			if (!(code == KeyCode.ENTER || code == KeyCode.ESCAPE))
+			if (!(code == KeyCode.ENTER || code == KeyCode.ESCAPE)) {
 				return;
+			}
 
-			if (code == KeyCode.ESCAPE)
+			if (code == KeyCode.ESCAPE) {
 				commentTextField.setText(lastComment.get());
+			}
 
 			e.consume();
 			commentTextField.setEditable(false);

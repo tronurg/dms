@@ -60,8 +60,9 @@ public class ReportsPane extends GridPane {
 
 		templates.forEach(template -> {
 
-			if (reportsComboBox.getItems().contains(template.heading))
+			if (reportsComboBox.getItems().contains(template.heading)) {
 				return;
+			}
 
 			reportsComboBox.getItems().add(template.heading);
 
@@ -154,11 +155,13 @@ public class ReportsPane extends GridPane {
 
 		int selectedIndex = reportsComboBox.getSelectionModel().getSelectedIndex();
 
-		if (selectedIndex < 0)
+		if (selectedIndex < 0) {
 			return;
+		}
 
-		if (selectedIndex < reportPanes.size())
+		if (selectedIndex < reportPanes.size()) {
 			reportPaneHolder.add(reportPanes.get(selectedIndex), 0, 0);
+		}
 
 	}
 
@@ -224,8 +227,9 @@ public class ReportsPane extends GridPane {
 
 			preview.setPadding(new Insets(2 * GAP));
 
-			if (textFields.size() > 0)
+			if (textFields.size() > 0) {
 				getItems().add(valuesScrollPane);
+			}
 
 			getItems().add(previewScrollPane);
 

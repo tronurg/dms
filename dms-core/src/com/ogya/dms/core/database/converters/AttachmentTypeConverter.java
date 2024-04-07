@@ -11,8 +11,9 @@ public class AttachmentTypeConverter implements AttributeConverter<AttachmentTyp
 	@Override
 	public Integer convertToDatabaseColumn(AttachmentType arg0) {
 
-		if (arg0 == null)
+		if (arg0 == null) {
 			return null;
+		}
 
 		return arg0.index();
 

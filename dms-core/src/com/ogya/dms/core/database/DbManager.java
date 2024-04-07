@@ -48,8 +48,9 @@ public class DbManager {
 
 		name = dbName;
 
-		if (name.length() > 40)
+		if (name.length() > 40) {
 			throw new Exception("Name too long, cannot exceed 40 characters.");
+		}
 
 		try {
 
@@ -138,8 +139,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -198,8 +200,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -245,8 +248,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -327,8 +331,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -403,8 +408,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -418,8 +424,9 @@ public class DbManager {
 
 	public ContactRef getContactRef(String ownerUuid, Long contactRefId) throws HibernateException {
 
-		if (ownerUuid == null || contactRefId == null)
+		if (ownerUuid == null || contactRefId == null) {
 			return null;
+		}
 
 		Session session = factory.openSession();
 
@@ -461,8 +468,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -509,8 +517,9 @@ public class DbManager {
 
 		} catch (HibernateException e) {
 
-			if (tx != null)
+			if (tx != null) {
 				tx.rollback();
+			}
 
 			throw e;
 
@@ -539,8 +548,9 @@ public class DbManager {
 
 	public Message getMessageById(Long id) throws HibernateException {
 
-		if (id == null)
+		if (id == null) {
 			return null;
+		}
 
 		Session session = factory.openSession();
 
@@ -555,8 +565,9 @@ public class DbManager {
 
 	public List<Message> getMessagesById(Long[] ids) throws HibernateException {
 
-		if (ids == null)
+		if (ids == null) {
 			return null;
+		}
 
 		Session session = factory.openSession();
 
@@ -564,8 +575,9 @@ public class DbManager {
 
 		for (Long id : ids) {
 
-			if (id == null)
+			if (id == null) {
 				continue;
+			}
 
 			Message dbMessage = session.createQuery("from Message where id=:id", Message.class).setParameter("id", id)
 					.uniqueResult();
@@ -885,8 +897,9 @@ public class DbManager {
 
 		Message refMessage = message.getRefMessage();
 
-		if (refMessage == null || message.isLocal())
+		if (refMessage == null || message.isLocal()) {
 			return;
+		}
 
 		Message dbMessage = null;
 

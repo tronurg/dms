@@ -228,8 +228,9 @@ public class Model {
 		List<ContactId> contactIds = new ArrayList<ContactId>();
 
 		idContacts.forEach((id, contact) -> {
-			if (contact.getLocalRemoteServerIps().containsValue(ip))
+			if (contact.getLocalRemoteServerIps().containsValue(ip)) {
 				contactIds.add(ContactIdImpl.of(id));
+			}
 		});
 
 		return contactIds;
@@ -251,8 +252,9 @@ public class Model {
 		List<ContactId> contactIds = new ArrayList<ContactId>();
 
 		idContacts.forEach((id, contact) -> {
-			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getName(), name))
+			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getName(), name)) {
 				contactIds.add(ContactIdImpl.of(id));
+			}
 		});
 
 		return contactIds;
@@ -274,8 +276,10 @@ public class Model {
 		List<ContactId> contactIds = new ArrayList<ContactId>();
 
 		idContacts.forEach((id, contact) -> {
-			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getSecretId(), secretId))
+			if (contact.getLocalRemoteServerIps().containsValue(ip)
+					&& Objects.equals(contact.getSecretId(), secretId)) {
 				contactIds.add(ContactIdImpl.of(id));
+			}
 		});
 
 		return contactIds;
@@ -291,8 +295,9 @@ public class Model {
 
 		idGroups.put(group.getId(), group);
 
-		if (group.isLocal())
+		if (group.isLocal()) {
 			return;
+		}
 
 		String ownerUuid = group.getOwner().getUuid();
 
@@ -309,17 +314,20 @@ public class Model {
 
 		idGroups.remove(group.getId());
 
-		if (group.isLocal())
+		if (group.isLocal()) {
 			return;
+		}
 
 		String ownerUuid = group.getOwner().getUuid();
 
 		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
-		if (contactsGroups == null)
+		if (contactsGroups == null) {
 			return;
+		}
 		contactsGroups.remove(group.getGroupRefId());
-		if (contactsGroups.isEmpty())
+		if (contactsGroups.isEmpty()) {
 			uuidRemoteGroups.remove(ownerUuid);
+		}
 
 	}
 
@@ -333,8 +341,9 @@ public class Model {
 
 		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
 
-		if (contactsGroups == null)
+		if (contactsGroups == null) {
 			return null;
+		}
 
 		return contactsGroups.get(groupRefId);
 
@@ -348,8 +357,9 @@ public class Model {
 
 	public void registerMessage(Message message) {
 
-		if (message.isLocal() || message.getUpdateType() != null)
+		if (message.isLocal() || message.getUpdateType() != null) {
 			return;
+		}
 
 		EntityId entityId = message.getEntity().getEntityId();
 
@@ -475,13 +485,15 @@ public class Model {
 
 		if (progress < 0 || progress == 100) {
 
-			if (!groupMessageProgresses.containsKey(messageId))
+			if (!groupMessageProgresses.containsKey(messageId)) {
 				return;
+			}
 
 			groupMessageProgresses.get(messageId).remove(contactId);
 
-			if (groupMessageProgresses.get(messageId).isEmpty())
+			if (groupMessageProgresses.get(messageId).isEmpty()) {
 				groupMessageProgresses.remove(messageId);
+			}
 
 		} else {
 

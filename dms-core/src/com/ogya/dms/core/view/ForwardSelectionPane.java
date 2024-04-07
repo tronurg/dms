@@ -53,15 +53,17 @@ public class ForwardSelectionPane extends GridPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof EntityCard && arg1 instanceof EntityCard))
+			if (!(arg0 instanceof EntityCard && arg1 instanceof EntityCard)) {
 				return 0;
+			}
 
 			EntityCard card0 = (EntityCard) arg0;
 			EntityCard card1 = (EntityCard) arg1;
 
 			int comparison = Long.compare(card1.maxMessageId.get(), card0.maxMessageId.get());
-			if (comparison == 0)
+			if (comparison == 0) {
 				return Long.compare(card1.entityId.getId(), card0.entityId.getId());
+			}
 
 			return comparison;
 
@@ -146,8 +148,9 @@ public class ForwardSelectionPane extends GridPane {
 
 		boolean active = entity.getViewStatus() == ViewStatus.DEFAULT
 				&& !(entityId.isGroup() && entity.getStatus() == Availability.OFFLINE);
-		if (!active && Objects.equals(selectedEntityIdProperty.get(), entityId))
+		if (!active && Objects.equals(selectedEntityIdProperty.get(), entityId)) {
 			selectedEntityIdProperty.set(null);
+		}
 		entityCard.activeProperty().set(active);
 		entityCard.updateEntity(entity);
 
@@ -156,8 +159,9 @@ public class ForwardSelectionPane extends GridPane {
 	private void removeEntity(EntityId entityId) {
 
 		EntityCard entityCard = entityIdCards.remove(entityId);
-		if (entityCard == null)
+		if (entityCard == null) {
 			return;
+		}
 
 		entities.getChildren().remove(entityCard);
 
@@ -173,8 +177,9 @@ public class ForwardSelectionPane extends GridPane {
 
 		EntityCard entityCard = entityIdCards.get(entityId);
 
-		if (entityCard != null)
+		if (entityCard != null) {
 			entityCard.updateMessageStatus(message);
+		}
 
 	}
 
@@ -212,10 +217,11 @@ public class ForwardSelectionPane extends GridPane {
 			fEntityCard.setOnMouseClicked(e -> {
 
 				EntityId selectedEntityId = selectedEntityIdProperty.get();
-				if (Objects.equals(selectedEntityId, entityId))
+				if (Objects.equals(selectedEntityId, entityId)) {
 					selectedEntityIdProperty.set(null);
-				else
+				} else {
 					selectedEntityIdProperty.set(entityId);
+				}
 
 			});
 

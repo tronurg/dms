@@ -112,14 +112,16 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private void receiveUdpMessage(InetAddress senderAddress, String message, boolean isUnicast) {
 
-		if (DMS_UUID.equals(message))
+		if (DMS_UUID.equals(message)) {
 			return;
+		}
 
 		tcpManager.addConnection(message, senderAddress,
 				message.compareTo(DMS_UUID) < 0 ? TcpConnectionType.SERVER : TcpConnectionType.CLIENT);
 
-		if (isUnicast)
+		if (isUnicast) {
 			taskQueue.execute(() -> model.addRemoteIps(senderAddress));
+		}
 
 	}
 

@@ -98,8 +98,9 @@ public class ViewFactory {
 		if (parent != null) {
 			parent.setFocusTraversable(true);
 			parent.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-				if (e.getCode() != KeyCode.ESCAPE)
+				if (e.getCode() != KeyCode.ESCAPE) {
 					return;
+				}
 				btn.fire();
 				e.consume();
 			});

@@ -150,8 +150,9 @@ class SearchInAllMessagesPane extends BorderPane {
 			clear();
 			imSearchField.textProperty().set("");
 			Runnable backAction = backActionRef.get();
-			if (backAction == null)
+			if (backAction == null) {
 				return;
+			}
 			backAction.run();
 		});
 
@@ -346,8 +347,9 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		MessageBalloon messageBalloon = new MessageBalloon(messageInfo);
 
-		if (message.getRefMessage() != null)
+		if (message.getRefMessage() != null) {
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
+		}
 
 		return messageBalloon;
 
@@ -406,11 +408,13 @@ class SearchInAllMessagesPane extends BorderPane {
 			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
 			messagePane.setPadding(new Insets(GAP));
 
-			if (messageInfo.attachmentType != null)
+			if (messageInfo.attachmentType != null) {
 				messagePane.add(getAttachmentArea(), 0, 2);
+			}
 
-			if (messageInfo.content != null)
+			if (messageInfo.content != null) {
 				messagePane.add(getContentArea(), 0, 3);
+			}
 
 			initHeaderPane();
 			initTimeLbl();

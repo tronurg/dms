@@ -80,20 +80,23 @@ public class IpField extends HBox {
 
 				String str = change.getControlNewText();
 
-				if (str.isEmpty())
+				if (str.isEmpty()) {
 					return change;
+				}
 
-				if (str.length() > 3)
+				if (str.length() > 3) {
 					return null;
+				}
 
 				try {
 
 					int val = Integer.parseInt(str);
 
-					if (val > 255)
+					if (val > 255) {
 						ipField.setText("255");
-					else if (val < 0)
+					} else if (val < 0) {
 						ipField.setText("0");
+					}
 
 					return (val > 255 || val < 0) ? null : change;
 
@@ -109,8 +112,9 @@ public class IpField extends HBox {
 
 			ipField.textProperty().addListener((observable, oldValue, newValue) -> {
 
-				if (ipField.getAnchor() != ipField.getCaretPosition())
+				if (ipField.getAnchor() != ipField.getCaretPosition()) {
 					return;
+				}
 
 				if (index < ipFields.length - 1 && newValue.length() == 3 && ipField.getCaretPosition() == 2) {
 
@@ -123,23 +127,23 @@ public class IpField extends HBox {
 
 			ipField.setOnKeyTyped(e -> {
 
-				if (ipField.getAnchor() != ipField.getCaretPosition())
+				if (ipField.getAnchor() != ipField.getCaretPosition()) {
 					return;
+				}
 
 				if (index < ipFields.length - 1 && ipField.getCaretPosition() == ipField.getText().length()
 						&& e.getCharacter().charAt(0) == '.') {
-
 					ipFields[index + 1].requestFocus();
 					ipFields[index + 1].selectAll();
-
 				}
 
 			});
 
 			ipField.setOnKeyPressed(e -> {
 
-				if (ipField.getAnchor() != ipField.getCaretPosition())
+				if (ipField.getAnchor() != ipField.getCaretPosition()) {
 					return;
+				}
 
 				switch (e.getCode()) {
 
@@ -203,13 +207,15 @@ public class IpField extends HBox {
 
 			String txt = ipFields[i].getText();
 
-			if (txt.isEmpty())
+			if (txt.isEmpty()) {
 				return null;
+			}
 
 			sb.append(txt);
 
-			if (i == ipFields.length - 1)
+			if (i == ipFields.length - 1) {
 				break;
+			}
 
 			sb.append('.');
 
@@ -237,8 +243,9 @@ public class IpField extends HBox {
 
 				int val = Integer.parseInt(fields[i]);
 
-				if (val > 255)
+				if (val > 255) {
 					val = 255;
+				}
 
 				ipFields[i].setText(String.valueOf(val));
 

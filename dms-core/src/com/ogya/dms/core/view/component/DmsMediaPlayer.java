@@ -45,8 +45,9 @@ public class DmsMediaPlayer extends GridPane {
 
 		try {
 
-			if (Files.notExists(path))
+			if (Files.notExists(path)) {
 				throw new Exception();
+			}
 
 			mediaPlayer = new MediaPlayer(new Media(path.toUri().toString()));
 			init();
@@ -69,8 +70,9 @@ public class DmsMediaPlayer extends GridPane {
 		add(btn, 0, 0, 1, 1);
 		add(progressBar, 1, 0, 1, 1);
 
-		if (mediaPlayer == null)
+		if (mediaPlayer == null) {
 			return;
+		}
 
 		initMediaPlayer();
 		initDurationLbl();
@@ -130,8 +132,9 @@ public class DmsMediaPlayer extends GridPane {
 	private void initBtn() {
 
 		double viewFactor = VIEW_FACTOR;
-		if (mediaPlayer == null)
+		if (mediaPlayer == null) {
 			viewFactor *= 0.8;
+		}
 
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
@@ -173,12 +176,14 @@ public class DmsMediaPlayer extends GridPane {
 
 		progressBar.setOnMouseClicked(e -> {
 
-			if (e.getButton() != MouseButton.PRIMARY)
+			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
+			}
 
-			if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING)
+			if (mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING) {
 				mediaPlayer.seek(
 						Duration.millis(mediaPlayer.getTotalDuration().toMillis() * e.getX() / progressBar.getWidth()));
+			}
 
 		});
 

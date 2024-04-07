@@ -22,14 +22,13 @@ public class SoundPlayer {
 			Clip duoToneClip = getDuoToneClip();
 			Clip triToneClip = getTriToneClip();
 
-			if (triToneClip != null)
+			if (triToneClip != null) {
 				triToneClip.stop();
+			}
 
 			if (duoToneClip != null) {
-
 				duoToneClip.setMicrosecondPosition(0);
 				duoToneClip.start();
-
 			}
 
 		});
@@ -43,14 +42,13 @@ public class SoundPlayer {
 			Clip duoToneClip = getDuoToneClip();
 			Clip triToneClip = getTriToneClip();
 
-			if (duoToneClip != null)
+			if (duoToneClip != null) {
 				duoToneClip.stop();
+			}
 
 			if (triToneClip != null) {
-
 				triToneClip.setMicrosecondPosition(0);
 				triToneClip.start();
-
 			}
 
 		});

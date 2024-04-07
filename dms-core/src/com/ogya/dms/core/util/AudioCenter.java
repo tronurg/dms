@@ -35,8 +35,9 @@ public class AudioCenter {
 
 		DataLine.Info info = new DataLine.Info(TargetDataLine.class, audioFormat);
 
-		if (!AudioSystem.isLineSupported(info))
+		if (!AudioSystem.isLineSupported(info)) {
 			throw new Exception("Capture device not found!");
+		}
 
 		TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
 		line.open(audioFormat);
@@ -49,8 +50,9 @@ public class AudioCenter {
 
 		final TargetDataLine line = targetLineRef.get();
 
-		if (line == null)
+		if (line == null) {
 			throw new Exception("Audio line not initialized!");
+		}
 
 		taskQueue.execute(() -> {
 
@@ -78,8 +80,9 @@ public class AudioCenter {
 
 		TargetDataLine line = targetLineRef.getAndSet(null);
 
-		if (line == null)
+		if (line == null) {
 			return;
+		}
 
 		line.stop();
 		line.drain();

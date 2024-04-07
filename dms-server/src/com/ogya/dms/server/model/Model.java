@@ -57,8 +57,9 @@ public class Model {
 
 		Path ipDatPath = Paths.get("./ip.dat");
 
-		if (Files.notExists(ipDatPath))
+		if (Files.notExists(ipDatPath)) {
 			return;
+		}
 
 		try (ObjectInputStream ois = new ObjectInputStream(Files.newInputStream(ipDatPath))) {
 
@@ -133,8 +134,9 @@ public class Model {
 		dmsServer.checkInterfacedMessages();
 
 		// This block is added upon a half-open connection error.
-		if (beaconsRequested)
+		if (beaconsRequested) {
 			sendAllBeaconsToRemoteServer(dmsUuid);
+		}
 
 		dmsServer.remoteMappedUsers.forEach((mapId, user) -> sendBeaconToLocalUsers(user.beacon));
 
@@ -161,8 +163,9 @@ public class Model {
 
 		DmsServer dmsServer = remoteServers.remove(dmsUuid);
 
-		if (dmsServer == null)
+		if (dmsServer == null) {
 			return;
+		}
 
 		dmsServer.remoteMappedUsers.forEach((mapId, user) -> remoteUserDisconnected(user));
 
@@ -170,8 +173,9 @@ public class Model {
 
 	private void remoteUserDisconnected(User user) {
 
-		if (user == null)
+		if (user == null) {
 			return;
+		}
 
 		String userUuid = user.beacon.uuid;
 		cleanMessagesToUuid(userUuid, false);
@@ -214,8 +218,9 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			if (user.beacon.status == null || Objects.equals(receiverUuid, uuid))
+			if (user.beacon.status == null || Objects.equals(receiverUuid, uuid)) {
 				return;
+			}
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.pack(user.beacon), null, null, ContentType.BCON,
 					null);
@@ -242,8 +247,9 @@ public class Model {
 
 		localUsers.forEach((uuid, user) -> {
 
-			if (user.beacon.status == null)
+			if (user.beacon.status == null) {
 				return;
+			}
 
 			MessagePojo beaconPojo = new MessagePojo(DmsPackingFactory.packBeaconServerToServer(user.beacon),
 					user.mapId, null, ContentType.BCON, null);
@@ -259,8 +265,9 @@ public class Model {
 
 		for (InetAddress ip : ips) {
 
-			if (remoteIps.contains(ip))
+			if (remoteIps.contains(ip)) {
 				continue;
+			}
 
 			changed = true;
 
@@ -268,8 +275,9 @@ public class Model {
 
 		}
 
-		if (!changed)
+		if (!changed) {
 			return;
+		}
 
 		persistRemoteIps();
 
@@ -285,8 +293,9 @@ public class Model {
 
 		for (InetAddress ip : ips) {
 
-			if (!remoteIps.contains(ip))
+			if (!remoteIps.contains(ip)) {
 				continue;
+			}
 
 			changed = true;
 
@@ -294,8 +303,9 @@ public class Model {
 
 		}
 
-		if (!changed)
+		if (!changed) {
 			return;
+		}
 
 		persistRemoteIps();
 
@@ -305,8 +315,9 @@ public class Model {
 
 	private void clearRemoteIps() {
 
-		if (remoteIps.isEmpty())
+		if (remoteIps.isEmpty()) {
 			return;
+		}
 
 		remoteIps.clear();
 
@@ -353,23 +364,29 @@ public class Model {
 
 	private void copyBeacon(Beacon fromBeacon, Beacon toBeacon) {
 
-		if (fromBeacon.name != null)
+		if (fromBeacon.name != null) {
 			toBeacon.name = fromBeacon.name;
+		}
 
-		if (fromBeacon.comment != null)
+		if (fromBeacon.comment != null) {
 			toBeacon.comment = fromBeacon.comment;
+		}
 
-		if (fromBeacon.status != null)
+		if (fromBeacon.status != null) {
 			toBeacon.status = fromBeacon.status;
+		}
 
-		if (fromBeacon.latitude != null)
+		if (fromBeacon.latitude != null) {
 			toBeacon.latitude = fromBeacon.latitude;
+		}
 
-		if (fromBeacon.longitude != null)
+		if (fromBeacon.longitude != null) {
 			toBeacon.longitude = fromBeacon.longitude;
+		}
 
-		if (fromBeacon.secretId != null)
+		if (fromBeacon.secretId != null) {
 			toBeacon.secretId = fromBeacon.secretId;
+		}
 
 	}
 
@@ -496,11 +513,13 @@ public class Model {
 
 				String userUuid = beacon.uuid;
 
-				if (userUuid == null)
+				if (userUuid == null) {
 					break;
+				}
 
-				if (localUsers.values().stream().noneMatch(user -> user.beacon.status != null))
+				if (localUsers.values().stream().noneMatch(user -> user.beacon.status != null)) {
 					listener.publishImmediately();
+				}
 
 				User localUser = localUsers.get(userUuid);
 
@@ -537,10 +556,11 @@ public class Model {
 
 				InetAddress[] ips = DmsPackingFactory.unpack(messagePojo.payload, InetAddress[].class);
 
-				if (ips.length == 0)
+				if (ips.length == 0) {
 					clearRemoteIps();
-				else
+				} else {
 					removeRemoteIps(ips);
+				}
 
 				break;
 

@@ -53,8 +53,9 @@ public class ActiveContactsPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof EntityPaneBase && arg1 instanceof EntityPaneBase))
+			if (!(arg0 instanceof EntityPaneBase && arg1 instanceof EntityPaneBase)) {
 				return 0;
+			}
 
 			EntityPaneBase entity0 = (EntityPaneBase) arg0;
 			EntityPaneBase entity1 = (EntityPaneBase) arg1;
@@ -109,8 +110,9 @@ public class ActiveContactsPane extends BorderPane {
 	private void removeContact(Long id) {
 
 		ContactCard contactCard = idContactCards.remove(id);
-		if (contactCard == null)
+		if (contactCard == null) {
 			return;
+		}
 
 		entities.getChildren().remove(contactCard);
 
@@ -166,10 +168,11 @@ public class ActiveContactsPane extends BorderPane {
 			fContactCard.managedProperty().bind(fContactCard.visibleProperty());
 
 			fContactCard.setOnMouseClicked(e -> {
-				if (fContactCard.selectProperty().get())
+				if (fContactCard.selectProperty().get()) {
 					selectedIds.remove(id);
-				else
+				} else {
 					selectedIds.add(id);
+				}
 			});
 
 			idContactCards.put(id, fContactCard);
@@ -204,18 +207,21 @@ public class ActiveContactsPane extends BorderPane {
 
 				Contact contact = contactProperty.get();
 
-				if (contact == null)
+				if (contact == null) {
 					return false;
+				}
 
 				boolean active = contact.getStatus() != Availability.OFFLINE;
 
 				Predicate<ContactHandle> filter = contactFilterProperty.get();
 
-				if (filter != null)
+				if (filter != null) {
 					active = active && filter.test(new ContactHandleImpl(contact));
+				}
 
-				if (!active)
+				if (!active) {
 					selectedIds.remove(id);
+				}
 
 				return active;
 

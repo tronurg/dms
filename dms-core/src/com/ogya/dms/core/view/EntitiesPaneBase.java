@@ -80,15 +80,17 @@ class EntitiesPaneBase extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof EntityPane && arg1 instanceof EntityPane))
+			if (!(arg0 instanceof EntityPane && arg1 instanceof EntityPane)) {
 				return 0;
+			}
 
 			EntityPane pane0 = (EntityPane) arg0;
 			EntityPane pane1 = (EntityPane) arg1;
 
 			int comparison = Long.compare(pane1.maxMessageId.get(), pane0.maxMessageId.get());
-			if (comparison == 0)
+			if (comparison == 0) {
 				return Long.compare(pane1.entityId.getId(), pane0.entityId.getId());
+			}
 
 			return comparison;
 
@@ -184,8 +186,9 @@ class EntitiesPaneBase extends BorderPane {
 	private void removeEntity(EntityId entityId) {
 
 		EntityPane entityPane = entityIdPane.remove(entityId);
-		if (entityPane == null)
+		if (entityPane == null) {
 			return;
+		}
 
 		entities.getChildren().remove(entityPane);
 
@@ -201,8 +204,9 @@ class EntitiesPaneBase extends BorderPane {
 
 		EntityPane entityPane = entityIdPane.get(entityId);
 
-		if (entityPane != null)
+		if (entityPane != null) {
 			entityPane.updateMessageStatus(message);
+		}
 
 	}
 
@@ -238,10 +242,12 @@ class EntitiesPaneBase extends BorderPane {
 
 			entityPane.setOnMouseClicked(e -> {
 				EventTarget clickedTarget = e.getTarget();
-				if (lastClickedTarget.getAndSet(clickedTarget) != clickedTarget)
+				if (lastClickedTarget.getAndSet(clickedTarget) != clickedTarget) {
 					return;
-				if (!(e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2 && e.isStillSincePress()))
+				}
+				if (!(e.getButton() == MouseButton.PRIMARY && e.getClickCount() == 2 && e.isStillSincePress())) {
 					return;
+				}
 				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 			});
 
@@ -332,13 +338,15 @@ class EntitiesPaneBase extends BorderPane {
 
 			maxMessageId.set(Math.max(maxMessageId.get(), messageId));
 
-			if (message.isLocal())
+			if (message.isLocal()) {
 				return;
+			}
 
-			if (message.getMessageStatus() == MessageStatus.READ)
+			if (message.getMessageStatus() == MessageStatus.READ) {
 				unreadMessages.remove(messageId);
-			else
+			} else {
 				unreadMessages.add(messageId);
+			}
 
 		}
 

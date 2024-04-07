@@ -155,15 +155,17 @@ public class Dgroup extends EntityBase {
 
 	@PrePersist
 	protected void prePersist() {
-		if (name == null || name.isEmpty())
+		if (name == null || name.isEmpty()) {
 			name = owner.getName();
+		}
 		preUpdate();
 	}
 
 	@PreUpdate
 	protected void preUpdate() {
-		if (viewStatus == null || status != Availability.OFFLINE)
+		if (viewStatus == null || status != Availability.OFFLINE) {
 			viewStatus = ViewStatus.DEFAULT;
+		}
 	}
 
 	@Override

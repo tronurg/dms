@@ -61,8 +61,9 @@ public class ActiveGroupsPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof EntityPaneBase && arg1 instanceof EntityPaneBase))
+			if (!(arg0 instanceof EntityPaneBase && arg1 instanceof EntityPaneBase)) {
 				return 0;
+			}
 
 			EntityPaneBase entity0 = (EntityPaneBase) arg0;
 			EntityPaneBase entity1 = (EntityPaneBase) arg1;
@@ -80,8 +81,9 @@ public class ActiveGroupsPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof MemberCard && arg1 instanceof MemberCard))
+			if (!(arg0 instanceof MemberCard && arg1 instanceof MemberCard)) {
 				return 0;
+			}
 
 			MemberCard card0 = (MemberCard) arg0;
 			MemberCard card1 = (MemberCard) arg1;
@@ -136,8 +138,9 @@ public class ActiveGroupsPane extends BorderPane {
 	private void removeGroup(Long id) {
 
 		GroupCard groupCard = idGroupCards.remove(id);
-		if (groupCard == null)
+		if (groupCard == null) {
 			return;
+		}
 
 		entities.getChildren().remove(groupCard);
 
@@ -208,10 +211,11 @@ public class ActiveGroupsPane extends BorderPane {
 			fGroupCard.setOnMouseClicked(e -> {
 
 				Long selectedId = selectedIdProperty.get();
-				if (Objects.equals(selectedId, id))
+				if (Objects.equals(selectedId, id)) {
 					selectedIdProperty.set(null);
-				else
+				} else {
 					selectedIdProperty.set(id);
+				}
 
 			});
 
@@ -249,18 +253,21 @@ public class ActiveGroupsPane extends BorderPane {
 
 				Dgroup group = groupProperty.get();
 
-				if (group == null)
+				if (group == null) {
 					return false;
+				}
 
 				boolean active = group.getStatus() != Availability.OFFLINE;
 
 				Predicate<GroupHandle> filter = groupFilterProperty.get();
 
-				if (filter != null)
+				if (filter != null) {
 					active = active && filter.test(new GroupHandleImpl(group));
+				}
 
-				if (!active && Objects.equals(selectedIdProperty.get(), id))
+				if (!active && Objects.equals(selectedIdProperty.get(), id)) {
 					selectedIdProperty.set(null);
+				}
 
 				return active;
 
@@ -299,8 +306,9 @@ public class ActiveGroupsPane extends BorderPane {
 
 				Long memberId = member.getId();
 
-				if (memberId == 1L)
+				if (memberId == 1L) {
 					return;
+				}
 
 				ObjectProperty<Color> colorProperty = memberIdStatus.get(memberId);
 				if (colorProperty == null) {
@@ -315,8 +323,9 @@ public class ActiveGroupsPane extends BorderPane {
 
 			Long ownerId = owner.getId();
 
-			if (ownerId == 1L)
+			if (ownerId == 1L) {
 				return;
+			}
 
 			ObjectProperty<Color> colorProperty = memberIdStatus.get(ownerId);
 			if (colorProperty == null) {

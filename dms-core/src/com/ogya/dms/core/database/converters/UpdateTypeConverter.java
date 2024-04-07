@@ -11,8 +11,9 @@ public class UpdateTypeConverter implements AttributeConverter<UpdateType, Integ
 	@Override
 	public Integer convertToDatabaseColumn(UpdateType arg0) {
 
-		if (arg0 == null)
+		if (arg0 == null) {
 			return null;
+		}
 
 		return arg0.index();
 

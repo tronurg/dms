@@ -65,8 +65,9 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private void init() {
 
 		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (e.getCode() != KeyCode.ENTER)
+			if (e.getCode() != KeyCode.ENTER) {
 				return;
+			}
 			addIpButton.fire();
 		});
 
@@ -124,8 +125,9 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		for (String ip : ips) {
 
-			if (ip.isEmpty())
+			if (ip.isEmpty()) {
 				continue;
+			}
 
 			HBox ipField = new HBox(GAP);
 
@@ -138,8 +140,9 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 				Consumer<String> removeIpAction = removeIpActionRef.get();
 
-				if (removeIpAction != null)
+				if (removeIpAction != null) {
 					removeIpAction.accept(ip);
+				}
 
 			});
 

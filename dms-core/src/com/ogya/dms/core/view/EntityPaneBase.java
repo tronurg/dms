@@ -140,8 +140,9 @@ class EntityPaneBase extends GridPane {
 
 		nameLbl.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String name = nameLbl.getText();
-			if (name == null || name.isEmpty())
+			if (name == null || name.isEmpty()) {
 				return null;
+			}
 			return new Tooltip(name);
 		}, nameLbl.textProperty()));
 
@@ -153,8 +154,9 @@ class EntityPaneBase extends GridPane {
 
 		commentLbl.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String comment = commentLbl.getText();
-			if (comment == null || comment.isEmpty())
+			if (comment == null || comment.isEmpty()) {
 				return null;
+			}
 			return new Tooltip(comment);
 		}, commentLbl.textProperty()));
 
@@ -179,8 +181,9 @@ class EntityPaneBase extends GridPane {
 		String name = entity.getName();
 
 		statusCircle.setStroke(entity.getStatus().getStatusColor());
-		if (!(name == null || name.isEmpty()))
+		if (!(name == null || name.isEmpty())) {
 			initialLbl.setText(name.substring(0, 1).toUpperCase(Locale.getDefault()));
+		}
 		nameLbl.setText(name);
 		commentLbl.setText(entity.getComment());
 		coordinatesLbl.setText(entity.getLatitude() == null || entity.getLongitude() == null ? ""

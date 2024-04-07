@@ -94,8 +94,9 @@ public class AddUpdateGroupPane extends BorderPane {
 		@Override
 		public int compare(Node arg0, Node arg1) {
 
-			if (!(arg0 instanceof AddRemoveContactBox && arg1 instanceof AddRemoveContactBox))
+			if (!(arg0 instanceof AddRemoveContactBox && arg1 instanceof AddRemoveContactBox)) {
 				return 0;
+			}
 
 			AddRemoveContactBox box0 = (AddRemoveContactBox) arg0;
 			AddRemoveContactBox box1 = (AddRemoveContactBox) arg1;
@@ -162,8 +163,9 @@ public class AddUpdateGroupPane extends BorderPane {
 			group.getMembers().forEach(contact -> {
 				Long id = contact.getId();
 				// initialize if not exists
-				if (!idContactGroups.containsKey(id))
+				if (!idContactGroups.containsKey(id)) {
 					getContactGroup(id).updateContact(contact.getName(), Availability.OFFLINE, false);
+				}
 				selectedIds.add(id);
 			});
 		}
@@ -249,8 +251,9 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			Runnable addUpdateGroupAction = addUpdateGroupActionRef.get();
 
-			if (addUpdateGroupAction != null)
+			if (addUpdateGroupAction != null) {
 				addUpdateGroupAction.run();
+			}
 
 		});
 
@@ -323,8 +326,9 @@ public class AddUpdateGroupPane extends BorderPane {
 
 			Runnable deleteGroupAction = deleteGroupActionRef.get();
 
-			if (deleteGroupAction != null)
+			if (deleteGroupAction != null) {
 				deleteGroupAction.run();
+			}
 
 		});
 
@@ -513,8 +517,9 @@ public class AddUpdateGroupPane extends BorderPane {
 			addContactBox.updateContact(name, status.getStatusColor());
 			removeContactBox.updateContact(name, status.getStatusColor());
 
-			if (toBeSorted)
+			if (toBeSorted) {
 				FXCollections.sort(notAddedContactsPane.getChildren(), contactsSorter);
+			}
 
 		}
 

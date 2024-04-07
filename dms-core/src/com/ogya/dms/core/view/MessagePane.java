@@ -201,8 +201,9 @@ class MessagePane extends BorderPane {
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
 	private final ChangeListener<Number> scrollListener = (e0, e1, e2) -> {
-		if (e2.doubleValue() == 0.0 && e1.doubleValue() != 0.0)
+		if (e2.doubleValue() == 0.0 && e1.doubleValue() != 0.0) {
 			listeners.forEach(listener -> listener.paneScrolledToTop(minMessageId.get()));
+		}
 	};
 
 	MessagePane(EntityId entityId, BooleanProperty unreadProperty) {
@@ -219,8 +220,9 @@ class MessagePane extends BorderPane {
 	private void init() {
 
 		addEventFilter(KeyEvent.KEY_PRESSED, e -> {
-			if (!searchModeProperty.get())
+			if (!searchModeProperty.get()) {
 				return;
+			}
 			if (e.getCode() == KeyCode.UP) {
 				imSearchField.fireSearchUp();
 				e.consume();
@@ -320,10 +322,12 @@ class MessagePane extends BorderPane {
 		nameLabel.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
 		nameLabel.managedProperty().bind(nameLabel.visibleProperty());
 		nameLabel.setOnMouseClicked(e -> {
-			if (e.getButton() != MouseButton.PRIMARY)
+			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
-			if (editableProperty.get())
+			}
+			if (editableProperty.get()) {
 				listeners.forEach(listener -> listener.showAddUpdateGroupClicked());
+			}
 		});
 
 	}
@@ -361,8 +365,9 @@ class MessagePane extends BorderPane {
 			@Override
 			public void upRequested() {
 				int hitIndex = searchHitIndex.get();
-				if (searchHits.isEmpty() || hitIndex == searchHits.size() - 1)
+				if (searchHits.isEmpty() || hitIndex == searchHits.size() - 1) {
 					return;
+				}
 				scrollNodeToBottom.set(true);
 				if (hitIndex < 0) {
 					hitIndex = -(hitIndex + 1);
@@ -376,8 +381,9 @@ class MessagePane extends BorderPane {
 			@Override
 			public void downRequested() {
 				int hitIndex = searchHitIndex.get();
-				if (searchHits.isEmpty() || hitIndex == 0)
+				if (searchHits.isEmpty() || hitIndex == 0) {
 					return;
+				}
 				if (hitIndex < 0) {
 					hitIndex = -(hitIndex + 1) - 1;
 				} else {
@@ -493,8 +499,9 @@ class MessagePane extends BorderPane {
 
 		messagesPane.setPadding(new Insets(GAP));
 		messagesPane.heightProperty().addListener((e0, e1, e2) -> {
-			if (!autoScroll.get())
+			if (!autoScroll.get()) {
 				return;
+			}
 			scrollPaneToBottom();
 		});
 
@@ -511,15 +518,18 @@ class MessagePane extends BorderPane {
 		scrollPane.setVvalue(scrollPane.getVmax());
 		scrollPane.vvalueProperty().addListener((e0, e1, e2) -> {
 			autoScroll.set(e1.doubleValue() == scrollPane.getVmax() || e2.doubleValue() == scrollPane.getVmax());
-			if (scrollPane.isNeedsLayout())
+			if (scrollPane.isNeedsLayout()) {
 				return;
+			}
 			MessageBalloon firstUnreadMessageBalloon = messageBalloons.get(firstUnreadMessageIdProperty.get());
-			if (firstUnreadMessageBalloon == null)
+			if (firstUnreadMessageBalloon == null) {
 				return;
+			}
 			Bounds nodeBoundsInScene = firstUnreadMessageBalloon
 					.localToScene(firstUnreadMessageBalloon.getLayoutBounds());
-			if (nodeBoundsInScene.getMinY() < scrollPane.localToScene(scrollPane.getLayoutBounds()).getMaxY())
+			if (nodeBoundsInScene.getMinY() < scrollPane.localToScene(scrollPane.getLayoutBounds()).getMaxY()) {
 				firstUnreadMessageIdProperty.set(null);
+			}
 		});
 		scrollPane.vvalueProperty().addListener(scrollListener);
 
@@ -534,8 +544,9 @@ class MessagePane extends BorderPane {
 
 		scrollToUnreadBtn.setOnAction(e -> {
 			Long firstUnreadMessageId = firstUnreadMessageIdProperty.get();
-			if (firstUnreadMessageId == null)
+			if (firstUnreadMessageId == null) {
 				return;
+			}
 			scrollPaneToMessage(firstUnreadMessageId);
 		});
 
@@ -546,8 +557,9 @@ class MessagePane extends BorderPane {
 		referencePane.getStyleClass().add("reference-pane");
 		referenceMessageProperty.addListener((e0, e1, e2) -> {
 			referencePane.getChildren().clear();
-			if (e2 == null)
+			if (e2 == null) {
 				return;
+			}
 			MessageInfo messageInfo = messageBalloons.get(e2).messageInfo;
 			referencePane.getChildren().add(newReferenceBalloon(messageInfo));
 		});
@@ -673,8 +685,9 @@ class MessagePane extends BorderPane {
 			imPane.setMessage("");
 			final FileBuilder fileBuilder = attachmentProperty.get();
 			attachmentProperty.set(null);
-			if (mesajTxt == null && fileBuilder == null)
+			if (mesajTxt == null && fileBuilder == null) {
 				return;
+			}
 			final Long referenceMessageId = referenceMessageProperty.get();
 			referenceMessageProperty.set(null);
 			listeners.forEach(listener -> listener.sendMessageClicked(mesajTxt, fileBuilder, referenceMessageId));
@@ -747,14 +760,16 @@ class MessagePane extends BorderPane {
 		statusCircle.setFill(entity.getStatus().getStatusColor());
 		nameLabel.setText(entity.getName());
 
-		if (!entity.getEntityId().isGroup())
+		if (!entity.getEntityId().isGroup()) {
 			return;
+		}
 
 		activeProperty.setValue(entity.getStatus() != Availability.OFFLINE);
 		editableProperty.set(entity.getStatus() == Availability.AVAILABLE);
 
-		if (activeProperty.get())
+		if (activeProperty.get()) {
 			return;
+		}
 
 		referenceMessageProperty.set(null);
 		attachmentProperty.set(null);
@@ -782,8 +797,9 @@ class MessagePane extends BorderPane {
 			return;
 		}
 
-		if (message.getViewStatus() == ViewStatus.DELETED)
+		if (message.getViewStatus() == ViewStatus.DELETED) {
 			return;
+		}
 
 		MessageBalloon messageBalloon = newMessageBalloon(message);
 
@@ -849,8 +865,9 @@ class MessagePane extends BorderPane {
 
 		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (messageBalloon == null)
+		if (messageBalloon == null) {
 			return;
+		}
 
 		messageBalloon.messageInfo.statusProperty.set(message.getMessageStatus());
 		messageBalloon.messageInfo.archivedProperty.set(message.getViewStatus() == ViewStatus.ARCHIVED);
@@ -861,27 +878,32 @@ class MessagePane extends BorderPane {
 
 		Long messageId = message.getId();
 
-		if (Objects.equals(referenceMessageProperty.get(), messageId))
+		if (Objects.equals(referenceMessageProperty.get(), messageId)) {
 			referenceMessageProperty.set(null);
-		if (Objects.equals(firstUnreadMessageIdProperty.get(), messageId))
+		}
+		if (Objects.equals(firstUnreadMessageIdProperty.get(), messageId)) {
 			firstUnreadMessageIdProperty.set(null);
+		}
 
 		referencedMessageIds.remove(messageId);
 
 		MessageBalloon messageBalloon = messageBalloons.remove(messageId);
 
-		if (messageBalloon == null)
+		if (messageBalloon == null) {
 			return;
+		}
 
 		DayBox dayBox = messageBalloon.dayBox;
 
-		if (dayBox == null)
+		if (dayBox == null) {
 			return;
+		}
 
 		dayBox.removeMessageBalloon(messageBalloon);
 
-		if (!dayBox.isEmpty())
+		if (!dayBox.isEmpty()) {
 			return;
+		}
 
 		dayBoxes.remove(dayBox);
 		messagesPane.getChildren().remove(dayBox);
@@ -892,8 +914,9 @@ class MessagePane extends BorderPane {
 
 		for (int i = 0; i < searchHits.size(); ++i) {
 			Long hitId = searchHits.get(i).getId();
-			if (!Objects.equals(hitId, message.getId()))
+			if (!Objects.equals(hitId, message.getId())) {
 				continue;
+			}
 			searchHits.remove(i);
 			if (searchHitIndex.get() == i) {
 				searchHitIndex.set(-searchHitIndex.get() - 1);
@@ -915,8 +938,9 @@ class MessagePane extends BorderPane {
 
 		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (messageBalloon == null)
+		if (messageBalloon == null) {
 			return;
+		}
 
 		messageBalloon.messageInfo.progressProperty.set(progress);
 
@@ -944,8 +968,9 @@ class MessagePane extends BorderPane {
 
 		MessageBalloon messageBalloon = messageBalloons.get(messageId);
 
-		if (messageBalloon == null)
+		if (messageBalloon == null) {
 			return;
+		}
 
 		Double yNode = scrollPane.sceneToLocal(messageBalloon.localToScene(0.0, 0.0)).getY();
 
@@ -957,8 +982,9 @@ class MessagePane extends BorderPane {
 
 		SimpleEntry<Node, Double> nodeY = savedNodeY.getAndSet(null);
 
-		if (nodeY == null)
+		if (nodeY == null) {
 			return;
+		}
 
 		scrollPane(nodeY.getKey(), nodeY.getValue());
 
@@ -979,10 +1005,11 @@ class MessagePane extends BorderPane {
 
 	void goToMessage(Long messageId) {
 
-		if (messageBalloons.containsKey(messageId))
+		if (messageBalloons.containsKey(messageId)) {
 			scrollPaneToMessage(messageId);
-		else
+		} else {
 			listeners.forEach(listener -> listener.messagesClaimed(minMessageId.get(), messageId));
+		}
 
 	}
 
@@ -994,8 +1021,9 @@ class MessagePane extends BorderPane {
 
 	void showSearchResults(String fulltext, List<Message> hits) {
 
-		if (!searchModeProperty.get())
+		if (!searchModeProperty.get()) {
 			return;
+		}
 
 		searchHits.clear();
 		searchHits.addAll(hits);
@@ -1047,8 +1075,9 @@ class MessagePane extends BorderPane {
 			}
 		});
 
-		if (message.getViewStatus() != ViewStatus.DELETED)
+		if (message.getViewStatus() != ViewStatus.DELETED) {
 			referencedMessageIds.add(messageId);
+		}
 
 		return referenceBalloon;
 
@@ -1122,22 +1151,25 @@ class MessagePane extends BorderPane {
 		boolean scrollToBottom = scrollNodeToBottom.getAndSet(false);
 
 		Parent parent = getParent();
-		if (parent == null)
+		if (parent == null) {
 			return;
+		}
 
 		parent.applyCss();
 		parent.layout();
 
 		Bounds nodeBoundsInScene = nodeToScrollTo.localToScene(nodeToScrollTo.getLayoutBounds());
 
-		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene))
+		if (scrollPane.localToScene(scrollPane.getLayoutBounds()).contains(nodeBoundsInScene)) {
 			return;
+		}
 
 		Double messagesPaneHeight = messagesPane.getHeight();
 		Double scrollPaneViewportHeight = scrollPane.getViewportBounds().getHeight();
 
-		if (messagesPaneHeight < scrollPaneViewportHeight)
+		if (messagesPaneHeight < scrollPaneViewportHeight) {
 			return;
+		}
 
 		Double scrollY = messagesPane.sceneToLocal(nodeBoundsInScene).getMinY() - bias;
 		if (scrollToBottom) {
@@ -1162,19 +1194,23 @@ class MessagePane extends BorderPane {
 
 		MessageBalloon messageBalloon = new MessageBalloon(messageInfo);
 
-		if (message.getRefMessage() != null)
+		if (message.getRefMessage() != null) {
 			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
+		}
 
 		final Long messageId = messageInfo.messageId;
 
 		messageBalloon.backgroundProperty().bind(Bindings.createObjectBinding(() -> {
 			int index = searchHitIndex.get();
-			if (index < 0)
+			if (index < 0) {
 				return null;
-			if (!(index < searchHits.size()))
+			}
+			if (!(index < searchHits.size())) {
 				return null;
-			if (!Objects.equals(messageId, searchHits.get(index).getId()))
+			}
+			if (!Objects.equals(messageId, searchHits.get(index).getId())) {
 				return null;
+			}
 			return searchHitBackground;
 		}, searchHits, searchHitIndex));
 
@@ -1186,11 +1222,13 @@ class MessagePane extends BorderPane {
 
 			} else if (selectionModeProperty.get()) {
 
-				if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType()))
+				if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType())) {
 					messageBalloon.selectedProperty.set(!messageBalloon.selectedProperty.get());
+				}
 
-				if (!MouseEvent.MOUSE_EXITED_TARGET.equals(e.getEventType()))
+				if (!MouseEvent.MOUSE_EXITED_TARGET.equals(e.getEventType())) {
 					e.consume();
+				}
 
 			} else if (MouseEvent.MOUSE_PRESSED.equals(e.getEventType())) {
 
@@ -1202,12 +1240,14 @@ class MessagePane extends BorderPane {
 
 				longPressTimer.stop();
 
-				if (replyGroup.getParent() != messageBalloon)
+				if (replyGroup.getParent() != messageBalloon) {
 					messageBalloon.addReplyGroup(replyGroup);
+				}
 				double diff = e.getSceneX() - dragPosProperty.get();
 				dragPosProperty.set(e.getSceneX());
-				if (!activeProperty.get())
+				if (!activeProperty.get()) {
 					return;
+				}
 				double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
 				double translate = 4.0 * radius;
 				messageBalloon.setTranslateX(translate);
@@ -1218,17 +1258,20 @@ class MessagePane extends BorderPane {
 				longPressTimer.stop();
 
 				messageBalloon.setTranslateX(0.0);
-				if (replyGroup.inner.getRadius() == replyGroup.radius)
+				if (replyGroup.inner.getRadius() == replyGroup.radius) {
 					referenceMessageProperty.set(messageId);
+				}
 				replyGroup.inner.setRadius(0.0);
 
-				if (!e.isStillSincePress())
+				if (!e.isStillSincePress()) {
 					e.consume();
+				}
 
 			} else if (MouseEvent.MOUSE_CLICKED.equals(e.getEventType())) {
 
-				if (!e.isStillSincePress())
+				if (!e.isStillSincePress()) {
 					e.consume();
+				}
 
 			}
 
@@ -1266,10 +1309,11 @@ class MessagePane extends BorderPane {
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.localDateTime));
 
 			selectedProperty.addListener((e0, e1, e2) -> {
-				if (e2)
+				if (e2) {
 					selectedBalloons.add(this);
-				else
+				} else {
 					selectedBalloons.remove(this);
+				}
 			});
 
 			init();
@@ -1292,13 +1336,15 @@ class MessagePane extends BorderPane {
 			add(selectionBtn, 1, 0);
 			add(messagePane, 2, 0);
 
-			if (messageInfo.infoAvailable)
+			if (messageInfo.infoAvailable) {
 				add(getInfoBtn(), 3, 0);
+			}
 
-			if (messageInfo.isOutgoing)
+			if (messageInfo.isOutgoing) {
 				col1.setHgrow(Priority.ALWAYS);
-			else
+			} else {
 				col3.setHgrow(Priority.ALWAYS);
+			}
 
 		}
 
@@ -1325,8 +1371,9 @@ class MessagePane extends BorderPane {
 
 		void blink() {
 
-			if (!Color.TRANSPARENT.equals(shadow.getColor()))
+			if (!Color.TRANSPARENT.equals(shadow.getColor())) {
 				return;
+			}
 
 			new Transition() {
 
@@ -1371,11 +1418,13 @@ class MessagePane extends BorderPane {
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setEffect(shadow);
 
-			if (messageInfo.attachmentType != null)
+			if (messageInfo.attachmentType != null) {
 				messagePane.add(getAttachmentArea(), 0, 2);
+			}
 
-			if (messageInfo.content != null)
+			if (messageInfo.content != null) {
 				messagePane.add(getContentArea(), 0, 3);
+			}
 
 			initStatusPane();
 
@@ -1445,11 +1494,12 @@ class MessagePane extends BorderPane {
 			initStarGraph();
 			initTimeLbl();
 
-			if (messageInfo.isOutgoing)
+			if (messageInfo.isOutgoing) {
 				statusPane.getChildren().addAll(starGraph, getSpace(), getProgressLbl(), getInfoGrp(), getFwdGraph(),
 						timeLbl);
-			else
+			} else {
 				statusPane.getChildren().addAll(timeLbl, getFwdGraph(), getSpace(), starGraph);
+			}
 
 		}
 
@@ -1462,14 +1512,16 @@ class MessagePane extends BorderPane {
 
 		private Node getFwdGraph() {
 
-			if (messageInfo.fwdCount == null)
+			if (messageInfo.fwdCount == null) {
 				return new Region();
+			}
 
 			Node fwdGraph = ViewFactory.newForwardGraph(0.5, Color.DARKGRAY);
 
-			if (messageInfo.fwdCount > 1)
+			if (messageInfo.fwdCount > 1) {
 				Tooltip.install(fwdGraph,
 						new Tooltip(String.format(Commons.translate("FORWARDED_N_TIMES"), messageInfo.fwdCount)));
+			}
 
 			return fwdGraph;
 
@@ -1568,13 +1620,16 @@ class MessagePane extends BorderPane {
 				public void onChanged(Change<? extends Node> arg0) {
 					ObservableList<? extends Node> children = arg0.getList();
 					MessageBalloon namedBalloon = namedBalloonRef.get();
-					if (children.isEmpty() || children.get(0) == namedBalloon)
+					if (children.isEmpty() || children.get(0) == namedBalloon) {
 						return;
-					if (namedBalloon != null)
+					}
+					if (namedBalloon != null) {
 						namedBalloon.removeNameLbl(nameLbl);
+					}
 					Node firstChild = children.get(0);
-					if (!(firstChild instanceof MessageBalloon))
+					if (!(firstChild instanceof MessageBalloon)) {
 						return;
+					}
 					MessageBalloon firstBalloon = (MessageBalloon) firstChild;
 					firstBalloon.addNameLbl(nameLbl);
 					namedBalloonRef.set(firstBalloon);
@@ -1601,8 +1656,9 @@ class MessagePane extends BorderPane {
 
 		private void removeMessageBalloon(MessageBalloon messageBalloon) {
 
-			if (messageBalloon.messageGroup != this)
+			if (messageBalloon.messageGroup != this) {
 				return;
+			}
 
 			getChildren().remove(messageBalloon);
 
@@ -1693,13 +1749,15 @@ class MessagePane extends BorderPane {
 
 			MessageGroup messageGroup = messageBalloon.messageGroup;
 
-			if (messageGroup == null || messageGroup.dayBox != this)
+			if (messageGroup == null || messageGroup.dayBox != this) {
 				return;
+			}
 
 			messageGroup.removeMessageBalloon(messageBalloon);
 
-			if (!messageGroup.isEmpty())
+			if (!messageGroup.isEmpty()) {
 				return;
+			}
 
 			messageGroups.remove(messageGroup);
 			messageGroupBox.getChildren().remove(messageGroup);
@@ -1744,13 +1802,15 @@ class MessagePane extends BorderPane {
 
 		@Override
 		public void handle(long arg0) {
-			if (arg0 - startTime < 500e6)
+			if (arg0 - startTime < 500e6) {
 				return;
+			}
 			stop();
 			selectionModeProperty.set(true);
 			MessageBalloon messageBalloon = messageBalloonRef.getAndSet(null);
-			if (messageBalloon != null)
+			if (messageBalloon != null) {
 				messageBalloon.selectedProperty.set(true);
+			}
 		}
 
 		public void start(MessageBalloon messageBalloon) {
@@ -1797,8 +1857,9 @@ class MessagePane extends BorderPane {
 			this.archivedProperty.set(message.getViewStatus() == ViewStatus.ARCHIVED);
 
 			this.statusProperty.addListener((e0, e1, e2) -> {
-				if (e2 == MessageStatus.FRESH)
+				if (e2 == MessageStatus.FRESH) {
 					this.progressProperty.set(-1);
+				}
 			});
 
 		}

@@ -80,8 +80,9 @@ public class RecordButton extends Button {
 				new KeyValue(recordArc.radiusYProperty(), 0.0), new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key1 = new KeyFrame(Duration.millis(1000.0), e -> {
-			if (isPressed())
+			if (isPressed()) {
 				listeners.forEach(listener -> listener.recordEventTriggered());
+			}
 		}, new KeyValue(recordArc.radiusXProperty(), 16.0 * VIEW_FACTOR),
 				new KeyValue(recordArc.radiusYProperty(), 16.0 * VIEW_FACTOR),
 				new KeyValue(recordArc.lengthProperty(), 360.0));
@@ -89,16 +90,18 @@ public class RecordButton extends Button {
 		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), new KeyValue(recordArc.lengthProperty(), 0.0));
 
 		timeline.setOnFinished(e -> {
-			if (isPressed())
+			if (isPressed()) {
 				listeners.forEach(listener -> listener.recordButtonReleased());
+			}
 		});
 
 		timeline.getKeyFrames().addAll(key0, key1, key2);
 
 		setOnMousePressed(e -> {
 
-			if (e.getButton() != MouseButton.PRIMARY)
+			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
+			}
 
 			timeline.play();
 			listeners.forEach(listener -> listener.recordButtonPressed());
@@ -107,8 +110,9 @@ public class RecordButton extends Button {
 
 		setOnMouseReleased(e -> {
 
-			if (e.getButton() != MouseButton.PRIMARY)
+			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
+			}
 
 			timeline.stop();
 			listeners.forEach(listener -> listener.recordButtonReleased());

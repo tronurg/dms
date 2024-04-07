@@ -90,8 +90,9 @@ public final class TcpConnection implements AutoCloseable {
 
 				int messageLength = messageInputStream.readInt();
 
-				if (messageLength < 0)
+				if (messageLength < 0) {
 					continue;
+				}
 
 				byte[] message = new byte[messageLength];
 
@@ -110,8 +111,9 @@ public final class TcpConnection implements AutoCloseable {
 
 	public synchronized boolean sendMessage(int messageNumber, byte[] data) {
 
-		if (socket.isClosed())
+		if (socket.isClosed()) {
 			return false;
+		}
 
 		try {
 
@@ -153,8 +155,9 @@ public final class TcpConnection implements AutoCloseable {
 	public long getLatency() {
 
 		synchronized (latencyNsQueue) {
-			if (latencyNsQueue.isEmpty())
+			if (latencyNsQueue.isEmpty()) {
 				return Long.MAX_VALUE;
+			}
 			return Collections.min(latencyNsQueue);
 		}
 

@@ -45,8 +45,9 @@ public class SearchField extends HBox {
 
 		getChildren().add(searchTextField);
 
-		if (allowFilter)
+		if (allowFilter) {
 			getChildren().add(getVisibleBtn());
+		}
 
 	}
 
