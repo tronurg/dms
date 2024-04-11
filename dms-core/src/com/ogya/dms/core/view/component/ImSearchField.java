@@ -75,7 +75,7 @@ public class ImSearchField extends HBox {
 	private void initSearchBtn() {
 
 		searchBtn.setOnAction(e -> {
-			String fulltext = getFulltext();
+			String fulltext = searchTextField.textProperty().getValueSafe().trim();
 			if (!fulltext.isEmpty()) {
 				listeners.forEach(listener -> listener.searchRequested(fulltext));
 			}
@@ -87,11 +87,6 @@ public class ImSearchField extends HBox {
 
 		listeners.add(listener);
 
-	}
-
-	public String getFulltext() {
-		String fulltext = searchTextField.textProperty().getValueSafe().trim();
-		return fulltext;
 	}
 
 	public void fireSearchUp() {

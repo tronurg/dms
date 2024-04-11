@@ -12,14 +12,15 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.text.Collator;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -37,8 +38,6 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -100,6 +99,7 @@ public class FoldersPane extends BorderPane {
 	private final ImSearchField imSearchField = new ImSearchField();
 	private final Button menuBtn = ViewFactory.newSettingsMenuBtn();
 	private final ContextMenu contextMenu = new ContextMenu();
+	private final SearchView searchView = new SearchView();
 
 	private final BooleanProperty searchModeProperty = new SimpleBooleanProperty(false);
 
@@ -107,7 +107,6 @@ public class FoldersPane extends BorderPane {
 
 	private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 	private final AtomicReference<Runnable> backActionRef = new AtomicReference<Runnable>();
-	private final AtomicReference<SearchView> searchViewRef = new AtomicReference<SearchView>();
 
 	private final Comparator<Node> sorterByName = new Comparator<Node>() {
 
@@ -192,6 +191,22 @@ public class FoldersPane extends BorderPane {
 
 	private void init() {
 
+		initSearchView();
+
+		searchModeProperty.addListener((e0, e1, e2) -> {
+			boolean val = Boolean.TRUE.equals(e2);
+			if (val) {
+				Path topFolder = getTopFolder();
+				searchView.setSearchFolder(topFolder);
+				addView(searchView);
+				imSearchField.requestFocus();
+			} else {
+				searchView.clearSearch();
+				imSearchField.clear();
+				backInFolders();
+			}
+		});
+
 		initTopPane();
 		initScrollPane();
 
@@ -227,7 +242,7 @@ public class FoldersPane extends BorderPane {
 
 		backBtn.setOnAction(e -> {
 			if (searchModeProperty.get()) {
-				setSearchMode(false);
+				searchModeProperty.set(false);
 				return;
 			}
 			if (centerPane.getChildren().size() > 1) {
@@ -262,22 +277,10 @@ public class FoldersPane extends BorderPane {
 
 		imSearchField.setNavigationDisabled(true);
 
-		imSearchField.textProperty().addListener(new ChangeListener<String>() {
-			@Override
-			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
-				imSearchField.setTextFieldStyle(null);
-			}
-		});
-
 		imSearchField.addImSearchListener(new ImSearchListener() {
 
 			@Override
 			public void searchRequested(String fulltext) {
-				imSearchField.setTextFieldStyle(null);
-				SearchView searchView = searchViewRef.get();
-				if (searchView == null) {
-					return;
-				}
 				searchView.search(fulltext);
 			}
 
@@ -319,7 +322,7 @@ public class FoldersPane extends BorderPane {
 		contextMenu.setAnchorLocation(AnchorLocation.CONTENT_TOP_RIGHT);
 
 		MenuItem findItem = new MenuItem(Commons.translate("FIND_DOTS"));
-		findItem.setOnAction(e -> setSearchMode(true));
+		findItem.setOnAction(e -> searchModeProperty.set(true));
 
 		ToggleGroup orderGroup = new ToggleGroup();
 
@@ -352,6 +355,15 @@ public class FoldersPane extends BorderPane {
 
 		contextMenu.getItems().addAll(findItem, new SeparatorMenuItem(), orderByNameItem, orderByDateItem,
 				new SeparatorMenuItem(), goBackItem);
+
+	}
+
+	private void initSearchView() {
+
+		searchView.setOnFileSelectedAction(e -> {
+			fileSelected(e);
+			searchModeProperty.set(false);
+		});
 
 	}
 
@@ -470,26 +482,6 @@ public class FoldersPane extends BorderPane {
 
 		scrollPane.setVvalue(0.0);
 
-	}
-
-	private void setSearchMode(boolean val) {
-		if (val) {
-			Path topFolder = getTopFolder();
-			SearchView searchView = new SearchView(topFolder);
-			searchView.setOnFileSelectedAction(e -> {
-				fileSelected(e);
-				setSearchMode(false);
-			});
-			addView(searchView);
-			searchViewRef.set(searchView);
-			searchModeProperty.set(true);
-			imSearchField.requestFocus();
-		} else {
-			searchViewRef.set(null);
-			searchModeProperty.set(false);
-			imSearchField.clear();
-			backInFolders();
-		}
 	}
 
 	private void registerFolder(Path folder) {
@@ -791,31 +783,33 @@ public class FoldersPane extends BorderPane {
 
 	private class SearchView extends FileView {
 
+		private final AtomicReference<String> searchTextRef = new AtomicReference<String>();
 		private final ExecutorService searchPool = DmsFactory.newCachedThreadPool();
 
-		private final Path searchFolder;
+		private Path searchFolder;
 
-		private String filter;
-
-		SearchView(Path searchFolder) {
+		SearchView() {
 			super();
-			this.searchFolder = searchFolder;
 			setAlignment(Pos.CENTER);
 		}
 
-		private void addFile(Path path, String filter) {
-			if (!okToContinue(filter)) {
+		private void showSearchResults(String filter, List<Path> paths, boolean hasMore) {
+			if (filter != searchTextRef.get()) {
 				return;
 			}
-			if (getChildren().size() == MAX_SEARCH_HIT) {
-				addNotification();
-				return;
+			getChildren().clear();
+			if (paths.isEmpty()) {
+				addNotification(Commons.translate("NOT_FOUND"));
+			} else {
+				paths.forEach(path -> addFile(path));
 			}
-			addFile(path);
+			if (hasMore) {
+				addNotification(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
+			}
 		}
 
-		private void addNotification() {
-			Label notLabel = new Label(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
+		private void addNotification(String text) {
+			Label notLabel = new Label(text);
 			notLabel.setTextAlignment(TextAlignment.CENTER);
 			notLabel.setWrapText(true);
 			notLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
@@ -827,47 +821,43 @@ public class FoldersPane extends BorderPane {
 			getChildren().add(notLabel);
 		}
 
-		private boolean okToContinue(String filter) {
-			return this.filter == filter && !(getChildren().size() > MAX_SEARCH_HIT);
+		void setSearchFolder(Path searchFolder) {
+			this.searchFolder = searchFolder;
 		}
 
 		void search(final String fulltext) {
+			clearSearch();
 			final String filter = fulltext.trim().replace(".", "\\.").replace("*", ".*").replace("?", ".?")
 					.toLowerCase(Locale.getDefault());
-			this.filter = filter;
-			getChildren().clear();
+			searchTextRef.set(filter);
+			addNotification(Commons.translate("SEARCHING_DOTS"));
 			searchPool.execute(() -> {
 				try (Stream<Path> stream = Files.find(searchFolder, Integer.MAX_VALUE, (e0, e1) -> e1.isRegularFile()
 						&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
+					List<Path> paths = new ArrayList<Path>();
 					Iterator<Path> iter = stream.iterator();
-					int count = 0;
-					while (okToContinue(filter)) {
+					boolean hasNext = false;
+					while (filter == searchTextRef.get() && !(paths.size() > MAX_SEARCH_HIT)) {
 						try {
-							if (!iter.hasNext()) {
+							if (!(hasNext = iter.hasNext()) || paths.size() == MAX_SEARCH_HIT) {
 								break;
 							}
-							final Path file = iter.next();
-							Platform.runLater(() -> addFile(file, filter));
-							++count;
+							paths.add(iter.next());
 						} catch (Exception e) {
 
 						}
 					}
-					final int hitCount = count;
-					Platform.runLater(() -> {
-						if (!Objects.equals(fulltext, imSearchField.getFulltext())) {
-							return;
-						}
-						if (hitCount == 0) {
-							imSearchField.setTextFieldStyle("-fx-text-fill: red;");
-						} else {
-							imSearchField.setTextFieldStyle(null);
-						}
-					});
+					final boolean hasMore = hasNext;
+					Platform.runLater(() -> showSearchResults(filter, paths, hasMore));
 				} catch (Exception e) {
 
 				}
 			});
+		}
+
+		void clearSearch() {
+			getChildren().clear();
+			searchTextRef.set(null);
 		}
 
 	}

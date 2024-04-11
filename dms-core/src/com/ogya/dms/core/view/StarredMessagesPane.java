@@ -133,6 +133,8 @@ class StarredMessagesPane extends BorderPane {
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
 	private final BooleanProperty searchModeProperty = new SimpleBooleanProperty(false);
 
+	private final AtomicReference<String> searchTextRef = new AtomicReference<String>();
+
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
 	private final Comparator<Node> messagesSorter = new Comparator<Node>() {
@@ -205,8 +207,8 @@ class StarredMessagesPane extends BorderPane {
 
 	private void initCenterPaneWithLoadBtn() {
 
-		centerPaneWithLoadBtn.setPadding(new Insets(GAP));
 		centerPaneWithLoadBtn.setAlignment(Pos.CENTER);
+		centerPaneWithLoadBtn.setPadding(new Insets(GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
@@ -272,9 +274,7 @@ class StarredMessagesPane extends BorderPane {
 
 			@Override
 			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
-				imSearchField.setTextFieldStyle(null);
-				searchHits.clear();
-				searchHitIndex.set(0);
+				clearSearch();
 			}
 
 		});
@@ -283,6 +283,8 @@ class StarredMessagesPane extends BorderPane {
 
 			@Override
 			public void searchRequested(String fulltext) {
+				clearSearch();
+				searchTextRef.set(fulltext);
 				listeners.forEach(listener -> listener.archiveSearchRequested(fulltext));
 			}
 
@@ -495,23 +497,27 @@ class StarredMessagesPane extends BorderPane {
 
 	}
 
-	void showSearchResults(List<Message> hits) {
+	void showSearchResults(String fulltext, List<Message> hits) {
 
-		if (!searchModeProperty.get()) {
+		if (!searchModeProperty.get() || fulltext != searchTextRef.get()) {
 			return;
 		}
 
-		searchHits.clear();
 		searchHits.addAll(hits);
-		searchHitIndex.set(0);
 
 		if (searchHits.isEmpty()) {
 			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
 		} else {
-			imSearchField.setTextFieldStyle(null);
 			goToMessage(searchHits.get(searchHitIndex.get()).getId());
 		}
 
+	}
+
+	private void clearSearch() {
+		imSearchField.setTextFieldStyle(null);
+		searchHits.clear();
+		searchHitIndex.set(0);
+		searchTextRef.set(null);
 	}
 
 	private Node getReferenceBalloon(Message message) {

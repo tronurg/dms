@@ -3517,7 +3517,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				List<Message> hits = dbManager.searchInArchivedMessages(fulltext);
-				Platform.runLater(() -> dmsPanel.showArchiveSearchResults(hits));
+				Platform.runLater(() -> dmsPanel.showArchiveSearchResults(fulltext, hits));
 
 			} catch (Exception e) {
 
@@ -3577,7 +3577,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 			try {
 
 				List<Message> hits = dbManager.searchInAllMessages(fulltext);
-				Platform.runLater(() -> dmsPanel.showSearchInAllMessagesResults(hits));
+				Platform.runLater(() -> dmsPanel.showSearchInAllMessagesResults(fulltext, hits));
 
 			} catch (Exception e) {
 

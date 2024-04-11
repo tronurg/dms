@@ -25,8 +25,6 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
 import javafx.geometry.Bounds;
@@ -58,6 +56,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.TextAlignment;
 
 class SearchInAllMessagesPane extends BorderPane {
 
@@ -67,6 +66,11 @@ class SearchInAllMessagesPane extends BorderPane {
 	private static final double GAP = ViewFactory.GAP;
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
+
+	private final Border notificationBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
+			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
+	private final Background notificationBackground = new Background(
+			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
 
 	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 			new CornerRadii(10.0 * VIEW_FACTOR), BorderWidths.DEFAULT));
@@ -93,6 +97,8 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private final List<ISearchInAllMessagesPane> listeners = Collections
 			.synchronizedList(new ArrayList<ISearchInAllMessagesPane>());
+
+	private final AtomicReference<String> searchTextRef = new AtomicReference<String>();
 
 	SearchInAllMessagesPane(BooleanProperty unreadProperty) {
 
@@ -129,6 +135,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private void initCenterPane() {
 
+		centerPane.setAlignment(Pos.CENTER);
 		centerPane.setPadding(new Insets(GAP));
 
 		scrollPane.getStyleClass().add("edge-to-edge");
@@ -147,8 +154,8 @@ class SearchInAllMessagesPane extends BorderPane {
 	private void initBackBtn() {
 
 		backBtn.setOnAction(e -> {
-			clear();
-			imSearchField.textProperty().set("");
+			clearSearch();
+			imSearchField.clear();
 			Runnable backAction = backActionRef.get();
 			if (backAction == null) {
 				return;
@@ -165,20 +172,13 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		imSearchField.setNavigationDisabled(true);
 
-		imSearchField.textProperty().addListener(new ChangeListener<String>() {
-
-			@Override
-			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
-				imSearchField.setTextFieldStyle(null);
-			}
-
-		});
-
 		imSearchField.addImSearchListener(new ImSearchListener() {
 
 			@Override
 			public void searchRequested(String fulltext) {
-				clear();
+				clearSearch();
+				searchTextRef.set(fulltext);
+				addNotification(Commons.translate("SEARCHING_DOTS"));
 				listeners.forEach(listener -> listener.searchInAllMessagesRequested(fulltext));
 			}
 
@@ -205,13 +205,6 @@ class SearchInAllMessagesPane extends BorderPane {
 	void setOnBackAction(final Runnable runnable) {
 
 		backActionRef.set(runnable);
-
-	}
-
-	private void clear() {
-
-		messageBalloons.clear();
-		centerPane.getChildren().clear();
 
 	}
 
@@ -253,15 +246,39 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	}
 
-	void showSearchResults(List<Message> hits) {
+	void showSearchResults(String fulltext, List<Message> hits) {
+
+		if (fulltext != searchTextRef.get()) {
+			return;
+		}
+
+		centerPane.getChildren().clear();
 
 		if (hits.isEmpty()) {
-			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
+			addNotification(Commons.translate("NOT_FOUND"));
 		} else {
-			imSearchField.setTextFieldStyle(null);
 			hits.forEach(hit -> addMessage(hit));
 		}
 
+	}
+
+	private void addNotification(String text) {
+		Label notLabel = new Label(text);
+		notLabel.setTextAlignment(TextAlignment.CENTER);
+		notLabel.setWrapText(true);
+		notLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
+		notLabel.setFont(Font.font(null, FontWeight.BOLD, notLabel.getFont().getSize()));
+		notLabel.setTextFill(Color.GRAY);
+		notLabel.setBorder(notificationBorder);
+		notLabel.setBackground(notificationBackground);
+		VBox.setMargin(notLabel, new Insets(GAP, 0.0, GAP, 0.0));
+		centerPane.getChildren().add(notLabel);
+	}
+
+	private void clearSearch() {
+		messageBalloons.clear();
+		centerPane.getChildren().clear();
+		searchTextRef.set(null);
 	}
 
 	private Node getReferenceBalloon(Message message) {

@@ -198,6 +198,8 @@ class MessagePane extends BorderPane {
 	private final BooleanProperty selectionModeProperty = new SimpleBooleanProperty(false);
 	private final BooleanProperty searchModeProperty = new SimpleBooleanProperty(false);
 
+	private final AtomicReference<String> searchTextRef = new AtomicReference<String>();
+
 	private final LongPressTimer longPressTimer = new LongPressTimer();
 
 	private final ChangeListener<Number> scrollListener = (e0, e1, e2) -> {
@@ -347,9 +349,7 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void changed(ObservableValue<? extends String> arg0, String arg1, String arg2) {
-				imSearchField.setTextFieldStyle(null);
-				searchHits.clear();
-				searchHitIndex.set(0);
+				clearSearch();
 			}
 
 		});
@@ -358,7 +358,8 @@ class MessagePane extends BorderPane {
 
 			@Override
 			public void searchRequested(String fulltext) {
-				imSearchField.setTextFieldStyle(null);
+				clearSearch();
+				searchTextRef.set(fulltext);
 				listeners.forEach(listener -> listener.searchRequested(fulltext));
 			}
 
@@ -1021,25 +1022,25 @@ class MessagePane extends BorderPane {
 
 	void showSearchResults(String fulltext, List<Message> hits) {
 
-		if (!searchModeProperty.get()) {
+		if (!searchModeProperty.get() || fulltext != searchTextRef.get()) {
 			return;
 		}
 
-		searchHits.clear();
 		searchHits.addAll(hits);
-		searchHitIndex.set(0);
-
-		if (!Objects.equals(fulltext, imSearchField.getFulltext())) {
-			return;
-		}
 
 		if (searchHits.isEmpty()) {
 			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
 		} else {
-			imSearchField.setTextFieldStyle(null);
 			goToMessage(searchHits.get(searchHitIndex.get()).getId());
 		}
 
+	}
+
+	private void clearSearch() {
+		imSearchField.setTextFieldStyle(null);
+		searchHits.clear();
+		searchHitIndex.set(0);
+		searchTextRef.set(null);
 	}
 
 	private Node getReferenceBalloon(Message message) {

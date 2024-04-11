@@ -558,15 +558,15 @@ public class DmsPanel extends StackPane
 
 	}
 
-	public void showArchiveSearchResults(List<Message> hits) {
+	public void showArchiveSearchResults(String fulltext, List<Message> hits) {
 
-		starredMessagesPane.showSearchResults(hits);
+		starredMessagesPane.showSearchResults(fulltext, hits);
 
 	}
 
-	public void showSearchInAllMessagesResults(List<Message> hits) {
+	public void showSearchInAllMessagesResults(String fulltext, List<Message> hits) {
 
-		searchInAllMessagesPane.showSearchResults(hits);
+		searchInAllMessagesPane.showSearchResults(fulltext, hits);
 
 	}
 
