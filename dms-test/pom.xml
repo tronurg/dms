@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ogya.dms</groupId>
   <artifactId>dms-test</artifactId>
-  <version>1.0.0</version>
+  <version>0.4.4</version>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>com.ogya.dms</groupId>
       <artifactId>dms-core</artifactId>
-      <version>1.0.0</version>
+      <version>0.4.4</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

@@ -129,9 +129,9 @@ public interface DmsHandle {
 
 	void clearGuiGroupConversation(GroupId groupId);
 
-	void markPrivateMessagesAsRead(ContactId contactId);
+	void markGuiPrivateMessagesAsRead(ContactId contactId);
 
-	void markGroupMessagesAsRead(GroupId groupId);
+	void markGuiGroupMessagesAsRead(GroupId groupId);
 
 	void switchAudio(boolean on);
 

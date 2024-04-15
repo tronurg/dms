@@ -32,6 +32,11 @@ import com.ogya.dms.core.view.ReportsPane.ReportTemplate;
 
 public class Commons {
 
+	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
+
+	public static final int UNITS_PER_PAGE = 50;
+	public static final int CHUNK_SIZE = 8192;
+
 	public static final String SERVER_IP = getServerIp();
 	public static final int SERVER_PORT = getServerPort();
 	public static final String DB_PATH = getDbPath();
@@ -43,10 +48,6 @@ public class Commons {
 	public static final boolean AUTO_OPEN_FILE = getAutoOpenFile();
 
 	public static final List<ReportTemplate> REPORT_TEMPLATES = getReportTemplates();
-
-	public static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuuMMddHHmmss");
-
-	public static final int CHUNK_SIZE = 8192;
 
 	private static Document confDoc;
 	private static ResourceBundle langFile;

@@ -3,3 +3,4 @@
 bin
 workspace/*
 !workspace/plugins
+ip.dat

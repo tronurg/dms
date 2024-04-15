@@ -100,7 +100,7 @@ import javafx.scene.Scene;
 
 public class DmsControl implements DmsClientListener, AppListener, ReportsListener, AudioCenterListener, DmsHandle {
 
-	private static final int MIN_MESSAGES_PER_PAGE = 50;
+	private static final int MIN_MESSAGES_PER_PAGE = Commons.UNITS_PER_PAGE;
 
 	private static final Object FILE_SYNC = new Object();
 
@@ -4273,7 +4273,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void markPrivateMessagesAsRead(ContactId contactId) {
+	public void markGuiPrivateMessagesAsRead(ContactId contactId) {
 
 		taskQueue.execute(() -> {
 
@@ -4288,7 +4288,7 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 	}
 
 	@Override
-	public void markGroupMessagesAsRead(GroupId groupId) {
+	public void markGuiGroupMessagesAsRead(GroupId groupId) {
 
 		taskQueue.execute(() -> {
 
