@@ -13,7 +13,7 @@ import com.ogya.dms.core.structures.Chunk;
 
 public class DmsMessageSender implements AutoCloseable {
 
-	private static final int CHUNK_SIZE = 8192;
+	private static final int CHUNK_SIZE = Commons.CHUNK_SIZE;
 	private static final byte MESSAGE_POJO_PREFIX = -1;
 
 	private final MessagePojo messagePojo;
