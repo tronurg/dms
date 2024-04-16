@@ -66,6 +66,7 @@ class SearchInAllMessagesPane extends BorderPane {
 	private static final double GAP = ViewFactory.GAP;
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
+	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
 
 	private final Border notificationBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
@@ -257,7 +258,14 @@ class SearchInAllMessagesPane extends BorderPane {
 		if (hits.isEmpty()) {
 			addNotification(Commons.translate("NOT_FOUND"));
 		} else {
-			hits.forEach(hit -> addMessage(hit));
+			int index = 0;
+			for (Message hit : hits) {
+				if (++index > MAX_SEARCH_HIT) {
+					addNotification(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
+					break;
+				}
+				addMessage(hit);
+			}
 		}
 
 	}
