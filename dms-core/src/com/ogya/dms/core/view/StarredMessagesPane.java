@@ -20,10 +20,11 @@ import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
+import com.ogya.dms.core.view.component.DmsScrollPane;
+import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
-import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
 import javafx.animation.AnimationTimer;
 import javafx.animation.Transition;
@@ -108,11 +109,7 @@ class StarredMessagesPane extends BorderPane {
 
 	private final Button loadBtn = new Button(Commons.translate("SHOW_MORE"));
 
-	private final ScrollPane scrollPane = new ScrollPane(centerPaneWithLoadBtn) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(centerPaneWithLoadBtn);
 
 	private final ObservableSet<MessageBalloon> selectedBalloons = FXCollections.observableSet();
 
@@ -214,12 +211,7 @@ class StarredMessagesPane extends BorderPane {
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
-		scrollPane.setSkin(new ScrollPaneSkin(scrollPane) {
-			@Override
-			public void onTraverse(Node arg0, Bounds arg1) {
-
-			}
-		});
+		scrollPane.setSkin(new DmsScrollPaneSkin(scrollPane));
 
 		initLoadBtn();
 

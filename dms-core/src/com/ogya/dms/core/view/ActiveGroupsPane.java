@@ -17,6 +17,7 @@ import com.ogya.dms.core.intf.handles.GroupHandle;
 import com.ogya.dms.core.intf.handles.impl.GroupHandleImpl;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -44,11 +45,7 @@ public class ActiveGroupsPane extends BorderPane {
 	private final SearchField searchField = new SearchField(false);
 
 	private final VBox entities = new VBox();
-	private final ScrollPane scrollPane = new ScrollPane(entities) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 
 	private final Map<Long, GroupCard> idGroupCards = Collections.synchronizedMap(new HashMap<Long, GroupCard>());
 	private final Map<Long, ObjectProperty<Color>> memberIdStatus = Collections

@@ -17,6 +17,7 @@ import com.ogya.dms.core.intf.handles.ContactHandle;
 import com.ogya.dms.core.intf.handles.impl.ContactHandleImpl;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -38,11 +39,7 @@ public class ActiveContactsPane extends BorderPane {
 	private final SearchField searchField = new SearchField(false);
 
 	private final VBox entities = new VBox();
-	private final ScrollPane scrollPane = new ScrollPane(entities) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 
 	private final Map<Long, ContactCard> idContactCards = Collections.synchronizedMap(new HashMap<Long, ContactCard>());
 

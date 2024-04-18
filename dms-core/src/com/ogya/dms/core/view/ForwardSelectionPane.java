@@ -13,6 +13,7 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -38,11 +39,7 @@ public class ForwardSelectionPane extends GridPane {
 	private final Button backBtn;
 	private final SearchField searchField = new SearchField(true);
 	private final VBox entities = new VBox();
-	private final ScrollPane scrollPane = new ScrollPane(entities) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 	private final Button sendBtn = ViewFactory.newSendBtn();
 
 	private final Map<EntityId, EntityCard> entityIdCards = Collections

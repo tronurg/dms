@@ -16,6 +16,7 @@ import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -65,11 +66,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
 	private final VBox scrollableContent = new VBox();
-	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(scrollableContent);
 	private final Popup deleteGroupPopup = new Popup();
 	private final VBox addedContactsPane = new VBox();
 	private final VBox notAddedContactsPane = new VBox();

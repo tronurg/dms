@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -32,11 +33,7 @@ public class SettingsPane extends BorderPane {
 	private final Button backBtn;
 
 	private final VBox scrollableContent = new VBox(GAP);
-	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(scrollableContent);
 
 	private final AtomicReference<Consumer<Settings>> settingClickedActionRef = new AtomicReference<Consumer<Settings>>();
 

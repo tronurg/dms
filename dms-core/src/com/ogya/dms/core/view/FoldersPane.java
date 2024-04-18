@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import com.ogya.dms.core.factory.DmsFactory;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -89,11 +90,7 @@ public class FoldersPane extends BorderPane {
 	private final HBox topPane = new HBox(2 * GAP);
 	private final StackPane centerPane = new StackPane();
 
-	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(centerPane);
 	private final Button backBtn;
 	private final Label headingLbl = new Label(Commons.translate("FILE_EXPLORER"));
 	private final ImSearchField imSearchField = new ImSearchField();

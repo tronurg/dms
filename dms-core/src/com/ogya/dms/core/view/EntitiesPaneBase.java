@@ -17,9 +17,10 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsScrollPane;
+import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
-import com.sun.javafx.scene.control.skin.ScrollPaneSkin;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
@@ -29,7 +30,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableSet;
 import javafx.event.EventTarget;
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
@@ -62,11 +62,7 @@ class EntitiesPaneBase extends BorderPane {
 
 	private final SearchField searchField;
 	private final VBox entities = new VBox();
-	private final ScrollPane scrollPane = new ScrollPane(entities) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 	private final Popup removeEntityPopup = new Popup();
 	private final Button removeEntityBtn = new Button(Commons.translate("REMOVE_COMPLETELY"));
 
@@ -119,12 +115,7 @@ class EntitiesPaneBase extends BorderPane {
 		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
-		scrollPane.setSkin(new ScrollPaneSkin(scrollPane) {
-			@Override
-			public void onTraverse(Node arg0, Bounds arg1) {
-
-			}
-		});
+		scrollPane.setSkin(new DmsScrollPaneSkin(scrollPane));
 
 		setTop(searchField);
 		setCenter(scrollPane);

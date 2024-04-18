@@ -7,6 +7,7 @@ import java.util.Map;
 
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.MessageStatus;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -34,11 +35,7 @@ public class StatusInfoPane extends BorderPane {
 	private final HBox topPane = new HBox(2 * GAP);
 	private final VBox centerPane = new VBox(2 * GAP);
 
-	private final ScrollPane scrollPane = new ScrollPane(centerPane) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(centerPane);
 	private final Button backBtn;
 
 	private final Map<Long, Card> cards = Collections.synchronizedMap(new HashMap<Long, Card>());

@@ -7,6 +7,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -192,17 +193,9 @@ public class ReportsPane extends GridPane {
 		private final Integer reportId;
 
 		private final GridPane valuesPane = new GridPane();
-		private final ScrollPane valuesScrollPane = new ScrollPane(valuesPane) {
-			@Override
-			public void requestFocus() {
-			}
-		};
+		private final ScrollPane valuesScrollPane = new DmsScrollPane(valuesPane);
 		private final VBox preview = new VBox();
-		private final ScrollPane previewScrollPane = new ScrollPane(preview) {
-			@Override
-			public void requestFocus() {
-			}
-		};
+		private final ScrollPane previewScrollPane = new DmsScrollPane(preview);
 
 		private final List<TextField> textFields = Collections.synchronizedList(new ArrayList<TextField>());
 		private final List<List<Label>> lines = Collections.synchronizedList(new ArrayList<List<Label>>());

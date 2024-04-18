@@ -4,6 +4,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.IpField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -44,11 +45,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 	private final Button addIpButton = ViewFactory.newAddBtn();
 
 	private final VBox scrollableContent = new VBox(GAP);
-	private final ScrollPane scrollPane = new ScrollPane(scrollableContent) {
-		@Override
-		public void requestFocus() {
-		}
-	};
+	private final ScrollPane scrollPane = new DmsScrollPane(scrollableContent);
 
 	private final AtomicReference<Consumer<String>> removeIpActionRef = new AtomicReference<Consumer<String>>();
 
