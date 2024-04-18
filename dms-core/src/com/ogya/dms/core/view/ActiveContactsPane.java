@@ -135,10 +135,10 @@ public class ActiveContactsPane extends BorderPane {
 
 	public void updateUI() {
 
-		setStyle("-panel-background: #"
+		setStyle("-dms-background: #"
 				+ String.format("%6s", Integer.toHexString(
 						((java.awt.Color) UIManager.get("Panel.background")).getRGB() & 0xffffff)).replace(' ', '0')
-				+ ";" + "-text-fill: #" + String
+				+ ";" + "-dms-foreground: #" + String
 						.format("%6s",
 								Integer.toHexString(
 										((java.awt.Color) UIManager.get("Panel.foreground")).getRGB() & 0xffffff))

@@ -86,10 +86,10 @@ public class ReportsDialog extends JDialog {
 
 	public void updateUI() {
 
-		reportsPane.setStyle("-panel-background: #"
+		reportsPane.setStyle("-dms-background: #"
 				+ String.format("%6s", Integer.toHexString(
 						((java.awt.Color) UIManager.get("Panel.background")).getRGB() & 0xffffff)).replace(' ', '0')
-				+ ";" + "-text-fill: #" + String
+				+ ";" + "-dms-foreground: #" + String
 						.format("%6s",
 								Integer.toHexString(
 										((java.awt.Color) UIManager.get("Panel.foreground")).getRGB() & 0xffffff))

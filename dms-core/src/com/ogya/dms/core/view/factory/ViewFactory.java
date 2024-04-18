@@ -653,7 +653,7 @@ public class ViewFactory {
 		btn.setGraphic(group);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
-		btn.setStyle("-fx-effect: dropshadow(gaussian, -text-fill, 1em, 0, 0, 0);");
+		btn.setStyle("-fx-effect: dropshadow(gaussian, -dms-foreground, 1em, 0, 0, 0);");
 
 		return btn;
 

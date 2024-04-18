@@ -1,8 +1,8 @@
 .root {
-	-panel-background: white;
-	-text-fill: black;
-	-fx-base: -panel-background;
-	-fx-background: -panel-background;
+	-dms-background: white;
+	-dms-foreground: black;
+	-fx-base: -dms-background;
+	-fx-background: -dms-background;
 }
 .button {
 	-fx-background-color: transparent;
@@ -14,7 +14,7 @@
 }
 .text-field {
 	-fx-background-color: transparent;
-	-fx-text-fill: -text-fill;
+	-fx-text-fill: -dms-foreground;
 	-fx-prompt-text-fill: gray;
 }
 .text-field:focused {
@@ -50,7 +50,7 @@
 	-fx-padding: 0.2em;
 }
 .reference-pane {
-	-fx-effect: dropshadow(gaussian, -text-fill, 0.5em, 0, 0, 0);
+	-fx-effect: dropshadow(gaussian, -dms-foreground, 0.5em, 0, 0, 0);
 	-fx-background-color: whitesmoke;
 	-fx-background-radius: 0.4em;
 }
@@ -66,7 +66,7 @@
 }
 .message-area {
 	-fx-background-color: transparent;
-	-fx-text-fill: -text-fill;
+	-fx-text-fill: -dms-foreground;
 }
 .message-area .scroll-pane {
 	-fx-background-color: transparent;
@@ -80,17 +80,17 @@
 .im-box {
 	-fx-background-color: rgba(255,255,255,0.1);
 	-fx-background-radius: 1.1em;
-	-fx-border-color: -text-fill;
+	-fx-border-color: -dms-foreground;
 	-fx-border-radius: 1.1em;
 }
 .ghost-shape {
-	-fx-stroke: -text-fill;
+	-fx-stroke: -dms-foreground;
 }
 .file-button:hover {
 	-fx-background-color: deepskyblue;
 }
 .file-button .label {
-	-fx-text-fill: -text-fill;
+	-fx-text-fill: -dms-foreground;
 }
 .file-button:hover .label {
 	-fx-text-fill: black;
@@ -110,13 +110,13 @@
 	-fx-font-weight: bold;
 }
 .folders-menu .menu-item .label {
-	-fx-text-fill: -text-fill;
+	-fx-text-fill: -dms-foreground;
 }
 .folders-menu .menu-item:hover .label {
 	-fx-text-fill: dodgerblue;
 }
 .folders-menu .radio-menu-item .radio {
-	-fx-background-color: -text-fill;
+	-fx-background-color: -dms-foreground;
 }
 .folders-menu .radio-menu-item:hover .radio {
 	-fx-background-color: dodgerblue;
