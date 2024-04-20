@@ -56,7 +56,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 
 class SearchInAllMessagesPane extends BorderPane {
 
@@ -67,11 +66,6 @@ class SearchInAllMessagesPane extends BorderPane {
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
-
-	private final Border notificationBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
-	private final Background notificationBackground = new Background(
-			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
 
 	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 			new CornerRadii(10.0 * VIEW_FACTOR), BorderWidths.DEFAULT));
@@ -262,16 +256,9 @@ class SearchInAllMessagesPane extends BorderPane {
 	}
 
 	private void addNotification(String text) {
-		Label notLabel = new Label(text);
-		notLabel.setTextAlignment(TextAlignment.CENTER);
-		notLabel.setWrapText(true);
-		notLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-		notLabel.setFont(Font.font(null, FontWeight.BOLD, notLabel.getFont().getSize()));
-		notLabel.setTextFill(Color.GRAY);
-		notLabel.setBorder(notificationBorder);
-		notLabel.setBackground(notificationBackground);
-		VBox.setMargin(notLabel, new Insets(GAP, 0.0, GAP, 0.0));
-		centerPane.getChildren().add(notLabel);
+		Label noteLabel = ViewFactory.newNoteLabel(text);
+		VBox.setMargin(noteLabel, new Insets(GAP, 0.0, GAP, 0.0));
+		centerPane.getChildren().add(noteLabel);
 	}
 
 	private void clearSearch() {

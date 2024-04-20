@@ -114,14 +114,10 @@ class MessagePane extends BorderPane {
 
 	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
 			new CornerRadii(10.0 * VIEW_FACTOR), BorderWidths.DEFAULT));
-	private final Border dateBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
 	private final Background incomingBackground = new Background(
 			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 	private final Background outgoingBackground = new Background(
 			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
-	private final Background dateBackground = new Background(
-			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
 	private final Background searchHitBackground = new Background(
 			new BackgroundFill(Color.rgb(155, 155, 255, 0.5), new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
@@ -1682,7 +1678,7 @@ class MessagePane extends BorderPane {
 
 			this.day = day;
 
-			dateLabel = new Label(DAY_MONTH_YEAR.format(day));
+			dateLabel = ViewFactory.newNoteLabel(DAY_MONTH_YEAR.format(day));
 
 			init();
 
@@ -1690,12 +1686,6 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			// init dateLabel
-			dateLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-			dateLabel.setFont(Font.font(null, FontWeight.BOLD, dateLabel.getFont().getSize()));
-			dateLabel.setTextFill(Color.GRAY);
-			dateLabel.setBorder(dateBorder);
-			dateLabel.setBackground(dateBackground);
 			BorderPane.setAlignment(dateLabel, Pos.CENTER);
 			BorderPane.setMargin(dateLabel, new Insets(0.0, 0.0, GAP, 0.0));
 

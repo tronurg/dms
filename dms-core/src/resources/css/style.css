@@ -8,10 +8,6 @@
 	-fx-background-color: transparent;
 	-fx-focus-traversable: false;
 }
-.dim-label {
-	-fx-font-weight: bold;
-	-fx-text-fill: gray;
-}
 .text-field {
 	-fx-background-color: transparent;
 	-fx-text-fill: -dms-foreground;
@@ -22,6 +18,10 @@
 }
 .black-label {
 	-fx-text-fill: black;
+}
+.dim-label {
+	-fx-font-weight: bold;
+	-fx-text-fill: gray;
 }
 .link-label:hover {
 	-fx-text-fill: dodgerblue;

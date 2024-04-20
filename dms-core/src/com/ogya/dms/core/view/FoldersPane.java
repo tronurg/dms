@@ -58,11 +58,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -73,7 +69,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
@@ -81,11 +76,6 @@ public class FoldersPane extends BorderPane {
 	private static final double GAP = ViewFactory.GAP;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
-
-	private final Border notificationBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(GAP), BorderWidths.DEFAULT, Insets.EMPTY));
-	private final Background notificationBackground = new Background(
-			new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY));
 
 	private final HBox topPane = new HBox(2 * GAP);
 	private final StackPane centerPane = new StackPane();
@@ -806,16 +796,9 @@ public class FoldersPane extends BorderPane {
 		}
 
 		private void addNotification(String text) {
-			Label notLabel = new Label(text);
-			notLabel.setTextAlignment(TextAlignment.CENTER);
-			notLabel.setWrapText(true);
-			notLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-			notLabel.setFont(Font.font(null, FontWeight.BOLD, notLabel.getFont().getSize()));
-			notLabel.setTextFill(Color.GRAY);
-			notLabel.setBorder(notificationBorder);
-			notLabel.setBackground(notificationBackground);
-			VBox.setMargin(notLabel, new Insets(GAP, 0.0, GAP, 0.0));
-			getChildren().add(notLabel);
+			Label noteLabel = ViewFactory.newNoteLabel(text);
+			VBox.setMargin(noteLabel, new Insets(GAP, 0.0, GAP, 0.0));
+			getChildren().add(noteLabel);
 		}
 
 		void setSearchFolder(Path searchFolder) {
