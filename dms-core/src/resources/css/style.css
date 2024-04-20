@@ -19,6 +19,7 @@
 .top-pane {
 	-fx-alignment: center-left;
 	-fx-background-color: lightskyblue;
+	-fx-min-height: 2.8em;
 	-fx-padding: 0.3em;
 	-fx-spacing: 0.6em;
 }

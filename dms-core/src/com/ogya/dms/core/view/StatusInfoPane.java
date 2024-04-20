@@ -32,7 +32,7 @@ public class StatusInfoPane extends BorderPane {
 	private static final double GAP = ViewFactory.GAP;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final HBox topPane = new HBox(2 * GAP);
+	private final HBox topPane = new HBox();
 	private final VBox centerPane = new VBox(2 * GAP);
 
 	private final ScrollPane scrollPane = new DmsScrollPane(centerPane);
@@ -52,19 +52,24 @@ public class StatusInfoPane extends BorderPane {
 
 	private void init() {
 
-		topPane.setPadding(new Insets(GAP));
-		centerPane.setPadding(new Insets(2 * GAP, 4 * GAP, 2 * GAP, 2 * GAP));
-
-		topPane.setAlignment(Pos.CENTER_LEFT);
-
-		scrollPane.getStyleClass().add("edge-to-edge");
-		scrollPane.setFitToWidth(true);
-
-		topPane.getChildren().add(backBtn);
+		initTopPane();
+		initScrollPane();
 
 		setTop(topPane);
 		setCenter(scrollPane);
 
+	}
+
+	private void initTopPane() {
+		topPane.getStyleClass().add("top-pane");
+		topPane.setStyle("-fx-background-color: transparent;");
+		topPane.getChildren().add(backBtn);
+	}
+
+	private void initScrollPane() {
+		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.setFitToWidth(true);
+		centerPane.setPadding(new Insets(2 * GAP, 4 * GAP, 2 * GAP, 2 * GAP));
 	}
 
 	void setOnBackAction(Runnable runnable) {
