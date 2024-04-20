@@ -20,13 +20,6 @@ import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
@@ -40,7 +33,6 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontPosture;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 
 public class ViewFactory {
 
@@ -670,15 +662,7 @@ public class ViewFactory {
 
 	public static Label newNoteLabel(String text) {
 		Label noteLabel = new Label(text);
-		noteLabel.setTextAlignment(TextAlignment.CENTER);
-		noteLabel.setWrapText(true);
-		noteLabel.setPadding(new Insets(0.0, GAP, 0.0, GAP));
-		noteLabel.setFont(Font.font(null, FontWeight.BOLD, noteLabel.getFont().getSize()));
-		noteLabel.setTextFill(Color.GRAY);
-		noteLabel.setBorder(new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, new CornerRadii(GAP),
-				BorderWidths.DEFAULT, Insets.EMPTY)));
-		noteLabel
-				.setBackground(new Background(new BackgroundFill(Color.LIGHTGRAY, new CornerRadii(GAP), Insets.EMPTY)));
+		noteLabel.getStyleClass().add("note-label");
 		return noteLabel;
 	}
 

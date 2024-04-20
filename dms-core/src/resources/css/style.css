@@ -16,12 +16,29 @@
 .text-field:focused {
 	-fx-prompt-text-fill: transparent;
 }
+.top-pane {
+	-fx-alignment: center-left;
+	-fx-background-color: lightskyblue;
+	-fx-padding: 0.3em;
+	-fx-spacing: 0.6em;
+}
 .black-label {
 	-fx-text-fill: black;
 }
 .dim-label {
 	-fx-font-weight: bold;
 	-fx-text-fill: gray;
+}
+.note-label {
+	-fx-background-color: lightgray;
+	-fx-background-radius: 0.3em;
+	-fx-border-color: darkgray;
+	-fx-border-radius: 0.3em;
+	-fx-font-weight: bold;
+	-fx-padding: 0 0.3em 0 0.3em;
+	-fx-text-alignment: center;
+	-fx-text-fill: gray;
+	-fx-wrap-text: true;
 }
 .link-label:hover {
 	-fx-text-fill: dodgerblue;

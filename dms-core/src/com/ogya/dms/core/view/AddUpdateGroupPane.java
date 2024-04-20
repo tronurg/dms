@@ -38,10 +38,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.control.TitledPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -59,7 +56,7 @@ public class AddUpdateGroupPane extends BorderPane {
 	private static final double GAP = ViewFactory.GAP;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
-	private final HBox topPane = new HBox(GAP);
+	private final HBox topPane = new HBox();
 
 	private final Button backBtn;
 	private final TextField groupNameTextField = new TextField();
@@ -192,9 +189,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
-		topPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.getStyleClass().add("top-pane");
 
 		initGroupNameTextField();
 		initDeleteBtn();

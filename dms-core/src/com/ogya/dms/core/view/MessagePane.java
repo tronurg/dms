@@ -121,7 +121,7 @@ class MessagePane extends BorderPane {
 	private final Background searchHitBackground = new Background(
 			new BackgroundFill(Color.rgb(155, 155, 255, 0.5), new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
-	private final HBox topPane = new HBox(2 * GAP);
+	private final HBox topPane = new HBox();
 	private final StackPane centerPane = new StackPane();
 	private final GridPane bottomPane = new GridPane();
 
@@ -239,9 +239,7 @@ class MessagePane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
-		topPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.getStyleClass().add("top-pane");
 
 		initBackBtn();
 		initNameLabel();

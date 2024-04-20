@@ -74,7 +74,7 @@ class SearchInAllMessagesPane extends BorderPane {
 	private final Background outgoingBackground = new Background(
 			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
-	private final HBox topPane = new HBox(2 * GAP);
+	private final HBox topPane = new HBox();
 	private final VBox centerPane = new VBox(GAP);
 
 	private final Button backBtn;
@@ -113,9 +113,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
-		topPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.getStyleClass().add("top-pane");
 
 		initBackBtn();
 		initImSearchField();

@@ -56,17 +56,13 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.PopupWindow.AnchorLocation;
@@ -77,7 +73,7 @@ public class FoldersPane extends BorderPane {
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
 
-	private final HBox topPane = new HBox(2 * GAP);
+	private final HBox topPane = new HBox();
 	private final StackPane centerPane = new StackPane();
 
 	private final ScrollPane scrollPane = new DmsScrollPane(centerPane);
@@ -204,9 +200,7 @@ public class FoldersPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
-		topPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.getStyleClass().add("top-pane");
 
 		initBackBtn();
 		initHeadingLbl();

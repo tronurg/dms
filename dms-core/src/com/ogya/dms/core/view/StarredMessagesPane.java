@@ -96,7 +96,7 @@ class StarredMessagesPane extends BorderPane {
 	private final Background searchHitBackground = new Background(
 			new BackgroundFill(Color.rgb(155, 155, 255, 0.5), new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
-	private final HBox topPane = new HBox(2 * GAP);
+	private final HBox topPane = new HBox();
 	private final VBox centerPaneWithLoadBtn = new VBox(GAP);
 	private final VBox centerPane = new VBox(GAP);
 
@@ -187,9 +187,7 @@ class StarredMessagesPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.setBackground(new Background(new BackgroundFill(Color.LIGHTSKYBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
-		topPane.setPadding(new Insets(GAP));
-		topPane.setAlignment(Pos.CENTER_LEFT);
+		topPane.getStyleClass().add("top-pane");
 
 		initBackBtn();
 		initTitleLbl();
