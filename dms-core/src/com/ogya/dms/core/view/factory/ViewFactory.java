@@ -75,9 +75,16 @@ public class ViewFactory {
 
 	}
 
+	private static Button newButton() {
+		Button btn = new Button();
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+		return btn;
+	}
+
 	public static Button newBackBtn(BooleanProperty highlightProperty, Parent parent) {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.DODGERBLUE);
@@ -87,8 +94,6 @@ public class ViewFactory {
 		triangle.setFill(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		if (highlightProperty != null) {
 			final Effect highlight = new ColorAdjust(0.8, 0.0, 0.0, 0.0);
@@ -113,7 +118,7 @@ public class ViewFactory {
 
 	public static Button newSendBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.GREEN);
@@ -125,8 +130,6 @@ public class ViewFactory {
 		triangle.setFill(Color.ANTIQUEWHITE);
 		Group group = new Group(circle, triangle);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -134,7 +137,7 @@ public class ViewFactory {
 
 	public static Button newAddBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(10.0 * VIEW_FACTOR);
 		circle.setStrokeWidth(3.0 * VIEW_FACTOR);
@@ -147,8 +150,6 @@ public class ViewFactory {
 		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		circle.strokeProperty().bind(
 				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
@@ -165,7 +166,7 @@ public class ViewFactory {
 
 		double viewFactor = scaleFactor * VIEW_FACTOR;
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(10.0 * viewFactor);
 		circle.setStrokeWidth(3.0 * viewFactor);
@@ -175,8 +176,6 @@ public class ViewFactory {
 		line.setStrokeWidth(3.0 * viewFactor);
 		Group group = new Group(circle, line);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		circle.strokeProperty()
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
@@ -189,7 +188,7 @@ public class ViewFactory {
 
 	public static Button newDeleteBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Rectangle rectangle = new Rectangle(12.0 * VIEW_FACTOR, 20.0 * VIEW_FACTOR);
 		rectangle.setArcWidth(4.0 * VIEW_FACTOR);
@@ -210,8 +209,6 @@ public class ViewFactory {
 		line3.setStroke(Color.RED);
 		Group group = new Group(rectangle, line1, line2, line3);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -221,7 +218,7 @@ public class ViewFactory {
 
 		double viewFactor = 0.85 * VIEW_FACTOR;
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.TRANSPARENT);
@@ -238,8 +235,6 @@ public class ViewFactory {
 		line.setStrokeWidth(2.0 * VIEW_FACTOR);
 		Group group = new Group(circle, rectangle, line);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -253,14 +248,12 @@ public class ViewFactory {
 
 	private static Button newAttachBtn(double scaleFactor, Color background, Color foreground) {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(background);
 		Group group = new Group(circle, newAttachGraph(scaleFactor, foreground));
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -294,7 +287,7 @@ public class ViewFactory {
 
 	public static Button newReportBtnTransparent() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(16.0 * VIEW_FACTOR);
 		circle.setFill(Color.TRANSPARENT);
@@ -314,8 +307,6 @@ public class ViewFactory {
 		line3.setStrokeWidth(2.0 * VIEW_FACTOR);
 		Group group = new Group(circle, rectangle, line1, line2, line3);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -323,7 +314,8 @@ public class ViewFactory {
 
 	public static Button newInfoBtn() {
 
-		Button btn = new Button("i");
+		Button btn = newButton();
+		btn.setText("i");
 		btn.setTextFill(Color.WHITE);
 		btn.setContentDisplay(ContentDisplay.CENTER);
 		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 * VIEW_FACTOR));
@@ -335,8 +327,6 @@ public class ViewFactory {
 						() -> btn.isHover() && !btn.isDisabled() ? Color.LIGHTSKYBLUE : Color.LIGHTGRAY,
 						btn.hoverProperty(), btn.disabledProperty()));
 		btn.setGraphic(circle);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -344,7 +334,7 @@ public class ViewFactory {
 
 	public static Button newCancelBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(10.0 * VIEW_FACTOR);
 		circle.setFill(Color.RED);
@@ -357,8 +347,6 @@ public class ViewFactory {
 		line2.setStroke(Color.WHITE);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -366,7 +354,7 @@ public class ViewFactory {
 
 	public static Button newSettingsBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		ObjectProperty<Color> colorProperty = new SimpleObjectProperty<Color>();
 
@@ -381,8 +369,6 @@ public class ViewFactory {
 		point2.fillProperty().bind(colorProperty);
 		Group group = new Group(circle, point0, point1, point2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 		final Effect dropShadow = new DropShadow(GAP, Color.DODGERBLUE);
 		colorProperty.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.DODGERBLUE : Color.DARKGRAY,
 				btn.hoverProperty()));
@@ -395,7 +381,7 @@ public class ViewFactory {
 
 	public static Button newSettingsMenuBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(12.0 * VIEW_FACTOR, Color.TRANSPARENT);
 		circle.setStroke(Color.WHITE);
@@ -408,8 +394,6 @@ public class ViewFactory {
 		point2.setFill(Color.WHITE);
 		Group group = new Group(circle, point0, point1, point2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -417,7 +401,7 @@ public class ViewFactory {
 
 	public static Button newSelectionBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(12.0 * VIEW_FACTOR);
 		circle.setStrokeWidth(3.0 * VIEW_FACTOR);
@@ -432,23 +416,15 @@ public class ViewFactory {
 		line2.setStroke(Color.WHITE);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
 	}
 
 	public static Button newStarBtn(double scaleFactor) {
-
-		Button btn = new Button();
-
+		Button btn = newButton();
 		btn.setGraphic(newStarGraph(scaleFactor));
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
-
 		return btn;
-
 	}
 
 	public static Node newStarGraph(double scaleFactor) {
@@ -472,14 +448,12 @@ public class ViewFactory {
 
 		double viewFactor = 0.75 * VIEW_FACTOR;
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(-3.75 * viewFactor, 1.25 * viewFactor, 16.0 * viewFactor);
 		circle.setFill(Color.DODGERBLUE);
 		Group group = new Group(circle, newForwardGraph(0.75, Color.ANTIQUEWHITE));
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -489,7 +463,7 @@ public class ViewFactory {
 
 		double viewFactor = 0.75 * VIEW_FACTOR;
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(-3.75 * viewFactor, 1.25 * viewFactor, 16.0 * viewFactor);
 		circle.fillProperty()
@@ -498,8 +472,6 @@ public class ViewFactory {
 						btn.hoverProperty(), btn.disabledProperty()));
 		Group group = new Group(circle, newForwardGraph(0.75, Color.ANTIQUEWHITE));
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -525,31 +497,17 @@ public class ViewFactory {
 	}
 
 	public static Button newVisibleBtn(double scaleFactor) {
-
 		double viewFactor = scaleFactor * VIEW_FACTOR;
-
-		Button btn = new Button();
-
+		Button btn = newButton();
 		btn.setGraphic(newEyeGraph(viewFactor, Color.DEEPSKYBLUE));
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
-
 		return btn;
-
 	}
 
 	public static Button newInvisibleBtn(double scaleFactor) {
-
 		double viewFactor = scaleFactor * VIEW_FACTOR;
-
-		Button btn = new Button();
-
+		Button btn = newButton();
 		btn.setGraphic(newNoEyeGraph(viewFactor, Color.RED));
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
-
 		return btn;
-
 	}
 
 	private static Node newEyeGraph(double viewFactor, Color color) {
@@ -582,7 +540,7 @@ public class ViewFactory {
 
 	public static Button newSearchBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(7.0 * VIEW_FACTOR);
 		circle.setFill(Color.TRANSPARENT);
@@ -593,8 +551,6 @@ public class ViewFactory {
 		line.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Group group = new Group(circle, line);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -602,7 +558,7 @@ public class ViewFactory {
 
 	public static Button newUpBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Line line1 = new Line(-5.0 * VIEW_FACTOR, 0.0, 0.0, -5.0 * VIEW_FACTOR);
 		line1.setStroke(Color.WHITE);
@@ -612,8 +568,6 @@ public class ViewFactory {
 		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Group group = new Group(line1, line2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -621,7 +575,7 @@ public class ViewFactory {
 
 	public static Button newDownBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Line line1 = new Line(-5.0 * VIEW_FACTOR, -5.0 * VIEW_FACTOR, 0.0, 0.0);
 		line1.setStroke(Color.WHITE);
@@ -631,8 +585,6 @@ public class ViewFactory {
 		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Group group = new Group(line1, line2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 
 		return btn;
 
@@ -640,7 +592,7 @@ public class ViewFactory {
 
 	public static Button newScrollToUnreadBtn() {
 
-		Button btn = new Button();
+		Button btn = newButton();
 
 		Circle circle = new Circle(12.0 * VIEW_FACTOR);
 		circle.setFill(Color.RED);
@@ -652,8 +604,6 @@ public class ViewFactory {
 		line2.setStrokeWidth(3.0 * VIEW_FACTOR);
 		Group group = new Group(circle, line1, line2);
 		btn.setGraphic(group);
-		btn.setPadding(Insets.EMPTY);
-		btn.setPickOnBounds(false);
 		btn.setStyle("-fx-effect: dropshadow(gaussian, -dms-foreground, 1em, 0, 0, 0);");
 
 		return btn;
