@@ -19,7 +19,6 @@
 .top-pane {
 	-fx-alignment: center-left;
 	-fx-background-color: lightskyblue;
-	-fx-min-height: 2.8em;
 	-fx-padding: 0.3em;
 	-fx-spacing: 0.6em;
 }
@@ -117,6 +116,7 @@
 	-fx-border-color: black;
 	-fx-border-width: 0 0 1 0;
 	-fx-font-weight: bold;
+	-fx-padding: 0.2em;
 	-fx-text-fill: black;
 }
 .folders-menu {
