@@ -20,6 +20,7 @@ import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
 import com.ogya.dms.core.view.component.SearchField;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -50,7 +51,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
@@ -58,7 +58,6 @@ import javafx.stage.PopupWindow.AnchorLocation;
 class EntitiesPaneBase extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final SearchField searchField;
 	private final VBox entities = new VBox();
@@ -145,9 +144,9 @@ class EntitiesPaneBase extends BorderPane {
 
 	private void initRemoveEntityBtn() {
 
-		removeEntityBtn.setStyle("-fx-background-color: red;");
+		removeEntityBtn
+				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 		removeEntityBtn.setTextFill(Color.ANTIQUEWHITE);
-		removeEntityBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		removeEntityBtn.setMnemonicParsing(false);
 
 		removeEntityBtn.setOnAction(e -> {
@@ -397,7 +396,7 @@ class EntitiesPaneBase extends BorderPane {
 
 			unreadMessagesLbl.setAlignment(Pos.CENTER);
 
-			unreadMessagesLbl.setFont(Font.font(null, FontWeight.BOLD, unreadMessagesLbl.getFont().getSize()));
+			unreadMessagesLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, -1));
 			unreadMessagesLbl.setTextFill(Color.WHITE);
 
 			unreadMessagesLbl.visibleProperty().bind(Bindings.isNotEmpty(unreadMessages));

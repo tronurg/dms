@@ -18,6 +18,7 @@ import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -46,7 +47,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
@@ -224,7 +224,8 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initAddUpdateGroupBtn() {
 
-		addUpdateGroupBtn.setStyle("-fx-background-color: green;");
+		addUpdateGroupBtn
+				.setStyle("-fx-background-color: green;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
 
 		addUpdateGroupBtn.textProperty()
@@ -232,7 +233,6 @@ public class AddUpdateGroupPane extends BorderPane {
 						() -> updateMode.get() ? Commons.translate("UPDATE_GROUP") : Commons.translate("CREATE_GROUP"),
 						updateMode));
 
-		addUpdateGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		addUpdateGroupBtn.setMnemonicParsing(false);
 		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
@@ -263,7 +263,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		groupNameTextField.setPadding(Insets.EMPTY);
 		groupNameTextField.setPromptText(Commons.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
-		groupNameTextField.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+		groupNameTextField.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 
 	}
 
@@ -306,10 +306,10 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initDeleteGroupBtn() {
 
-		deleteGroupBtn.setStyle("-fx-background-color: red;");
+		deleteGroupBtn
+				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 		deleteGroupBtn.setTextFill(Color.ANTIQUEWHITE);
 
-		deleteGroupBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		deleteGroupBtn.setMnemonicParsing(false);
 
 		deleteGroupBtn.setOnAction(e -> {
@@ -415,7 +415,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+			addRemoveBtn.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
@@ -438,7 +438,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+			addRemoveBtn.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}

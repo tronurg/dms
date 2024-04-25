@@ -5,6 +5,7 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -13,13 +14,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 public class HiddenEntitiesPane extends BorderPane {
-
-	private static final double GAP = ViewFactory.GAP;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final HBox topPane = new HBox();
 	private final Button backBtn;
@@ -61,7 +58,7 @@ public class HiddenEntitiesPane extends BorderPane {
 	private void initHeadingLabel() {
 
 		headingLabel.getStyleClass().add("black-label");
-		headingLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
+		headingLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
 
 	}
 

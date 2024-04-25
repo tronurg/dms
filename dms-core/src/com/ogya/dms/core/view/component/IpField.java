@@ -1,6 +1,5 @@
 package com.ogya.dms.core.view.component;
 
-import java.util.Arrays;
 import java.util.function.UnaryOperator;
 
 import javafx.beans.property.BooleanProperty;
@@ -16,7 +15,6 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.util.StringConverter;
 
 public class IpField extends HBox {
@@ -264,13 +262,6 @@ public class IpField extends HBox {
 			ipField.setText("");
 
 		}
-
-	}
-
-	public void setFont(Font font) {
-
-		Arrays.stream(ipFields).forEach(node -> node.setFont(font));
-		Arrays.stream(dots).forEach(node -> node.setFont(font));
 
 	}
 

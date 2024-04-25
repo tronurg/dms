@@ -304,7 +304,7 @@ public class ViewFactory {
 		btn.setText("i");
 		btn.setTextFill(Color.WHITE);
 		btn.setContentDisplay(ContentDisplay.CENTER);
-		btn.setFont(Font.font(null, FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0));
+		btn.setStyle(CssFactory.getFontStyle(FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 / 15));
 
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(

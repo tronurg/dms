@@ -24,6 +24,7 @@ import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.animation.AnimationTimer;
@@ -74,7 +75,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
 
@@ -243,7 +243,7 @@ class StarredMessagesPane extends BorderPane {
 		HBox.setHgrow(titleLbl, Priority.ALWAYS);
 		titleLbl.setMaxWidth(Double.MAX_VALUE);
 		titleLbl.getStyleClass().add("black-label");
-		titleLbl.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
+		titleLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
 		titleLbl.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
 		titleLbl.managedProperty().bind(titleLbl.visibleProperty());
 
@@ -530,7 +530,7 @@ class StarredMessagesPane extends BorderPane {
 		referenceBalloon.setPadding(new Insets(GAP));
 
 		Label nameLabel = new Label(messageInfo.senderName);
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
+		nameLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 0.8));
 		nameLabel.setTextFill(messageInfo.nameColor);
 
 		referenceBalloon.getChildren().add(nameLabel);
@@ -549,7 +549,7 @@ class StarredMessagesPane extends BorderPane {
 
 				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
 				attachmentLabel.setText(messageInfo.attachmentName);
-				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
+				attachmentLabel.setStyle(CssFactory.getFontStyle(null, null, 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
 
@@ -574,7 +574,7 @@ class StarredMessagesPane extends BorderPane {
 
 			};
 			contentLbl.getStyleClass().add("black-label");
-			contentLbl.setFont(Font.font(contentLbl.getFont().getSize() * 0.8));
+			contentLbl.setStyle(CssFactory.getFontStyle(null, null, 0.8));
 			contentLbl.setWrapText(true);
 
 			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
@@ -895,14 +895,14 @@ class StarredMessagesPane extends BorderPane {
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
 			nameLbl.setText(messageInfo.senderName + " \u00BB " + messageInfo.receiverName);
-			nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
+			nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, -1));
 			nameLbl.setTextFill(messageInfo.nameColor);
 
 		}
 
 		private void initDateLbl() {
 
-			dateLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
+			dateLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			dateLbl.setTextFill(Color.DIMGRAY);
 
 		}
@@ -917,7 +917,7 @@ class StarredMessagesPane extends BorderPane {
 
 			HBox.setHgrow(timeLbl, Priority.ALWAYS);
 			timeLbl.setMaxWidth(Double.MAX_VALUE);
-			timeLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
+			timeLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}

@@ -8,6 +8,7 @@ import java.util.Map;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.view.component.DmsScrollPane;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -24,7 +25,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 public class StatusInfoPane extends BorderPane {
@@ -207,14 +207,14 @@ public class StatusInfoPane extends BorderPane {
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
 			nameLbl.setGraphic(statusCircle);
 			nameLbl.setGraphicTextGap(2 * GAP);
-			nameLbl.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
+			nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 
 		}
 
 		private void initProgressLbl() {
 
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
-			progressLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
+			progressLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());

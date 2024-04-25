@@ -99,8 +99,8 @@ public class DmsTest {
 
 			GroupSelectionHandle gsh = dmsHandle.getActiveGroupsHandle();
 
-			JComponent mcPanel = dmsHandle.getDmsPanel();
-//			JComponent mcPanel = gsh.getGroupSelectionPanel();
+//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = gsh.getGroupSelectionPanel();
 			JButton btn = new JButton("test");
 			final AtomicBoolean loggedIn = new AtomicBoolean(true);
 			btn.addActionListener(e -> {
@@ -175,8 +175,8 @@ public class DmsTest {
 
 			ContactSelectionHandle csh = dmsHandle.getActiveContactsHandle();
 
-			JComponent mcPanel = dmsHandle.getDmsPanel();
-//			JComponent mcPanel = csh.getContactSelectionPanel();
+//			JComponent mcPanel = dmsHandle.getDmsPanel();
+			JComponent mcPanel = csh.getContactSelectionPanel();
 			JButton btn = new JButton("test");
 			final AtomicReference<Long> downloadId = new AtomicReference<Long>();
 			final AtomicBoolean downloading = new AtomicBoolean();

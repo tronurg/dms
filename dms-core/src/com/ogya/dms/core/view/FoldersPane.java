@@ -31,6 +31,7 @@ import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
@@ -63,14 +64,12 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
 
 	private final HBox topPane = new HBox();
@@ -243,7 +242,7 @@ public class FoldersPane extends BorderPane {
 		headingLbl.getStyleClass().add("black-label");
 		HBox.setHgrow(headingLbl, Priority.ALWAYS);
 		headingLbl.setMaxWidth(Double.MAX_VALUE);
-		headingLbl.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
+		headingLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
 		headingLbl.visibleProperty().bind(searchModeProperty.not());
 		headingLbl.managedProperty().bind(headingLbl.visibleProperty());
 

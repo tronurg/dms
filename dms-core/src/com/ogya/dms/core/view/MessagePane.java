@@ -34,6 +34,7 @@ import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.component.RecordButton;
 import com.ogya.dms.core.view.component.RecordButton.RecordListener;
+import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.animation.AnimationTimer;
@@ -95,7 +96,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
@@ -310,7 +310,7 @@ class MessagePane extends BorderPane {
 		nameLabel.setMaxWidth(Double.MAX_VALUE);
 		nameLabel.setGraphic(statusCircle);
 		nameLabel.setGraphicTextGap(2 * GAP);
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, 22.0 * VIEW_FACTOR));
+		nameLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
 		nameLabel.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
 		nameLabel.managedProperty().bind(nameLabel.visibleProperty());
@@ -707,9 +707,9 @@ class MessagePane extends BorderPane {
 
 	private void initDeleteSelectedBtn() {
 
-		deleteSelectedBtn.setStyle("-fx-background-color: red;");
+		deleteSelectedBtn
+				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
-		deleteSelectedBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		deleteSelectedBtn.setMnemonicParsing(false);
 		deleteSelectedBtn.setOnAction(e -> {
 			deleteSelectedPopup.hide();
@@ -723,9 +723,9 @@ class MessagePane extends BorderPane {
 
 	private void initClearConversationBtn() {
 
-		clearConversationBtn.setStyle("-fx-background-color: red;");
+		clearConversationBtn
+				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 		clearConversationBtn.setTextFill(Color.ANTIQUEWHITE);
-		clearConversationBtn.setFont(Font.font(null, FontWeight.BOLD, 18.0 * VIEW_FACTOR));
 		clearConversationBtn.setMnemonicParsing(false);
 		clearConversationBtn.setOnAction(e -> {
 			clearConversationPopup.hide();
@@ -1074,7 +1074,7 @@ class MessagePane extends BorderPane {
 		referenceBalloon.setPadding(new Insets(GAP));
 
 		Label nameLabel = new Label(messageInfo.senderName);
-		nameLabel.setFont(Font.font(null, FontWeight.BOLD, nameLabel.getFont().getSize() * 0.8));
+		nameLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 0.8));
 		nameLabel.setTextFill(messageInfo.nameColor);
 
 		referenceBalloon.getChildren().add(nameLabel);
@@ -1093,7 +1093,7 @@ class MessagePane extends BorderPane {
 
 				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
 				attachmentLabel.setText(messageInfo.attachmentName);
-				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
+				attachmentLabel.setStyle(CssFactory.getFontStyle(null, null, 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
 
@@ -1118,7 +1118,7 @@ class MessagePane extends BorderPane {
 
 			};
 			contentLbl.getStyleClass().add("black-label");
-			contentLbl.setFont(Font.font(contentLbl.getFont().getSize() * 0.8));
+			contentLbl.setStyle(CssFactory.getFontStyle(null, null, 0.8));
 			contentLbl.setWrapText(true);
 
 			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
@@ -1513,7 +1513,7 @@ class MessagePane extends BorderPane {
 
 		private void initTimeLbl() {
 
-			timeLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
+			timeLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
@@ -1523,7 +1523,7 @@ class MessagePane extends BorderPane {
 			Label progressLbl = new Label();
 
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
-			progressLbl.setFont(Font.font(11.25 * VIEW_FACTOR));
+			progressLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.FRESH));
@@ -1596,7 +1596,7 @@ class MessagePane extends BorderPane {
 		private void initNameLbl(Color nameColor) {
 
 			nameLbl.setPadding(new Insets(0.0, 0.0, GAP, 0.0));
-			nameLbl.setFont(Font.font(null, FontWeight.BOLD, nameLbl.getFont().getSize()));
+			nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, -1));
 			nameLbl.setTextFill(nameColor);
 
 			getChildren().addListener(new ListChangeListener<Node>() {
