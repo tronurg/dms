@@ -39,7 +39,7 @@ public class ReportsPane extends GridPane {
 	private final ComboBox<String> reportsComboBox = new ComboBox<String>();
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
-	private final Button attachBtn = ViewFactory.newAttachBtnGreen();
+	private final Button attachBtn = ViewFactory.newAttachBtn();
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 

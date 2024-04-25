@@ -235,25 +235,24 @@ public class ViewFactory {
 
 	}
 
-	public static Button newAttachBtnGreen() {
+	public static Button newAttachBtn() {
 
-		return newAttachBtn(1.0, Color.GREEN, Color.ANTIQUEWHITE);
-
-	}
-
-	private static Button newAttachBtn(double scaleFactor, Color background, Color foreground) {
+		double scaleFactor = 1.0;
 
 		Circle circle = new Circle(16.0);
-		circle.setFill(background);
-		Button btn = newButton(circle, newAttachGraph(scaleFactor, foreground));
+		circle.setFill(Color.GREEN);
+		Button btn = newButton(circle, newAttachGraph(scaleFactor, Color.ANTIQUEWHITE));
 
 		return btn;
 
 	}
 
-	public static Node newAttachGraph(double scaleFactor) {
+	public static Label newAttachLbl(double scaleFactor) {
 
-		return newAttachGraph(scaleFactor, Color.GRAY);
+		Label lbl = newLabel(newAttachGraph(scaleFactor, Color.GRAY));
+		lbl.getStyleClass().add("dim-label");
+
+		return lbl;
 
 	}
 
@@ -395,12 +394,23 @@ public class ViewFactory {
 
 	}
 
-	public static Button newStarBtn(double scaleFactor) {
-		Button btn = newButton(newStarGraph(scaleFactor));
-		return btn;
+	public static Button newStarBtn() {
+
+		double scaleFactor = 1.0;
+
+		return newButton(newStarGraph(scaleFactor));
+
 	}
 
-	public static Node newStarGraph(double scaleFactor) {
+	public static Label newStarLbl() {
+
+		double scaleFactor = 0.65;
+
+		return newLabel(newStarGraph(scaleFactor));
+
+	}
+
+	private static Node newStarGraph(double scaleFactor) {
 
 		Polygon star = new Polygon();
 		star.setFill(Color.YELLOW);
@@ -421,7 +431,7 @@ public class ViewFactory {
 
 		Circle circle = new Circle(-3.75 * scaleFactor, 1.25 * scaleFactor, 16.0 * scaleFactor);
 		circle.setFill(Color.DODGERBLUE);
-		Button btn = newButton(circle, newForwardGraph(0.75, Color.ANTIQUEWHITE));
+		Button btn = newButton(circle, newForwardGraph(scaleFactor, Color.ANTIQUEWHITE));
 
 		return btn;
 
@@ -432,7 +442,7 @@ public class ViewFactory {
 		double scaleFactor = 0.75;
 
 		Circle circle = new Circle(-3.75 * scaleFactor, 1.25 * scaleFactor, 16.0 * scaleFactor);
-		Button btn = newButton(circle, newForwardGraph(0.75, Color.ANTIQUEWHITE));
+		Button btn = newButton(circle, newForwardGraph(scaleFactor, Color.ANTIQUEWHITE));
 
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
@@ -443,7 +453,15 @@ public class ViewFactory {
 
 	}
 
-	public static Node newForwardGraph(double scaleFactor, Color color) {
+	public static Label newForwardLbl() {
+
+		double scaleFactor = 0.5;
+
+		return newLabel(newForwardGraph(scaleFactor, Color.DARKGRAY));
+
+	}
+
+	private static Node newForwardGraph(double scaleFactor, Color color) {
 
 		Polygon arrowHead = new Polygon();
 		arrowHead.getPoints()
@@ -460,14 +478,20 @@ public class ViewFactory {
 
 	}
 
-	public static Button newVisibleBtn(double scaleFactor) {
-		Button btn = newButton(newEyeGraph(scaleFactor, Color.DEEPSKYBLUE));
-		return btn;
+	public static Button newVisibleBtn() {
+
+		double scaleFactor = 0.65;
+
+		return newButton(newEyeGraph(scaleFactor, Color.DEEPSKYBLUE));
+
 	}
 
-	public static Button newInvisibleBtn(double scaleFactor) {
-		Button btn = newButton(newNoEyeGraph(scaleFactor, Color.RED));
-		return btn;
+	public static Button newInvisibleBtn() {
+
+		double scaleFactor = 0.65;
+
+		return newButton(newNoEyeGraph(scaleFactor, Color.RED));
+
 	}
 
 	private static Node newEyeGraph(double scaleFactor, Color color) {

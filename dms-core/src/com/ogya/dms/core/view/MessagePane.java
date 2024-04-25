@@ -133,7 +133,7 @@ class MessagePane extends BorderPane {
 	private final Button clearBtn = ViewFactory.newDeleteBtn();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
 	private final Button forwardBtn = ViewFactory.newForwardBtn();
-	private final Button starBtn = ViewFactory.newStarBtn(1.0);
+	private final Button starBtn = ViewFactory.newStarBtn();
 	private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
 	private final VBox messagesPane = new VBox(2 * GAP);
@@ -151,7 +151,7 @@ class MessagePane extends BorderPane {
 	private final ImPane imPane = new ImPane();
 	private final StackPane btnPane = new StackPane();
 
-	private final Label attachmentLbl = new Label();
+	private final Label attachmentLbl = ViewFactory.newAttachLbl(0.5);
 	private final Button removeAttachmentBtn = ViewFactory.newRemoveBtn(0.65);
 
 	private final Button sendBtn = ViewFactory.newSendBtn();
@@ -644,10 +644,8 @@ class MessagePane extends BorderPane {
 
 	private void initAttachmentLbl() {
 
-		attachmentLbl.getStyleClass().add("dim-label");
 		HBox.setHgrow(attachmentLbl, Priority.ALWAYS);
 		attachmentLbl.setMaxWidth(Double.MAX_VALUE);
-		attachmentLbl.setGraphic(ViewFactory.newAttachGraph(0.5));
 		attachmentLbl.textProperty()
 				.bind(Bindings.createStringBinding(
 						() -> attachmentProperty.get() == null ? null : attachmentProperty.get().getFileName(),
@@ -1093,8 +1091,8 @@ class MessagePane extends BorderPane {
 
 			} else {
 
-				Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.4));
-				attachmentLabel.getStyleClass().add("dim-label");
+				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
+				attachmentLabel.setText(messageInfo.attachmentName);
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
@@ -1277,7 +1275,7 @@ class MessagePane extends BorderPane {
 		private final GridPane messagePane = new GridPane();
 		private final HBox statusPane = new HBox(GAP);
 		private final Label timeLbl;
-		private final Node starGraph = ViewFactory.newStarGraph(0.65);
+		private final Node starGraph = ViewFactory.newStarLbl();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final InnerShadow shadow = new InnerShadow(3 * GAP, Color.TRANSPARENT);
@@ -1449,9 +1447,8 @@ class MessagePane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 
-			Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.5));
-
-			attachmentLabel.getStyleClass().add("dim-label");
+			Label attachmentLabel = ViewFactory.newAttachLbl(0.5);
+			attachmentLabel.setText(messageInfo.attachmentName);
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
 
 			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
@@ -1482,10 +1479,10 @@ class MessagePane extends BorderPane {
 			initTimeLbl();
 
 			if (messageInfo.isOutgoing) {
-				statusPane.getChildren().addAll(starGraph, getSpace(), getProgressLbl(), getInfoGrp(), getFwdGraph(),
+				statusPane.getChildren().addAll(starGraph, getSpace(), getProgressLbl(), getInfoGrp(), newFwdLbl(),
 						timeLbl);
 			} else {
-				statusPane.getChildren().addAll(timeLbl, getFwdGraph(), getSpace(), starGraph);
+				statusPane.getChildren().addAll(timeLbl, newFwdLbl(), getSpace(), starGraph);
 			}
 
 		}
@@ -1497,20 +1494,20 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private Node getFwdGraph() {
+		private Label newFwdLbl() {
 
 			if (messageInfo.fwdCount == null) {
-				return new Region();
+				return new Label();
 			}
 
-			Node fwdGraph = ViewFactory.newForwardGraph(0.5, Color.DARKGRAY);
+			Label fwdLbl = ViewFactory.newForwardLbl();
 
 			if (messageInfo.fwdCount > 1) {
-				Tooltip.install(fwdGraph,
+				Tooltip.install(fwdLbl,
 						new Tooltip(String.format(Commons.translate("FORWARDED_N_TIMES"), messageInfo.fwdCount)));
 			}
 
-			return fwdGraph;
+			return fwdLbl;
 
 		}
 

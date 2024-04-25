@@ -105,7 +105,7 @@ class StarredMessagesPane extends BorderPane {
 	private final ImSearchField imSearchField = new ImSearchField();
 	private final Button searchBtn = ViewFactory.newSearchBtn();
 	private final Button selectAllBtn = ViewFactory.newSelectionBtn();
-	private final Button starBtn = ViewFactory.newStarBtn(1.0);
+	private final Button starBtn = ViewFactory.newStarBtn();
 
 	private final Button loadBtn = new Button(Commons.translate("SHOW_MORE"));
 
@@ -547,8 +547,8 @@ class StarredMessagesPane extends BorderPane {
 
 			} else {
 
-				Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.4));
-				attachmentLabel.getStyleClass().add("dim-label");
+				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
+				attachmentLabel.setText(messageInfo.attachmentName);
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
@@ -705,7 +705,7 @@ class StarredMessagesPane extends BorderPane {
 		private final Label nameLbl = new Label();
 		private final Label dateLbl;
 		private final Label timeLbl;
-		private final Node starGraph = ViewFactory.newStarGraph(0.65);
+		private final Node starGraph = ViewFactory.newStarLbl();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
 
@@ -868,9 +868,8 @@ class StarredMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 
-			Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.5));
-
-			attachmentLabel.getStyleClass().add("dim-label");
+			Label attachmentLabel = ViewFactory.newAttachLbl(0.5);
+			attachmentLabel.setText(messageInfo.attachmentName);
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
 
 			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));

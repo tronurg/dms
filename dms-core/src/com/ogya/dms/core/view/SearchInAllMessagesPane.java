@@ -302,8 +302,8 @@ class SearchInAllMessagesPane extends BorderPane {
 
 			} else {
 
-				Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.4));
-				attachmentLabel.getStyleClass().add("dim-label");
+				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
+				attachmentLabel.setText(messageInfo.attachmentName);
 				attachmentLabel.setFont(Font.font(attachmentLabel.getFont().getSize() * 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
@@ -473,9 +473,8 @@ class SearchInAllMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 
-			Label attachmentLabel = new Label(messageInfo.attachmentName, ViewFactory.newAttachGraph(0.5));
-
-			attachmentLabel.getStyleClass().add("dim-label");
+			Label attachmentLabel = ViewFactory.newAttachLbl(0.5);
+			attachmentLabel.setText(messageInfo.attachmentName);
 			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
 
 			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));

@@ -62,7 +62,7 @@ public class SearchField extends HBox {
 
 	private Button getVisibleBtn() {
 
-		final Button visibleBtn = ViewFactory.newVisibleBtn(0.65);
+		final Button visibleBtn = ViewFactory.newVisibleBtn();
 		HBox.setMargin(visibleBtn, new Insets(GAP));
 
 		final Effect glow = new Glow();

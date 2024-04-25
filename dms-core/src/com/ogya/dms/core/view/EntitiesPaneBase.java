@@ -276,8 +276,8 @@ class EntitiesPaneBase extends BorderPane {
 
 		};
 
-		private final Button visibleBtn = ViewFactory.newVisibleBtn(0.65);
-		private final Button invisibleBtn = ViewFactory.newInvisibleBtn(0.65);
+		private final Button visibleBtn = ViewFactory.newVisibleBtn();
+		private final Button invisibleBtn = ViewFactory.newInvisibleBtn();
 		private final Button deleteBtn = ViewFactory.newDeleteBtn();
 
 		private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
