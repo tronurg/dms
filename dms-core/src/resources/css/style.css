@@ -175,6 +175,22 @@
 .transparent-bg {
 	-fx-background-color: transparent;
 }
+.in-bg {
+	-fx-background-color: paleturquoise;
+	-fx-background-radius: 0.6em;
+}
+.out-bg {
+	-fx-background-color: palegreen;
+	-fx-background-radius: 0.6em;
+}
+.message-balloon:hit {
+	-fx-background-color: rgba(155,155,255,0.5);
+	-fx-background-radius: 0.6em;
+}
+.message-border {
+	-fx-border-color: darkgray;
+	-fx-border-radius: 0.6em;
+}
 .transparent-box-border {
 	-fx-box-border: transparent;
 }

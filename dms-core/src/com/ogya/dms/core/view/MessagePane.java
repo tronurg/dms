@@ -54,6 +54,7 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
+import javafx.css.PseudoClass;
 import javafx.geometry.Bounds;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
@@ -78,15 +79,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.ColumnConstraints;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -109,15 +103,6 @@ class MessagePane extends BorderPane {
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final EntityId entityId;
-
-	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(10.0 * VIEW_FACTOR), BorderWidths.DEFAULT));
-	private final Background incomingBackground = new Background(
-			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
-	private final Background outgoingBackground = new Background(
-			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
-	private final Background searchHitBackground = new Background(
-			new BackgroundFill(Color.rgb(155, 155, 255, 0.5), new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
 	private final HBox topPane = new HBox();
 	private final StackPane centerPane = new StackPane();
@@ -1180,18 +1165,18 @@ class MessagePane extends BorderPane {
 
 		final Long messageId = messageInfo.messageId;
 
-		messageBalloon.backgroundProperty().bind(Bindings.createObjectBinding(() -> {
+		messageBalloon.hitProperty.bind(Bindings.createObjectBinding(() -> {
 			int index = searchHitIndex.get();
 			if (index < 0) {
-				return null;
+				return false;
 			}
 			if (!(index < searchHits.size())) {
-				return null;
+				return false;
 			}
 			if (!Objects.equals(messageId, searchHits.get(index).getId())) {
-				return null;
+				return false;
 			}
-			return searchHitBackground;
+			return true;
 		}, searchHits, searchHitIndex));
 
 		messageBalloon.addEventFilter(MouseEvent.ANY, e -> {
@@ -1277,6 +1262,9 @@ class MessagePane extends BorderPane {
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
+		private final BooleanProperty hitProperty = new SimpleBooleanProperty(false);
+		private final PseudoClass hit = PseudoClass.getPseudoClass("hit");
+
 		private DayBox dayBox;
 		private MessageGroup messageGroup;
 
@@ -1301,6 +1289,9 @@ class MessagePane extends BorderPane {
 		}
 
 		private void init() {
+
+			getStyleClass().addAll("message-balloon");
+			hitProperty.addListener((e0, e1, e2) -> pseudoClassStateChanged(hit, Boolean.TRUE.equals(e2)));
 
 			ColumnConstraints col0 = new ColumnConstraints();
 			ColumnConstraints col1 = new ColumnConstraints();
@@ -1383,19 +1374,18 @@ class MessagePane extends BorderPane {
 
 		private void initMessagePane() {
 
-			messagePane.getStyleClass().addAll("min-width-6em");
+			messagePane.getStyleClass().addAll("min-width-6em", "message-border");
 
 			if (messageInfo.isOutgoing) {
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
-				messagePane.setBackground(outgoingBackground);
+				messagePane.getStyleClass().addAll("out-bg");
 			} else {
 				GridPane.setHalignment(messagePane, HPos.LEFT);
-				messagePane.setBackground(incomingBackground);
+				messagePane.getStyleClass().addAll("in-bg");
 			}
 
 			GridPane.setFillWidth(messagePane, false);
 
-			messagePane.setBorder(messagePaneBorder);
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setEffect(shadow);
 

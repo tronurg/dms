@@ -22,6 +22,8 @@ public class ImSearchField extends HBox {
 	private final Button downBtn = ViewFactory.newDownBtn();
 	private final Button searchBtn = ViewFactory.newSearchBtn();
 
+	private final String errorCssClass = "red-text";
+
 	private final List<ImSearchListener> listeners = Collections.synchronizedList(new ArrayList<ImSearchListener>());
 
 	public ImSearchField() {
@@ -103,9 +105,9 @@ public class ImSearchField extends HBox {
 
 	public void setError(boolean arg0) {
 		if (arg0) {
-			searchTextField.getStyleClass().addAll("red-text");
+			searchTextField.getStyleClass().addAll(errorCssClass);
 		} else {
-			searchTextField.getStyleClass().remove("red-text");
+			searchTextField.getStyleClass().remove(errorCssClass);
 		}
 	}
 

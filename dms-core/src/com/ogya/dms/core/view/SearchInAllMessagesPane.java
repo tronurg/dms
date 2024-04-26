@@ -41,14 +41,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -64,13 +57,6 @@ class SearchInAllMessagesPane extends BorderPane {
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
 	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
-
-	private final Border messagePaneBorder = new Border(new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID,
-			new CornerRadii(10.0 * VIEW_FACTOR), BorderWidths.DEFAULT));
-	private final Background incomingBackground = new Background(
-			new BackgroundFill(Color.PALETURQUOISE, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
-	private final Background outgoingBackground = new Background(
-			new BackgroundFill(Color.PALEGREEN, new CornerRadii(10.0 * VIEW_FACTOR), Insets.EMPTY));
 
 	private final HBox topPane = new HBox();
 	private final VBox centerPane = new VBox(GAP);
@@ -398,11 +384,10 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private void initMessagePane() {
 
-			messagePane.getStyleClass().addAll("min-width-6em");
+			messagePane.getStyleClass().addAll("min-width-6em", "message-border",
+					messageInfo.isOutgoing ? "out-bg" : "in-bg");
 			GridPane.setHgrow(messagePane, Priority.ALWAYS);
 			GridPane.setFillWidth(messagePane, false);
-			messagePane.setBorder(messagePaneBorder);
-			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
 			messagePane.setPadding(new Insets(GAP));
 
 			if (messageInfo.attachmentType != null) {
