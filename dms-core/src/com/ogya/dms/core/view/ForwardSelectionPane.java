@@ -115,9 +115,9 @@ public class ForwardSelectionPane extends GridPane {
 
 		entities.setPadding(new Insets(2 * GAP));
 
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		GridPane.setHgrow(scrollPane, Priority.ALWAYS);
 		GridPane.setVgrow(scrollPane, Priority.ALWAYS);
-		scrollPane.getStyleClass().add("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
 	}

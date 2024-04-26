@@ -8,7 +8,6 @@ import java.util.Map;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.view.component.DmsScrollPane;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -25,7 +24,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.FontWeight;
 
 public class StatusInfoPane extends BorderPane {
 
@@ -61,13 +59,12 @@ public class StatusInfoPane extends BorderPane {
 	}
 
 	private void initTopPane() {
-		topPane.getStyleClass().add("top-pane");
-		topPane.setStyle("-fx-background-color: transparent;");
+		topPane.getStyleClass().addAll("top-pane", "transparent-bg");
 		topPane.getChildren().add(backBtn);
 	}
 
 	private void initScrollPane() {
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 		centerPane.setPadding(new Insets(2 * GAP, 4 * GAP, 2 * GAP, 2 * GAP));
 	}
@@ -203,18 +200,18 @@ public class StatusInfoPane extends BorderPane {
 
 		private void initNameLbl() {
 
+			nameLbl.getStyleClass().addAll("em12", "bold");
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
 			nameLbl.setGraphic(statusCircle);
 			nameLbl.setGraphicTextGap(2 * GAP);
-			nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 
 		}
 
 		private void initProgressLbl() {
 
+			progressLbl.getStyleClass().addAll("em08");
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
-			progressLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(infoGrp.visibleProperty().not());

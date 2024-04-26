@@ -20,7 +20,6 @@ import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -55,7 +54,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.FontWeight;
 
 class SearchInAllMessagesPane extends BorderPane {
 
@@ -113,7 +111,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.getStyleClass().add("top-pane");
+		topPane.getStyleClass().addAll("top-pane");
 
 		initBackBtn();
 		initImSearchField();
@@ -127,7 +125,7 @@ class SearchInAllMessagesPane extends BorderPane {
 		centerPane.setAlignment(Pos.CENTER);
 		centerPane.setPadding(new Insets(GAP));
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
@@ -270,7 +268,7 @@ class SearchInAllMessagesPane extends BorderPane {
 		MessageInfo messageInfo = new MessageInfo(message);
 
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
-		referenceBalloon.getStyleClass().add("reference-balloon");
+		referenceBalloon.getStyleClass().addAll("reference-balloon");
 
 		InnerShadow shadow = new InnerShadow(2 * GAP, Color.DARKGRAY);
 		referenceBalloon.setEffect(shadow);
@@ -285,7 +283,7 @@ class SearchInAllMessagesPane extends BorderPane {
 		referenceBalloon.setPadding(new Insets(GAP));
 
 		Label nameLabel = new Label(messageInfo.senderName);
-		nameLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 0.8));
+		nameLabel.getStyleClass().addAll("em08", "bold");
 		nameLabel.setTextFill(messageInfo.nameColor);
 
 		referenceBalloon.getChildren().add(nameLabel);
@@ -303,8 +301,8 @@ class SearchInAllMessagesPane extends BorderPane {
 			} else {
 
 				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
+				attachmentLabel.getStyleClass().addAll("em08");
 				attachmentLabel.setText(messageInfo.attachmentName);
-				attachmentLabel.setStyle(CssFactory.getFontStyle(null, null, 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
 
@@ -328,8 +326,7 @@ class SearchInAllMessagesPane extends BorderPane {
 				}
 
 			};
-			contentLbl.getStyleClass().add("black-label");
-			contentLbl.setStyle(CssFactory.getFontStyle(null, null, 0.8));
+			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
 
 			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
@@ -401,10 +398,9 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private void initMessagePane() {
 
+			messagePane.getStyleClass().addAll("min-width-6em");
 			GridPane.setHgrow(messagePane, Priority.ALWAYS);
 			GridPane.setFillWidth(messagePane, false);
-
-			messagePane.setStyle("-fx-min-width: 6em;");
 			messagePane.setBorder(messagePaneBorder);
 			messagePane.setBackground(messageInfo.isOutgoing ? outgoingBackground : incomingBackground);
 			messagePane.setPadding(new Insets(GAP));
@@ -440,9 +436,9 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private void initTimeLbl() {
 
+			timeLbl.getStyleClass().addAll("em08");
 			GridPane.setHgrow(timeLbl, Priority.ALWAYS);
 			timeLbl.setMaxWidth(Double.MAX_VALUE);
-			timeLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
@@ -459,8 +455,7 @@ class SearchInAllMessagesPane extends BorderPane {
 		private Node getContentArea() {
 
 			Label contentLbl = new Label(messageInfo.content);
-
-			contentLbl.getStyleClass().add("black-label");
+			contentLbl.getStyleClass().addAll("black-label");
 			contentLbl.setWrapText(true);
 
 			return contentLbl;
@@ -495,17 +490,17 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private void initNameLbl() {
 
+			nameLbl.getStyleClass().addAll("bold");
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
 			nameLbl.setText(messageInfo.senderName + " \u00BB " + messageInfo.receiverName);
-			nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, -1));
 			nameLbl.setTextFill(messageInfo.nameColor);
 
 		}
 
 		private void initDateLbl() {
 
-			dateLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
+			dateLbl.getStyleClass().addAll("em08");
 			dateLbl.setTextFill(Color.DIMGRAY);
 
 		}

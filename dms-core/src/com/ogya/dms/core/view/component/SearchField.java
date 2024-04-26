@@ -38,7 +38,7 @@ public class SearchField extends HBox {
 
 	private void init() {
 
-		setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
+		getStyleClass().addAll("gray-underline");
 		setAlignment(Pos.CENTER);
 
 		initSearchTextField();

@@ -34,7 +34,6 @@ import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.component.RecordButton;
 import com.ogya.dms.core.view.component.RecordButton.RecordListener;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.animation.AnimationTimer;
@@ -96,7 +95,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
 import javafx.util.Duration;
@@ -239,7 +237,7 @@ class MessagePane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.getStyleClass().add("top-pane");
+		topPane.getStyleClass().addAll("top-pane");
 
 		initBackBtn();
 		initNameLabel();
@@ -305,12 +303,11 @@ class MessagePane extends BorderPane {
 
 	private void initNameLabel() {
 
-		nameLabel.getStyleClass().add("black-label");
+		nameLabel.getStyleClass().addAll("black-label", "em15", "bold");
 		HBox.setHgrow(nameLabel, Priority.ALWAYS);
 		nameLabel.setMaxWidth(Double.MAX_VALUE);
 		nameLabel.setGraphic(statusCircle);
 		nameLabel.setGraphicTextGap(2 * GAP);
-		nameLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
 		nameLabel.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
 		nameLabel.managedProperty().bind(nameLabel.visibleProperty());
@@ -497,7 +494,7 @@ class MessagePane extends BorderPane {
 			scrollPaneToBottom();
 		});
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
@@ -541,7 +538,7 @@ class MessagePane extends BorderPane {
 
 	private void initReferencePane() {
 
-		referencePane.getStyleClass().add("reference-pane");
+		referencePane.getStyleClass().addAll("reference-pane");
 		referenceMessageProperty.addListener((e0, e1, e2) -> {
 			referencePane.getChildren().clear();
 			if (e2 == null) {
@@ -566,7 +563,7 @@ class MessagePane extends BorderPane {
 
 	private void initAttachmentArea() {
 
-		attachmentArea.getStyleClass().add("attachment-area");
+		attachmentArea.getStyleClass().addAll("attachment-area");
 		attachmentArea.setAlignment(Pos.CENTER);
 		attachmentArea.setPadding(new Insets(GAP));
 		attachmentArea.visibleProperty().bind(Bindings.isNotNull(attachmentProperty));
@@ -707,8 +704,7 @@ class MessagePane extends BorderPane {
 
 	private void initDeleteSelectedBtn() {
 
-		deleteSelectedBtn
-				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		deleteSelectedBtn.getStyleClass().addAll("red-bg", "em12", "bold");
 		deleteSelectedBtn.setTextFill(Color.ANTIQUEWHITE);
 		deleteSelectedBtn.setMnemonicParsing(false);
 		deleteSelectedBtn.setOnAction(e -> {
@@ -723,8 +719,7 @@ class MessagePane extends BorderPane {
 
 	private void initClearConversationBtn() {
 
-		clearConversationBtn
-				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		clearConversationBtn.getStyleClass().addAll("red-bg", "em12", "bold");
 		clearConversationBtn.setTextFill(Color.ANTIQUEWHITE);
 		clearConversationBtn.setMnemonicParsing(false);
 		clearConversationBtn.setOnAction(e -> {
@@ -1013,7 +1008,7 @@ class MessagePane extends BorderPane {
 		searchHits.addAll(hits);
 
 		if (searchHits.isEmpty()) {
-			imSearchField.setTextFieldStyle("-fx-text-fill: red;");
+			imSearchField.setError(true);
 		} else {
 			goToMessage(searchHits.get(searchHitIndex.get()).getId());
 		}
@@ -1021,7 +1016,7 @@ class MessagePane extends BorderPane {
 	}
 
 	private void clearSearch() {
-		imSearchField.setTextFieldStyle(null);
+		imSearchField.setError(false);
 		searchHits.clear();
 		searchHitIndex.set(0);
 		searchTextRef.set(null);
@@ -1032,7 +1027,7 @@ class MessagePane extends BorderPane {
 		MessageInfo messageInfo = new MessageInfo(message);
 
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
-		referenceBalloon.getStyleClass().add("reference-balloon");
+		referenceBalloon.getStyleClass().addAll("reference-balloon");
 
 		final InnerShadow shadow = new InnerShadow(2 * GAP, Color.DARKGRAY);
 		referenceBalloon.setEffect(shadow);
@@ -1074,7 +1069,7 @@ class MessagePane extends BorderPane {
 		referenceBalloon.setPadding(new Insets(GAP));
 
 		Label nameLabel = new Label(messageInfo.senderName);
-		nameLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 0.8));
+		nameLabel.getStyleClass().addAll("em08", "bold");
 		nameLabel.setTextFill(messageInfo.nameColor);
 
 		referenceBalloon.getChildren().add(nameLabel);
@@ -1092,8 +1087,8 @@ class MessagePane extends BorderPane {
 			} else {
 
 				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
+				attachmentLabel.getStyleClass().addAll("em08");
 				attachmentLabel.setText(messageInfo.attachmentName);
-				attachmentLabel.setStyle(CssFactory.getFontStyle(null, null, 0.8));
 
 				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
 
@@ -1117,8 +1112,7 @@ class MessagePane extends BorderPane {
 				}
 
 			};
-			contentLbl.getStyleClass().add("black-label");
-			contentLbl.setStyle(CssFactory.getFontStyle(null, null, 0.8));
+			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
 
 			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
@@ -1169,6 +1163,7 @@ class MessagePane extends BorderPane {
 
 	private void scrollPaneToBottom() {
 
+		firstUnreadMessageIdProperty.set(null);
 		scrollPane.setVvalue(scrollPane.getVmax());
 
 	}
@@ -1388,6 +1383,8 @@ class MessagePane extends BorderPane {
 
 		private void initMessagePane() {
 
+			messagePane.getStyleClass().addAll("min-width-6em");
+
 			if (messageInfo.isOutgoing) {
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
 				messagePane.setBackground(outgoingBackground);
@@ -1398,7 +1395,6 @@ class MessagePane extends BorderPane {
 
 			GridPane.setFillWidth(messagePane, false);
 
-			messagePane.setStyle("-fx-min-width: 6em;");
 			messagePane.setBorder(messagePaneBorder);
 			messagePane.setPadding(new Insets(GAP));
 			messagePane.setEffect(shadow);
@@ -1433,8 +1429,7 @@ class MessagePane extends BorderPane {
 		private Node getContentArea() {
 
 			Label contentLbl = new Label(messageInfo.content);
-
-			contentLbl.getStyleClass().add("black-label");
+			contentLbl.getStyleClass().addAll("black-label");
 			contentLbl.setWrapText(true);
 
 			return contentLbl;
@@ -1513,7 +1508,7 @@ class MessagePane extends BorderPane {
 
 		private void initTimeLbl() {
 
-			timeLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
+			timeLbl.getStyleClass().addAll("em08");
 			timeLbl.setTextFill(Color.DIMGRAY);
 
 		}
@@ -1521,9 +1516,8 @@ class MessagePane extends BorderPane {
 		private Node getProgressLbl() {
 
 			Label progressLbl = new Label();
-
+			progressLbl.getStyleClass().addAll("em08");
 			progressLbl.setAlignment(Pos.BASELINE_RIGHT);
-			progressLbl.setStyle(CssFactory.getFontStyle(null, null, 11.25 / 15));
 			progressLbl.setTextFill(Color.DIMGRAY);
 
 			progressLbl.visibleProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.FRESH));
@@ -1595,8 +1589,8 @@ class MessagePane extends BorderPane {
 
 		private void initNameLbl(Color nameColor) {
 
+			nameLbl.getStyleClass().addAll("bold");
 			nameLbl.setPadding(new Insets(0.0, 0.0, GAP, 0.0));
-			nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, -1));
 			nameLbl.setTextFill(nameColor);
 
 			getChildren().addListener(new ListChangeListener<Node>() {

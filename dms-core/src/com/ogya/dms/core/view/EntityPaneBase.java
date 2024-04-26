@@ -5,7 +5,6 @@ import java.util.Locale;
 import com.ogya.dms.core.database.tables.EntityBase;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.util.Commons;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -27,7 +26,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.FontWeight;
 
 class EntityPaneBase extends GridPane {
 
@@ -103,9 +101,8 @@ class EntityPaneBase extends GridPane {
 
 	private void initInitialLbl() {
 
+		initialLbl.getStyleClass().addAll("gray40-text", "em16", "bold");
 		initialLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		initialLbl.setStyle("-fx-text-fill: #404040;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 24.0 / 15));
 
 		initialLbl.translateXProperty().bind(
 				Bindings.createDoubleBinding(() -> -initialLbl.widthProperty().get() / 2, initialLbl.widthProperty()));
@@ -116,10 +113,10 @@ class EntityPaneBase extends GridPane {
 
 	private void initGroupSign() {
 
+		groupSign.getStyleClass().addAll("em08", "extra-bold");
 		groupSign.setVisible(false);
 		groupSign.setTextFill(Color.WHITE);
 		groupSign.setContentDisplay(ContentDisplay.CENTER);
-		groupSign.setStyle(CssFactory.getFontStyle(FontWeight.EXTRA_BOLD, null, 12.0 / 15));
 
 		Circle circle = new Circle(UNIT_SIZE * 0.3);
 		circle.setFill(Color.TOMATO);
@@ -133,9 +130,8 @@ class EntityPaneBase extends GridPane {
 
 	private void initNameLbl() {
 
+		nameLbl.getStyleClass().addAll("em13", "bold");
 		nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 19.2 / 15));
 
 		nameLbl.tooltipProperty().bind(Bindings.createObjectBinding(() -> {
 			String name = nameLbl.getText();

@@ -20,7 +20,6 @@ import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
 import com.ogya.dms.core.view.component.SearchField;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -51,7 +50,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
 
@@ -111,7 +109,7 @@ class EntitiesPaneBase extends BorderPane {
 
 		entities.setPadding(new Insets(2 * GAP));
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
 		scrollPane.setFitToWidth(true);
 		scrollPane.setSkin(new DmsScrollPaneSkin(scrollPane));
@@ -144,8 +142,7 @@ class EntitiesPaneBase extends BorderPane {
 
 	private void initRemoveEntityBtn() {
 
-		removeEntityBtn
-				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		removeEntityBtn.getStyleClass().addAll("red-bg", "em12", "bold");
 		removeEntityBtn.setTextFill(Color.ANTIQUEWHITE);
 		removeEntityBtn.setMnemonicParsing(false);
 
@@ -386,18 +383,16 @@ class EntitiesPaneBase extends BorderPane {
 
 		private void initUnreadMessagesLbl() {
 
+			unreadMessagesLbl.getStyleClass().addAll("bold");
 			unreadMessagesLbl.setMinWidth(Region.USE_PREF_SIZE);
+			unreadMessagesLbl.setAlignment(Pos.CENTER);
+			unreadMessagesLbl.setTextFill(Color.WHITE);
 
 			unreadMessagesLbl.backgroundProperty()
 					.bind(Bindings.createObjectBinding(
 							() -> new Background(new BackgroundFill(Color.RED,
 									new CornerRadii(unreadMessagesLbl.getHeight() / 2), Insets.EMPTY)),
 							unreadMessagesLbl.heightProperty()));
-
-			unreadMessagesLbl.setAlignment(Pos.CENTER);
-
-			unreadMessagesLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, -1));
-			unreadMessagesLbl.setTextFill(Color.WHITE);
 
 			unreadMessagesLbl.visibleProperty().bind(Bindings.isNotEmpty(unreadMessages));
 			unreadMessagesLbl.managedProperty().bind(unreadMessagesLbl.visibleProperty());

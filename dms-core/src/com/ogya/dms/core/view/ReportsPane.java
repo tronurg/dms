@@ -265,7 +265,7 @@ public class ReportsPane extends GridPane {
 						label.setMaxWidth(50.0 * GAP);
 						label.setTooltip(new Tooltip(label.getText()));
 						TextField textField = new TextField();
-						textField.setStyle("-fx-border-color: gray;-fx-border-width: 0 0 1 0;");
+						textField.getStyleClass().addAll("gray-underline");
 						textFields.add(textField);
 
 						word.textProperty().bind(textField.textProperty());

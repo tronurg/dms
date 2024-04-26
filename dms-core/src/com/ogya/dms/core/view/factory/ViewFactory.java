@@ -31,8 +31,6 @@ import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontPosture;
-import javafx.scene.text.FontWeight;
 
 public class ViewFactory {
 
@@ -220,14 +218,14 @@ public class ViewFactory {
 		circle.setFill(Color.TRANSPARENT);
 		Rectangle rectangle = new Rectangle(-12.0 * scaleFactor, -5.0 * scaleFactor, 24.0 * scaleFactor,
 				10.0 * scaleFactor);
-		rectangle.getStyleClass().add("ghost-shape");
+		rectangle.getStyleClass().addAll("ghost-shape");
 		rectangle.setArcWidth(6.0 * scaleFactor);
 		rectangle.setArcHeight(6.0 * scaleFactor);
 		rectangle.setStrokeWidth(2.0);
 		rectangle.setRotate(-45.0);
 		rectangle.setFill(Color.TRANSPARENT);
 		Line line = new Line(-6.0 * scaleFactor, 6.0 * scaleFactor, 3.0 * scaleFactor, -3.0 * scaleFactor);
-		line.getStyleClass().add("ghost-shape");
+		line.getStyleClass().addAll("ghost-shape");
 		line.setStrokeWidth(2.0);
 		Button btn = newButton(circle, rectangle, line);
 
@@ -250,7 +248,7 @@ public class ViewFactory {
 	public static Label newAttachLbl(double scaleFactor) {
 
 		Label lbl = newLabel(newAttachGraph(scaleFactor, Color.GRAY));
-		lbl.getStyleClass().add("dim-label");
+		lbl.getStyleClass().addAll("dim-label");
 
 		return lbl;
 
@@ -279,17 +277,17 @@ public class ViewFactory {
 		Circle circle = new Circle(16.0);
 		circle.setFill(Color.TRANSPARENT);
 		Rectangle rectangle = new Rectangle(-6.0, -8.0, 12.0, 16.0);
-		rectangle.getStyleClass().add("ghost-shape");
+		rectangle.getStyleClass().addAll("ghost-shape");
 		rectangle.setStrokeWidth(2.0);
 		rectangle.setFill(Color.TRANSPARENT);
 		Line line1 = new Line(-2.0, -4.0, 2.0, -4.0);
-		line1.getStyleClass().add("ghost-shape");
+		line1.getStyleClass().addAll("ghost-shape");
 		line1.setStrokeWidth(2.0);
 		Line line2 = new Line(-2.0, 0.0, 2.0, 0.0);
-		line2.getStyleClass().add("ghost-shape");
+		line2.getStyleClass().addAll("ghost-shape");
 		line2.setStrokeWidth(2.0);
 		Line line3 = new Line(-2.0, 4.0, 2.0, 4.0);
-		line3.getStyleClass().add("ghost-shape");
+		line3.getStyleClass().addAll("ghost-shape");
 		line3.setStrokeWidth(2.0);
 		Button btn = newButton(circle, rectangle, line1, line2, line3);
 
@@ -301,10 +299,10 @@ public class ViewFactory {
 
 		Circle circle = new Circle(12.0);
 		Button btn = newButton(circle);
+		btn.getStyleClass().addAll("em13", "extra-bold", "italic");
 		btn.setText("i");
 		btn.setTextFill(Color.WHITE);
 		btn.setContentDisplay(ContentDisplay.CENTER);
-		btn.setStyle(CssFactory.getFontStyle(FontWeight.EXTRA_BOLD, FontPosture.ITALIC, 20.0 / 15));
 
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
@@ -576,7 +574,7 @@ public class ViewFactory {
 		line2.setStroke(Color.WHITE);
 		line2.setStrokeWidth(3.0);
 		Button btn = newButton(circle, line1, line2);
-		btn.setStyle("-fx-effect: dropshadow(gaussian, -dms-foreground, 1em, 0, 0, 0);");
+		btn.getStyleClass().addAll("shadow");
 
 		return btn;
 
@@ -584,7 +582,7 @@ public class ViewFactory {
 
 	public static Label newNoteLabel(String text) {
 		Label noteLabel = new Label(text);
-		noteLabel.getStyleClass().add("note-label");
+		noteLabel.getStyleClass().addAll("note-label");
 		return noteLabel;
 	}
 

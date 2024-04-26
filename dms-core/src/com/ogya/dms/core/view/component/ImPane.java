@@ -48,8 +48,7 @@ public class ImPane extends HBox {
 
 	private void init() {
 
-		getStyleClass().add("im-box");
-
+		getStyleClass().addAll("im-box");
 		setAlignment(Pos.BOTTOM_CENTER);
 
 		initMessageArea();
@@ -62,8 +61,7 @@ public class ImPane extends HBox {
 
 	private void initMessageArea() {
 
-		messageArea.getStyleClass().add("message-area");
-
+		messageArea.getStyleClass().addAll("message-area");
 		messageArea.setSkin(new TextAreaSkin(messageArea));
 
 		ScrollPane messageAreaScrollPane = (ScrollPane) messageArea.lookup(".scroll-pane");

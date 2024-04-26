@@ -31,7 +31,6 @@ import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.application.Platform;
@@ -64,7 +63,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.FontWeight;
 import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
@@ -199,7 +197,7 @@ public class FoldersPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.getStyleClass().add("top-pane");
+		topPane.getStyleClass().addAll("top-pane");
 
 		initBackBtn();
 		initHeadingLbl();
@@ -239,10 +237,9 @@ public class FoldersPane extends BorderPane {
 
 	private void initHeadingLbl() {
 
-		headingLbl.getStyleClass().add("black-label");
+		headingLbl.getStyleClass().addAll("black-label", "em15", "bold");
 		HBox.setHgrow(headingLbl, Priority.ALWAYS);
 		headingLbl.setMaxWidth(Double.MAX_VALUE);
-		headingLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
 		headingLbl.visibleProperty().bind(searchModeProperty.not());
 		headingLbl.managedProperty().bind(headingLbl.visibleProperty());
 
@@ -298,7 +295,7 @@ public class FoldersPane extends BorderPane {
 
 	private void initContextMenu() {
 
-		contextMenu.getStyleClass().add("folders-menu");
+		contextMenu.getStyleClass().addAll("folders-menu");
 		contextMenu.setAnchorLocation(AnchorLocation.CONTENT_TOP_RIGHT);
 
 		MenuItem findItem = new MenuItem(Commons.translate("FIND_DOTS"));
@@ -549,16 +546,15 @@ public class FoldersPane extends BorderPane {
 
 		private void init(ImageView icon, Path path) throws Exception {
 
+			getStyleClass().addAll("file-button");
+			setMaxWidth(Double.MAX_VALUE);
+			setPadding(new Insets(GAP));
+
 			String dateStr = SimpleDateFormat.getInstance().format(date);
 			String sizeStr = null;
 			if (isFile) {
 				sizeStr = getFileSizeStr(path);
 			}
-
-			getStyleClass().add("file-button");
-
-			setMaxWidth(Double.MAX_VALUE);
-			setPadding(new Insets(GAP));
 
 			GridPane grid = new GridPane();
 			grid.setHgap(GAP);

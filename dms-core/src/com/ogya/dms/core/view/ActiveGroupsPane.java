@@ -19,7 +19,6 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -35,7 +34,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.FontWeight;
 
 public class ActiveGroupsPane extends BorderPane {
 
@@ -107,7 +105,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		entities.setPadding(new Insets(2 * GAP));
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
 		setTop(searchField);
@@ -353,8 +351,8 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private void init() {
 
+			getStyleClass().addAll("em12", "bold");
 			setGraphicTextGap(GAP);
-			setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 			setGraphic(statusCircle);
 
 			statusCircle.fillProperty().bind(statusColorProperty);

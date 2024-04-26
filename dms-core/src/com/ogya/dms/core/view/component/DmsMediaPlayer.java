@@ -99,7 +99,7 @@ public class DmsMediaPlayer extends GridPane {
 		btn.setPickOnBounds(false);
 
 		Label lbl = new Label(path);
-		lbl.getStyleClass().add("dim-label");
+		lbl.getStyleClass().addAll("dim-label");
 		lbl.setTooltip(new Tooltip(lbl.getText()));
 
 		add(btn, 0, 0, 1, 1);
@@ -170,7 +170,7 @@ public class DmsMediaPlayer extends GridPane {
 	private void initProgressBar() {
 
 		if (mediaPlayer == null) {
-			progressBar.getStyleClass().add("dummy-player");
+			progressBar.getStyleClass().addAll("dummy-player");
 			return;
 		}
 
@@ -191,7 +191,7 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initDurationLbl() {
 
-		durationLbl.getStyleClass().add("black-label");
+		durationLbl.getStyleClass().addAll("black-label");
 
 	}
 

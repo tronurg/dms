@@ -6,7 +6,6 @@ import java.util.function.Consumer;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.IpField;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -21,7 +20,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.FontWeight;
 
 public class RemoteIpSettingsPane extends BorderPane {
 
@@ -123,7 +121,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 			HBox ipField = new HBox(GAP);
 
 			Label ipLabel = new Label(ip);
-			ipLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+			ipLabel.getStyleClass().addAll("em12", "bold");
 
 			Button removeIpButton = ViewFactory.newRemoveBtn(1.0);
 
@@ -153,7 +151,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.getStyleClass().add("top-pane");
+		topPane.getStyleClass().addAll("top-pane");
 
 		initHeadingLabel();
 
@@ -172,8 +170,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initHeadingLabel() {
 
-		headingLabel.getStyleClass().add("black-label");
-		headingLabel.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 22.0 / 15));
+		headingLabel.getStyleClass().addAll("black-label", "em15", "bold");
 
 	}
 
@@ -192,7 +189,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 		initScrollableContent();
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		VBox.setVgrow(scrollPane, Priority.ALWAYS);
 
 	}
@@ -205,7 +202,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initIpField() {
 
-		ipField.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 16.0 / 15));
+		ipField.getStyleClass().addAll("bold");
 
 	}
 

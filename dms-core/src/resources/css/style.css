@@ -139,3 +139,63 @@
 .folders-menu .radio-menu-item:hover .radio {
 	-fx-background-color: dodgerblue;
 }
+.em08 {
+	-fx-font-size: 0.8em;
+}
+.em12 {
+	-fx-font-size: 1.2em;
+}
+.em13 {
+	-fx-font-size: 1.3em;
+}
+.em15 {
+	-fx-font-size: 1.5em;
+}
+.em16 {
+	-fx-font-size: 1.6em;
+}
+.em20 {
+	-fx-font-size: 2.0em;
+}
+.bold {
+	-fx-font-weight: bold;
+}
+.extra-bold {
+	-fx-font-weight: 800;
+}
+.italic {
+	-fx-font-style: italic;
+}
+.green-bg {
+	-fx-background-color: green;
+}
+.red-bg {
+	-fx-background-color: red;
+}
+.transparent-bg {
+	-fx-background-color: transparent;
+}
+.transparent-box-border {
+	-fx-box-border: transparent;
+}
+.transparent-tf {
+	-fx-text-box-border: transparent;
+	-fx-focus-color: transparent;
+	-fx-faint-focus-color: transparent;
+}
+.min-width-6em {
+	-fx-min-width: 6em;
+}
+.gray-underline {
+	-fx-border-color: gray;
+	-fx-border-width: 0 0 1 0;
+}
+.shadow {
+	-fx-effect: dropshadow(gaussian, -dms-foreground, 1em, 0, 0, 0);
+}
+.gray40-text {
+	-fx-text-fill: #404040;
+}
+.red-text {
+	-fx-text-fill: red;
+}

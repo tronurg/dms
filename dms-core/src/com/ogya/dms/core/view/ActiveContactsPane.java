@@ -79,7 +79,7 @@ public class ActiveContactsPane extends BorderPane {
 
 		entities.setPadding(new Insets(2 * GAP));
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
 		setTop(searchField);

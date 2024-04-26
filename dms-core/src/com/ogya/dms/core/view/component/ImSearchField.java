@@ -47,7 +47,7 @@ public class ImSearchField extends HBox {
 
 	private void initSearchTextField() {
 
-		searchTextField.getStyleClass().add("search-field");
+		searchTextField.getStyleClass().addAll("search-field");
 		HBox.setHgrow(searchTextField, Priority.ALWAYS);
 		searchTextField.setMaxWidth(Double.MAX_VALUE);
 		searchTextField.setOnKeyPressed(e -> {
@@ -101,8 +101,12 @@ public class ImSearchField extends HBox {
 		searchTextField.clear();
 	}
 
-	public void setTextFieldStyle(String style) {
-		searchTextField.setStyle(style);
+	public void setError(boolean arg0) {
+		if (arg0) {
+			searchTextField.getStyleClass().addAll("red-text");
+		} else {
+			searchTextField.getStyleClass().remove("red-text");
+		}
 	}
 
 	public final BooleanProperty upDisableProperty() {

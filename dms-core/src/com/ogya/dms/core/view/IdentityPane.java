@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.ogya.dms.core.database.tables.Contact;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.util.Commons;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.animation.Interpolator;
@@ -41,7 +40,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.FontWeight;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 
@@ -251,17 +249,15 @@ class IdentityPane extends GridPane {
 
 	private void initProfileLbl() {
 
+		profileLbl.getStyleClass().addAll("gray40-text", "em20", "bold");
 		profileLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		profileLbl.setStyle("-fx-text-fill: #404040;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 2.0));
 
 	}
 
 	private void initNameLbl() {
 
+		nameLbl.getStyleClass().addAll("em16", "bold");
 		nameLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		nameLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 24.0 / 15));
 
 	}
 

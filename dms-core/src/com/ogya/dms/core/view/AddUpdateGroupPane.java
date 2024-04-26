@@ -18,7 +18,6 @@ import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
@@ -47,7 +46,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.scene.text.FontWeight;
 import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
 
@@ -189,7 +187,7 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.getStyleClass().add("top-pane");
+		topPane.getStyleClass().addAll("top-pane");
 
 		initGroupNameTextField();
 		initDeleteBtn();
@@ -211,12 +209,10 @@ public class AddUpdateGroupPane extends BorderPane {
 		TitledPane addedContactsTitledPane = new TitledPane(Commons.translate("ADDED_CONTACTS"), addedContactsPane);
 		TitledPane notAddedContactsTitledPane = new TitledPane(Commons.translate("ALL_CONTACTS"),
 				notAddedContactsBorderPane);
-
+		addedContactsTitledPane.getStyleClass().addAll("transparent-box-border");
+		notAddedContactsTitledPane.getStyleClass().addAll("transparent-box-border");
 		addedContactsTitledPane.setCollapsible(false);
 		notAddedContactsTitledPane.setCollapsible(false);
-
-		addedContactsTitledPane.setStyle("-fx-box-border: transparent;");
-		notAddedContactsTitledPane.setStyle("-fx-box-border: transparent;");
 
 		scrollableContent.getChildren().addAll(addedContactsTitledPane, notAddedContactsTitledPane);
 
@@ -224,37 +220,31 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initAddUpdateGroupBtn() {
 
-		addUpdateGroupBtn
-				.setStyle("-fx-background-color: green;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		addUpdateGroupBtn.getStyleClass().addAll("green-bg", "em12", "bold");
 		addUpdateGroupBtn.setTextFill(Color.ANTIQUEWHITE);
+		addUpdateGroupBtn.setMnemonicParsing(false);
+		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
 
 		addUpdateGroupBtn.textProperty()
 				.bind(Bindings.createStringBinding(
 						() -> updateMode.get() ? Commons.translate("UPDATE_GROUP") : Commons.translate("CREATE_GROUP"),
 						updateMode));
 
-		addUpdateGroupBtn.setMnemonicParsing(false);
-		addUpdateGroupBtn.setMaxWidth(Double.MAX_VALUE);
-
 		addUpdateGroupBtn.disableProperty().bind(Bindings.isEmpty(selectedIds)
 				.or(Bindings.createBooleanBinding(() -> getGroupName().isEmpty(), groupNameTextField.textProperty())));
 
 		addUpdateGroupBtn.setOnAction(e -> {
-
 			Runnable addUpdateGroupAction = addUpdateGroupActionRef.get();
-
 			if (addUpdateGroupAction != null) {
 				addUpdateGroupAction.run();
 			}
-
 		});
 
 	}
 
 	private void initGroupNameTextField() {
 
-		groupNameTextField.getStyleClass().add("black-label");
-
+		groupNameTextField.getStyleClass().addAll("black-label", "em12", "bold");
 		HBox.setHgrow(groupNameTextField, Priority.ALWAYS);
 
 		groupNameTextField.setTextFormatter(
@@ -263,7 +253,6 @@ public class AddUpdateGroupPane extends BorderPane {
 		groupNameTextField.setPadding(Insets.EMPTY);
 		groupNameTextField.setPromptText(Commons.translate("TYPE_GROUP_NAME"));
 		groupNameTextField.setFocusTraversable(false);
-		groupNameTextField.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 
 	}
 
@@ -306,22 +295,16 @@ public class AddUpdateGroupPane extends BorderPane {
 
 	private void initDeleteGroupBtn() {
 
-		deleteGroupBtn
-				.setStyle("-fx-background-color: red;" + CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		deleteGroupBtn.getStyleClass().addAll("red-bg", "em12", "bold");
 		deleteGroupBtn.setTextFill(Color.ANTIQUEWHITE);
-
 		deleteGroupBtn.setMnemonicParsing(false);
 
 		deleteGroupBtn.setOnAction(e -> {
-
 			deleteGroupPopup.hide();
-
 			Runnable deleteGroupAction = deleteGroupActionRef.get();
-
 			if (deleteGroupAction != null) {
 				deleteGroupAction.run();
 			}
-
 		});
 
 	}
@@ -345,11 +328,8 @@ public class AddUpdateGroupPane extends BorderPane {
 		private final Circle addRemoveStatusCircle = new Circle(7.0 * VIEW_FACTOR);
 
 		private AddRemoveContactBox() {
-
 			super();
-
 			init();
-
 		}
 
 		private void init() {
@@ -410,12 +390,11 @@ public class AddUpdateGroupPane extends BorderPane {
 		protected final void initButton() {
 
 			addRemoveBtn = ViewFactory.newAddBtn();
-
+			addRemoveBtn.getStyleClass().addAll("em12", "bold");
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
@@ -433,12 +412,11 @@ public class AddUpdateGroupPane extends BorderPane {
 		protected final void initButton() {
 
 			addRemoveBtn = ViewFactory.newRemoveBtn(1.0);
-
+			addRemoveBtn.getStyleClass().addAll("em12", "bold");
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
 			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
 			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}

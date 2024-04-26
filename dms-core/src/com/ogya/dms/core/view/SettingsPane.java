@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsScrollPane;
-import com.ogya.dms.core.view.factory.CssFactory;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
@@ -16,7 +15,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.FontWeight;
 
 public class SettingsPane extends BorderPane {
 
@@ -46,7 +44,7 @@ public class SettingsPane extends BorderPane {
 		initTopPane();
 		initScrollableContent();
 
-		scrollPane.getStyleClass().add("edge-to-edge");
+		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
 
 		setTop(topPane);
@@ -68,8 +66,7 @@ public class SettingsPane extends BorderPane {
 
 	private void initTopPane() {
 
-		topPane.getStyleClass().add("top-pane");
-
+		topPane.getStyleClass().addAll("top-pane");
 		topPane.getChildren().addAll(backBtn);
 
 	}
@@ -80,8 +77,7 @@ public class SettingsPane extends BorderPane {
 
 		// SEARCH_IN_ALL_MESSAGES
 		Label searchInAllMessagesLbl = new Label(Commons.translate("SEARCH_IN_ALL_MESSAGES"));
-		searchInAllMessagesLbl.getStyleClass().add("link-label");
-		searchInAllMessagesLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		searchInAllMessagesLbl.getStyleClass().addAll("link-label", "em12", "bold");
 		searchInAllMessagesLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null) {
@@ -93,8 +89,7 @@ public class SettingsPane extends BorderPane {
 
 		// STARRED_MESSAGES
 		Label starredMessagesLbl = new Label(Commons.translate("STARRED_MESSAGES"));
-		starredMessagesLbl.getStyleClass().add("link-label");
-		starredMessagesLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		starredMessagesLbl.getStyleClass().addAll("link-label", "em12", "bold");
 		starredMessagesLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null) {
@@ -106,8 +101,7 @@ public class SettingsPane extends BorderPane {
 
 		// HIDDEN_CONVERSATIONS
 		Label hiddenConversationsLbl = new Label(Commons.translate("HIDDEN_CONVERSATIONS"));
-		hiddenConversationsLbl.getStyleClass().add("link-label");
-		hiddenConversationsLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		hiddenConversationsLbl.getStyleClass().addAll("link-label", "em12", "bold");
 		hiddenConversationsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null) {
@@ -119,8 +113,7 @@ public class SettingsPane extends BorderPane {
 
 		// EDIT_REMOTE_IPS
 		Label editRemoteIpsLbl = new Label(Commons.translate("EDIT_REMOTE_IPS"));
-		editRemoteIpsLbl.getStyleClass().add("link-label");
-		editRemoteIpsLbl.setStyle(CssFactory.getFontStyle(FontWeight.BOLD, null, 18.0 / 15));
+		editRemoteIpsLbl.getStyleClass().addAll("link-label", "em12", "bold");
 		editRemoteIpsLbl.setOnMouseClicked(e -> {
 			Consumer<Settings> settingsClickedAction = settingClickedActionRef.get();
 			if (settingsClickedAction != null) {
