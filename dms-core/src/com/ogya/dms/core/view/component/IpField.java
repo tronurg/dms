@@ -8,13 +8,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
-import javafx.scene.paint.Color;
 import javafx.util.StringConverter;
 
 public class IpField extends HBox {
@@ -34,9 +28,8 @@ public class IpField extends HBox {
 
 	private void init() {
 
+		getStyleClass().addAll("gray-border");
 		setFillHeight(true);
-		setBorder(new Border(
-				new BorderStroke(Color.DARKGRAY, BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT)));
 
 		for (int i = 0; i < ipFields.length; i++) {
 

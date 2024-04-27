@@ -191,6 +191,13 @@
 	-fx-border-color: darkgray;
 	-fx-border-radius: 0.6em;
 }
+.gray-border {
+	-fx-border-color: darkgray;
+}
+.comment-border {
+	-fx-border-color: lightgray;
+	-fx-border-radius: 2em;
+}
 .transparent-box-border {
 	-fx-box-border: transparent;
 }
@@ -214,4 +221,22 @@
 }
 .red-text {
 	-fx-text-fill: red;
+}
+.down-padding {
+	-fx-padding: 0 0 1em 0;
+}
+.identity-pane .profile-picture {
+	-fx-max-width: 4em;
+	-fx-min-width: 4em;
+	-fx-pref-width: 4em;
+}
+.entity-pane .profile-picture {
+	-fx-max-width: 3.2em;
+	-fx-min-width: 3.2em;
+	-fx-pref-width: 3.2em;
+}
+.status-circle-pane {
+	-fx-max-width: 0.9em;
+	-fx-min-width: 0.9em;
+	-fx-pref-width: 0.9em;
 }

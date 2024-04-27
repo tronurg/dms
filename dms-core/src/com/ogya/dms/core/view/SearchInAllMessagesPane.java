@@ -55,7 +55,6 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
 
 	private final HBox topPane = new HBox();

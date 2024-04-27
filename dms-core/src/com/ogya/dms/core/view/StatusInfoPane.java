@@ -20,6 +20,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -28,7 +29,6 @@ import javafx.scene.shape.Circle;
 public class StatusInfoPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final HBox topPane = new HBox();
 	private final VBox centerPane = new VBox(2 * GAP);
@@ -138,18 +138,17 @@ public class StatusInfoPane extends BorderPane {
 
 	private final class Card extends HBox {
 
-		private final double radius = 3.0 * VIEW_FACTOR;
-
-		private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
+		private final Circle statusCircle = new Circle();
+		private final StackPane statusCirclePane = new StackPane(statusCircle);
 		private final Label nameLbl = new Label();
 		private final Label progressLbl = new Label();
 		private final Group infoGrp = new Group();
-		private final Circle waitingCircle = new Circle(radius, Color.TRANSPARENT);
-		private final Circle transmittedCircle = new Circle(radius, Color.TRANSPARENT);
+		private final Circle waitingCircle = new Circle();
+		private final Circle transmittedCircle = new Circle();
 
 		private Card() {
 
-			super(GAP);
+			super(2 * GAP);
 
 			init();
 
@@ -159,11 +158,12 @@ public class StatusInfoPane extends BorderPane {
 
 			setAlignment(Pos.CENTER);
 
+			initStatusCircle();
 			initNameLbl();
 			initProgressLbl();
 			initInfoGrp();
 
-			getChildren().addAll(nameLbl, progressLbl, infoGrp);
+			getChildren().addAll(statusCirclePane, nameLbl, progressLbl, infoGrp);
 
 		}
 
@@ -198,13 +198,18 @@ public class StatusInfoPane extends BorderPane {
 
 		}
 
+		private void initStatusCircle() {
+
+			statusCirclePane.getStyleClass().addAll("status-circle-pane");
+			statusCircle.radiusProperty().bind(statusCirclePane.widthProperty().multiply(0.5));
+
+		}
+
 		private void initNameLbl() {
 
 			nameLbl.getStyleClass().addAll("em12", "bold");
 			HBox.setHgrow(nameLbl, Priority.ALWAYS);
 			nameLbl.setMaxWidth(Double.MAX_VALUE);
-			nameLbl.setGraphic(statusCircle);
-			nameLbl.setGraphicTextGap(2 * GAP);
 
 		}
 
@@ -223,7 +228,11 @@ public class StatusInfoPane extends BorderPane {
 
 			infoGrp.managedProperty().bind(infoGrp.visibleProperty());
 
-			transmittedCircle.setLayoutX(-2.0 * radius);
+			waitingCircle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.45));
+			transmittedCircle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.45));
+			waitingCircle.setFill(Color.TRANSPARENT);
+			transmittedCircle.setFill(Color.TRANSPARENT);
+			transmittedCircle.layoutXProperty().bind(transmittedCircle.radiusProperty().multiply(-2.0));
 			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
 
 		}

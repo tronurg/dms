@@ -52,7 +52,6 @@ import javafx.stage.PopupWindow.AnchorLocation;
 public class AddUpdateGroupPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final HBox topPane = new HBox();
 
@@ -325,7 +324,8 @@ public class AddUpdateGroupPane extends BorderPane {
 	private abstract class AddRemoveContactBox extends HBox {
 
 		protected Button addRemoveBtn;
-		private final Circle addRemoveStatusCircle = new Circle(7.0 * VIEW_FACTOR);
+		private final Circle addRemoveStatusCircle = new Circle();
+		private final StackPane statusCirclePane = new StackPane(addRemoveStatusCircle);
 
 		private AddRemoveContactBox() {
 			super();
@@ -340,7 +340,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			setAlignment(Pos.CENTER_LEFT);
 			managedProperty().bind(visibleProperty());
 
-			getChildren().addAll(addRemoveBtn, addRemoveStatusCircle);
+			getChildren().addAll(addRemoveBtn, statusCirclePane);
 
 		}
 
@@ -348,7 +348,9 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		private void initCircle() {
 
-			HBox.setMargin(addRemoveStatusCircle, new Insets(GAP, 3 * GAP, GAP, GAP));
+			statusCirclePane.getStyleClass().addAll("status-circle-pane");
+			addRemoveStatusCircle.radiusProperty().bind(statusCirclePane.widthProperty().multiply(0.5));
+			HBox.setMargin(statusCirclePane, new Insets(GAP, 3 * GAP, GAP, GAP));
 
 		}
 

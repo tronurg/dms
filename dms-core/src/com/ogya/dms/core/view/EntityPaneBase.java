@@ -15,7 +15,6 @@ import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.Separator;
@@ -24,18 +23,18 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 class EntityPaneBase extends GridPane {
 
-	private static final double UNIT_SIZE = 24.0 * ViewFactory.VIEW_FACTOR;
-
-	private final Group profilePicture = new Group();
-	private final Circle statusCircle = new Circle(UNIT_SIZE);
-	private final Circle profileRound = new Circle(UNIT_SIZE * 0.8);
+	private final Circle statusCircle = new Circle();
+	private final Circle profileRound = new Circle();
 	private final Label initialLbl = new Label();
-	private final Label groupSign = new Label("G");
+	private final StackPane groupSign = new StackPane();
+	private final StackPane profilePicture = new StackPane(
+			new Group(statusCircle, profileRound, initialLbl, groupSign));
 
 	private final Label nameLbl = new Label();
 	private final Label commentLbl = new Label();
@@ -45,15 +44,13 @@ class EntityPaneBase extends GridPane {
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 
 	EntityPaneBase() {
-
 		super();
-
 		init();
-
 	}
 
 	private final void init() {
 
+		getStyleClass().addAll("entity-pane");
 		setHgap(ViewFactory.GAP);
 
 		initProfilePicture();
@@ -75,6 +72,7 @@ class EntityPaneBase extends GridPane {
 
 	private void initProfilePicture() {
 
+		profilePicture.getStyleClass().addAll("profile-picture");
 		GridPane.setValignment(profilePicture, VPos.TOP);
 
 		initStatusCircle();
@@ -82,19 +80,19 @@ class EntityPaneBase extends GridPane {
 		initInitialLbl();
 		initGroupSign();
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, initialLbl, groupSign);
-
 	}
 
 	private void initStatusCircle() {
 
-		statusCircle.setStrokeWidth(UNIT_SIZE * 0.2);
+		statusCircle.radiusProperty().bind(profilePicture.widthProperty().multiply(0.5));
+		statusCircle.strokeWidthProperty().bind(statusCircle.radiusProperty().multiply(0.2));
 		statusCircle.setFill(Color.TRANSPARENT);
 
 	}
 
 	private void initProfileRound() {
 
+		profileRound.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.8));
 		profileRound.setFill(Color.DARKGRAY);
 
 	}
@@ -102,29 +100,27 @@ class EntityPaneBase extends GridPane {
 	private void initInitialLbl() {
 
 		initialLbl.getStyleClass().addAll("gray40-text", "em16", "bold");
+		initialLbl.translateXProperty().bind(initialLbl.widthProperty().multiply(-0.5));
+		initialLbl.translateYProperty().bind(initialLbl.heightProperty().multiply(-0.5));
 		initialLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
-
-		initialLbl.translateXProperty().bind(
-				Bindings.createDoubleBinding(() -> -initialLbl.widthProperty().get() / 2, initialLbl.widthProperty()));
-		initialLbl.translateYProperty().bind(Bindings.createDoubleBinding(() -> -initialLbl.heightProperty().get() / 2,
-				initialLbl.heightProperty()));
 
 	}
 
 	private void initGroupSign() {
 
-		groupSign.getStyleClass().addAll("em08", "extra-bold");
-		groupSign.setVisible(false);
-		groupSign.setTextFill(Color.WHITE);
-		groupSign.setContentDisplay(ContentDisplay.CENTER);
+		groupSign.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
+		groupSign.translateXProperty().bind(groupSign.widthProperty().multiply(0.5));
+		groupSign.translateYProperty().bind(groupSign.heightProperty().multiply(0.5));
 
-		Circle circle = new Circle(UNIT_SIZE * 0.3);
-		circle.setFill(Color.TOMATO);
+		Circle groupCircle = new Circle();
+		groupCircle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.3));
+		groupCircle.setFill(Color.TOMATO);
 
-		groupSign.setGraphic(circle);
+		Label groupLbl = new Label("G");
+		groupLbl.getStyleClass().addAll("em08", "extra-bold");
+		groupLbl.setTextFill(Color.WHITE);
 
-		groupSign.setTranslateX(UNIT_SIZE * 0.5);
-		groupSign.setTranslateY(UNIT_SIZE * 0.5);
+		groupSign.getChildren().addAll(groupCircle, groupLbl);
 
 	}
 

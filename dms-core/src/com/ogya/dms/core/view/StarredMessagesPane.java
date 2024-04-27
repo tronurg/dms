@@ -77,7 +77,6 @@ class StarredMessagesPane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final HBox topPane = new HBox();
 	private final VBox centerPaneWithLoadBtn = new VBox(GAP);

@@ -30,11 +30,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -46,15 +41,15 @@ import javafx.util.Duration;
 class IdentityPane extends GridPane {
 
 	private static final double GAP = ViewFactory.GAP;
-	private static final double UNIT_SIZE = 30.0 * ViewFactory.VIEW_FACTOR;
 
-	private final StackPane profilePicture = new StackPane();
-	private final Circle statusCircle = new Circle(UNIT_SIZE);
-	private final Circle profileRound = new Circle(UNIT_SIZE * 0.8);
+	private final Circle statusCircle = new Circle();
+	private final Circle profileRound = new Circle();
 	private final Label profileLbl = new Label();
 	private final Button availableBtn = newStatusBtn(Availability.AVAILABLE.getStatusColor());
 	private final Button awayBtn = newStatusBtn(Availability.AWAY.getStatusColor());
 	private final Button busyBtn = newStatusBtn(Availability.BUSY.getStatusColor());
+	private final StackPane profilePicture = new StackPane(statusCircle, profileRound, profileLbl, busyBtn, awayBtn,
+			availableBtn);
 
 	private final Label nameLbl = new Label();
 	private final Button settingsButton = ViewFactory.newSettingsBtn();
@@ -67,14 +62,13 @@ class IdentityPane extends GridPane {
 	private final ObjectProperty<Availability> availabilityProperty = new SimpleObjectProperty<Availability>();
 
 	IdentityPane() {
-
 		super();
-
 		init();
-
 	}
 
 	private void init() {
+
+		getStyleClass().addAll("identity-pane");
 
 		initProfilePicture();
 		initNameLbl();
@@ -128,19 +122,19 @@ class IdentityPane extends GridPane {
 
 	private void initProfilePicture() {
 
+		profilePicture.getStyleClass().addAll("profile-picture");
+
 		initStatusCircle();
 		initProfileRound();
 		initProfileLbl();
 
-		profilePicture.getChildren().addAll(statusCircle, profileRound, profileLbl, busyBtn, awayBtn, availableBtn);
-
 		final Rotate awayBtnRotate = new Rotate();
 		final Rotate busyBtnRotate = new Rotate();
 
-		awayBtnRotate.pivotXProperty().bind(awayBtn.widthProperty().divide(2).subtract(awayBtn.getTranslateX()));
-		awayBtnRotate.pivotYProperty().bind(awayBtn.heightProperty().divide(2).subtract(awayBtn.getTranslateY()));
-		busyBtnRotate.pivotXProperty().bind(busyBtn.widthProperty().divide(2).subtract(busyBtn.getTranslateX()));
-		busyBtnRotate.pivotYProperty().bind(busyBtn.heightProperty().divide(2).subtract(busyBtn.getTranslateY()));
+		awayBtnRotate.pivotXProperty().bind(awayBtn.widthProperty().divide(2).subtract(awayBtn.translateXProperty()));
+		awayBtnRotate.pivotYProperty().bind(awayBtn.heightProperty().divide(2).subtract(awayBtn.translateYProperty()));
+		busyBtnRotate.pivotXProperty().bind(busyBtn.widthProperty().divide(2).subtract(busyBtn.translateXProperty()));
+		busyBtnRotate.pivotYProperty().bind(busyBtn.heightProperty().divide(2).subtract(busyBtn.translateYProperty()));
 
 		awayBtn.getTransforms().add(awayBtnRotate);
 		busyBtn.getTransforms().add(busyBtnRotate);
@@ -231,7 +225,8 @@ class IdentityPane extends GridPane {
 
 	private void initStatusCircle() {
 
-		statusCircle.setStrokeWidth(UNIT_SIZE * 0.2);
+		statusCircle.radiusProperty().bind(profilePicture.widthProperty().multiply(0.5));
+		statusCircle.strokeWidthProperty().bind(statusCircle.radiusProperty().multiply(0.2));
 		statusCircle.setFill(Color.TRANSPARENT);
 		statusCircle.strokeProperty()
 				.bind(Bindings.createObjectBinding(
@@ -243,6 +238,7 @@ class IdentityPane extends GridPane {
 
 	private void initProfileRound() {
 
+		profileRound.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.8));
 		profileRound.setFill(Color.DARKGRAY);
 
 	}
@@ -271,9 +267,9 @@ class IdentityPane extends GridPane {
 
 		final AtomicReference<String> lastComment = new AtomicReference<String>();
 
+		commentTextField.getStyleClass().addAll("comment-border");
 		commentTextField.setTextFormatter(
 				new TextFormatter<String>(change -> change.getControlNewText().length() > 40 ? null : change));
-
 		commentTextField.setPromptText(Commons.translate("TYPE_COMMENT"));
 		commentTextField.setFocusTraversable(false);
 		commentTextField.setEditable(false);
@@ -320,9 +316,6 @@ class IdentityPane extends GridPane {
 
 		});
 
-		commentTextField.setBorder(new Border(new BorderStroke[] { new BorderStroke(Color.LIGHTGRAY,
-				BorderStrokeStyle.SOLID, new CornerRadii(UNIT_SIZE * 15.0), BorderWidths.DEFAULT) }));
-
 	}
 
 	private void initCoordinatesLbl() {
@@ -335,14 +328,15 @@ class IdentityPane extends GridPane {
 	private Button newStatusBtn(Color color) {
 
 		final Button btn = new Button();
-		final Circle circle = new Circle(UNIT_SIZE * 0.2);
+		final Circle circle = new Circle();
+		circle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.2));
 		circle.setFill(color);
 		btn.setGraphic(circle);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.setVisible(false);
 
-		btn.setTranslateX(UNIT_SIZE * 1.5);
+		btn.translateXProperty().bind(statusCircle.radiusProperty().multiply(1.5));
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 
