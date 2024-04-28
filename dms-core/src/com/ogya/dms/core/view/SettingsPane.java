@@ -8,7 +8,6 @@ import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -18,13 +17,11 @@ import javafx.scene.layout.VBox;
 
 public class SettingsPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
-
 	private final HBox topPane = new HBox();
 
 	private final Button backBtn;
 
-	private final VBox scrollableContent = new VBox(GAP);
+	private final VBox scrollableContent = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(scrollableContent);
 
 	private final AtomicReference<Consumer<Settings>> settingClickedActionRef = new AtomicReference<Consumer<Settings>>();
@@ -73,7 +70,7 @@ public class SettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
-		scrollableContent.setPadding(new Insets(3 * GAP));
+		scrollableContent.getStyleClass().addAll("spacing-1", "padding-3");
 
 		// SEARCH_IN_ALL_MESSAGES
 		Label searchInAllMessagesLbl = new Label(Commons.translate("SEARCH_IN_ALL_MESSAGES"));

@@ -27,15 +27,13 @@ public class ImSearchField extends HBox {
 	private final List<ImSearchListener> listeners = Collections.synchronizedList(new ArrayList<ImSearchListener>());
 
 	public ImSearchField() {
-
-		super(ViewFactory.GAP);
-
+		super();
 		init();
-
 	}
 
 	private void init() {
 
+		getStyleClass().addAll("spacing-1");
 		setAlignment(Pos.CENTER);
 
 		initSearchTextField();

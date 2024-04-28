@@ -100,7 +100,6 @@ class MessagePane extends BorderPane {
 
 	private static final double GAP = ViewFactory.GAP;
 	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
 
 	private final EntityId entityId;
 
@@ -109,8 +108,10 @@ class MessagePane extends BorderPane {
 	private final GridPane bottomPane = new GridPane();
 
 	private final Button backBtn;
-	private final Circle statusCircle = new Circle(7.0 * VIEW_FACTOR);
+	private final Circle statusCircle = new Circle(7.0);
+	private final Group statusCircleGraph = new Group(statusCircle);
 	private final Label nameLabel = new Label();
+	private final HBox nameBox = new HBox(2 * GAP, statusCircleGraph, nameLabel);
 	private final ImSearchField imSearchField = new ImSearchField();
 	private final Button searchBtn = ViewFactory.newSearchBtn();
 	private final Button clearBtn = ViewFactory.newDeleteBtn();
@@ -145,7 +146,7 @@ class MessagePane extends BorderPane {
 	private final ObservableList<Message> searchHits = FXCollections.observableArrayList();
 	private final IntegerProperty searchHitIndex = new SimpleIntegerProperty(0);
 
-	private final ReplyGroup replyGroup = new ReplyGroup(12.0 * VIEW_FACTOR);
+	private final ReplyGroup replyGroup = new ReplyGroup(12.0);
 
 	private final BooleanProperty activeProperty = new SimpleBooleanProperty(true);
 	private final BooleanProperty editableProperty = new SimpleBooleanProperty(false);
@@ -225,7 +226,7 @@ class MessagePane extends BorderPane {
 		topPane.getStyleClass().addAll("top-pane");
 
 		initBackBtn();
-		initNameLabel();
+		initNameBox();
 		initImSearchField();
 		initSearchBtn();
 		initClearBtn();
@@ -234,7 +235,7 @@ class MessagePane extends BorderPane {
 		initStarBtn();
 		initDeleteBtn();
 
-		topPane.getChildren().addAll(backBtn, nameLabel, imSearchField, searchBtn, clearBtn, selectAllBtn, forwardBtn,
+		topPane.getChildren().addAll(backBtn, nameBox, imSearchField, searchBtn, clearBtn, selectAllBtn, forwardBtn,
 				starBtn, deleteBtn);
 
 	}
@@ -286,16 +287,15 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initNameLabel() {
+	private void initNameBox() {
 
+		nameBox.setAlignment(Pos.CENTER_LEFT);
+		HBox.setHgrow(nameBox, Priority.ALWAYS);
+		nameBox.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
+		nameBox.managedProperty().bind(nameBox.visibleProperty());
+		statusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 		nameLabel.getStyleClass().addAll("black-label", "em15", "bold");
-		HBox.setHgrow(nameLabel, Priority.ALWAYS);
-		nameLabel.setMaxWidth(Double.MAX_VALUE);
-		nameLabel.setGraphic(statusCircle);
-		nameLabel.setGraphicTextGap(2 * GAP);
 		nameLabel.underlineProperty().bind(Bindings.and(editableProperty, nameLabel.hoverProperty()));
-		nameLabel.visibleProperty().bind(searchModeProperty.not().or(selectionModeProperty));
-		nameLabel.managedProperty().bind(nameLabel.visibleProperty());
 		nameLabel.setOnMouseClicked(e -> {
 			if (e.getButton() != MouseButton.PRIMARY) {
 				return;
@@ -1213,20 +1213,21 @@ class MessagePane extends BorderPane {
 				if (!activeProperty.get()) {
 					return;
 				}
-				double radius = Math.max(0.0, Math.min(replyGroup.radius, replyGroup.inner.getRadius() + diff / 4.0));
+				double radius = Math.max(0.0,
+						Math.min(replyGroup.getOuterRadius(), replyGroup.getInnerRadius() + diff / 4.0));
 				double translate = 4.0 * radius;
 				messageBalloon.setTranslateX(translate);
-				replyGroup.inner.setRadius(radius);
+				replyGroup.setInnerRadius(radius);
 
 			} else if (MouseEvent.MOUSE_RELEASED.equals(e.getEventType())) {
 
 				longPressTimer.stop();
 
 				messageBalloon.setTranslateX(0.0);
-				if (replyGroup.inner.getRadius() == replyGroup.radius) {
+				if (replyGroup.getInnerRadius() == replyGroup.getOuterRadius()) {
 					referenceMessageProperty.set(messageId);
 				}
-				replyGroup.inner.setRadius(0.0);
+				replyGroup.setInnerRadius(0.0);
 
 				if (!e.isStillSincePress()) {
 					e.consume();
@@ -1247,8 +1248,6 @@ class MessagePane extends BorderPane {
 	}
 
 	private class MessageBalloon extends GridPane {
-
-		private final double radius = 3.0 * VIEW_FACTOR;
 
 		private final MessageInfo messageInfo;
 
@@ -1523,12 +1522,15 @@ class MessagePane extends BorderPane {
 
 		private Node getInfoGrp() {
 
-			Group infoGrp = new Group();
-			Circle waitingCircle = new Circle(radius, messageInfo.statusProperty.get().getWaitingColor());
-			Circle transmittedCircle = new Circle(radius, messageInfo.statusProperty.get().getTransmittedColor());
+			Circle waitingCircle = new Circle(3.0, messageInfo.statusProperty.get().getWaitingColor());
+			Circle transmittedCircle = new Circle(3.0, messageInfo.statusProperty.get().getTransmittedColor());
 
-			transmittedCircle.setLayoutX(-2.0 * radius);
-			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
+			transmittedCircle.setLayoutX(-2.0 * transmittedCircle.getRadius());
+
+			Group group = new Group(waitingCircle, transmittedCircle);
+			group.setStyle(ViewFactory.getScaleCss(1d, 1d));
+
+			Group infoGrp = new Group(group);
 
 			infoGrp.visibleProperty().bind(messageInfo.statusProperty.isNotEqualTo(MessageStatus.FRESH));
 			infoGrp.managedProperty().bind(infoGrp.visibleProperty());
@@ -1652,15 +1654,10 @@ class MessagePane extends BorderPane {
 		private final List<MessageGroup> messageGroups = Collections.synchronizedList(new ArrayList<MessageGroup>());
 
 		private DayBox(LocalDate day) {
-
 			super();
-
 			this.day = day;
-
-			dateLabel = ViewFactory.newNoteLabel(DAY_MONTH_YEAR.format(day));
-
+			dateLabel = ViewFactory.newNoteLbl(DAY_MONTH_YEAR.format(day));
 			init();
-
 		}
 
 		private void init() {
@@ -1748,11 +1745,25 @@ class MessagePane extends BorderPane {
 		}
 
 		private void init() {
+			outer.setStyle(ViewFactory.getScaleCss(1d, 1d));
+			inner.setStyle(ViewFactory.getScaleCss(1d, 1d));
 			outer.setRadius(radius);
 			outer.setFill(Color.LIGHTSKYBLUE);
 			inner.setFill(Color.DEEPSKYBLUE);
 			getChildren().addAll(outer, inner);
-			setTranslateX(-2.0 * (radius + GAP));
+			translateXProperty().bind(outer.radiusProperty().multiply(outer.scaleXProperty()).multiply(-2.8));
+		}
+
+		private double getInnerRadius() {
+			return inner.getRadius() * inner.getScaleX();
+		}
+
+		private void setInnerRadius(double radius) {
+			inner.setRadius(radius / inner.getScaleX());
+		}
+
+		private double getOuterRadius() {
+			return outer.getRadius() * outer.getScaleX();
 		}
 
 	}

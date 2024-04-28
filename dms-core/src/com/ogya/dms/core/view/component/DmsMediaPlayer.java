@@ -25,9 +25,6 @@ import javafx.util.Duration;
 
 public class DmsMediaPlayer extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
-
 	private MediaPlayer mediaPlayer;
 
 	private final Button btn = new Button();
@@ -62,7 +59,7 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void init() {
 
-		setHgap(2 * GAP);
+		getStyleClass().addAll("hgap-2");
 
 		initBtn();
 		initProgressBar();
@@ -83,18 +80,17 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initEmpty(String path) {
 
-		setHgap(GAP);
+		getStyleClass().addAll("hgap-1");
 
 		Button btn = new Button();
 		Polygon triangle = new Polygon();
 		triangle.setFill(Color.GRAY);
-		triangle.getPoints().addAll(new Double[] { 0.0 * VIEW_FACTOR, 0.0, 8.0 * VIEW_FACTOR, 8.0 * VIEW_FACTOR,
-				8.0 * VIEW_FACTOR, -8.0 * VIEW_FACTOR });
-		Rectangle rectangle = new Rectangle(0.0 * VIEW_FACTOR, -3.0 * VIEW_FACTOR, 8.0 * VIEW_FACTOR,
-				6.0 * VIEW_FACTOR);
+		triangle.getPoints().addAll(new Double[] { 0.0, 0.0, 8.0, 8.0, 8.0, -8.0 });
+		Rectangle rectangle = new Rectangle(0.0, -3.0, 8.0, 6.0);
 		rectangle.setFill(Color.GRAY);
 		Group group = new Group(triangle, rectangle);
-		btn.setGraphic(group);
+		group.setStyle(ViewFactory.getScaleCss(1d, 1d));
+		btn.setGraphic(new Group(group));
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 
@@ -131,30 +127,34 @@ public class DmsMediaPlayer extends GridPane {
 
 	private void initBtn() {
 
-		double viewFactor = VIEW_FACTOR;
+		double scaleFactor = 1.0;
 		if (mediaPlayer == null) {
-			viewFactor *= 0.8;
+			scaleFactor *= 0.8;
 		}
 
+		btn.setStyle(ViewFactory.getPrefSizeCss(16 * scaleFactor, 16 * scaleFactor));
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
-		btn.setPrefSize(16.0 * viewFactor, 16.0 * viewFactor);
 
 		final Polygon triangle = new Polygon();
-		triangle.getPoints().addAll(new Double[] { -8.0 * viewFactor, -8.0 * viewFactor, -8.0 * viewFactor,
-				8.0 * viewFactor, 6.0 * viewFactor, 0.0 });
+		triangle.setStyle(ViewFactory.getScaleCss(scaleFactor, scaleFactor));
+		triangle.getPoints().addAll(new Double[] { -8.0, -8.0, -8.0, 8.0, 6.0, 0.0 });
 		triangle.setFill(Color.GREEN);
+		Group triangleGraph = new Group(triangle);
 
 		if (mediaPlayer == null) {
 			btn.setGraphic(triangle);
 			return;
 		}
 
-		final Rectangle rectangle = new Rectangle(16.0 * viewFactor, 16.0 * viewFactor);
+		final Rectangle rectangle = new Rectangle(16.0, 16.0);
+		rectangle.setStyle(ViewFactory.getScaleCss(scaleFactor, scaleFactor));
 		rectangle.setFill(Color.RED);
+		Group rectangleGraph = new Group(rectangle);
+
 		btn.graphicProperty()
 				.bind(Bindings.createObjectBinding(
-						() -> mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING ? rectangle : triangle,
+						() -> mediaPlayer.getStatus() == MediaPlayer.Status.PLAYING ? rectangleGraph : triangleGraph,
 						mediaPlayer.statusProperty()));
 
 		btn.setOnAction(e -> {

@@ -19,11 +19,8 @@ public class IpField extends HBox {
 	private final BooleanProperty validProperty = new SimpleBooleanProperty(false);
 
 	public IpField() {
-
 		super();
-
 		init();
-
 	}
 
 	private void init() {
@@ -36,7 +33,7 @@ public class IpField extends HBox {
 			final int index = i;
 
 			TextField ipField = new TextField();
-			ipField.getStyleClass().addAll("transparent-tf");
+			ipField.getStyleClass().addAll("bold", "transparent-tf");
 			ipField.setPrefColumnCount(3);
 			ipField.setAlignment(Pos.CENTER);
 
@@ -175,6 +172,7 @@ public class IpField extends HBox {
 			if (i < dots.length) {
 
 				Label dot = new Label(".");
+				dot.getStyleClass().addAll("bold");
 				dot.setMaxHeight(Double.MAX_VALUE);
 
 				dots[i] = dot;

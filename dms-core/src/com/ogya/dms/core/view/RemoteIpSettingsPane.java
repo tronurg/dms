@@ -9,7 +9,6 @@ import com.ogya.dms.core.view.component.IpField;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -23,32 +22,25 @@ import javafx.scene.layout.VBox;
 
 public class RemoteIpSettingsPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
-
 	private final HBox topPane = new HBox();
 	private final VBox centerPane = new VBox();
 
 	private final Button backBtn;
 	private final Label headingLabel = new Label(Commons.translate("EDIT_REMOTE_IPS"));
 
-	private final HBox addIpPane = new HBox(2 * GAP);
-
 	private final IpField ipField = new IpField();
 	private final Button addIpButton = ViewFactory.newAddBtn();
+	private final HBox addIpPane = new HBox(ipField, addIpButton);
 
-	private final VBox scrollableContent = new VBox(GAP);
+	private final VBox scrollableContent = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(scrollableContent);
 
 	private final AtomicReference<Consumer<String>> removeIpActionRef = new AtomicReference<Consumer<String>>();
 
 	RemoteIpSettingsPane(BooleanProperty unreadProperty) {
-
 		super();
-
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
-
 		init();
-
 	}
 
 	private void init() {
@@ -103,7 +95,6 @@ public class RemoteIpSettingsPane extends BorderPane {
 	void clearAll() {
 
 		clearIpField();
-
 		scrollableContent.getChildren().clear();
 
 	}
@@ -118,7 +109,8 @@ public class RemoteIpSettingsPane extends BorderPane {
 				continue;
 			}
 
-			HBox ipField = new HBox(GAP);
+			HBox ipField = new HBox();
+			ipField.getStyleClass().addAll("spacing-1");
 
 			Label ipLabel = new Label(ip);
 			ipLabel.getStyleClass().addAll("em12", "bold");
@@ -176,12 +168,8 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initAddIpPane() {
 
-		initIpField();
+		addIpPane.getStyleClass().addAll("spacing-2", "padding-2");
 		initAddIpButton();
-
-		addIpPane.setPadding(new Insets(2 * GAP));
-
-		addIpPane.getChildren().addAll(ipField, addIpButton);
 
 	}
 
@@ -196,13 +184,7 @@ public class RemoteIpSettingsPane extends BorderPane {
 
 	private void initScrollableContent() {
 
-		scrollableContent.setPadding(new Insets(2 * GAP));
-
-	}
-
-	private void initIpField() {
-
-		ipField.getStyleClass().addAll("bold");
+		scrollableContent.getStyleClass().addAll("spacing-1", "padding-2");
 
 	}
 

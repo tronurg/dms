@@ -27,20 +27,18 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 public class ActiveGroupsPane extends BorderPane {
-
-	private static final double GAP = ViewFactory.GAP;
 
 	private final SearchField searchField = new SearchField(false);
 
@@ -96,16 +94,13 @@ public class ActiveGroupsPane extends BorderPane {
 	private final ObjectProperty<Long> selectedIdProperty = new SimpleObjectProperty<Long>();
 
 	ActiveGroupsPane() {
-
 		super();
-
 		init();
-
 	}
 
 	private void init() {
 
-		entities.setPadding(new Insets(2 * GAP));
+		entities.getStyleClass().addAll("padding-2");
 
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
@@ -339,24 +334,24 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private final ObjectProperty<Color> statusColorProperty;
 
-		private final Circle statusCircle = new Circle();
-		private final StackPane statusCirclePane = new StackPane(statusCircle);
+		private final Circle statusCircle = new Circle(7.0);
+		private final Group statusCircleGraph = new Group(statusCircle);
 		private final Label nameLbl = new Label();
 
 		private MemberCard(String name, ObjectProperty<Color> statusColorProperty) {
-			super(GAP);
+			super();
 			this.nameLbl.setText(name);
 			this.statusColorProperty = statusColorProperty;
 			init();
 		}
 
 		private void init() {
+			getStyleClass().addAll("spacing-1");
 			setAlignment(Pos.CENTER_LEFT);
-			statusCirclePane.getStyleClass().addAll("status-circle-pane");
-			statusCircle.radiusProperty().bind(statusCirclePane.widthProperty().multiply(0.5));
+			statusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 			statusCircle.fillProperty().bind(statusColorProperty);
 			nameLbl.getStyleClass().addAll("em12", "bold");
-			getChildren().addAll(statusCirclePane, nameLbl);
+			getChildren().addAll(statusCircleGraph, nameLbl);
 		}
 
 		private String getText() {

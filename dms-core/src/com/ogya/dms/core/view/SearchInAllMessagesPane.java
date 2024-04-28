@@ -237,7 +237,7 @@ class SearchInAllMessagesPane extends BorderPane {
 	}
 
 	private void addNotification(String text) {
-		Label noteLabel = ViewFactory.newNoteLabel(text);
+		Label noteLabel = ViewFactory.newNoteLbl(text);
 		VBox.setMargin(noteLabel, new Insets(GAP, 0.0, GAP, 0.0));
 		centerPane.getChildren().add(noteLabel);
 	}

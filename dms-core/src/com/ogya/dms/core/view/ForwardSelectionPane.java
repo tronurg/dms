@@ -22,25 +22,25 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.VPos;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class ForwardSelectionPane extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
-
+	private final HBox topPane = new HBox();
 	private final Button backBtn;
 	private final SearchField searchField = new SearchField(true);
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 	private final Button sendBtn = ViewFactory.newSendBtn();
+	private final StackPane sendBtnGraph = new StackPane(sendBtn);
 
 	private final Map<EntityId, EntityCard> entityIdCards = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityCard>());
@@ -71,25 +71,23 @@ public class ForwardSelectionPane extends GridPane {
 	private final ObjectProperty<EntityId> selectedEntityIdProperty = new SimpleObjectProperty<EntityId>();
 
 	ForwardSelectionPane(BooleanProperty unreadProperty) {
-
 		super();
-
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
-
 		init();
-
 	}
 
 	private void init() {
 
-		initBackBtn();
-		initEntities();
-		initSendBtn();
+		parentProperty().addListener((e0, e1, e2) -> scrollPane.setVvalue(scrollPane.getVmin()));
 
-		add(backBtn, 0, 0);
+		initTopPane();
+		initEntities();
+		initSendBtnGraph();
+
+		add(topPane, 0, 0);
 		add(searchField, 0, 1);
 		add(scrollPane, 0, 2);
-		add(sendBtn, 0, 2);
+		add(sendBtnGraph, 0, 2);
 
 	}
 
@@ -105,15 +103,14 @@ public class ForwardSelectionPane extends GridPane {
 
 	}
 
-	private void initBackBtn() {
-
-		GridPane.setMargin(backBtn, new Insets(GAP));
-
+	private void initTopPane() {
+		topPane.getStyleClass().addAll("top-pane", "transparent-bg");
+		topPane.getChildren().add(backBtn);
 	}
 
 	private void initEntities() {
 
-		entities.setPadding(new Insets(2 * GAP));
+		entities.getStyleClass().addAll("padding-2");
 
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		GridPane.setHgrow(scrollPane, Priority.ALWAYS);
@@ -122,12 +119,12 @@ public class ForwardSelectionPane extends GridPane {
 
 	}
 
-	private void initSendBtn() {
+	private void initSendBtnGraph() {
 
-		GridPane.setMargin(sendBtn, new Insets(2 * GAP));
-		GridPane.setHalignment(sendBtn, HPos.RIGHT);
-		GridPane.setValignment(sendBtn, VPos.BOTTOM);
+		sendBtnGraph.getStyleClass().addAll("padding-2");
+		sendBtnGraph.setPickOnBounds(false);
 
+		StackPane.setAlignment(sendBtn, Pos.BOTTOM_RIGHT);
 		sendBtn.disableProperty().bind(selectedEntityIdProperty.isNull());
 
 	}
@@ -241,13 +238,9 @@ public class ForwardSelectionPane extends GridPane {
 		private final AtomicLong maxMessageId = new AtomicLong(Long.MIN_VALUE);
 
 		private EntityCard(EntityId entityId) {
-
 			super();
-
 			this.entityId = entityId;
-
 			init();
-
 		}
 
 		private void init() {

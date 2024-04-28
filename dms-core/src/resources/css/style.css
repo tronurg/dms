@@ -209,6 +209,9 @@
 .min-width-6em {
 	-fx-min-width: 6em;
 }
+.max-width-17em {
+	-fx-max-width: 17em;
+}
 .gray-underline {
 	-fx-border-color: gray;
 	-fx-border-width: 0 0 1 0;
@@ -225,18 +228,39 @@
 .down-padding {
 	-fx-padding: 0 0 1em 0;
 }
-.identity-pane .profile-picture {
-	-fx-max-width: 4em;
-	-fx-min-width: 4em;
-	-fx-pref-width: 4em;
+.glowing-btn:hover {
+	-fx-effect: dropshadow(gaussian, dodgerblue, 0.3em, 0, 0, 0);
 }
-.entity-pane .profile-picture {
-	-fx-max-width: 3.2em;
-	-fx-min-width: 3.2em;
-	-fx-pref-width: 3.2em;
+.padding-1 {
+	-fx-padding: 0.3em;
 }
-.status-circle-pane {
-	-fx-max-width: 0.9em;
-	-fx-min-width: 0.9em;
-	-fx-pref-width: 0.9em;
+.padding-2 {
+	-fx-padding: 0.6em;
+}
+.padding-3 {
+	-fx-padding: 1em;
+}
+.padding-1311 {
+	-fx-padding: 0.3em 1em 0.3em 0.3em;
+}
+.padding-2422 {
+	-fx-padding: 0.6em 1.3em 0.6em 0.6em;
+}
+.spacing-1 {
+	-fx-spacing: 0.3em;
+}
+.spacing-2 {
+	-fx-spacing: 0.6em;
+}
+.hgap-1 {
+	-fx-hgap: 0.3em;
+}
+.hgap-2 {
+	-fx-hgap: 0.6em;
+}
+.vgap-1 {
+	-fx-vgap: 0.3em;
+}
+.vgap-2 {
+	-fx-vgap: 0.6em;
 }

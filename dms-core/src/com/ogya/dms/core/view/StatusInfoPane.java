@@ -11,7 +11,6 @@ import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.property.BooleanProperty;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.control.Button;
@@ -20,7 +19,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
@@ -28,10 +26,8 @@ import javafx.scene.shape.Circle;
 
 public class StatusInfoPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
-
 	private final HBox topPane = new HBox();
-	private final VBox centerPane = new VBox(2 * GAP);
+	private final VBox centerPane = new VBox();
 
 	private final ScrollPane scrollPane = new DmsScrollPane(centerPane);
 	private final Button backBtn;
@@ -39,13 +35,9 @@ public class StatusInfoPane extends BorderPane {
 	private final Map<Long, Card> cards = Collections.synchronizedMap(new HashMap<Long, Card>());
 
 	StatusInfoPane(BooleanProperty unreadProperty) {
-
 		super();
-
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
-
 		init();
-
 	}
 
 	private void init() {
@@ -66,7 +58,7 @@ public class StatusInfoPane extends BorderPane {
 	private void initScrollPane() {
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
-		centerPane.setPadding(new Insets(2 * GAP, 4 * GAP, 2 * GAP, 2 * GAP));
+		centerPane.getStyleClass().addAll("spacing-2", "padding-2422");
 	}
 
 	void setOnBackAction(Runnable runnable) {
@@ -78,15 +70,10 @@ public class StatusInfoPane extends BorderPane {
 	void addCards(List<Contact> contacts) {
 
 		contacts.forEach(contact -> {
-
 			Card card = new Card();
-
 			cards.put(contact.getId(), card);
-
 			updateContact(contact);
-
 			centerPane.getChildren().add(card);
-
 		});
 
 	}
@@ -94,7 +81,6 @@ public class StatusInfoPane extends BorderPane {
 	void reset() {
 
 		cards.forEach((uuid, card) -> centerPane.getChildren().remove(card));
-
 		cards.clear();
 
 	}
@@ -138,24 +124,22 @@ public class StatusInfoPane extends BorderPane {
 
 	private final class Card extends HBox {
 
-		private final Circle statusCircle = new Circle();
-		private final StackPane statusCirclePane = new StackPane(statusCircle);
+		private final Circle statusCircle = new Circle(7.0);
+		private final Group statusCircleGraph = new Group(statusCircle);
 		private final Label nameLbl = new Label();
 		private final Label progressLbl = new Label();
+		private final Circle waitingCircle = new Circle(3.0, Color.TRANSPARENT);
+		private final Circle transmittedCircle = new Circle(3.0, Color.TRANSPARENT);
 		private final Group infoGrp = new Group();
-		private final Circle waitingCircle = new Circle();
-		private final Circle transmittedCircle = new Circle();
 
 		private Card() {
-
-			super(2 * GAP);
-
+			super();
 			init();
-
 		}
 
 		private void init() {
 
+			getStyleClass().addAll("spacing-2");
 			setAlignment(Pos.CENTER);
 
 			initStatusCircle();
@@ -163,7 +147,7 @@ public class StatusInfoPane extends BorderPane {
 			initProgressLbl();
 			initInfoGrp();
 
-			getChildren().addAll(statusCirclePane, nameLbl, progressLbl, infoGrp);
+			getChildren().addAll(statusCircleGraph, nameLbl, progressLbl, infoGrp);
 
 		}
 
@@ -200,8 +184,7 @@ public class StatusInfoPane extends BorderPane {
 
 		private void initStatusCircle() {
 
-			statusCirclePane.getStyleClass().addAll("status-circle-pane");
-			statusCircle.radiusProperty().bind(statusCirclePane.widthProperty().multiply(0.5));
+			statusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 
 		}
 
@@ -227,13 +210,12 @@ public class StatusInfoPane extends BorderPane {
 		private void initInfoGrp() {
 
 			infoGrp.managedProperty().bind(infoGrp.visibleProperty());
+			transmittedCircle.setLayoutX(-2.0 * transmittedCircle.getRadius());
 
-			waitingCircle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.45));
-			transmittedCircle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.45));
-			waitingCircle.setFill(Color.TRANSPARENT);
-			transmittedCircle.setFill(Color.TRANSPARENT);
-			transmittedCircle.layoutXProperty().bind(transmittedCircle.radiusProperty().multiply(-2.0));
-			infoGrp.getChildren().addAll(waitingCircle, transmittedCircle);
+			Group group = new Group(waitingCircle, transmittedCircle);
+			group.setStyle(ViewFactory.getScaleCss(1d, 1d));
+
+			infoGrp.getChildren().add(group);
 
 		}
 

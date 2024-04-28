@@ -12,7 +12,7 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.geometry.HPos;
-import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -24,16 +24,16 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class ReportsPane extends GridPane {
-
-	private static final double GAP = ViewFactory.GAP;
 
 	private final ComboBox<String> reportsComboBox = new ComboBox<String>();
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
 	private final Button attachBtn = ViewFactory.newAttachBtn();
+	private final StackPane attachBtnGraph = new StackPane(attachBtn);
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 
@@ -46,10 +46,7 @@ public class ReportsPane extends GridPane {
 
 	void init(List<ReportTemplate> templates) {
 
-		getStyleClass().addAll("gray-border");
-		setPadding(new Insets(2 * GAP));
-		setHgap(2 * GAP);
-		setVgap(2 * GAP);
+		getStyleClass().addAll("gray-border", "padding-2", "hgap-2", "vgap-2");
 
 		templates.forEach(template -> {
 
@@ -70,12 +67,12 @@ public class ReportsPane extends GridPane {
 		initReportsComboBox();
 		initCancelBtn();
 		initReportPaneHolder();
-		initAttachBtn();
+		initAttachBtnGraph();
 
 		add(reportsComboBox, 0, 0);
 		add(cancelBtn, 0, 0);
 		add(reportPaneHolder, 0, 1);
-		add(attachBtn, 0, 1);
+		add(attachBtnGraph, 0, 1);
 
 	}
 
@@ -88,7 +85,6 @@ public class ReportsPane extends GridPane {
 	void reset() {
 
 		reportPanes.forEach(reportPane -> reportPane.reset());
-
 		reportsComboBox.getSelectionModel().selectFirst();
 
 	}
@@ -102,9 +98,7 @@ public class ReportsPane extends GridPane {
 	private void initReportsComboBox() {
 
 		reportsComboBox.getSelectionModel().selectedIndexProperty().addListener((e0, e1, e2) -> updateReportPane());
-
 		reportsComboBox.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
-
 		reportsComboBox.getSelectionModel().selectFirst();
 
 	}
@@ -123,11 +117,12 @@ public class ReportsPane extends GridPane {
 
 	}
 
-	private void initAttachBtn() {
+	private void initAttachBtnGraph() {
 
-		GridPane.setMargin(attachBtn, new Insets(2 * GAP));
-		GridPane.setHalignment(attachBtn, HPos.RIGHT);
-		GridPane.setValignment(attachBtn, VPos.BOTTOM);
+		attachBtnGraph.getStyleClass().addAll("padding-2");
+		attachBtnGraph.setPickOnBounds(false);
+
+		StackPane.setAlignment(attachBtn, Pos.BOTTOM_RIGHT);
 
 		attachBtn.opacityProperty()
 				.bind(Bindings.createDoubleBinding(() -> attachBtn.isHover() ? 1.0 : 0.5, attachBtn.hoverProperty()));
@@ -206,11 +201,8 @@ public class ReportsPane extends GridPane {
 
 		private void init() {
 
-			valuesPane.setPadding(new Insets(2 * GAP));
-			valuesPane.setHgap(GAP);
-			valuesPane.setVgap(GAP);
-
-			preview.setPadding(new Insets(2 * GAP));
+			valuesPane.getStyleClass().addAll("padding-2", "hgap-1", "vgap-1");
+			preview.getStyleClass().addAll("padding-2");
 
 			if (textFields.size() > 0) {
 				getItems().add(valuesScrollPane);
@@ -254,7 +246,7 @@ public class ReportsPane extends GridPane {
 						String tag = matcher.group();
 
 						Label label = new Label(tag.substring(1, tag.length() - 1));
-						label.setMaxWidth(50.0 * GAP);
+						label.getStyleClass().addAll("max-width-17em");
 						label.setTooltip(new Tooltip(label.getText()));
 						TextField textField = new TextField();
 						textField.getStyleClass().addAll("gray-underline");

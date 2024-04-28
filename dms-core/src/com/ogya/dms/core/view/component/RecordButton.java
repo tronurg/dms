@@ -24,8 +24,6 @@ import javafx.util.Duration;
 
 public class RecordButton extends Button {
 
-	private static final double VIEW_FACTOR = ViewFactory.VIEW_FACTOR;
-
 	private final Timeline timeline = new Timeline();
 
 	private final List<RecordListener> listeners = Collections.synchronizedList(new ArrayList<RecordListener>());
@@ -49,7 +47,7 @@ public class RecordButton extends Button {
 		setPadding(Insets.EMPTY);
 		setPickOnBounds(false);
 
-		Circle circle = new Circle(16.0 * VIEW_FACTOR);
+		Circle circle = new Circle(16.0);
 		circle.setFill(Color.GREEN);
 		circle.setStroke(Color.GREEN);
 		circle.setStrokeWidth(2.0);
@@ -60,21 +58,21 @@ public class RecordButton extends Button {
 		recordArc.setType(ArcType.ROUND);
 		recordArc.setFill(Color.RED);
 		recordArc.visibleProperty().bind(timeline.statusProperty().isNotEqualTo(Animation.Status.STOPPED));
-		Rectangle rectangle = new Rectangle(-3.0 * VIEW_FACTOR, -10.0 * VIEW_FACTOR, 6.0 * VIEW_FACTOR,
-				16.0 * VIEW_FACTOR);
-		rectangle.setArcWidth(6.0 * VIEW_FACTOR);
-		rectangle.setArcHeight(6.0 * VIEW_FACTOR);
+		Rectangle rectangle = new Rectangle(-3.0, -10.0, 6.0, 16.0);
+		rectangle.setArcWidth(6.0);
+		rectangle.setArcHeight(6.0);
 		rectangle.setFill(Color.ANTIQUEWHITE);
 		rectangle.setStroke(Color.ANTIQUEWHITE);
-		Arc arc = new Arc(0.0, 3.0 * VIEW_FACTOR, 7.0 * VIEW_FACTOR, 7.0 * VIEW_FACTOR, 180.0, 180.0);
-		arc.setStrokeWidth(3.0 * VIEW_FACTOR);
+		Arc arc = new Arc(0.0, 3.0, 7.0, 7.0, 180.0, 180.0);
+		arc.setStrokeWidth(3.0);
 		arc.setStrokeLineCap(StrokeLineCap.ROUND);
 		arc.setFill(Color.TRANSPARENT);
 		arc.setStroke(Color.ANTIQUEWHITE);
 
 		Group group = new Group(circle, recordArc, rectangle, arc);
+		group.setStyle(ViewFactory.getScaleCss(1d, 1d));
 
-		setGraphic(group);
+		setGraphic(new Group(group));
 
 		KeyFrame key0 = new KeyFrame(Duration.millis(0.0), new KeyValue(recordArc.radiusXProperty(), 0.0),
 				new KeyValue(recordArc.radiusYProperty(), 0.0), new KeyValue(recordArc.lengthProperty(), 360.0));
@@ -83,8 +81,7 @@ public class RecordButton extends Button {
 			if (isPressed()) {
 				listeners.forEach(listener -> listener.recordEventTriggered());
 			}
-		}, new KeyValue(recordArc.radiusXProperty(), 16.0 * VIEW_FACTOR),
-				new KeyValue(recordArc.radiusYProperty(), 16.0 * VIEW_FACTOR),
+		}, new KeyValue(recordArc.radiusXProperty(), 16.0), new KeyValue(recordArc.radiusYProperty(), 16.0),
 				new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), new KeyValue(recordArc.lengthProperty(), 0.0));

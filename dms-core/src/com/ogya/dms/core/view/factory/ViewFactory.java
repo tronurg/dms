@@ -2,6 +2,7 @@ package com.ogya.dms.core.view.factory;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javafx.beans.binding.Bindings;
@@ -9,17 +10,18 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
-import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.effect.ColorAdjust;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Arc;
 import javafx.scene.shape.ArcType;
@@ -34,9 +36,12 @@ import javafx.scene.text.Font;
 
 public class ViewFactory {
 
+	private static final String SCALE_CSS = "-fx-scale-x: %.3fem;-fx-scale-y: %.3fem;";
+	private static final String PREF_SIZE_CSS = "-fx-pref-height: %.3fem;-fx-pref-width: %.3fem;";
+
 	private static final double EM = Font.getDefault().getSize();
 	public static final double GAP = EM / 3.0;
-	public static final double VIEW_FACTOR = EM / 15.0;
+	private static final double SCALE_FACTOR = 1f / 15;
 
 	private static final Map<String, Color> colorMap = Collections.synchronizedMap(new HashMap<String, Color>());
 
@@ -91,8 +96,7 @@ public class ViewFactory {
 
 	private static Group newGroup(Node... nodes) {
 		Group group = new Group(nodes);
-		group.setScaleX(VIEW_FACTOR);
-		group.setScaleY(VIEW_FACTOR);
+		group.setStyle(getScaleCss(1d, 1d));
 		Group groupContainer = new Group(group);
 		return groupContainer;
 	}
@@ -166,6 +170,39 @@ public class ViewFactory {
 
 	}
 
+	public static Button newAddBtnWithLbl(Label lbl) {
+
+		Button btn = new Button();
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		Circle circle = new Circle(10.0);
+		circle.setStrokeWidth(3.0);
+		circle.setFill(Color.TRANSPARENT);
+		Line line1 = new Line(0.0, 5.0, 0.0, -5.0);
+		line1.setStrokeLineCap(StrokeLineCap.ROUND);
+		line1.setStrokeWidth(3.0);
+		Line line2 = new Line(-5.0, 0.0, 5.0, 0.0);
+		line2.setStrokeLineCap(StrokeLineCap.ROUND);
+		line2.setStrokeWidth(3.0);
+		Group group = newGroup(circle, line1, line2);
+
+		HBox btnGraph = new HBox(group, lbl);
+		btnGraph.getStyleClass().addAll("spacing-1");
+		btnGraph.setAlignment(Pos.CENTER_LEFT);
+		btn.setGraphic(btnGraph);
+
+		circle.strokeProperty().bind(
+				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
+		line1.strokeProperty().bind(
+				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
+		line2.strokeProperty().bind(
+				Bindings.createObjectBinding(() -> btn.isHover() ? Color.GREEN : Color.GRAY, btn.hoverProperty()));
+
+		return btn;
+
+	}
+
 	public static Button newRemoveBtn(double scaleFactor) {
 
 		Circle circle = new Circle(10.0 * scaleFactor);
@@ -175,6 +212,34 @@ public class ViewFactory {
 		line.setStrokeLineCap(StrokeLineCap.ROUND);
 		line.setStrokeWidth(3.0 * scaleFactor);
 		Button btn = newButton(circle, line);
+
+		circle.strokeProperty()
+				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
+		line.strokeProperty()
+				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
+
+		return btn;
+
+	}
+
+	public static Button newRemoveBtnWithLbl(Label lbl) {
+
+		Button btn = new Button();
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
+		Circle circle = new Circle(10.0);
+		circle.setStrokeWidth(3.0);
+		circle.setFill(Color.TRANSPARENT);
+		Line line = new Line(-5.0, 0.0, 5.0, 0.0);
+		line.setStrokeLineCap(StrokeLineCap.ROUND);
+		line.setStrokeWidth(3.0);
+		Group group = newGroup(circle, line);
+
+		HBox btnGraph = new HBox(group, lbl);
+		btnGraph.getStyleClass().addAll("spacing-1");
+		btnGraph.setAlignment(Pos.CENTER_LEFT);
+		btn.setGraphic(btnGraph);
 
 		circle.strokeProperty()
 				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.RED : Color.GRAY, btn.hoverProperty()));
@@ -297,12 +362,17 @@ public class ViewFactory {
 
 	public static Button newInfoBtn() {
 
+		Button btn = new Button();
+		btn.setPadding(Insets.EMPTY);
+		btn.setPickOnBounds(false);
+
 		Circle circle = new Circle(12.0);
-		Button btn = newButton(circle);
-		btn.getStyleClass().addAll("em13", "extra-bold", "italic");
-		btn.setText("i");
-		btn.setTextFill(Color.WHITE);
-		btn.setContentDisplay(ContentDisplay.CENTER);
+		Group circleGraph = newGroup(circle);
+		Label iLbl = new Label("i");
+		iLbl.getStyleClass().addAll("em13", "extra-bold", "italic");
+		iLbl.setTextFill(Color.WHITE);
+
+		btn.setGraphic(new StackPane(circleGraph, iLbl));
 
 		circle.fillProperty()
 				.bind(Bindings.createObjectBinding(
@@ -344,13 +414,10 @@ public class ViewFactory {
 		Circle point2 = new Circle(6.0, 0.0, 2.0);
 		point2.fillProperty().bind(colorProperty);
 		Button btn = newButton(circle, point0, point1, point2);
+		btn.getStyleClass().addAll("glowing-btn");
 
 		colorProperty.bind(Bindings.createObjectBinding(() -> btn.isHover() ? Color.DODGERBLUE : Color.DARKGRAY,
 				btn.hoverProperty()));
-
-		final Effect dropShadow = new DropShadow(GAP, Color.DODGERBLUE);
-		btn.effectProperty()
-				.bind(Bindings.createObjectBinding(() -> btn.isHover() ? dropShadow : null, btn.hoverProperty()));
 
 		return btn;
 
@@ -580,10 +647,18 @@ public class ViewFactory {
 
 	}
 
-	public static Label newNoteLabel(String text) {
-		Label noteLabel = new Label(text);
-		noteLabel.getStyleClass().addAll("note-label");
-		return noteLabel;
+	public static Label newNoteLbl(String text) {
+		Label noteLbl = new Label(text);
+		noteLbl.getStyleClass().addAll("note-label");
+		return noteLbl;
+	}
+
+	public static String getScaleCss(double scaleX, double scaleY) {
+		return String.format(Locale.ROOT, SCALE_CSS, scaleX * SCALE_FACTOR, scaleY * SCALE_FACTOR);
+	}
+
+	public static String getPrefSizeCss(double scaleWidth, double scaleHeight) {
+		return String.format(Locale.ROOT, PREF_SIZE_CSS, scaleWidth * SCALE_FACTOR, scaleHeight * SCALE_FACTOR);
 	}
 
 }

@@ -22,6 +22,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.VPos;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.OverrunStyle;
@@ -40,16 +41,16 @@ import javafx.util.Duration;
 
 class IdentityPane extends GridPane {
 
-	private static final double GAP = ViewFactory.GAP;
+	private static final double RADIUS = 30.0;
 
-	private final Circle statusCircle = new Circle();
-	private final Circle profileRound = new Circle();
+	private final Circle statusCircle = new Circle(RADIUS);
+	private final Circle profileRound = new Circle(0.8 * RADIUS);
 	private final Label profileLbl = new Label();
 	private final Button availableBtn = newStatusBtn(Availability.AVAILABLE.getStatusColor());
 	private final Button awayBtn = newStatusBtn(Availability.AWAY.getStatusColor());
 	private final Button busyBtn = newStatusBtn(Availability.BUSY.getStatusColor());
-	private final StackPane profilePicture = new StackPane(statusCircle, profileRound, profileLbl, busyBtn, awayBtn,
-			availableBtn);
+	private final StackPane profilePicture = new StackPane(new Group(statusCircle, profileRound, profileLbl), busyBtn,
+			awayBtn, availableBtn);
 
 	private final Label nameLbl = new Label();
 	private final Button settingsButton = ViewFactory.newSettingsBtn();
@@ -68,18 +69,13 @@ class IdentityPane extends GridPane {
 
 	private void init() {
 
-		getStyleClass().addAll("identity-pane");
+		getStyleClass().addAll("hgap-1");
 
 		initProfilePicture();
 		initNameLbl();
 		initSettingsButton();
 		initCommentTextField();
 		initCoordinatesLbl();
-
-		setHgap(GAP);
-		setValignment(profilePicture, VPos.TOP);
-		setFillHeight(profilePicture, false);
-		setHgrow(commentTextField, Priority.ALWAYS);
 
 		add(new Separator(Orientation.VERTICAL), 1, 0, 1, 3);
 		add(nameLbl, 2, 0, 1, 1);
@@ -122,7 +118,8 @@ class IdentityPane extends GridPane {
 
 	private void initProfilePicture() {
 
-		profilePicture.getStyleClass().addAll("profile-picture");
+		GridPane.setValignment(profilePicture, VPos.TOP);
+		GridPane.setFillHeight(profilePicture, false);
 
 		initStatusCircle();
 		initProfileRound();
@@ -225,8 +222,8 @@ class IdentityPane extends GridPane {
 
 	private void initStatusCircle() {
 
-		statusCircle.radiusProperty().bind(profilePicture.widthProperty().multiply(0.5));
-		statusCircle.strokeWidthProperty().bind(statusCircle.radiusProperty().multiply(0.2));
+		statusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
+		statusCircle.setStrokeWidth(0.2 * RADIUS);
 		statusCircle.setFill(Color.TRANSPARENT);
 		statusCircle.strokeProperty()
 				.bind(Bindings.createObjectBinding(
@@ -238,7 +235,7 @@ class IdentityPane extends GridPane {
 
 	private void initProfileRound() {
 
-		profileRound.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.8));
+		profileRound.setStyle(ViewFactory.getScaleCss(1d, 1d));
 		profileRound.setFill(Color.DARKGRAY);
 
 	}
@@ -246,6 +243,8 @@ class IdentityPane extends GridPane {
 	private void initProfileLbl() {
 
 		profileLbl.getStyleClass().addAll("gray40-text", "em20", "bold");
+		profileLbl.translateXProperty().bind(profileLbl.widthProperty().multiply(-0.5));
+		profileLbl.translateYProperty().bind(profileLbl.heightProperty().multiply(-0.5));
 		profileLbl.setTextOverrun(OverrunStyle.ELLIPSIS);
 
 	}
@@ -264,6 +263,8 @@ class IdentityPane extends GridPane {
 	}
 
 	private void initCommentTextField() {
+
+		GridPane.setHgrow(commentTextField, Priority.ALWAYS);
 
 		final AtomicReference<String> lastComment = new AtomicReference<String>();
 
@@ -327,23 +328,24 @@ class IdentityPane extends GridPane {
 
 	private Button newStatusBtn(Color color) {
 
-		final Button btn = new Button();
-		final Circle circle = new Circle();
-		circle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.2));
+		Button btn = new Button();
+		Circle circle = new Circle(0.2 * RADIUS);
+		circle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 		circle.setFill(color);
-		btn.setGraphic(circle);
+		final Group circleGraph = new Group(circle);
+		btn.setGraphic(circleGraph);
 		btn.setPadding(Insets.EMPTY);
 		btn.setPickOnBounds(false);
 		btn.setVisible(false);
 
-		btn.translateXProperty().bind(statusCircle.radiusProperty().multiply(1.5));
+		btn.translateXProperty().bind(circle.radiusProperty().multiply(circle.scaleXProperty()).multiply(7.5));
 
 		final Interpolator interpolator = Interpolator.EASE_BOTH;
 
 		final Transition circleTransition = new Transition() {
 
-			private double circleStart;
-			private double circleEnd;
+			private double circleGraphStart;
+			private double circleGraphEnd;
 			private int position = 0;
 
 			{
@@ -353,16 +355,16 @@ class IdentityPane extends GridPane {
 			@Override
 			protected void interpolate(double arg0) {
 
-				circle.setScaleX(interpolator.interpolate(circleStart, circleEnd, arg0));
-				circle.setScaleY(interpolator.interpolate(circleStart, circleEnd, arg0));
+				circleGraph.setScaleX(interpolator.interpolate(circleGraphStart, circleGraphEnd, arg0));
+				circleGraph.setScaleY(interpolator.interpolate(circleGraphStart, circleGraphEnd, arg0));
 
 			}
 
 			@Override
 			public void play() {
-				circleStart = 1.0 + position * 1.0;
+				circleGraphStart = 1.0 + position * 1.0;
 				position = (position + 1) % 2;
-				circleEnd = 1.0 + position * 1.0;
+				circleGraphEnd = 1.0 + position * 1.0;
 				super.play();
 			}
 

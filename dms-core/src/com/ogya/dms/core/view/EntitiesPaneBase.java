@@ -55,8 +55,6 @@ import javafx.stage.PopupWindow.AnchorLocation;
 
 class EntitiesPaneBase extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
-
 	private final SearchField searchField;
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
@@ -96,18 +94,14 @@ class EntitiesPaneBase extends BorderPane {
 	private final ObjectProperty<EntityId> entityToBeRemoved = new SimpleObjectProperty<EntityId>();
 
 	EntitiesPaneBase(boolean allowFilter) {
-
 		super();
-
 		searchField = new SearchField(allowFilter);
-
 		init();
-
 	}
 
 	private void init() {
 
-		entities.setPadding(new Insets(2 * GAP));
+		entities.getStyleClass().addAll("padding-2");
 
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setHbarPolicy(ScrollBarPolicy.NEVER);
@@ -300,7 +294,8 @@ class EntitiesPaneBase extends BorderPane {
 			initDeleteBtn();
 			initUnreadMessagesLbl();
 
-			HBox btnBox = new HBox(2 * GAP);
+			HBox btnBox = new HBox();
+			btnBox.getStyleClass().addAll("spacing-2");
 			btnBox.setAlignment(Pos.CENTER);
 			btnBox.getChildren().addAll(visibleBtn, invisibleBtn, deleteBtn, unreadMessagesLbl);
 
@@ -375,7 +370,7 @@ class EntitiesPaneBase extends BorderPane {
 
 			deleteBtn.setOnAction(e -> {
 				entityToBeRemoved.set(entityId);
-				Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + GAP);
+				Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), 1.25 * deleteBtn.getHeight());
 				removeEntityPopup.show(deleteBtn, point.getX(), point.getY());
 			});
 

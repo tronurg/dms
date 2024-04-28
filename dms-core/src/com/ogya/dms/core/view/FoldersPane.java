@@ -41,7 +41,6 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
-import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -67,7 +66,6 @@ import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
 
 	private final HBox topPane = new HBox();
@@ -210,9 +208,8 @@ public class FoldersPane extends BorderPane {
 
 	private void initScrollPane() {
 
+		centerPane.getStyleClass().addAll("padding-1");
 		scrollPane.setFitToWidth(true);
-
-		centerPane.setPadding(new Insets(GAP));
 
 	}
 
@@ -277,7 +274,6 @@ public class FoldersPane extends BorderPane {
 
 	private void initMenuBtn() {
 
-		HBox.setMargin(menuBtn, new Insets(-GAP, 0, -GAP, 0));
 		menuBtn.setMaxHeight(Double.MAX_VALUE);
 		menuBtn.visibleProperty().bind(searchModeProperty.not());
 		menuBtn.managedProperty().bind(menuBtn.visibleProperty());
@@ -285,7 +281,7 @@ public class FoldersPane extends BorderPane {
 				.bind(Bindings.createDoubleBinding(() -> menuBtn.isHover() || contextMenu.isShowing() ? 1.0 : 0.5,
 						menuBtn.hoverProperty(), contextMenu.showingProperty()));
 		menuBtn.setOnAction(e -> {
-			Point2D point = menuBtn.localToScreen(menuBtn.getWidth() + GAP, menuBtn.getHeight());
+			Point2D point = topPane.localToScreen(topPane.getWidth(), topPane.getHeight());
 			contextMenu.show(menuBtn, point.getX(), point.getY());
 		});
 
@@ -546,9 +542,8 @@ public class FoldersPane extends BorderPane {
 
 		private void init(ImageView icon, Path path) throws Exception {
 
-			getStyleClass().addAll("file-button");
+			getStyleClass().addAll("file-button", "padding-1");
 			setMaxWidth(Double.MAX_VALUE);
-			setPadding(new Insets(GAP));
 
 			String dateStr = SimpleDateFormat.getInstance().format(date);
 			String sizeStr = null;
@@ -557,7 +552,7 @@ public class FoldersPane extends BorderPane {
 			}
 
 			GridPane grid = new GridPane();
-			grid.setHgap(GAP);
+			grid.getStyleClass().addAll("hgap-1");
 			Label nameLbl = new Label(name);
 			Label dateLbl = new Label(dateStr);
 			Label sizeLbl = new Label(sizeStr);
@@ -785,9 +780,10 @@ public class FoldersPane extends BorderPane {
 		}
 
 		private void addNotification(String text) {
-			Label noteLabel = ViewFactory.newNoteLabel(text);
-			VBox.setMargin(noteLabel, new Insets(GAP, 0.0, GAP, 0.0));
-			getChildren().add(noteLabel);
+			Label noteLbl = ViewFactory.newNoteLbl(text);
+			StackPane noteLblGraph = new StackPane(noteLbl);
+			noteLblGraph.getStyleClass().addAll("padding-1");
+			getChildren().add(noteLblGraph);
 		}
 
 		void setSearchFolder(Path searchFolder) {

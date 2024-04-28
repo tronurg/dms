@@ -9,13 +9,13 @@ import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
 class EntitiesPane extends BorderPane {
 
-	private static final double GAP = ViewFactory.GAP;
-
-	private final Button createGroupBtn = ViewFactory.newAddBtn();
+	private final Label createGroupLbl = new Label(Commons.translate("CREATE_GROUP"));
+	private final Button createGroupBtn = ViewFactory.newAddBtnWithLbl(createGroupLbl);
 	private final EntitiesPaneBase entitiesPane = new EntitiesPaneBase(true);
 
 	EntitiesPane() {
@@ -39,10 +39,9 @@ class EntitiesPane extends BorderPane {
 
 	private void initCreateGroupBtn() {
 
-		createGroupBtn.getStyleClass().addAll("dim-label");
-		createGroupBtn.setMnemonicParsing(false);
-		createGroupBtn.setText(Commons.translate("CREATE_GROUP"));
-		createGroupBtn.setPadding(new Insets(2 * GAP));
+		createGroupBtn.getStyleClass().addAll("padding-2");
+		createGroupLbl.getStyleClass().addAll("dim-label");
+		createGroupLbl.setMnemonicParsing(false);
 
 	}
 

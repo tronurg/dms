@@ -32,8 +32,10 @@ import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
@@ -50,8 +52,6 @@ import javafx.stage.Popup;
 import javafx.stage.PopupWindow.AnchorLocation;
 
 public class AddUpdateGroupPane extends BorderPane {
-
-	private static final double GAP = ViewFactory.GAP;
 
 	private final HBox topPane = new HBox();
 
@@ -99,13 +99,9 @@ public class AddUpdateGroupPane extends BorderPane {
 	};
 
 	AddUpdateGroupPane(BooleanProperty unreadProperty) {
-
 		super();
-
 		this.backBtn = ViewFactory.newBackBtn(unreadProperty, this);
-
 		init();
-
 	}
 
 	void setOnBackAction(final Runnable runnable) {
@@ -263,7 +259,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		deleteBtn.managedProperty().bind(deleteBtn.visibleProperty());
 
 		deleteBtn.setOnAction(e -> {
-			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), deleteBtn.getHeight() + GAP);
+			Point2D point = deleteBtn.localToScreen(deleteBtn.getWidth(), 1.25 * deleteBtn.getHeight());
 			deleteGroupPopup.show(deleteBtn, point.getX(), point.getY());
 		});
 
@@ -324,8 +320,9 @@ public class AddUpdateGroupPane extends BorderPane {
 	private abstract class AddRemoveContactBox extends HBox {
 
 		protected Button addRemoveBtn;
-		private final Circle addRemoveStatusCircle = new Circle();
-		private final StackPane statusCirclePane = new StackPane(addRemoveStatusCircle);
+		protected Label addRemoveLbl = new Label();
+		private final Circle addRemoveStatusCircle = new Circle(7.0);
+		private final StackPane statusCircleGraph = new StackPane(new Group(addRemoveStatusCircle));
 
 		private AddRemoveContactBox() {
 			super();
@@ -334,25 +331,32 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		private void init() {
 
-			initButton();
+			initLabel();
 			initCircle();
+			initButton();
 
 			setAlignment(Pos.CENTER_LEFT);
 			managedProperty().bind(visibleProperty());
 
-			getChildren().addAll(addRemoveBtn, statusCirclePane);
+			getChildren().addAll(addRemoveBtn, statusCircleGraph);
+
+		}
+
+		private void initLabel() {
+
+			addRemoveLbl.getStyleClass().addAll("em12", "bold");
+			addRemoveLbl.setMnemonicParsing(false);
+
+		}
+
+		private void initCircle() {
+
+			statusCircleGraph.getStyleClass().addAll("padding-1311");
+			addRemoveStatusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 
 		}
 
 		protected abstract void initButton();
-
-		private void initCircle() {
-
-			statusCirclePane.getStyleClass().addAll("status-circle-pane");
-			addRemoveStatusCircle.radiusProperty().bind(statusCirclePane.widthProperty().multiply(0.5));
-			HBox.setMargin(statusCirclePane, new Insets(GAP, 3 * GAP, GAP, GAP));
-
-		}
 
 		protected void setOnAction(EventHandler<ActionEvent> arg0) {
 
@@ -362,20 +366,20 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		protected void updateContact(String name, Color statusColor) {
 
-			addRemoveBtn.setText(name);
+			addRemoveLbl.setText(name);
 			addRemoveStatusCircle.setFill(statusColor);
 
 		}
 
 		protected String getName() {
 
-			return addRemoveBtn.getText();
+			return addRemoveLbl.getText();
 
 		}
 
 		protected final StringProperty nameProperty() {
 
-			return addRemoveBtn.textProperty();
+			return addRemoveLbl.textProperty();
 
 		}
 
@@ -391,13 +395,11 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		protected final void initButton() {
 
-			addRemoveBtn = ViewFactory.newAddBtn();
-			addRemoveBtn.getStyleClass().addAll("em12", "bold");
+			addRemoveBtn = ViewFactory.newAddBtnWithLbl(addRemoveLbl);
+			addRemoveBtn.getStyleClass().addAll("padding-1");
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
-			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
 
@@ -413,13 +415,11 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		protected final void initButton() {
 
-			addRemoveBtn = ViewFactory.newRemoveBtn(1.0);
-			addRemoveBtn.getStyleClass().addAll("em12", "bold");
+			addRemoveBtn = ViewFactory.newRemoveBtnWithLbl(addRemoveLbl);
+			addRemoveBtn.getStyleClass().addAll("padding-1");
 			HBox.setHgrow(addRemoveBtn, Priority.ALWAYS);
 			addRemoveBtn.setMaxWidth(Double.MAX_VALUE);
 			addRemoveBtn.setAlignment(Pos.CENTER_LEFT);
-			addRemoveBtn.setMnemonicParsing(false);
-			addRemoveBtn.setPadding(new Insets(GAP));
 
 		}
 

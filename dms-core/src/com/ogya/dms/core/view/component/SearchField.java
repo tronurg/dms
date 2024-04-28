@@ -7,18 +7,17 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.StringProperty;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 
 public class SearchField extends HBox {
-
-	private static final double GAP = ViewFactory.GAP;
 
 	private final boolean allowFilter;
 
@@ -27,13 +26,9 @@ public class SearchField extends HBox {
 	private final BooleanProperty filterOnlineProperty = new SimpleBooleanProperty(false);
 
 	public SearchField(boolean allowFilter) {
-
 		super();
-
 		this.allowFilter = allowFilter;
-
 		init();
-
 	}
 
 	private void init() {
@@ -46,7 +41,7 @@ public class SearchField extends HBox {
 		getChildren().add(searchTextField);
 
 		if (allowFilter) {
-			getChildren().add(getVisibleBtn());
+			getChildren().add(newVisibleBtnGraph());
 		}
 
 	}
@@ -60,10 +55,11 @@ public class SearchField extends HBox {
 
 	}
 
-	private Button getVisibleBtn() {
+	private Pane newVisibleBtnGraph() {
 
-		final Button visibleBtn = ViewFactory.newVisibleBtn();
-		HBox.setMargin(visibleBtn, new Insets(GAP));
+		Button visibleBtn = ViewFactory.newVisibleBtn();
+		StackPane visibleBtnGraph = new StackPane(visibleBtn);
+		visibleBtnGraph.getStyleClass().addAll("padding-1");
 
 		final Effect glow = new Glow();
 		visibleBtn.effectProperty().bind(
@@ -75,7 +71,7 @@ public class SearchField extends HBox {
 
 		visibleBtn.setOnAction(e -> filterOnlineProperty.set(!filterOnlineProperty.get()));
 
-		return visibleBtn;
+		return visibleBtnGraph;
 
 	}
 

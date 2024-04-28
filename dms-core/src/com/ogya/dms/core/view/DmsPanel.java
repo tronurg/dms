@@ -20,7 +20,6 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.util.Commons;
-import com.ogya.dms.core.view.factory.ViewFactory;
 import com.ogya.dms.core.view.intf.AppListener;
 
 import javafx.application.Platform;
@@ -33,7 +32,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
-import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
@@ -41,13 +39,12 @@ import javafx.scene.layout.StackPane;
 public class DmsPanel extends StackPane
 		implements IIdentityPane, IEntitiesPane, ISearchInAllMessagesPane, IStarredMessagesPane, IMessagePane {
 
-	private static final double GAP = ViewFactory.GAP;
-
 	private final BooleanProperty unreadProperty = new SimpleBooleanProperty();
 	private final ObservableSet<EntityId> unreadEntityIds = FXCollections.observableSet();
 
 	private final BorderPane mainPane = new BorderPane();
 	private final IdentityPane identityPane = new IdentityPane();
+	private final StackPane identityPaneGraph = new StackPane(identityPane);
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(
@@ -130,11 +127,11 @@ public class DmsPanel extends StackPane
 
 		unreadProperty.bind(Bindings.isNotEmpty(unreadEntityIds));
 
-		BorderPane.setMargin(identityPane, new Insets(2 * GAP));
+		identityPaneGraph.getStyleClass().addAll("padding-2");
 
 		registerListeners();
 
-		mainPane.setTop(identityPane);
+		mainPane.setTop(identityPaneGraph);
 		mainPane.setCenter(entitiesPane);
 
 		getChildren().add(mainPane);

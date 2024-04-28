@@ -29,8 +29,10 @@ import javafx.scene.shape.Circle;
 
 class EntityPaneBase extends GridPane {
 
-	private final Circle statusCircle = new Circle();
-	private final Circle profileRound = new Circle();
+	private static final double RADIUS = 24.0;
+
+	private final Circle statusCircle = new Circle(RADIUS);
+	private final Circle profileRound = new Circle(0.8 * RADIUS);
 	private final Label initialLbl = new Label();
 	private final StackPane groupSign = new StackPane();
 	private final StackPane profilePicture = new StackPane(
@@ -50,8 +52,7 @@ class EntityPaneBase extends GridPane {
 
 	private final void init() {
 
-		getStyleClass().addAll("entity-pane");
-		setHgap(ViewFactory.GAP);
+		getStyleClass().addAll("hgap-1");
 
 		initProfilePicture();
 		initNameLbl();
@@ -72,8 +73,8 @@ class EntityPaneBase extends GridPane {
 
 	private void initProfilePicture() {
 
-		profilePicture.getStyleClass().addAll("profile-picture");
 		GridPane.setValignment(profilePicture, VPos.TOP);
+		GridPane.setFillHeight(profilePicture, false);
 
 		initStatusCircle();
 		initProfileRound();
@@ -84,15 +85,15 @@ class EntityPaneBase extends GridPane {
 
 	private void initStatusCircle() {
 
-		statusCircle.radiusProperty().bind(profilePicture.widthProperty().multiply(0.5));
-		statusCircle.strokeWidthProperty().bind(statusCircle.radiusProperty().multiply(0.2));
+		statusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
+		statusCircle.setStrokeWidth(0.2 * RADIUS);
 		statusCircle.setFill(Color.TRANSPARENT);
 
 	}
 
 	private void initProfileRound() {
 
-		profileRound.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.8));
+		profileRound.setStyle(ViewFactory.getScaleCss(1d, 1d));
 		profileRound.setFill(Color.DARKGRAY);
 
 	}
@@ -112,8 +113,8 @@ class EntityPaneBase extends GridPane {
 		groupSign.translateXProperty().bind(groupSign.widthProperty().multiply(0.5));
 		groupSign.translateYProperty().bind(groupSign.heightProperty().multiply(0.5));
 
-		Circle groupCircle = new Circle();
-		groupCircle.radiusProperty().bind(statusCircle.radiusProperty().multiply(0.3));
+		Circle groupCircle = new Circle(0.3 * RADIUS);
+		groupCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 		groupCircle.setFill(Color.TOMATO);
 
 		Label groupLbl = new Label("G");

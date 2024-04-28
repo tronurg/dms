@@ -19,7 +19,6 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
-import com.ogya.dms.core.view.factory.ViewFactory;
 
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.ObjectProperty;
@@ -33,8 +32,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 
 public class ActiveContactsPane extends BorderPane {
-
-	private static final double GAP = ViewFactory.GAP;
 
 	private final SearchField searchField = new SearchField(false);
 
@@ -68,16 +65,13 @@ public class ActiveContactsPane extends BorderPane {
 	private final ObservableSet<Long> selectedIds = FXCollections.observableSet();
 
 	ActiveContactsPane() {
-
 		super();
-
 		init();
-
 	}
 
 	private void init() {
 
-		entities.setPadding(new Insets(2 * GAP));
+		entities.getStyleClass().addAll("padding-2");
 
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setFitToWidth(true);
