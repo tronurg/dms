@@ -310,7 +310,6 @@ public class DbManager {
 				dbGroup.setId(null);
 
 				session.persist(dbGroup);
-				session.flush();
 
 				if (dbGroup.getGroupRefId() == null) {
 					dbGroup.setGroupRefId(dbGroup.getId());

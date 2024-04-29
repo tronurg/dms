@@ -58,6 +58,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -781,7 +782,7 @@ public class FoldersPane extends BorderPane {
 
 		private void addNotification(String text) {
 			Label noteLbl = ViewFactory.newNoteLbl(text);
-			StackPane noteLblGraph = new StackPane(noteLbl);
+			Pane noteLblGraph = new StackPane(noteLbl);
 			noteLblGraph.getStyleClass().addAll("padding-1");
 			getChildren().add(noteLblGraph);
 		}

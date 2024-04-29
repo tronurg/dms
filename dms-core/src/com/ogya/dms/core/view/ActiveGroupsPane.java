@@ -275,7 +275,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 		private void initMemberCards() {
 
-			memberCards.getStyleClass().addAll("down-padding");
+			memberCards.getStyleClass().addAll("padding-0030");
 			memberCards.visibleProperty().bind(selectProperty());
 			memberCards.managedProperty().bind(memberCards.visibleProperty());
 

@@ -67,15 +67,16 @@
 	-fx-padding: 0.2em;
 }
 .reference-pane {
-	-fx-effect: dropshadow(gaussian, -dms-foreground, 0.5em, 0, 0, 0);
 	-fx-background-color: whitesmoke;
 	-fx-background-radius: 0.4em;
+	-fx-effect: dropshadow(gaussian, -dms-foreground, 0.5em, 0, 0, 0);
 }
 .reference-balloon {
 	-fx-background-color: cornsilk;
 	-fx-background-radius: 0.4em;
 	-fx-border-color: gray;
 	-fx-border-radius: 0.4em;
+	-fx-effect: innershadow(gaussian, darkgray, 0.6em, 0, 0, 0);
 }
 .attachment-area {
 	-fx-border-color: gray;
@@ -216,7 +217,7 @@
 	-fx-border-color: gray;
 	-fx-border-width: 0 0 1 0;
 }
-.shadow {
+.drop-shadow {
 	-fx-effect: dropshadow(gaussian, -dms-foreground, 1em, 0, 0, 0);
 }
 .gray40-text {
@@ -224,9 +225,6 @@
 }
 .red-text {
 	-fx-text-fill: red;
-}
-.down-padding {
-	-fx-padding: 0 0 1em 0;
 }
 .glowing-btn:hover {
 	-fx-effect: dropshadow(gaussian, dodgerblue, 0.3em, 0, 0, 0);
@@ -240,17 +238,35 @@
 .padding-3 {
 	-fx-padding: 1em;
 }
+.padding-0001 {
+	-fx-padding: 0 0 0 0.3em;
+}
+.padding-0030 {
+	-fx-padding: 0 0 1em 0;
+}
+.padding-0100 {
+	-fx-padding: 0 0.3em 0 0;
+}
+.padding-1010 {
+	-fx-padding: 0.3em 0 0.3em 0;
+}
 .padding-1311 {
 	-fx-padding: 0.3em 1em 0.3em 0.3em;
 }
 .padding-2422 {
 	-fx-padding: 0.6em 1.3em 0.6em 0.6em;
 }
+.spacing-05 {
+	-fx-spacing: 0.15em;
+}
 .spacing-1 {
 	-fx-spacing: 0.3em;
 }
 .spacing-2 {
 	-fx-spacing: 0.6em;
+}
+.spacing-3 {
+	-fx-spacing: 1em;
 }
 .hgap-1 {
 	-fx-hgap: 0.3em;

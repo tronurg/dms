@@ -58,7 +58,7 @@ public class SearchField extends HBox {
 	private Pane newVisibleBtnGraph() {
 
 		Button visibleBtn = ViewFactory.newVisibleBtn();
-		StackPane visibleBtnGraph = new StackPane(visibleBtn);
+		Pane visibleBtnGraph = new StackPane(visibleBtn);
 		visibleBtnGraph.getStyleClass().addAll("padding-1");
 
 		final Effect glow = new Glow();

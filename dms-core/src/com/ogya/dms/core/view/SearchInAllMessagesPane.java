@@ -40,7 +40,6 @@ import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.Effect;
-import javafx.scene.effect.InnerShadow;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -255,9 +254,6 @@ class SearchInAllMessagesPane extends BorderPane {
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
 		referenceBalloon.getStyleClass().addAll("reference-balloon");
 
-		InnerShadow shadow = new InnerShadow(2 * GAP, Color.DARKGRAY);
-		referenceBalloon.setEffect(shadow);
-
 		return referenceBalloon;
 
 	}
@@ -285,13 +281,13 @@ class SearchInAllMessagesPane extends BorderPane {
 
 			} else {
 
-				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
-				attachmentLabel.getStyleClass().addAll("em08");
-				attachmentLabel.setText(messageInfo.attachmentName);
+				Label innerLbl = new Label(messageInfo.attachmentName);
+				innerLbl.getStyleClass().addAll("em08");
+				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
 
-				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
+				VBox.setMargin(attachmentLbl, new Insets(0.0, 0.0, 0.0, GAP));
 
-				referenceBalloon.getChildren().add(attachmentLabel);
+				referenceBalloon.getChildren().add(attachmentLbl);
 
 			}
 
@@ -452,23 +448,23 @@ class SearchInAllMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 
-			Label attachmentLabel = ViewFactory.newAttachLbl(0.5);
-			attachmentLabel.setText(messageInfo.attachmentName);
-			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
+			Label innerLbl = new Label(messageInfo.attachmentName);
+			innerLbl.setTooltip(new Tooltip(innerLbl.getText()));
+			Label attachmentLbl = ViewFactory.newAttachLbl(0.5, innerLbl);
 
-			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
+			attachmentLbl.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
 
-			attachmentLabel.setCursor(Cursor.HAND);
+			attachmentLbl.setCursor(Cursor.HAND);
 
-			attachmentLabel.setOnMouseClicked(
+			attachmentLbl.setOnMouseClicked(
 					e -> listeners.forEach(listener -> listener.attachmentClicked(messageInfo.messageId)));
 
 			final Effect colorAdjust = new ColorAdjust(-0.75, 1.0, 0.25, 0.0);
 
-			attachmentLabel.effectProperty().bind(Bindings.createObjectBinding(
-					() -> attachmentLabel.isHover() ? colorAdjust : null, attachmentLabel.hoverProperty()));
+			attachmentLbl.effectProperty().bind(Bindings.createObjectBinding(
+					() -> attachmentLbl.isHover() ? colorAdjust : null, attachmentLbl.hoverProperty()));
 
-			return attachmentLabel;
+			return attachmentLbl;
 
 		}
 

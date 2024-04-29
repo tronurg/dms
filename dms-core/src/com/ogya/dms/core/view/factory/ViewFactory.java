@@ -41,7 +41,7 @@ public class ViewFactory {
 
 	private static final double EM = Font.getDefault().getSize();
 	public static final double GAP = EM / 3.0;
-	private static final double SCALE_FACTOR = 1f / 15;
+	private static final double SCALE_FACTOR = 1d / 15;
 
 	private static final Map<String, Color> colorMap = Collections.synchronizedMap(new HashMap<String, Color>());
 
@@ -310,10 +310,19 @@ public class ViewFactory {
 
 	}
 
-	public static Label newAttachLbl(double scaleFactor) {
+	public static Label newAttachLbl(double scaleFactor, Label innerLbl) {
 
-		Label lbl = newLabel(newAttachGraph(scaleFactor, Color.GRAY));
-		lbl.getStyleClass().addAll("dim-label");
+		Label lbl = new Label();
+		lbl.setPadding(Insets.EMPTY);
+		lbl.setPickOnBounds(false);
+
+		Group group = newGroup(newAttachGraph(scaleFactor, Color.GRAY));
+		innerLbl.getStyleClass().addAll("dim-label");
+
+		HBox lblGraph = new HBox(group, innerLbl);
+		lblGraph.getStyleClass().addAll("spacing-1");
+		lblGraph.setAlignment(Pos.CENTER_LEFT);
+		lbl.setGraphic(lblGraph);
 
 		return lbl;
 
@@ -641,7 +650,7 @@ public class ViewFactory {
 		line2.setStroke(Color.WHITE);
 		line2.setStrokeWidth(3.0);
 		Button btn = newButton(circle, line1, line2);
-		btn.getStyleClass().addAll("shadow");
+		btn.getStyleClass().addAll("drop-shadow");
 
 		return btn;
 

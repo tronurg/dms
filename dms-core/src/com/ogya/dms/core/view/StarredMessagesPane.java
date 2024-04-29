@@ -43,7 +43,6 @@ import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import javafx.css.PseudoClass;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -65,7 +64,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
@@ -75,12 +76,9 @@ class StarredMessagesPane extends BorderPane {
 	private static final DateTimeFormatter HOUR_MIN = DateTimeFormatter.ofPattern("HH:mm");
 	private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
-	private static final double GAP = ViewFactory.GAP;
-	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
-
 	private final HBox topPane = new HBox();
-	private final VBox centerPaneWithLoadBtn = new VBox(GAP);
-	private final VBox centerPane = new VBox(GAP);
+	private final VBox centerPaneWithLoadBtn = new VBox();
+	private final VBox centerPane = new VBox();
 
 	private final Button backBtn;
 	private final Label titleLbl = new Label(Commons.translate("STARRED_MESSAGES"));
@@ -184,8 +182,9 @@ class StarredMessagesPane extends BorderPane {
 
 	private void initCenterPaneWithLoadBtn() {
 
+		centerPane.getStyleClass().addAll("spacing-1");
+		centerPaneWithLoadBtn.getStyleClass().addAll("spacing-1", "padding-1");
 		centerPaneWithLoadBtn.setAlignment(Pos.CENTER);
-		centerPaneWithLoadBtn.setPadding(new Insets(GAP));
 
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
@@ -446,7 +445,7 @@ class StarredMessagesPane extends BorderPane {
 			return;
 		}
 
-		scrollPane(messageBalloon, GAP);
+		scrollPane(messageBalloon, centerPane.getSpacing());
 
 		messageBalloon.blink();
 
@@ -498,17 +497,14 @@ class StarredMessagesPane extends BorderPane {
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
 		referenceBalloon.getStyleClass().addAll("reference-balloon");
 
-		InnerShadow shadow = new InnerShadow(2 * GAP, Color.DARKGRAY);
-		referenceBalloon.setEffect(shadow);
-
 		return referenceBalloon;
 
 	}
 
 	private Node newReferenceBalloon(MessageInfo messageInfo) {
 
-		VBox referenceBalloon = new VBox(SMALL_GAP);
-		referenceBalloon.setPadding(new Insets(GAP));
+		VBox referenceBalloon = new VBox();
+		referenceBalloon.getStyleClass().addAll("spacing-05", "padding-1");
 
 		Label nameLabel = new Label(messageInfo.senderName);
 		nameLabel.getStyleClass().addAll("em08", "bold");
@@ -521,20 +517,20 @@ class StarredMessagesPane extends BorderPane {
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
+				Pane dummyPlayerGraph = new VBox(dummyPlayer);
+				dummyPlayerGraph.getStyleClass().addAll("padding-0001");
 
-				VBox.setMargin(dummyPlayer, new Insets(0.0, 0.0, 0.0, GAP));
-
-				referenceBalloon.getChildren().add(dummyPlayer);
+				referenceBalloon.getChildren().add(dummyPlayerGraph);
 
 			} else {
 
-				Label attachmentLabel = ViewFactory.newAttachLbl(0.4);
-				attachmentLabel.getStyleClass().addAll("em08");
-				attachmentLabel.setText(messageInfo.attachmentName);
+				Label innerLbl = new Label(messageInfo.attachmentName);
+				innerLbl.getStyleClass().addAll("em08");
+				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
+				Pane attachmentLblGraph = new VBox(attachmentLbl);
+				attachmentLblGraph.getStyleClass().addAll("padding-0001");
 
-				VBox.setMargin(attachmentLabel, new Insets(0.0, 0.0, 0.0, GAP));
-
-				referenceBalloon.getChildren().add(attachmentLabel);
+				referenceBalloon.getChildren().add(attachmentLblGraph);
 
 			}
 
@@ -556,10 +552,10 @@ class StarredMessagesPane extends BorderPane {
 			};
 			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
+			Pane contentLblGraph = new StackPane(contentLbl);
+			contentLblGraph.getStyleClass().addAll("padding-0001");
 
-			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
-
-			referenceBalloon.getChildren().add(contentLbl);
+			referenceBalloon.getChildren().add(contentLblGraph);
 
 		}
 
@@ -680,16 +676,17 @@ class StarredMessagesPane extends BorderPane {
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final HBox headerPane = new HBox(3 * GAP);
-		private final HBox statusPane = new HBox(GAP);
+		private final HBox headerPane = new HBox();
+		private final HBox statusPane = new HBox();
 		private final Label nameLbl = new Label();
 		private final Label dateLbl;
 		private final Label timeLbl;
-		private final Node starGraph = ViewFactory.newStarLbl();
-		private final Button selectionBtn = ViewFactory.newSelectionBtn();
+		private final Node starLbl = ViewFactory.newStarLbl();
+		private final Pane selectionBtnGraph = new StackPane(ViewFactory.newSelectionBtn());
 		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
+		private final Pane goToRefBtnGraph = new StackPane(goToRefBtn);
 
-		private final InnerShadow shadow = new InnerShadow(3 * GAP, Color.TRANSPARENT);
+		private final InnerShadow shadow = new InnerShadow(0d, Color.TRANSPARENT);
 
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
@@ -722,22 +719,23 @@ class StarredMessagesPane extends BorderPane {
 			getStyleClass().addAll("message-balloon");
 			hitProperty.addListener((e0, e1, e2) -> pseudoClassStateChanged(hit, Boolean.TRUE.equals(e2)));
 
-			initSelectionBtn();
+			initSelectionBtnGraph();
 			initMessagePane();
-			initGoToRefBtn();
+			initGoToRefBtnGraph();
 
-			add(selectionBtn, 0, 0);
+			add(selectionBtnGraph, 0, 0);
 			add(messagePane, 1, 0);
-			add(goToRefBtn, 2, 0);
+			add(goToRefBtnGraph, 2, 0);
 
 		}
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			GridPane.setMargin(referenceBalloon, new Insets(GAP, 0, GAP, 0));
-			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
+			Pane referenceBalloonGraph = new StackPane(referenceBalloon);
+			referenceBalloonGraph.getStyleClass().addAll("padding-1010");
+			GridPane.setHgrow(referenceBalloonGraph, Priority.ALWAYS);
 
-			messagePane.add(referenceBalloon, 0, 1);
+			messagePane.add(referenceBalloonGraph, 0, 1);
 
 		}
 
@@ -762,24 +760,25 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
-		private void initSelectionBtn() {
+		private void initSelectionBtnGraph() {
 
-			GridPane.setMargin(selectionBtn, new Insets(0, GAP, 0, 0));
+			selectionBtnGraph.getStyleClass().addAll("padding-0100");
 
-			selectionBtn.visibleProperty().bind(selectionModeProperty);
-			selectionBtn.managedProperty().bind(selectionBtn.visibleProperty());
-			selectionBtn.opacityProperty()
+			selectionBtnGraph.visibleProperty().bind(selectionModeProperty);
+			selectionBtnGraph.managedProperty().bind(selectionBtnGraph.visibleProperty());
+			selectionBtnGraph.opacityProperty()
 					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
 
 		}
 
 		private void initMessagePane() {
 
-			messagePane.getStyleClass().addAll("min-width-6em", "message-border",
+			messagePane.getStyleClass().addAll("min-width-6em", "message-border", "padding-1",
 					messageInfo.isOutgoing ? "out-bg" : "in-bg");
 			GridPane.setHgrow(messagePane, Priority.ALWAYS);
 			GridPane.setFillWidth(messagePane, false);
-			messagePane.setPadding(new Insets(GAP));
+			shadow.radiusProperty()
+					.bind(Bindings.createDoubleBinding(() -> backBtn.getFont().getSize(), backBtn.fontProperty()));
 			messagePane.setEffect(shadow);
 
 			if (messageInfo.attachmentType != null) {
@@ -800,8 +799,8 @@ class StarredMessagesPane extends BorderPane {
 
 		private void initHeaderPane() {
 
+			headerPane.getStyleClass().addAll("spacing-3");
 			GridPane.setHgrow(headerPane, Priority.ALWAYS);
-
 			headerPane.setAlignment(Pos.BASELINE_CENTER);
 
 			initNameLbl();
@@ -813,23 +812,23 @@ class StarredMessagesPane extends BorderPane {
 
 		private void initStatusPane() {
 
+			statusPane.getStyleClass().addAll("spacing-1");
 			GridPane.setHgrow(statusPane, Priority.ALWAYS);
-
 			statusPane.setAlignment(Pos.CENTER);
 
 			initTimeLbl();
-			initStarGraph();
+			initStarLbl();
 
-			statusPane.getChildren().addAll(timeLbl, starGraph);
+			statusPane.getChildren().addAll(timeLbl, starLbl);
 
 		}
 
-		private void initGoToRefBtn() {
+		private void initGoToRefBtnGraph() {
 
-			GridPane.setMargin(goToRefBtn, new Insets(0, 0, 0, GAP));
+			goToRefBtnGraph.getStyleClass().addAll("padding-0001");
 
-			goToRefBtn.visibleProperty().bind(selectionModeProperty.not());
-			goToRefBtn.managedProperty().bind(goToRefBtn.visibleProperty());
+			goToRefBtnGraph.visibleProperty().bind(selectionModeProperty.not());
+			goToRefBtnGraph.managedProperty().bind(goToRefBtnGraph.visibleProperty());
 			goToRefBtn.setOnAction(e -> listeners
 					.forEach(listener -> listener.goToMessageClicked(messageInfo.entityId, messageInfo.messageId)));
 
@@ -851,25 +850,25 @@ class StarredMessagesPane extends BorderPane {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));
 			}
 
-			Label attachmentLabel = ViewFactory.newAttachLbl(0.5);
-			attachmentLabel.setText(messageInfo.attachmentName);
-			attachmentLabel.setTooltip(new Tooltip(attachmentLabel.getText()));
+			Label innerLbl = new Label(messageInfo.attachmentName);
+			innerLbl.setTooltip(new Tooltip(innerLbl.getText()));
+			Label attachmentLbl = ViewFactory.newAttachLbl(0.5, innerLbl);
 
-			attachmentLabel.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
+			attachmentLbl.disableProperty().bind(messageInfo.statusProperty.isEqualTo(MessageStatus.PREP));
 
-			attachmentLabel.cursorProperty().bind(Bindings.createObjectBinding(
+			attachmentLbl.cursorProperty().bind(Bindings.createObjectBinding(
 					() -> selectionModeProperty.get() ? Cursor.DEFAULT : Cursor.HAND, selectionModeProperty));
 
-			attachmentLabel.setOnMouseClicked(
+			attachmentLbl.setOnMouseClicked(
 					e -> listeners.forEach(listener -> listener.attachmentClicked(messageInfo.messageId)));
 
 			final Effect colorAdjust = new ColorAdjust(-0.75, 1.0, 0.25, 0.0);
 
-			attachmentLabel.effectProperty().bind(Bindings.createObjectBinding(
-					() -> attachmentLabel.hoverProperty().and(selectionModeProperty.not()).get() ? colorAdjust : null,
-					attachmentLabel.hoverProperty(), selectionModeProperty));
+			attachmentLbl.effectProperty().bind(Bindings.createObjectBinding(
+					() -> attachmentLbl.hoverProperty().and(selectionModeProperty.not()).get() ? colorAdjust : null,
+					attachmentLbl.hoverProperty(), selectionModeProperty));
 
-			return attachmentLabel;
+			return attachmentLbl;
 
 		}
 
@@ -890,9 +889,9 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
-		private void initStarGraph() {
+		private void initStarLbl() {
 
-			starGraph.setEffect(new DropShadow());
+			starLbl.setEffect(new DropShadow());
 
 		}
 

@@ -34,6 +34,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 
 public class DmsPanel extends StackPane
@@ -44,7 +45,7 @@ public class DmsPanel extends StackPane
 
 	private final BorderPane mainPane = new BorderPane();
 	private final IdentityPane identityPane = new IdentityPane();
-	private final StackPane identityPaneGraph = new StackPane(identityPane);
+	private final Pane identityPaneGraph = new StackPane(identityPane);
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(

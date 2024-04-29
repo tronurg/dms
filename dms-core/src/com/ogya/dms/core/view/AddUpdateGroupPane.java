@@ -322,7 +322,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		protected Button addRemoveBtn;
 		protected Label addRemoveLbl = new Label();
 		private final Circle addRemoveStatusCircle = new Circle(7.0);
-		private final StackPane statusCircleGraph = new StackPane(new Group(addRemoveStatusCircle));
+		private final Pane statusCircleGraph = new StackPane(new Group(addRemoveStatusCircle));
 
 		private AddRemoveContactBox() {
 			super();
