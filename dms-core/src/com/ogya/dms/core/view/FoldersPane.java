@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 
 import com.ogya.dms.core.factory.DmsFactory;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsBox;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
@@ -388,15 +389,14 @@ public class FoldersPane extends BorderPane {
 
 	private FolderView getSubFolderView(Path subFolder) {
 
-		if (!folderViews.containsKey(subFolder)) {
+		FolderView folderView = folderViews.get(subFolder);
 
-			FolderView folderView = newFolderView(subFolder);
-
+		if (folderView == null) {
+			folderView = newFolderView(subFolder);
 			folderViews.put(subFolder, folderView);
-
 		}
 
-		return folderViews.get(subFolder);
+		return folderView;
 
 	}
 
@@ -781,10 +781,8 @@ public class FoldersPane extends BorderPane {
 
 		private void addNotification(String text) {
 			Label noteLbl = ViewFactory.newNoteLbl(text);
-			VBox noteLblGraph = new VBox(noteLbl);
-			noteLblGraph.getStyleClass().addAll("padding-1");
-			noteLblGraph.setAlignment(Pos.CENTER);
-			getChildren().add(noteLblGraph);
+			DmsBox noteLblBox = new DmsBox(noteLbl, "padding-1");
+			getChildren().add(noteLblBox);
 		}
 
 		void setSearchFolder(Path searchFolder) {

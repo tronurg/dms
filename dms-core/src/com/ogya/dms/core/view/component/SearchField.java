@@ -8,12 +8,12 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.StringProperty;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.Glow;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 
 public class SearchField extends HBox {
@@ -40,7 +40,7 @@ public class SearchField extends HBox {
 		getChildren().add(searchTextField);
 
 		if (allowFilter) {
-			getChildren().add(newVisibleBtnGraph());
+			getChildren().add(newVisibleBtnBox());
 		}
 
 	}
@@ -54,12 +54,10 @@ public class SearchField extends HBox {
 
 	}
 
-	private Pane newVisibleBtnGraph() {
+	private Node newVisibleBtnBox() {
 
 		Button visibleBtn = ViewFactory.newVisibleBtn();
-		HBox visibleBtnGraph = new HBox(visibleBtn);
-		visibleBtnGraph.getStyleClass().addAll("padding-1");
-		visibleBtnGraph.setAlignment(Pos.CENTER);
+		DmsBox visibleBtnBox = new DmsBox(visibleBtn, "padding-1");
 
 		final Effect glow = new Glow();
 		visibleBtn.effectProperty().bind(
@@ -71,7 +69,7 @@ public class SearchField extends HBox {
 
 		visibleBtn.setOnAction(e -> filterOnlineProperty.set(!filterOnlineProperty.get()));
 
-		return visibleBtnGraph;
+		return visibleBtnBox;
 
 	}
 

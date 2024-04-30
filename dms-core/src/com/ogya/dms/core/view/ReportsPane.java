@@ -7,6 +7,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.ogya.dms.core.view.component.DmsBox;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.factory.ViewFactory;
 
@@ -33,7 +34,7 @@ public class ReportsPane extends GridPane {
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
 	private final Button attachBtn = ViewFactory.newAttachBtn();
-	private final StackPane attachBtnGraph = new StackPane(attachBtn);
+	private final DmsBox attachBtnBox = new DmsBox(attachBtn, "padding-2");
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 
@@ -67,12 +68,12 @@ public class ReportsPane extends GridPane {
 		initReportsComboBox();
 		initCancelBtn();
 		initReportPaneHolder();
-		initAttachBtnGraph();
+		initAttachBtnBox();
 
 		add(reportsComboBox, 0, 0);
 		add(cancelBtn, 0, 0);
 		add(reportPaneHolder, 0, 1);
-		add(attachBtnGraph, 0, 1);
+		add(attachBtnBox, 0, 1);
 
 	}
 
@@ -117,16 +118,12 @@ public class ReportsPane extends GridPane {
 
 	}
 
-	private void initAttachBtnGraph() {
+	private void initAttachBtnBox() {
 
-		attachBtnGraph.getStyleClass().addAll("padding-2");
-		attachBtnGraph.setPickOnBounds(false);
-
-		StackPane.setAlignment(attachBtn, Pos.BOTTOM_RIGHT);
-
-		attachBtn.opacityProperty()
-				.bind(Bindings.createDoubleBinding(() -> attachBtn.isHover() ? 1.0 : 0.5, attachBtn.hoverProperty()));
-		attachBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
+		StackPane.setAlignment(attachBtnBox, Pos.BOTTOM_RIGHT);
+		attachBtnBox.opacityProperty().bind(
+				Bindings.createDoubleBinding(() -> attachBtnBox.isHover() ? 1.0 : 0.5, attachBtnBox.hoverProperty()));
+		attachBtnBox.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
 		attachBtn.setOnAction(e -> {
 			final ReportPane selectedReportPane = reportPanes

@@ -13,6 +13,7 @@ import com.ogya.dms.core.database.tables.EntityId;
 import com.ogya.dms.core.database.tables.Message;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
+import com.ogya.dms.core.view.component.DmsBox;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -22,14 +23,14 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.geometry.Pos;
+import javafx.geometry.HPos;
+import javafx.geometry.VPos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class ForwardSelectionPane extends GridPane {
@@ -40,7 +41,7 @@ public class ForwardSelectionPane extends GridPane {
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 	private final Button sendBtn = ViewFactory.newSendBtn();
-	private final StackPane sendBtnGraph = new StackPane(sendBtn);
+	private final DmsBox sendBtnBox = new DmsBox(sendBtn, "padding-2");
 
 	private final Map<EntityId, EntityCard> entityIdCards = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityCard>());
@@ -82,12 +83,12 @@ public class ForwardSelectionPane extends GridPane {
 
 		initTopPane();
 		initEntities();
-		initSendBtnGraph();
+		initSendBtnBox();
 
 		add(topPane, 0, 0);
 		add(searchField, 0, 1);
 		add(scrollPane, 0, 2);
-		add(sendBtnGraph, 0, 2);
+		add(sendBtnBox, 0, 2);
 
 	}
 
@@ -119,13 +120,11 @@ public class ForwardSelectionPane extends GridPane {
 
 	}
 
-	private void initSendBtnGraph() {
+	private void initSendBtnBox() {
 
-		sendBtnGraph.getStyleClass().addAll("padding-2");
-		sendBtnGraph.setPickOnBounds(false);
-
-		StackPane.setAlignment(sendBtn, Pos.BOTTOM_RIGHT);
-		sendBtn.disableProperty().bind(selectedEntityIdProperty.isNull());
+		GridPane.setHalignment(sendBtnBox, HPos.RIGHT);
+		GridPane.setValignment(sendBtnBox, VPos.BOTTOM);
+		sendBtnBox.disableProperty().bind(selectedEntityIdProperty.isNull());
 
 	}
 
@@ -220,9 +219,7 @@ public class ForwardSelectionPane extends GridPane {
 			});
 
 			entityIdCards.put(entityId, fEntityCard);
-
 			entities.getChildren().add(fEntityCard);
-
 			FXCollections.sort(entities.getChildren(), entitiesSorter);
 
 		}

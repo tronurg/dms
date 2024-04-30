@@ -241,6 +241,9 @@
 .padding-0001 {
 	-fx-padding: 0 0 0 0.3em;
 }
+.padding-0010 {
+	-fx-padding: 0 0 0.3em 0;
+}
 .padding-0030 {
 	-fx-padding: 0 0 1em 0;
 }
@@ -252,6 +255,9 @@
 }
 .padding-1311 {
 	-fx-padding: 0.3em 1em 0.3em 0.3em;
+}
+.padding-1414 {
+	-fx-padding: 0.3em 1.3em 0.3em 1.3em;
 }
 .padding-2422 {
 	-fx-padding: 0.6em 1.3em 0.6em 0.6em;

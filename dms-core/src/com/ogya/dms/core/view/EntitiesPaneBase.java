@@ -208,20 +208,23 @@ class EntitiesPaneBase extends BorderPane {
 
 	private EntityPane getEntityPane(final EntityId entityId) {
 
-		if (!entityIdPane.containsKey(entityId)) {
+		EntityPane entityPane = entityIdPane.get(entityId);
 
-			final EntityPane entityPane = new EntityPane(entityId);
+		if (entityPane == null) {
 
-			entityPane.managedProperty().bind(entityPane.visibleProperty());
+			final EntityPane fEntityPane = new EntityPane(entityId);
+			entityPane = fEntityPane;
 
-			entityPane.visibleProperty().bind(entityPane.activeProperty().and(Bindings.createBooleanBinding(() -> {
+			fEntityPane.managedProperty().bind(fEntityPane.visibleProperty());
+
+			fEntityPane.visibleProperty().bind(fEntityPane.activeProperty().and(Bindings.createBooleanBinding(() -> {
 				String searchContactStr = searchField.getText().toLowerCase(Locale.getDefault());
 				return searchContactStr.isEmpty()
-						|| entityPane.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
-			}, searchField.textProperty(), entityPane.nameProperty()))
-					.and(searchField.filterOnlineProperty().not().or(entityPane.onlineProperty())));
+						|| fEntityPane.getName().toLowerCase(Locale.getDefault()).startsWith(searchContactStr);
+			}, searchField.textProperty(), fEntityPane.nameProperty()))
+					.and(searchField.filterOnlineProperty().not().or(fEntityPane.onlineProperty())));
 
-			entityPane.setOnMouseClicked(e -> {
+			fEntityPane.setOnMouseClicked(e -> {
 				EventTarget clickedTarget = e.getTarget();
 				if (lastClickedTarget.getAndSet(clickedTarget) != clickedTarget) {
 					return;
@@ -232,19 +235,18 @@ class EntitiesPaneBase extends BorderPane {
 				listeners.forEach(listener -> listener.entityDoubleClicked(entityId));
 			});
 
-			entityPane.visibleBtn
+			fEntityPane.visibleBtn
 					.setOnAction(e -> listeners.forEach(listener -> listener.showEntityRequested(entityId)));
 
-			entityPane.invisibleBtn
+			fEntityPane.invisibleBtn
 					.setOnAction(e -> listeners.forEach(listener -> listener.hideEntityRequested(entityId)));
 
-			entityIdPane.put(entityId, entityPane);
-
-			entities.getChildren().add(0, entityPane);
+			entityIdPane.put(entityId, fEntityPane);
+			entities.getChildren().add(0, fEntityPane);
 
 		}
 
-		return entityIdPane.get(entityId);
+		return entityPane;
 
 	}
 

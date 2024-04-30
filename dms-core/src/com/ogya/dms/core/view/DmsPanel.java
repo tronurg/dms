@@ -20,6 +20,7 @@ import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.FileBuilder;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsBox;
 import com.ogya.dms.core.view.intf.AppListener;
 
 import javafx.application.Platform;
@@ -44,7 +45,7 @@ public class DmsPanel extends StackPane
 
 	private final BorderPane mainPane = new BorderPane();
 	private final IdentityPane identityPane = new IdentityPane();
-	private final StackPane identityPaneGraph = new StackPane(identityPane);
+	private final DmsBox identityPaneBox = new DmsBox(identityPane, "padding-2");
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(
@@ -127,11 +128,9 @@ public class DmsPanel extends StackPane
 
 		unreadProperty.bind(Bindings.isNotEmpty(unreadEntityIds));
 
-		identityPaneGraph.getStyleClass().addAll("padding-2");
-
 		registerListeners();
 
-		mainPane.setTop(identityPaneGraph);
+		mainPane.setTop(identityPaneBox);
 		mainPane.setCenter(entitiesPane);
 
 		getChildren().add(mainPane);
@@ -455,13 +454,15 @@ public class DmsPanel extends StackPane
 
 	private MessagePane getMessagePane(EntityId entityId) {
 
-		if (!messagePanes.containsKey(entityId)) {
-			MessagePane messagePane = new MessagePane(entityId, unreadProperty);
+		MessagePane messagePane = messagePanes.get(entityId);
+
+		if (messagePane == null) {
+			messagePane = new MessagePane(entityId, unreadProperty);
 			messagePane.addListener(this);
 			messagePanes.put(entityId, messagePane);
 		}
 
-		return messagePanes.get(entityId);
+		return messagePane;
 
 	}
 

@@ -15,6 +15,7 @@ import com.ogya.dms.core.structures.AttachmentType;
 import com.ogya.dms.core.structures.MessageStatus;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsBox;
 import com.ogya.dms.core.view.component.DmsMediaPlayer;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.DmsScrollPaneSkin;
@@ -28,7 +29,6 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -52,12 +52,10 @@ class SearchInAllMessagesPane extends BorderPane {
 	private static final DateTimeFormatter HOUR_MIN = DateTimeFormatter.ofPattern("HH:mm");
 	private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
-	private static final double GAP = ViewFactory.GAP;
-	private static final double SMALL_GAP = 2.0 * GAP / 5.0;
 	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
 
 	private final HBox topPane = new HBox();
-	private final VBox centerPane = new VBox(GAP);
+	private final VBox centerPane = new VBox();
 
 	private final Button backBtn;
 	private final ImSearchField imSearchField = new ImSearchField();
@@ -106,8 +104,8 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private void initCenterPane() {
 
+		centerPane.getStyleClass().addAll("spacing-1", "padding-1");
 		centerPane.setAlignment(Pos.CENTER);
-		centerPane.setPadding(new Insets(GAP));
 
 		scrollPane.getStyleClass().addAll("edge-to-edge");
 		scrollPane.setVbarPolicy(ScrollBarPolicy.ALWAYS);
@@ -236,9 +234,9 @@ class SearchInAllMessagesPane extends BorderPane {
 	}
 
 	private void addNotification(String text) {
-		Label noteLabel = ViewFactory.newNoteLbl(text);
-		VBox.setMargin(noteLabel, new Insets(GAP, 0.0, GAP, 0.0));
-		centerPane.getChildren().add(noteLabel);
+		Label noteLbl = ViewFactory.newNoteLbl(text);
+		DmsBox noteLblBox = new DmsBox(noteLbl, "padding-1010");
+		centerPane.getChildren().add(noteLblBox);
 	}
 
 	private void clearSearch() {
@@ -247,10 +245,9 @@ class SearchInAllMessagesPane extends BorderPane {
 		searchTextRef.set(null);
 	}
 
-	private Node getReferenceBalloon(Message message) {
+	private Node newReferenceBalloon(Message message) {
 
 		MessageInfo messageInfo = new MessageInfo(message);
-
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
 		referenceBalloon.getStyleClass().addAll("reference-balloon");
 
@@ -260,8 +257,8 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private Node newReferenceBalloon(MessageInfo messageInfo) {
 
-		VBox referenceBalloon = new VBox(SMALL_GAP);
-		referenceBalloon.setPadding(new Insets(GAP));
+		VBox referenceBalloon = new VBox();
+		referenceBalloon.getStyleClass().addAll("spacing-05", "padding-1");
 
 		Label nameLabel = new Label(messageInfo.senderName);
 		nameLabel.getStyleClass().addAll("em08", "bold");
@@ -274,20 +271,18 @@ class SearchInAllMessagesPane extends BorderPane {
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
+				DmsBox dummyPlayerBox = new DmsBox(dummyPlayer, "padding-0001");
 
-				VBox.setMargin(dummyPlayer, new Insets(0.0, 0.0, 0.0, GAP));
-
-				referenceBalloon.getChildren().add(dummyPlayer);
+				referenceBalloon.getChildren().add(dummyPlayerBox);
 
 			} else {
 
 				Label innerLbl = new Label(messageInfo.attachmentName);
 				innerLbl.getStyleClass().addAll("em08");
 				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
+				DmsBox attachmentLblBox = new DmsBox(attachmentLbl, "padding-0001");
 
-				VBox.setMargin(attachmentLbl, new Insets(0.0, 0.0, 0.0, GAP));
-
-				referenceBalloon.getChildren().add(attachmentLbl);
+				referenceBalloon.getChildren().add(attachmentLblBox);
 
 			}
 
@@ -309,10 +304,9 @@ class SearchInAllMessagesPane extends BorderPane {
 			};
 			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
+			DmsBox contentLblBox = new DmsBox(contentLbl, "padding-0001");
 
-			VBox.setMargin(contentLbl, new Insets(0.0, 0.0, 0.0, GAP));
-
-			referenceBalloon.getChildren().add(contentLbl);
+			referenceBalloon.getChildren().add(contentLblBox);
 
 		}
 
@@ -327,7 +321,7 @@ class SearchInAllMessagesPane extends BorderPane {
 		MessageBalloon messageBalloon = new MessageBalloon(messageInfo);
 
 		if (message.getRefMessage() != null) {
-			messageBalloon.addReferenceBalloon(getReferenceBalloon(message.getRefMessage()));
+			messageBalloon.addReferenceBalloon(newReferenceBalloon(message.getRefMessage()));
 		}
 
 		return messageBalloon;
@@ -339,58 +333,53 @@ class SearchInAllMessagesPane extends BorderPane {
 		private final MessageInfo messageInfo;
 
 		private final GridPane messagePane = new GridPane();
-		private final HBox headerPane = new HBox(3 * GAP);
+		private final HBox headerPane = new HBox();
 		private final Label nameLbl = new Label();
 		private final Label dateLbl;
 		private final Label timeLbl;
 		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
+		private final DmsBox goToRefBtnBox = new DmsBox(goToRefBtn, "padding-0001");
 
 		private MessageBalloon(MessageInfo messageInfo) {
-
 			super();
-
 			this.messageInfo = messageInfo;
-
 			dateLbl = new Label(DAY_MONTH_YEAR.format(messageInfo.localDateTime));
 			timeLbl = new Label(HOUR_MIN.format(messageInfo.localDateTime));
-
 			init();
-
 		}
 
 		private void init() {
 
 			initMessagePane();
-			initGoToRefBtn();
+			initGoToRefBtnBox();
 
 			add(messagePane, 0, 0);
-			add(goToRefBtn, 1, 0);
+			add(goToRefBtnBox, 1, 0);
 
 		}
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			GridPane.setMargin(referenceBalloon, new Insets(GAP, 0, GAP, 0));
-			GridPane.setHgrow(referenceBalloon, Priority.ALWAYS);
+			DmsBox referenceBalloonBox = new DmsBox(referenceBalloon, "padding-1010");
+			GridPane.setHgrow(referenceBalloonBox, Priority.ALWAYS);
 
-			messagePane.add(referenceBalloon, 0, 1);
+			messagePane.add(referenceBalloonBox, 0, 1);
 
 		}
 
 		private void initMessagePane() {
 
-			messagePane.getStyleClass().addAll("min-width-6em", "message-border",
+			messagePane.getStyleClass().addAll("min-width-6em", "message-border", "padding-1",
 					messageInfo.isOutgoing ? "out-bg" : "in-bg");
 			GridPane.setHgrow(messagePane, Priority.ALWAYS);
 			GridPane.setFillWidth(messagePane, false);
-			messagePane.setPadding(new Insets(GAP));
 
 			if (messageInfo.attachmentType != null) {
-				messagePane.add(getAttachmentArea(), 0, 2);
+				messagePane.add(newAttachmentArea(), 0, 2);
 			}
 
 			if (messageInfo.content != null) {
-				messagePane.add(getContentArea(), 0, 3);
+				messagePane.add(newContentArea(), 0, 3);
 			}
 
 			initHeaderPane();
@@ -403,8 +392,8 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		private void initHeaderPane() {
 
+			headerPane.getStyleClass().addAll("spacing-3");
 			GridPane.setHgrow(headerPane, Priority.ALWAYS);
-
 			headerPane.setAlignment(Pos.BASELINE_CENTER);
 
 			initNameLbl();
@@ -423,16 +412,14 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		}
 
-		private void initGoToRefBtn() {
-
-			GridPane.setMargin(goToRefBtn, new Insets(0, 0, 0, GAP));
+		private void initGoToRefBtnBox() {
 
 			goToRefBtn.setOnAction(e -> listeners
 					.forEach(listener -> listener.goToMessageClicked(messageInfo.entityId, messageInfo.messageId)));
 
 		}
 
-		private Node getContentArea() {
+		private Node newContentArea() {
 
 			Label contentLbl = new Label(messageInfo.content);
 			contentLbl.getStyleClass().addAll("black-label");
@@ -442,7 +429,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		}
 
-		private Node getAttachmentArea() {
+		private Node newAttachmentArea() {
 
 			if (messageInfo.attachmentType == AttachmentType.AUDIO && messageInfo.attachmentPath != null) {
 				return new DmsMediaPlayer(Paths.get(messageInfo.attachmentPath));

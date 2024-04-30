@@ -16,6 +16,7 @@ import com.ogya.dms.core.database.tables.Dgroup;
 import com.ogya.dms.core.structures.Availability;
 import com.ogya.dms.core.structures.ViewStatus;
 import com.ogya.dms.core.util.Commons;
+import com.ogya.dms.core.view.component.DmsBox;
 import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.SearchField;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -322,7 +323,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		protected Button addRemoveBtn;
 		protected Label addRemoveLbl = new Label();
 		private final Circle addRemoveStatusCircle = new Circle(7.0);
-		private final HBox statusCircleGraph = new HBox(new Group(addRemoveStatusCircle));
+		private final DmsBox statusCircleBox = new DmsBox(new Group(addRemoveStatusCircle), "padding-1311");
 
 		private AddRemoveContactBox() {
 			super();
@@ -338,7 +339,7 @@ public class AddUpdateGroupPane extends BorderPane {
 			setAlignment(Pos.CENTER_LEFT);
 			managedProperty().bind(visibleProperty());
 
-			getChildren().addAll(addRemoveBtn, statusCircleGraph);
+			getChildren().addAll(addRemoveBtn, statusCircleBox);
 
 		}
 
@@ -351,8 +352,6 @@ public class AddUpdateGroupPane extends BorderPane {
 
 		private void initCircle() {
 
-			statusCircleGraph.getStyleClass().addAll("padding-1311");
-			statusCircleGraph.setAlignment(Pos.CENTER_LEFT);
 			addRemoveStatusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 
 		}
