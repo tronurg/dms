@@ -23,7 +23,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -34,7 +33,7 @@ public class ReportsPane extends GridPane {
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
 	private final Button attachBtn = ViewFactory.newAttachBtn();
-	private final Pane attachBtnGraph = new StackPane(attachBtn);
+	private final StackPane attachBtnGraph = new StackPane(attachBtn);
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 

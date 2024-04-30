@@ -517,7 +517,7 @@ class StarredMessagesPane extends BorderPane {
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
-				Pane dummyPlayerGraph = new VBox(dummyPlayer);
+				VBox dummyPlayerGraph = new VBox(dummyPlayer);
 				dummyPlayerGraph.getStyleClass().addAll("padding-0001");
 
 				referenceBalloon.getChildren().add(dummyPlayerGraph);
@@ -527,7 +527,7 @@ class StarredMessagesPane extends BorderPane {
 				Label innerLbl = new Label(messageInfo.attachmentName);
 				innerLbl.getStyleClass().addAll("em08");
 				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
-				Pane attachmentLblGraph = new VBox(attachmentLbl);
+				VBox attachmentLblGraph = new VBox(attachmentLbl);
 				attachmentLblGraph.getStyleClass().addAll("padding-0001");
 
 				referenceBalloon.getChildren().add(attachmentLblGraph);
@@ -552,7 +552,7 @@ class StarredMessagesPane extends BorderPane {
 			};
 			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
-			Pane contentLblGraph = new StackPane(contentLbl);
+			VBox contentLblGraph = new VBox(contentLbl);
 			contentLblGraph.getStyleClass().addAll("padding-0001");
 
 			referenceBalloon.getChildren().add(contentLblGraph);

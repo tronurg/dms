@@ -28,7 +28,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -41,7 +40,7 @@ public class ForwardSelectionPane extends GridPane {
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 	private final Button sendBtn = ViewFactory.newSendBtn();
-	private final Pane sendBtnGraph = new StackPane(sendBtn);
+	private final StackPane sendBtnGraph = new StackPane(sendBtn);
 
 	private final Map<EntityId, EntityCard> entityIdCards = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityCard>());

@@ -322,7 +322,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		protected Button addRemoveBtn;
 		protected Label addRemoveLbl = new Label();
 		private final Circle addRemoveStatusCircle = new Circle(7.0);
-		private final Pane statusCircleGraph = new StackPane(new Group(addRemoveStatusCircle));
+		private final HBox statusCircleGraph = new HBox(new Group(addRemoveStatusCircle));
 
 		private AddRemoveContactBox() {
 			super();
@@ -352,6 +352,7 @@ public class AddUpdateGroupPane extends BorderPane {
 		private void initCircle() {
 
 			statusCircleGraph.getStyleClass().addAll("padding-1311");
+			statusCircleGraph.setAlignment(Pos.CENTER_LEFT);
 			addRemoveStatusCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 
 		}

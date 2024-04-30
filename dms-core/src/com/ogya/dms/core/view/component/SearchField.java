@@ -15,7 +15,6 @@ import javafx.scene.effect.Glow;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 
 public class SearchField extends HBox {
 
@@ -58,8 +57,9 @@ public class SearchField extends HBox {
 	private Pane newVisibleBtnGraph() {
 
 		Button visibleBtn = ViewFactory.newVisibleBtn();
-		Pane visibleBtnGraph = new StackPane(visibleBtn);
+		HBox visibleBtnGraph = new HBox(visibleBtn);
 		visibleBtnGraph.getStyleClass().addAll("padding-1");
+		visibleBtnGraph.setAlignment(Pos.CENTER);
 
 		final Effect glow = new Glow();
 		visibleBtn.effectProperty().bind(
