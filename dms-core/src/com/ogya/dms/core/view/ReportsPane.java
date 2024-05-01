@@ -25,7 +25,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 public class ReportsPane extends GridPane {
@@ -34,7 +33,6 @@ public class ReportsPane extends GridPane {
 	private final Button cancelBtn = ViewFactory.newCancelBtn();
 	private final GridPane reportPaneHolder = new GridPane();
 	private final Button attachBtn = ViewFactory.newAttachBtn();
-	private final DmsBox attachBtnBox = new DmsBox(attachBtn, "padding-2");
 
 	private final List<ReportPane> reportPanes = Collections.synchronizedList(new ArrayList<ReportPane>());
 
@@ -68,12 +66,12 @@ public class ReportsPane extends GridPane {
 		initReportsComboBox();
 		initCancelBtn();
 		initReportPaneHolder();
-		initAttachBtnBox();
+		initAttachBtn();
 
 		add(reportsComboBox, 0, 0);
 		add(cancelBtn, 0, 0);
 		add(reportPaneHolder, 0, 1);
-		add(attachBtnBox, 0, 1);
+		add(DmsBox.wrap(attachBtn, Pos.BOTTOM_RIGHT, "padding-2"), 0, 1);
 
 	}
 
@@ -118,12 +116,11 @@ public class ReportsPane extends GridPane {
 
 	}
 
-	private void initAttachBtnBox() {
+	private void initAttachBtn() {
 
-		StackPane.setAlignment(attachBtnBox, Pos.BOTTOM_RIGHT);
-		attachBtnBox.opacityProperty().bind(
-				Bindings.createDoubleBinding(() -> attachBtnBox.isHover() ? 1.0 : 0.5, attachBtnBox.hoverProperty()));
-		attachBtnBox.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
+		attachBtn.opacityProperty()
+				.bind(Bindings.createDoubleBinding(() -> attachBtn.isHover() ? 1.0 : 0.5, attachBtn.hoverProperty()));
+		attachBtn.disableProperty().bind(Bindings.size(reportsComboBox.getItems()).isEqualTo(0));
 
 		attachBtn.setOnAction(e -> {
 			final ReportPane selectedReportPane = reportPanes

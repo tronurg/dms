@@ -761,7 +761,6 @@ public class FoldersPane extends BorderPane {
 
 		SearchView() {
 			super();
-			setAlignment(Pos.CENTER);
 		}
 
 		private void showSearchResults(String filter, List<Path> paths, boolean hasMore) {
@@ -781,8 +780,7 @@ public class FoldersPane extends BorderPane {
 
 		private void addNotification(String text) {
 			Label noteLbl = ViewFactory.newNoteLbl(text);
-			DmsBox noteLblBox = new DmsBox(noteLbl, "padding-1");
-			getChildren().add(noteLblBox);
+			getChildren().add(DmsBox.wrap(noteLbl, Pos.CENTER, "padding-1"));
 		}
 
 		void setSearchFolder(Path searchFolder) {

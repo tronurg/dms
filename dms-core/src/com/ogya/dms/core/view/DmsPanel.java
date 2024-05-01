@@ -33,6 +33,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableSet;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
@@ -45,7 +46,6 @@ public class DmsPanel extends StackPane
 
 	private final BorderPane mainPane = new BorderPane();
 	private final IdentityPane identityPane = new IdentityPane();
-	private final DmsBox identityPaneBox = new DmsBox(identityPane, "padding-2");
 	private final EntitiesPane entitiesPane = new EntitiesPane();
 
 	private final FoldersPane foldersPane = new FoldersPane(
@@ -130,7 +130,7 @@ public class DmsPanel extends StackPane
 
 		registerListeners();
 
-		mainPane.setTop(identityPaneBox);
+		mainPane.setTop(DmsBox.wrap(identityPane, Pos.CENTER, "padding-2"));
 		mainPane.setCenter(entitiesPane);
 
 		getChildren().add(mainPane);

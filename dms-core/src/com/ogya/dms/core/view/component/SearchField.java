@@ -33,14 +33,14 @@ public class SearchField extends HBox {
 	private void init() {
 
 		getStyleClass().addAll("gray-underline");
-		setAlignment(Pos.CENTER);
+		setAlignment(Pos.CENTER_LEFT);
 
 		initSearchTextField();
 
 		getChildren().add(searchTextField);
 
 		if (allowFilter) {
-			getChildren().add(newVisibleBtnBox());
+			getChildren().add(DmsBox.wrap(newVisibleBtn(), Pos.CENTER_RIGHT, "padding-1"));
 		}
 
 	}
@@ -54,10 +54,9 @@ public class SearchField extends HBox {
 
 	}
 
-	private Node newVisibleBtnBox() {
+	private Node newVisibleBtn() {
 
 		Button visibleBtn = ViewFactory.newVisibleBtn();
-		DmsBox visibleBtnBox = new DmsBox(visibleBtn, "padding-1");
 
 		final Effect glow = new Glow();
 		visibleBtn.effectProperty().bind(
@@ -69,7 +68,7 @@ public class SearchField extends HBox {
 
 		visibleBtn.setOnAction(e -> filterOnlineProperty.set(!filterOnlineProperty.get()));
 
-		return visibleBtnBox;
+		return visibleBtn;
 
 	}
 

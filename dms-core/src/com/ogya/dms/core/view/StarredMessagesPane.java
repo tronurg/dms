@@ -515,18 +515,16 @@ class StarredMessagesPane extends BorderPane {
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
-				DmsBox dummyPlayerBox = new DmsBox(dummyPlayer, "padding-0001");
 
-				referenceBalloon.getChildren().add(dummyPlayerBox);
+				referenceBalloon.getChildren().add(DmsBox.wrap(dummyPlayer, Pos.CENTER_LEFT, "padding-0001"));
 
 			} else {
 
 				Label innerLbl = new Label(messageInfo.attachmentName);
 				innerLbl.getStyleClass().addAll("em08");
 				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
-				DmsBox attachmentLblBox = new DmsBox(attachmentLbl, "padding-0001");
 
-				referenceBalloon.getChildren().add(attachmentLblBox);
+				referenceBalloon.getChildren().add(DmsBox.wrap(attachmentLbl, Pos.CENTER_LEFT, "padding-0001"));
 
 			}
 
@@ -548,9 +546,8 @@ class StarredMessagesPane extends BorderPane {
 			};
 			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
-			DmsBox contentLblBox = new DmsBox(contentLbl, "padding-0001");
 
-			referenceBalloon.getChildren().add(contentLblBox);
+			referenceBalloon.getChildren().add(DmsBox.wrap(contentLbl, Pos.CENTER_LEFT, "padding-0001"));
 
 		}
 
@@ -677,9 +674,8 @@ class StarredMessagesPane extends BorderPane {
 		private final Label dateLbl;
 		private final Label timeLbl;
 		private final Node starLbl = ViewFactory.newStarLbl();
-		private final DmsBox selectionBtnBox = new DmsBox(ViewFactory.newSelectionBtn(), "padding-0100");
+		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
-		private final DmsBox goToRefBtnBox = new DmsBox(goToRefBtn, "padding-0001");
 
 		private final InnerShadow shadow = new InnerShadow(0d, Color.TRANSPARENT);
 
@@ -714,22 +710,19 @@ class StarredMessagesPane extends BorderPane {
 			getStyleClass().addAll("message-balloon");
 			hitProperty.addListener((e0, e1, e2) -> pseudoClassStateChanged(hit, Boolean.TRUE.equals(e2)));
 
-			initSelectionBtnBox();
+			initSelectionBtn();
 			initMessagePane();
-			initGoToRefBtnBox();
+			initGoToRefBtn();
 
-			add(selectionBtnBox, 0, 0);
+			add(DmsBox.wrap(selectionBtn, Pos.CENTER_LEFT, "padding-0100"), 0, 0);
 			add(messagePane, 1, 0);
-			add(goToRefBtnBox, 2, 0);
+			add(DmsBox.wrap(goToRefBtn, Pos.CENTER_RIGHT, "padding-0001"), 2, 0);
 
 		}
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			DmsBox referenceBalloonBox = new DmsBox(referenceBalloon, "padding-1010");
-			GridPane.setHgrow(referenceBalloonBox, Priority.ALWAYS);
-
-			messagePane.add(referenceBalloonBox, 0, 1);
+			messagePane.add(DmsBox.wrap(referenceBalloon, Pos.CENTER_LEFT, "padding-1010"), 0, 1);
 
 		}
 
@@ -754,11 +747,11 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
-		private void initSelectionBtnBox() {
+		private void initSelectionBtn() {
 
-			selectionBtnBox.visibleProperty().bind(selectionModeProperty);
-			selectionBtnBox.managedProperty().bind(selectionBtnBox.visibleProperty());
-			selectionBtnBox.opacityProperty()
+			selectionBtn.visibleProperty().bind(selectionModeProperty);
+			selectionBtn.managedProperty().bind(selectionBtn.visibleProperty());
+			selectionBtn.opacityProperty()
 					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
 
 		}
@@ -815,10 +808,10 @@ class StarredMessagesPane extends BorderPane {
 
 		}
 
-		private void initGoToRefBtnBox() {
+		private void initGoToRefBtn() {
 
-			goToRefBtnBox.visibleProperty().bind(selectionModeProperty.not());
-			goToRefBtnBox.managedProperty().bind(goToRefBtnBox.visibleProperty());
+			goToRefBtn.visibleProperty().bind(selectionModeProperty.not());
+			goToRefBtn.managedProperty().bind(goToRefBtn.visibleProperty());
 			goToRefBtn.setOnAction(e -> listeners
 					.forEach(listener -> listener.goToMessageClicked(messageInfo.entityId, messageInfo.messageId)));
 

@@ -120,7 +120,6 @@ class MessagePane extends BorderPane {
 	private final VBox messagesPane = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(messagesPane);
 	private final Button scrollToUnreadBtn = ViewFactory.newScrollToUnreadBtn();
-	private final DmsBox scrollToUnreadBtnBox = new DmsBox(scrollToUnreadBtn, "padding-1414");
 
 	private final Popup deleteSelectedPopup = new Popup();
 	private final Popup clearConversationPopup = new Popup();
@@ -129,7 +128,6 @@ class MessagePane extends BorderPane {
 
 	private final HBox referencePane = new HBox();
 	private final Button closeReferenceBtn = ViewFactory.newCancelBtn();
-	private final DmsBox closeReferenceBtnBox = new DmsBox(closeReferenceBtn, "padding-1");
 	private final HBox attachmentArea = new HBox();
 	private final ImPane imPane = new ImPane();
 	private final StackPane btnPane = new StackPane();
@@ -243,9 +241,9 @@ class MessagePane extends BorderPane {
 	private void initCenterPane() {
 
 		initScrollPane();
-		initScrollToUnreadBtnBox();
+		initScrollToUnreadBtn();
 
-		centerPane.getChildren().addAll(scrollPane, scrollToUnreadBtnBox);
+		centerPane.getChildren().addAll(scrollPane, DmsBox.wrap(scrollToUnreadBtn, Pos.BOTTOM_RIGHT, "padding-1414"));
 
 	}
 
@@ -255,13 +253,13 @@ class MessagePane extends BorderPane {
 		bottomPane.managedProperty().bind(activeProperty);
 
 		initReferencePane();
-		initCloseReferenceBtnBox();
+		initCloseReferenceBtn();
 		initAttachmentArea();
 		initImPane();
 		initBtnPane();
 
 		bottomPane.add(referencePane, 0, 0);
-		bottomPane.add(closeReferenceBtnBox, 0, 0);
+		bottomPane.add(DmsBox.wrap(closeReferenceBtn, Pos.TOP_RIGHT, "padding-1"), 0, 0);
 		bottomPane.add(attachmentArea, 0, 1);
 		bottomPane.add(imPane, 0, 2);
 		bottomPane.add(btnPane, 1, 2);
@@ -503,11 +501,10 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initScrollToUnreadBtnBox() {
+	private void initScrollToUnreadBtn() {
 
-		StackPane.setAlignment(scrollToUnreadBtnBox, Pos.BOTTOM_RIGHT);
-		scrollToUnreadBtnBox.visibleProperty().bind(firstUnreadMessageIdProperty.isNotNull());
-		scrollToUnreadBtnBox.managedProperty().bind(scrollToUnreadBtnBox.visibleProperty());
+		scrollToUnreadBtn.visibleProperty().bind(firstUnreadMessageIdProperty.isNotNull());
+		scrollToUnreadBtn.managedProperty().bind(scrollToUnreadBtn.visibleProperty());
 		scrollToUnreadBtn.setOnAction(e -> {
 			Long firstUnreadMessageId = firstUnreadMessageIdProperty.get();
 			if (firstUnreadMessageId == null) {
@@ -532,12 +529,10 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void initCloseReferenceBtnBox() {
+	private void initCloseReferenceBtn() {
 
-		GridPane.setHalignment(closeReferenceBtnBox, HPos.RIGHT);
-		GridPane.setValignment(closeReferenceBtnBox, VPos.TOP);
-		closeReferenceBtnBox.visibleProperty().bind(referenceMessageProperty.isNotNull());
-		closeReferenceBtnBox.managedProperty().bind(closeReferenceBtnBox.visibleProperty());
+		closeReferenceBtn.visibleProperty().bind(referenceMessageProperty.isNotNull());
+		closeReferenceBtn.managedProperty().bind(closeReferenceBtn.visibleProperty());
 		closeReferenceBtn.setOnAction(e -> referenceMessageProperty.set(null));
 
 	}
@@ -1058,18 +1053,16 @@ class MessagePane extends BorderPane {
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
-				DmsBox dummyPlayerBox = new DmsBox(dummyPlayer, "padding-0001");
 
-				referenceBalloon.getChildren().add(dummyPlayerBox);
+				referenceBalloon.getChildren().add(DmsBox.wrap(dummyPlayer, Pos.CENTER_LEFT, "padding-0001"));
 
 			} else {
 
 				Label innerLbl = new Label(messageInfo.attachmentName);
 				innerLbl.getStyleClass().addAll("em08");
 				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
-				DmsBox attachmentLblBox = new DmsBox(attachmentLbl, "padding-0001");
 
-				referenceBalloon.getChildren().add(attachmentLblBox);
+				referenceBalloon.getChildren().add(DmsBox.wrap(attachmentLbl, Pos.CENTER_LEFT, "padding-0001"));
 
 			}
 
@@ -1091,9 +1084,8 @@ class MessagePane extends BorderPane {
 			};
 			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
-			DmsBox contentLblBox = new DmsBox(contentLbl, "padding-0001");
 
-			referenceBalloon.getChildren().add(contentLblBox);
+			referenceBalloon.getChildren().add(DmsBox.wrap(contentLbl, Pos.CENTER_LEFT, "padding-0001"));
 
 		}
 
@@ -1246,7 +1238,7 @@ class MessagePane extends BorderPane {
 		private final HBox statusPane = new HBox();
 		private final Label timeLbl;
 		private final Node starLbl = ViewFactory.newStarLbl();
-		private final DmsBox selectionBtnBox = new DmsBox(ViewFactory.newSelectionBtn(), "padding-0100");
+		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
 		private final InnerShadow shadow = new InnerShadow(3 * ViewFactory.GAP, Color.TRANSPARENT);
 
@@ -1286,14 +1278,14 @@ class MessagePane extends BorderPane {
 			col0.setPercentWidth(0.0);
 			col2.setPercentWidth(80.0);
 
-			initSelectionBtnBox();
+			initSelectionBtn();
 			initMessagePane();
 
-			add(selectionBtnBox, 1, 0);
+			add(DmsBox.wrap(selectionBtn, Pos.CENTER_LEFT, "padding-0100"), 1, 0);
 			add(messagePane, 2, 0);
 
 			if (messageInfo.infoAvailable) {
-				add(newInfoBtnGraph(), 3, 0);
+				add(DmsBox.wrap(newInfoBtn(), Pos.CENTER_RIGHT, "padding-0001"), 3, 0);
 			}
 
 			if (messageInfo.isOutgoing) {
@@ -1318,10 +1310,7 @@ class MessagePane extends BorderPane {
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			DmsBox referenceBalloonBox = new DmsBox(referenceBalloon, "padding-0010");
-			GridPane.setHgrow(referenceBalloonBox, Priority.ALWAYS);
-
-			messagePane.add(referenceBalloonBox, 0, 1);
+			messagePane.add(DmsBox.wrap(referenceBalloon, Pos.CENTER_LEFT, "padding-0010"), 0, 1);
 
 		}
 
@@ -1346,11 +1335,11 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private void initSelectionBtnBox() {
+		private void initSelectionBtn() {
 
-			selectionBtnBox.visibleProperty().bind(selectionModeProperty);
-			selectionBtnBox.managedProperty().bind(selectionBtnBox.visibleProperty());
-			selectionBtnBox.opacityProperty()
+			selectionBtn.visibleProperty().bind(selectionModeProperty);
+			selectionBtn.managedProperty().bind(selectionBtn.visibleProperty());
+			selectionBtn.opacityProperty()
 					.bind(Bindings.createDoubleBinding(() -> selectedProperty.get() ? 1.0 : 0.2, selectedProperty));
 
 		}
@@ -1384,16 +1373,15 @@ class MessagePane extends BorderPane {
 
 		}
 
-		private Node newInfoBtnGraph() {
+		private Node newInfoBtn() {
 
 			Button infoBtn = ViewFactory.newInfoBtn();
-			DmsBox infoBtnBox = new DmsBox(infoBtn, "padding-0001");
 
-			infoBtnBox.visibleProperty().bind(selectionModeProperty.not());
-			infoBtnBox.managedProperty().bind(infoBtnBox.visibleProperty());
+			infoBtn.visibleProperty().bind(selectionModeProperty.not());
+			infoBtn.managedProperty().bind(infoBtn.visibleProperty());
 			infoBtn.setOnAction(e -> listeners.forEach(listener -> listener.infoClicked(messageInfo.messageId)));
 
-			return infoBtnBox;
+			return infoBtn;
 
 		}
 
@@ -1639,11 +1627,9 @@ class MessagePane extends BorderPane {
 
 		private void init() {
 
-			DmsBox dateLabelBox = new DmsBox(dateLabel, "padding-0010");
-			BorderPane.setAlignment(dateLabelBox, Pos.CENTER);
 			messageGroupBox.getStyleClass().addAll("spacing-1");
 
-			setTop(dateLabelBox);
+			setTop(DmsBox.wrap(dateLabel, Pos.CENTER, "padding-0010"));
 			setCenter(messageGroupBox);
 
 		}

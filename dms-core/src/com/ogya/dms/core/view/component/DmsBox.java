@@ -1,18 +1,22 @@
 package com.ogya.dms.core.view.component;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.StackPane;
 
-public class DmsBox extends VBox {
+public class DmsBox extends StackPane {
 
-	public DmsBox(Node node, String styleClass) {
-		super();
-		getStyleClass().add(styleClass);
-		getChildren().add(node);
+	private DmsBox(Node node, Pos alignment, String... styleClasses) {
+		super(node);
+		getStyleClass().addAll(styleClasses);
+		setAlignment(alignment);
 		setPickOnBounds(false);
-//		setMaxHeight(USE_PREF_SIZE);
-//		setMaxWidth(USE_PREF_SIZE);
-		setStyle("-fx-border-color: blue;");
+		visibleProperty().bind(node.visibleProperty());
+		managedProperty().bind(visibleProperty());
+	}
+
+	public static Node wrap(Node node, Pos alignment, String... styleClasses) {
+		return new DmsBox(node, alignment, styleClasses);
 	}
 
 }

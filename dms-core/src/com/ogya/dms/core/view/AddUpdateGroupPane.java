@@ -323,7 +323,6 @@ public class AddUpdateGroupPane extends BorderPane {
 		protected Button addRemoveBtn;
 		protected Label addRemoveLbl = new Label();
 		private final Circle addRemoveStatusCircle = new Circle(7.0);
-		private final DmsBox statusCircleBox = new DmsBox(new Group(addRemoveStatusCircle), "padding-1311");
 
 		private AddRemoveContactBox() {
 			super();
@@ -339,7 +338,8 @@ public class AddUpdateGroupPane extends BorderPane {
 			setAlignment(Pos.CENTER_LEFT);
 			managedProperty().bind(visibleProperty());
 
-			getChildren().addAll(addRemoveBtn, statusCircleBox);
+			getChildren().addAll(addRemoveBtn,
+					DmsBox.wrap(new Group(addRemoveStatusCircle), Pos.CENTER_RIGHT, "padding-1311"));
 
 		}
 

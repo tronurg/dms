@@ -235,8 +235,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 	private void addNotification(String text) {
 		Label noteLbl = ViewFactory.newNoteLbl(text);
-		DmsBox noteLblBox = new DmsBox(noteLbl, "padding-1010");
-		centerPane.getChildren().add(noteLblBox);
+		centerPane.getChildren().add(DmsBox.wrap(noteLbl, Pos.CENTER, "padding-1010"));
 	}
 
 	private void clearSearch() {
@@ -271,18 +270,16 @@ class SearchInAllMessagesPane extends BorderPane {
 			if (messageInfo.attachmentType == AttachmentType.AUDIO) {
 
 				DmsMediaPlayer dummyPlayer = new DmsMediaPlayer(null);
-				DmsBox dummyPlayerBox = new DmsBox(dummyPlayer, "padding-0001");
 
-				referenceBalloon.getChildren().add(dummyPlayerBox);
+				referenceBalloon.getChildren().add(DmsBox.wrap(dummyPlayer, Pos.CENTER_LEFT, "padding-0001"));
 
 			} else {
 
 				Label innerLbl = new Label(messageInfo.attachmentName);
 				innerLbl.getStyleClass().addAll("em08");
 				Label attachmentLbl = ViewFactory.newAttachLbl(0.4, innerLbl);
-				DmsBox attachmentLblBox = new DmsBox(attachmentLbl, "padding-0001");
 
-				referenceBalloon.getChildren().add(attachmentLblBox);
+				referenceBalloon.getChildren().add(DmsBox.wrap(attachmentLbl, Pos.CENTER_LEFT, "padding-0001"));
 
 			}
 
@@ -304,9 +301,8 @@ class SearchInAllMessagesPane extends BorderPane {
 			};
 			contentLbl.getStyleClass().addAll("black-label", "em08");
 			contentLbl.setWrapText(true);
-			DmsBox contentLblBox = new DmsBox(contentLbl, "padding-0001");
 
-			referenceBalloon.getChildren().add(contentLblBox);
+			referenceBalloon.getChildren().add(DmsBox.wrap(contentLbl, Pos.CENTER_LEFT, "padding-0001"));
 
 		}
 
@@ -338,7 +334,6 @@ class SearchInAllMessagesPane extends BorderPane {
 		private final Label dateLbl;
 		private final Label timeLbl;
 		private final Button goToRefBtn = ViewFactory.newGoToRefBtn();
-		private final DmsBox goToRefBtnBox = new DmsBox(goToRefBtn, "padding-0001");
 
 		private MessageBalloon(MessageInfo messageInfo) {
 			super();
@@ -351,19 +346,16 @@ class SearchInAllMessagesPane extends BorderPane {
 		private void init() {
 
 			initMessagePane();
-			initGoToRefBtnBox();
+			initGoToRefBtn();
 
 			add(messagePane, 0, 0);
-			add(goToRefBtnBox, 1, 0);
+			add(DmsBox.wrap(goToRefBtn, Pos.CENTER_RIGHT, "padding-0001"), 1, 0);
 
 		}
 
 		void addReferenceBalloon(Node referenceBalloon) {
 
-			DmsBox referenceBalloonBox = new DmsBox(referenceBalloon, "padding-1010");
-			GridPane.setHgrow(referenceBalloonBox, Priority.ALWAYS);
-
-			messagePane.add(referenceBalloonBox, 0, 1);
+			messagePane.add(DmsBox.wrap(referenceBalloon, Pos.CENTER_LEFT, "padding-1010"), 0, 1);
 
 		}
 
@@ -412,7 +404,7 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		}
 
-		private void initGoToRefBtnBox() {
+		private void initGoToRefBtn() {
 
 			goToRefBtn.setOnAction(e -> listeners
 					.forEach(listener -> listener.goToMessageClicked(messageInfo.entityId, messageInfo.messageId)));

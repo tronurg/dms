@@ -23,8 +23,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.geometry.HPos;
-import javafx.geometry.VPos;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
@@ -41,7 +40,6 @@ public class ForwardSelectionPane extends GridPane {
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 	private final Button sendBtn = ViewFactory.newSendBtn();
-	private final DmsBox sendBtnBox = new DmsBox(sendBtn, "padding-2");
 
 	private final Map<EntityId, EntityCard> entityIdCards = Collections
 			.synchronizedMap(new HashMap<EntityId, EntityCard>());
@@ -83,12 +81,12 @@ public class ForwardSelectionPane extends GridPane {
 
 		initTopPane();
 		initEntities();
-		initSendBtnBox();
+		initSendBtn();
 
 		add(topPane, 0, 0);
 		add(searchField, 0, 1);
 		add(scrollPane, 0, 2);
-		add(sendBtnBox, 0, 2);
+		add(DmsBox.wrap(sendBtn, Pos.BOTTOM_RIGHT, "padding-2"), 0, 2);
 
 	}
 
@@ -120,11 +118,9 @@ public class ForwardSelectionPane extends GridPane {
 
 	}
 
-	private void initSendBtnBox() {
+	private void initSendBtn() {
 
-		GridPane.setHalignment(sendBtnBox, HPos.RIGHT);
-		GridPane.setValignment(sendBtnBox, VPos.BOTTOM);
-		sendBtnBox.disableProperty().bind(selectedEntityIdProperty.isNull());
+		sendBtn.disableProperty().bind(selectedEntityIdProperty.isNull());
 
 	}
 
