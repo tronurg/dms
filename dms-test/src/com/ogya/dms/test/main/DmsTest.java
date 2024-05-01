@@ -123,7 +123,6 @@ public class DmsTest {
 							panel.repaint();
 						});
 					} catch (DmsException e1) {
-						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
 					loggedIn.set(true);

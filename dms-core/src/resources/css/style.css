@@ -78,6 +78,14 @@
 	-fx-border-radius: 0.4em;
 	-fx-effect: innershadow(gaussian, darkgray, 0.6em, 0, 0, 0);
 }
+.error-effect {
+	-dms-color: darkgray;
+	-fx-effect: innershadow(gaussian, -dms-color, 0.6em, 0, 0, 0);
+}
+.blink-effect {
+	-dms-color: transparent;
+	-fx-effect: innershadow(gaussian, -dms-color, 1em, 0, 0, 0);
+}
 .attachment-area {
 	-fx-border-color: gray;
 	-fx-border-radius: 0.4em;

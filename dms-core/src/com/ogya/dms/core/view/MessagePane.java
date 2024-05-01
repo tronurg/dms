@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,7 +75,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.effect.ColorAdjust;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
-import javafx.scene.effect.InnerShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -999,34 +999,35 @@ class MessagePane extends BorderPane {
 		MessageInfo messageInfo = new MessageInfo(message);
 
 		Node referenceBalloon = newReferenceBalloon(messageInfo);
-		referenceBalloon.getStyleClass().addAll("reference-balloon");
-
-		// TODO: Restore shadow !!!
-
-		final InnerShadow shadow = new InnerShadow(2 * ViewFactory.GAP, Color.DARKGRAY);
-		referenceBalloon.setEffect(shadow);
+		referenceBalloon.getStyleClass().addAll("reference-balloon", "error-effect");
 
 		final Long messageId = messageInfo.messageId;
+		final AtomicBoolean playing = new AtomicBoolean();
 
 		referenceBalloon.addEventFilter(MouseEvent.MOUSE_CLICKED, e -> {
 			if (referencedMessageIds.contains(messageId)) {
 				goToMessage(messageId);
 				return;
 			}
-			if (Color.DARKGRAY.equals(shadow.getColor())) {
-				new Transition() {
-
-					{
-						setCycleDuration(Duration.millis(500.0));
-					}
-
-					@Override
-					protected void interpolate(double arg0) {
-						shadow.setColor(Color.RED.interpolate(Color.DARKGRAY, arg0));
-					}
-
-				}.play();
+			if (playing.get()) {
+				return;
 			}
+			new Transition() {
+
+				{
+					setCycleDuration(Duration.millis(500.0));
+				}
+
+				@Override
+				protected void interpolate(double arg0) {
+					Color color = Color.RED.interpolate(Color.DARKGRAY, arg0);
+					referenceBalloon.setStyle(
+							String.format(Locale.ROOT, "-dms-color: rgba(%d,%d,%d,%.1f);", (int) (255 * color.getRed()),
+									(int) (255 * color.getGreen()), (int) (255 * color.getBlue()), color.getOpacity()));
+					playing.set(arg0 < 1d);
+				}
+
+			}.play();
 		});
 
 		if (message.getViewStatus() != ViewStatus.DELETED) {
@@ -1240,12 +1241,12 @@ class MessagePane extends BorderPane {
 		private final Node starLbl = ViewFactory.newStarLbl();
 		private final Button selectionBtn = ViewFactory.newSelectionBtn();
 
-		private final InnerShadow shadow = new InnerShadow(3 * ViewFactory.GAP, Color.TRANSPARENT);
-
 		private final BooleanProperty selectedProperty = new SimpleBooleanProperty(false);
 
 		private final BooleanProperty hitProperty = new SimpleBooleanProperty(false);
 		private final PseudoClass hit = PseudoClass.getPseudoClass("hit");
+
+		private final AtomicBoolean blinking = new AtomicBoolean();
 
 		private DayBox dayBox;
 		private MessageGroup messageGroup;
@@ -1316,7 +1317,7 @@ class MessagePane extends BorderPane {
 
 		void blink() {
 
-			if (!Color.TRANSPARENT.equals(shadow.getColor())) {
+			if (blinking.get()) {
 				return;
 			}
 
@@ -1328,7 +1329,11 @@ class MessagePane extends BorderPane {
 
 				@Override
 				protected void interpolate(double arg0) {
-					shadow.setColor(Color.MEDIUMBLUE.interpolate(Color.TRANSPARENT, arg0));
+					Color color = Color.MEDIUMBLUE.interpolate(Color.TRANSPARENT, arg0);
+					messagePane.setStyle(
+							String.format(Locale.ROOT, "-dms-color: rgba(%d,%d,%d,%.1f);", (int) (255 * color.getRed()),
+									(int) (255 * color.getGreen()), (int) (255 * color.getBlue()), color.getOpacity()));
+					blinking.set(arg0 < 1d);
 				}
 
 			}.play();
@@ -1346,7 +1351,7 @@ class MessagePane extends BorderPane {
 
 		private void initMessagePane() {
 
-			messagePane.getStyleClass().addAll("min-width-6em", "message-border", "padding-1");
+			messagePane.getStyleClass().addAll("min-width-6em", "message-border", "padding-1", "blink-effect");
 
 			if (messageInfo.isOutgoing) {
 				GridPane.setHalignment(messagePane, HPos.RIGHT);
@@ -1357,7 +1362,6 @@ class MessagePane extends BorderPane {
 			}
 
 			GridPane.setFillWidth(messagePane, false);
-			messagePane.setEffect(shadow);
 
 			if (messageInfo.attachmentType != null) {
 				messagePane.add(newAttachmentArea(), 0, 2);

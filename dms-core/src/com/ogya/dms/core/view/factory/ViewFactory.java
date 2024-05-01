@@ -32,15 +32,12 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
-import javafx.scene.text.Font;
 
 public class ViewFactory {
 
 	private static final String SCALE_CSS = "-fx-scale-x: %.3fem;-fx-scale-y: %.3fem;";
 	private static final String PREF_SIZE_CSS = "-fx-pref-height: %.3fem;-fx-pref-width: %.3fem;";
 
-	private static final double EM = Font.getDefault().getSize();
-	public static final double GAP = EM / 3.0;
 	private static final double SCALE_FACTOR = 1d / 15;
 
 	private static final Map<String, Color> colorMap = Collections.synchronizedMap(new HashMap<String, Color>());
