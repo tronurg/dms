@@ -148,6 +148,19 @@
 .folders-menu .radio-menu-item:hover .radio {
 	-fx-background-color: dodgerblue;
 }
+.dms-list-view {
+	-fx-background-color: transparent;
+	-fx-padding: 0.3em;
+}
+.dms-list-view .list-cell {
+	-fx-background-color: transparent;
+	-fx-padding: 0;
+	-fx-pref-width: 0;
+	-fx-text-background-color: transparent;
+}
+.dms-list-view .scroll-bar {
+	-fx-padding: -0.3em -0.3em -0.3em 0.3em;
+}
 .em08 {
 	-fx-font-size: 0.8em;
 }

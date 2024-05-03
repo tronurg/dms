@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -29,7 +30,6 @@ import java.util.stream.Stream;
 import com.ogya.dms.core.factory.DmsFactory;
 import com.ogya.dms.core.util.Commons;
 import com.ogya.dms.core.view.component.DmsBox;
-import com.ogya.dms.core.view.component.DmsScrollPane;
 import com.ogya.dms.core.view.component.ImSearchField;
 import com.ogya.dms.core.view.component.ImSearchField.ImSearchListener;
 import com.ogya.dms.core.view.factory.ViewFactory;
@@ -48,9 +48,9 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
@@ -62,17 +62,15 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.stage.PopupWindow.AnchorLocation;
 
 public class FoldersPane extends BorderPane {
 
-	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
+	private static final int UNITS_PER_PAGE = Commons.UNITS_PER_PAGE;
 
 	private final HBox topPane = new HBox();
 	private final StackPane centerPane = new StackPane();
 
-	private final ScrollPane scrollPane = new DmsScrollPane(centerPane);
 	private final Button backBtn;
 	private final Label headingLbl = new Label(Commons.translate("FILE_EXPLORER"));
 	private final ImSearchField imSearchField = new ImSearchField();
@@ -187,10 +185,9 @@ public class FoldersPane extends BorderPane {
 		});
 
 		initTopPane();
-		initScrollPane();
 
 		setTop(topPane);
-		setCenter(scrollPane);
+		setCenter(centerPane);
 
 	}
 
@@ -204,13 +201,6 @@ public class FoldersPane extends BorderPane {
 		initMenuBtn();
 
 		topPane.getChildren().addAll(backBtn, headingLbl, imSearchField, menuBtn);
-
-	}
-
-	private void initScrollPane() {
-
-		centerPane.getStyleClass().addAll("padding-1");
-		scrollPane.setFitToWidth(true);
 
 	}
 
@@ -429,8 +419,6 @@ public class FoldersPane extends BorderPane {
 
 		addView(getSubFolderView(folder));
 
-		scrollPane.setVvalue(0.0);
-
 	}
 
 	private void fileSelected(Path file) {
@@ -441,8 +429,6 @@ public class FoldersPane extends BorderPane {
 			fileSelectedAction.accept(file);
 		}
 
-		scrollPane.setVvalue(0.0);
-
 	}
 
 	private void backInFolders() {
@@ -452,8 +438,6 @@ public class FoldersPane extends BorderPane {
 		centerPane.getChildren().remove(size - 1);
 
 		centerPane.getChildren().get(size - 2).setVisible(true);
-
-		scrollPane.setVvalue(0.0);
 
 	}
 
@@ -602,14 +586,30 @@ public class FoldersPane extends BorderPane {
 
 	}
 
-	private abstract class FileView extends VBox {
+	private abstract class FileView extends ListView<Node> {
 
 		private static final String FILE_ICO_PATH = "/resources/icon/file.png";
+
+		protected final BooleanProperty onScreen = new SimpleBooleanProperty();
 
 		private final AtomicReference<Consumer<Path>> fileSelectedActionRef = new AtomicReference<Consumer<Path>>();
 
 		FileView() {
 			super();
+			init();
+		}
+
+		private void init() {
+			getStyleClass().addAll("dms-list-view");
+			managedProperty().bind(visibleProperty());
+			onScreen.addListener((e0, e1, e2) -> {
+				try {
+					scrollTo(0);
+				} catch (Exception e) {
+
+				}
+			});
+			onScreen.bind(visibleProperty().and(parentProperty().isNotNull()));
 		}
 
 		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
@@ -639,7 +639,7 @@ public class FoldersPane extends BorderPane {
 
 				});
 
-				getChildren().add(cButton);
+				getItems().add(cButton);
 
 			} catch (Exception e) {
 
@@ -655,8 +655,6 @@ public class FoldersPane extends BorderPane {
 
 		private final Path mainFolder;
 
-		private final BooleanProperty sortable = new SimpleBooleanProperty();
-
 		private final AtomicReference<Consumer<Path>> folderSelectedActionRef = new AtomicReference<Consumer<Path>>();
 		private final AtomicReference<Comparator<Node>> localSorter = new AtomicReference<Comparator<Node>>();
 
@@ -668,10 +666,7 @@ public class FoldersPane extends BorderPane {
 
 		private void init() {
 
-			managedProperty().bind(visibleProperty());
-			sortable.bind(visibleProperty().and(parentProperty().isNotNull()));
-
-			sortable.addListener((e0, e1, e2) -> sort());
+			onScreen.addListener((e0, e1, e2) -> sort());
 			selectedSorter.addListener((e0, e1, e2) -> sort());
 
 			populate();
@@ -680,7 +675,7 @@ public class FoldersPane extends BorderPane {
 
 		void populate() {
 
-			getChildren().clear();
+			getItems().clear();
 			localSorter.set(null);
 
 			try {
@@ -728,7 +723,7 @@ public class FoldersPane extends BorderPane {
 
 				});
 
-				getChildren().add(cButton);
+				getItems().add(cButton);
 
 			} catch (Exception e) {
 
@@ -738,7 +733,7 @@ public class FoldersPane extends BorderPane {
 
 		private void sort() {
 
-			if (!sortable.get()) {
+			if (!onScreen.get()) {
 				return;
 			}
 			Comparator<Node> sorter = selectedSorter.get();
@@ -746,7 +741,7 @@ public class FoldersPane extends BorderPane {
 			if (sorter == oldSorter || sorter == null) {
 				return;
 			}
-			FXCollections.sort(getChildren(), sorter);
+			FXCollections.sort(getItems(), sorter);
 
 		}
 
@@ -763,24 +758,25 @@ public class FoldersPane extends BorderPane {
 			super();
 		}
 
-		private void showSearchResults(String filter, List<Path> paths, boolean hasMore) {
+		private void showSearchResults(String filter, List<Path> paths, boolean clear) {
 			if (filter != searchTextRef.get()) {
 				return;
 			}
-			getChildren().clear();
-			if (paths.isEmpty()) {
-				addNotification(Commons.translate("NOT_FOUND"));
-			} else {
-				paths.forEach(path -> addFile(path));
+			if (clear) {
+				getItems().clear();
+				if (paths.isEmpty()) {
+					addNotification(Commons.translate("NOT_FOUND"));
+				}
 			}
-			if (hasMore) {
-				addNotification(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
+			paths.forEach(path -> addFile(path));
+			if (clear) {
+				scrollTo(0);
 			}
 		}
 
 		private void addNotification(String text) {
 			Label noteLbl = ViewFactory.newNoteLbl(text);
-			getChildren().add(DmsBox.wrap(noteLbl, Pos.CENTER, "padding-1"));
+			getItems().add(DmsBox.wrap(noteLbl, Pos.CENTER, "padding-1"));
 		}
 
 		void setSearchFolder(Path searchFolder) {
@@ -796,21 +792,27 @@ public class FoldersPane extends BorderPane {
 			searchPool.execute(() -> {
 				try (Stream<Path> stream = Files.find(searchFolder, Integer.MAX_VALUE, (e0, e1) -> e1.isRegularFile()
 						&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
-					List<Path> paths = new ArrayList<Path>();
 					Iterator<Path> iter = stream.iterator();
 					boolean hasNext = false;
-					while (filter == searchTextRef.get() && !(paths.size() > MAX_SEARCH_HIT)) {
-						try {
-							if (!(hasNext = iter.hasNext()) || paths.size() == MAX_SEARCH_HIT) {
-								break;
-							}
-							paths.add(iter.next());
-						} catch (Exception e) {
+					AtomicBoolean clear = new AtomicBoolean(true);
+					while (filter == searchTextRef.get()) {
+						List<Path> paths = new ArrayList<Path>();
+						for (int i = 0; filter == searchTextRef.get() && i < UNITS_PER_PAGE;) {
+							try {
+								if (!(hasNext = iter.hasNext())) {
+									break;
+								}
+								paths.add(iter.next());
+								++i;
+							} catch (Exception e) {
 
+							}
+						}
+						Platform.runLater(() -> showSearchResults(filter, paths, clear.getAndSet(false)));
+						if (!hasNext) {
+							break;
 						}
 					}
-					final boolean hasMore = hasNext;
-					Platform.runLater(() -> showSearchResults(filter, paths, hasMore));
 				} catch (Exception e) {
 
 				}
@@ -818,7 +820,7 @@ public class FoldersPane extends BorderPane {
 		}
 
 		void clearSearch() {
-			getChildren().clear();
+			getItems().clear();
 			searchTextRef.set(null);
 		}
 
