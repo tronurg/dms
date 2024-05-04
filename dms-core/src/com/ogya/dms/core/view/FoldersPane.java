@@ -622,10 +622,6 @@ public class FoldersPane extends BorderPane {
 
 			try {
 
-				if (Files.size(path) > Commons.MAX_FILE_LENGTH) {
-					return;
-				}
-
 				FileButton cButton = new FileButton(
 						new ImageView(new Image(getClass().getResourceAsStream(FILE_ICO_PATH))), path);
 
@@ -681,10 +677,17 @@ public class FoldersPane extends BorderPane {
 			try {
 
 				Files.list(mainFolder).forEach(path -> {
-					if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-						addFolder(path);
-					} else {
+					try {
+						if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+							addFolder(path);
+							return;
+						}
+						if (Files.size(path) > Commons.MAX_FILE_LENGTH) {
+							return;
+						}
 						addFile(path);
+					} catch (Exception e) {
+
 					}
 				});
 
@@ -802,7 +805,11 @@ public class FoldersPane extends BorderPane {
 								if (!(hasNext = iter.hasNext())) {
 									break;
 								}
-								paths.add(iter.next());
+								Path path = iter.next();
+								if (Files.size(path) > Commons.MAX_FILE_LENGTH) {
+									continue;
+								}
+								paths.add(path);
 								++i;
 							} catch (Exception e) {
 
