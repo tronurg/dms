@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -67,6 +66,7 @@ import javafx.stage.PopupWindow.AnchorLocation;
 public class FoldersPane extends BorderPane {
 
 	private static final int UNITS_PER_PAGE = Commons.UNITS_PER_PAGE;
+	private static final int MAX_PAGES = Commons.MAX_PAGES;
 
 	private final HBox topPane = new HBox();
 	private final StackPane centerPane = new StackPane();
@@ -761,19 +761,22 @@ public class FoldersPane extends BorderPane {
 			super();
 		}
 
-		private void showSearchResults(String filter, List<Path> paths, boolean clear) {
+		private void showSearchResults(String filter, List<Path> paths, int page, boolean hasMore) {
 			if (filter != searchTextRef.get()) {
 				return;
 			}
-			if (clear) {
+			if (page == 1) {
 				getItems().clear();
 				if (paths.isEmpty()) {
 					addNotification(Commons.translate("NOT_FOUND"));
 				}
 			}
 			paths.forEach(path -> addFile(path));
-			if (clear) {
+			if (page == 1) {
 				scrollTo(0);
+			}
+			if (page == MAX_PAGES && hasMore) {
+				addNotification(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
 			}
 		}
 
@@ -797,10 +800,9 @@ public class FoldersPane extends BorderPane {
 						&& e0.getFileName().toString().toLowerCase(Locale.getDefault()).matches(filter))) {
 					Iterator<Path> iter = stream.iterator();
 					boolean hasNext = false;
-					AtomicBoolean clear = new AtomicBoolean(true);
-					while (filter == searchTextRef.get()) {
+					for (int j = 0; j < MAX_PAGES && filter == searchTextRef.get(); ++j) {
 						List<Path> paths = new ArrayList<Path>();
-						for (int i = 0; filter == searchTextRef.get() && i < UNITS_PER_PAGE;) {
+						for (int i = 0; i < UNITS_PER_PAGE && filter == searchTextRef.get();) {
 							try {
 								if (!(hasNext = iter.hasNext())) {
 									break;
@@ -815,7 +817,9 @@ public class FoldersPane extends BorderPane {
 
 							}
 						}
-						Platform.runLater(() -> showSearchResults(filter, paths, clear.getAndSet(false)));
+						final int page = j + 1;
+						final boolean hasMore = hasNext;
+						Platform.runLater(() -> showSearchResults(filter, paths, page, hasMore));
 						if (!hasNext) {
 							break;
 						}

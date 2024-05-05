@@ -910,7 +910,7 @@ class MessagePane extends BorderPane {
 			return;
 		}
 
-		scrollPane(messageBalloon, 0.25 * messagesPane.getSpacing());
+		scrollPane(messageBalloon, null);
 
 		messageBalloon.blink();
 
@@ -1094,7 +1094,7 @@ class MessagePane extends BorderPane {
 
 	}
 
-	private void scrollPane(Node nodeToScrollTo, double bias) {
+	private void scrollPane(Node nodeToScrollTo, Double bias) {
 
 		boolean scrollToBottom = scrollNodeToBottom.getAndSet(false);
 
@@ -1117,6 +1117,10 @@ class MessagePane extends BorderPane {
 
 		if (messagesPaneHeight < scrollPaneViewportHeight) {
 			return;
+		}
+
+		if (bias == null) {
+			bias = 0.25 * messagesPane.getSpacing();
 		}
 
 		Double scrollY = messagesPane.sceneToLocal(nodeBoundsInScene).getMinY() - bias;

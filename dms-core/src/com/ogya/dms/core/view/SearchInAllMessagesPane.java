@@ -52,8 +52,6 @@ class SearchInAllMessagesPane extends BorderPane {
 	private static final DateTimeFormatter HOUR_MIN = DateTimeFormatter.ofPattern("HH:mm");
 	private static final DateTimeFormatter DAY_MONTH_YEAR = DateTimeFormatter.ofPattern("dd.MM.uuuu");
 
-	private static final int MAX_SEARCH_HIT = Commons.UNITS_PER_PAGE;
-
 	private final HBox topPane = new HBox();
 	private final VBox centerPane = new VBox();
 
@@ -220,16 +218,9 @@ class SearchInAllMessagesPane extends BorderPane {
 
 		if (hits.isEmpty()) {
 			addNotification(Commons.translate("NOT_FOUND"));
-		} else {
-			int index = 0;
-			for (Message hit : hits) {
-				if (++index > MAX_SEARCH_HIT) {
-					addNotification(Commons.translate("TOO_MANY_RESULTS_NOTIFICATION"));
-					break;
-				}
-				addMessage(hit);
-			}
 		}
+
+		hits.forEach(hit -> addMessage(hit));
 
 	}
 
