@@ -153,6 +153,7 @@
 	-fx-padding: 0.3em;
 }
 .dms-list-view .list-cell {
+	-fx-alignment: center;
 	-fx-background-color: transparent;
 	-fx-padding: 0;
 	-fx-pref-width: 0;

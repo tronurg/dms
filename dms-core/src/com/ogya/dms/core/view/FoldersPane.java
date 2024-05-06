@@ -42,7 +42,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.HPos;
 import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -782,7 +781,7 @@ public class FoldersPane extends BorderPane {
 
 		private void addNotification(String text) {
 			Label noteLbl = ViewFactory.newNoteLbl(text);
-			getItems().add(DmsBox.wrap(noteLbl, Pos.CENTER, "padding-1"));
+			getItems().add(DmsBox.wrap(noteLbl, "padding-1"));
 		}
 
 		void setSearchFolder(Path searchFolder) {
