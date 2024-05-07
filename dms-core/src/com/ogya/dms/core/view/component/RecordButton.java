@@ -29,17 +29,12 @@ public class RecordButton extends Button {
 	private final List<RecordListener> listeners = Collections.synchronizedList(new ArrayList<RecordListener>());
 
 	public RecordButton() {
-
 		super();
-
 		init();
-
 	}
 
 	public void addRecordListener(RecordListener listener) {
-
 		listeners.add(listener);
-
 	}
 
 	private void init() {
@@ -47,14 +42,9 @@ public class RecordButton extends Button {
 		setPadding(Insets.EMPTY);
 		setPickOnBounds(false);
 
-		Circle circle = new Circle(16.0);
+		Circle circle = new Circle(17.0);
 		circle.setFill(Color.GREEN);
-		circle.setStroke(Color.GREEN);
-		circle.setStrokeWidth(2.0);
-		final Arc recordArc = new Arc();
-		recordArc.setCenterX(0.0);
-		recordArc.setCenterY(0.0);
-		recordArc.setStartAngle(90.0);
+		final Arc recordArc = new Arc(0.0, 0.0, 17.0, 17.0, 90.0, 360.0);
 		recordArc.setType(ArcType.ROUND);
 		recordArc.setFill(Color.RED);
 		recordArc.visibleProperty().bind(timeline.statusProperty().isNotEqualTo(Animation.Status.STOPPED));
@@ -74,14 +64,14 @@ public class RecordButton extends Button {
 
 		setGraphic(new Group(group));
 
-		KeyFrame key0 = new KeyFrame(Duration.millis(0.0), new KeyValue(recordArc.radiusXProperty(), 0.0),
-				new KeyValue(recordArc.radiusYProperty(), 0.0), new KeyValue(recordArc.lengthProperty(), 360.0));
+		KeyFrame key0 = new KeyFrame(Duration.millis(0.0), new KeyValue(recordArc.scaleXProperty(), 0.0),
+				new KeyValue(recordArc.scaleYProperty(), 0.0), new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key1 = new KeyFrame(Duration.millis(1000.0), e -> {
 			if (isPressed()) {
 				listeners.forEach(listener -> listener.recordEventTriggered());
 			}
-		}, new KeyValue(recordArc.radiusXProperty(), 16.0), new KeyValue(recordArc.radiusYProperty(), 16.0),
+		}, new KeyValue(recordArc.scaleXProperty(), 1.0), new KeyValue(recordArc.scaleYProperty(), 1.0),
 				new KeyValue(recordArc.lengthProperty(), 360.0));
 
 		KeyFrame key2 = new KeyFrame(Duration.millis(11000.0), new KeyValue(recordArc.lengthProperty(), 0.0));
@@ -119,9 +109,7 @@ public class RecordButton extends Button {
 	}
 
 	public void stopAnimation() {
-
 		timeline.stop();
-
 	}
 
 	public static interface RecordListener {
