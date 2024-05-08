@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.ogya.dms</groupId>
   <artifactId>dms-server</artifactId>
-  <version>0.4.4</version>
+  <version>0.4.3</version>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>com.ogya.dms</groupId>
       <artifactId>dms-commons</artifactId>
-      <version>0.4.4</version>
+      <version>0.4.3</version>
     </dependency>
   </dependencies>
 </project>
