@@ -119,8 +119,8 @@ class EntityPaneBase extends GridPane {
 		groupLbl.translateXProperty().bind(groupLbl.widthProperty().multiply(-0.5));
 		groupLbl.translateYProperty().bind(groupLbl.heightProperty().multiply(-0.5));
 
-		groupSign.translateXProperty().bind(groupCircle.radiusProperty().multiply(3.0));
-		groupSign.translateYProperty().bind(groupCircle.radiusProperty().multiply(3.0));
+		groupSign.translateXProperty().bind(profilePicture.widthProperty().divide(3.0));
+		groupSign.translateYProperty().bind(profilePicture.heightProperty().divide(3.0));
 
 		groupSign.getChildren().addAll(groupCircle, groupLbl);
 

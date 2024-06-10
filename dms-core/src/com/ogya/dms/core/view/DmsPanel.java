@@ -130,8 +130,8 @@ public class DmsPanel extends StackPane
 
 		registerListeners();
 
-		mainPane.setTop(DmsBox.wrap(identityPane, Pos.CENTER, "padding-2"));
 		mainPane.setCenter(entitiesPane);
+		mainPane.setTop(DmsBox.wrap(identityPane, Pos.CENTER, "padding-2"));
 
 		getChildren().add(mainPane);
 
