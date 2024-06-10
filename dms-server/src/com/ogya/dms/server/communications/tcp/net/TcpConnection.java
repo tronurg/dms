@@ -32,9 +32,9 @@ public final class TcpConnection implements AutoCloseable {
 
 	TcpConnection(Socket socket, BiConsumer<Integer, byte[]> messageConsumer) throws Exception {
 
-		socket.setSendBufferSize(1);
 		socket.setKeepAlive(false);
 		socket.setSoLinger(true, 0);
+		socket.setTcpNoDelay(true);
 
 		this.socket = socket;
 		this.messageConsumer = messageConsumer;

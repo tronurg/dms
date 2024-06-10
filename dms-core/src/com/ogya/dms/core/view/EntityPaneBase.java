@@ -34,7 +34,7 @@ class EntityPaneBase extends GridPane {
 	private final Circle statusCircle = new Circle(RADIUS);
 	private final Circle profileRound = new Circle(0.8 * RADIUS);
 	private final Label initialLbl = new Label();
-	private final StackPane groupSign = new StackPane();
+	private final Group groupSign = new Group();
 	private final StackPane profilePicture = new StackPane(
 			new Group(statusCircle, profileRound, initialLbl, groupSign));
 
@@ -109,10 +109,6 @@ class EntityPaneBase extends GridPane {
 
 	private void initGroupSign() {
 
-		groupSign.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
-		groupSign.translateXProperty().bind(groupSign.widthProperty().multiply(0.5));
-		groupSign.translateYProperty().bind(groupSign.heightProperty().multiply(0.5));
-
 		Circle groupCircle = new Circle(0.3 * RADIUS);
 		groupCircle.setStyle(ViewFactory.getScaleCss(1d, 1d));
 		groupCircle.setFill(Color.TOMATO);
@@ -120,6 +116,11 @@ class EntityPaneBase extends GridPane {
 		Label groupLbl = new Label("G");
 		groupLbl.getStyleClass().addAll("em08", "extra-bold");
 		groupLbl.setTextFill(Color.WHITE);
+		groupLbl.translateXProperty().bind(groupLbl.widthProperty().multiply(-0.5));
+		groupLbl.translateYProperty().bind(groupLbl.heightProperty().multiply(-0.5));
+
+		groupSign.translateXProperty().bind(groupCircle.radiusProperty().multiply(3.0));
+		groupSign.translateYProperty().bind(groupCircle.radiusProperty().multiply(3.0));
 
 		groupSign.getChildren().addAll(groupCircle, groupLbl);
 
