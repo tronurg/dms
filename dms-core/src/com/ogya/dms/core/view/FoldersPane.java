@@ -608,7 +608,7 @@ public class FoldersPane extends BorderPane {
 
 				}
 			});
-			onScreen.bind(visibleProperty().and(parentProperty().isNotNull()));
+			onScreen.bind(visibleProperty().and(sceneProperty().isNotNull()));
 		}
 
 		void setOnFileSelectedAction(Consumer<Path> fileSelectedAction) {
