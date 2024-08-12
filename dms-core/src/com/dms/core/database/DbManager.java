@@ -1,8 +1,6 @@
 package com.dms.core.database;
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -58,13 +56,11 @@ public class DbManager {
 
 			lock();
 
-			Files.createDirectories(Paths.get(Commons.DB_PATH));
-
 			String dbPath = Commons.DB_PATH + File.separator + dbName;
 
 			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
 					.configure("/resources/hibernate.cfg/dms.cfg.xml")
-					.applySetting("hibernate.connection.url", "jdbc:sqlite:" + dbPath + ".db")
+					.applySetting("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
 					.applySetting("hibernate.connection.username", dbName)
 					.applySetting("hibernate.connection.password", dbPassword)
 					.applySetting("hibernate.search.backend.directory.root", dbPath)
