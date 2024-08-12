@@ -8,6 +8,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
+import org.zeromq.ZEvent;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
 
@@ -223,15 +224,18 @@ public class Control implements TcpManagerListener, ModelListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
+				ZEvent event = ZEvent.recv(monitorSocket);
 
 				switch (event.getEvent()) {
 
-				case ZMQ.EVENT_DISCONNECTED:
+				case DISCONNECTED:
 
 					Thread.sleep(100);
 					taskQueue.execute(() -> model.testAllLocalUsers());
 
+					break;
+
+				default:
 					break;
 
 				}

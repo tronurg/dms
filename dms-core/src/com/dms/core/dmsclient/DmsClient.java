@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
+import org.zeromq.ZEvent;
 import org.zeromq.ZMQ;
 
 import com.dms.commons.DmsPackingFactory;
@@ -44,8 +45,8 @@ import com.dms.core.structures.GroupMessageStatus;
 import com.dms.core.structures.MessageStatus;
 import com.dms.core.util.Commons;
 import com.dms.core.util.DmsMessageReceiver;
-import com.dms.core.util.DmsMessageSender;
 import com.dms.core.util.DmsMessageReceiver.DmsMessageReceiverListener;
+import com.dms.core.util.DmsMessageSender;
 
 public class DmsClient implements DmsMessageReceiverListener {
 
@@ -461,20 +462,23 @@ public class DmsClient implements DmsMessageReceiverListener {
 
 			while (!Thread.currentThread().isInterrupted()) {
 
-				ZMQ.Event event = ZMQ.Event.recv(monitorSocket);
+				ZEvent event = ZEvent.recv(monitorSocket);
 
 				switch (event.getEvent()) {
 
-				case ZMQ.EVENT_HANDSHAKE_PROTOCOL:
+				case HANDSHAKE_PROTOCOL:
 					updateServerConnStatus(true);
 					break;
 
-				case ZMQ.EVENT_DISCONNECTED:
+				case DISCONNECTED:
 					updateServerConnStatus(false);
 					break;
 
-				case ZMQ.EVENT_MONITOR_STOPPED:
+				case MONITOR_STOPPED:
 					stopped = true;
+					break;
+
+				default:
 					break;
 
 				}
