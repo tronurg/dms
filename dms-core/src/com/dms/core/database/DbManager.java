@@ -60,7 +60,7 @@ public class DbManager {
 
 			StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
 					.configure("/resources/hibernate.cfg/dms.cfg.xml")
-					.applySetting("hibernate.connection.url", "jdbc:h2:split:24:" + dbPath)
+					.applySetting("hibernate.connection.url", "jdbc:h2:" + dbPath)
 					.applySetting("hibernate.connection.username", dbName)
 					.applySetting("hibernate.connection.password", dbPassword)
 					.applySetting("hibernate.search.backend.directory.root", dbPath)

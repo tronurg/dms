@@ -28,7 +28,6 @@ public class UdpManager {
 
 	private static final int PACKET_SIZE = 128;
 	private static final int TTL = 32;
-	private static final int RCVBUF_SIZE = (int) Math.pow(2, 21);
 
 	private final InetAddress multicastGroup;
 	private final int udpPort;
@@ -117,7 +116,6 @@ public class UdpManager {
 			try (MulticastSocket socket = new MulticastSocket(udpPort)) {
 
 				socket.setLoopbackMode(true);
-				socket.setReceiveBufferSize(RCVBUF_SIZE);
 				socket.joinGroup(multicastGroup);
 
 				while (!socket.isClosed()) {

@@ -3,15 +3,10 @@
         "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
     <session-factory>
-        <!-- JDBC Database connection settings -->
         <property name="hibernate.connection.driver_class">org.h2.Driver</property>
-        <!-- Select our SQL dialect -->
         <property name="hibernate.dialect">org.hibernate.dialect.H2Dialect</property>
-        <!-- Echo the SQL to stdout -->
         <property name="hibernate.show_sql">false</property>
-        <!-- Set the current session context -->
         <property name="hibernate.current_session_context_class">thread</property>
-        <!-- Drop and re-create the database schema on startup -->
         <property name="hibernate.hbm2ddl.auto">update</property>
     </session-factory>
 </hibernate-configuration>
