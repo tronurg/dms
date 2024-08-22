@@ -1,6 +1,6 @@
 package com.dms.core.view;
 
-import com.dms.core.database.tables.EntityBase;
+import com.dms.core.database.tables.DmsEntity;
 import com.dms.core.database.tables.EntityId;
 import com.dms.core.database.tables.Message;
 import com.dms.core.structures.ViewStatus;
@@ -57,7 +57,7 @@ class EntitiesPane extends BorderPane {
 
 	}
 
-	void updateEntity(EntityBase entity) {
+	void updateEntity(DmsEntity entity) {
 
 		entitiesPane.updateEntity(entity, entity.getViewStatus() == ViewStatus.DEFAULT);
 

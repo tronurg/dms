@@ -1,31 +1,34 @@
 package com.dms.core.intf.tools.impl;
 
+import java.util.Objects;
+
+import com.dms.core.database.tables.Contact;
 import com.dms.core.intf.tools.ContactId;
 
 public class ContactIdImpl implements ContactId {
 
-	private final Long value;
+	private final String uuid;
 
-	private ContactIdImpl(Long value) {
+	private ContactIdImpl(String uuid) {
 		super();
-		this.value = value;
+		this.uuid = uuid;
 	}
 
-	public static ContactId of(Long value) {
-		if (value == null) {
+	public static ContactId of(Contact contact) {
+		if (contact == null) {
 			return null;
 		}
-		return new ContactIdImpl(value);
+		return new ContactIdImpl(contact.getUuid());
 	}
 
 	@Override
-	public Long getValue() {
-		return value;
+	public String getUuid() {
+		return uuid;
 	}
 
 	@Override
 	public String toString() {
-		return value.toString();
+		return uuid.toString();
 	}
 
 	@Override
@@ -34,12 +37,12 @@ public class ContactIdImpl implements ContactId {
 			return false;
 		}
 		ContactIdImpl contactId = (ContactIdImpl) obj;
-		return this.value.equals(contactId.value);
+		return Objects.equals(this.uuid, contactId.uuid);
 	}
 
 	@Override
 	public int hashCode() {
-		return value.hashCode();
+		return uuid.hashCode();
 	}
 
 }

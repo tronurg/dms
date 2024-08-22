@@ -9,7 +9,6 @@ import javax.swing.event.AncestorListener;
 import com.dms.core.intf.handles.GroupHandle;
 import com.dms.core.intf.handles.GroupSelectionHandle;
 import com.dms.core.intf.tools.GroupId;
-import com.dms.core.intf.tools.impl.GroupIdImpl;
 import com.dms.core.view.ActiveGroupsPane;
 
 import javafx.application.Platform;
@@ -92,7 +91,7 @@ public class ActiveGroupsHandleImpl implements GroupSelectionHandle {
 	@Override
 	public GroupId getSelectedGroupId() {
 
-		return GroupIdImpl.of(activeGroupsPane.getSelectedId());
+		return activeGroupsPane.getSelectedId();
 
 	}
 

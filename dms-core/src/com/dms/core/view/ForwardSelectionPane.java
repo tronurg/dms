@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.dms.core.database.tables.EntityBase;
+import com.dms.core.database.tables.DmsEntity;
 import com.dms.core.database.tables.EntityId;
 import com.dms.core.database.tables.Message;
 import com.dms.core.structures.Availability;
@@ -124,7 +124,7 @@ public class ForwardSelectionPane extends GridPane {
 
 	}
 
-	void updateEntity(EntityBase entity) {
+	void updateEntity(DmsEntity entity) {
 
 		EntityId entityId = entity.getEntityId();
 

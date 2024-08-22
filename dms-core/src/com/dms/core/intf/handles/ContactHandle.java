@@ -10,8 +10,6 @@ public interface ContactHandle {
 
 	ContactId getId();
 
-	String getUuid();
-
 	String getName();
 
 	String getComment();

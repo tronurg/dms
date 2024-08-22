@@ -1,21 +1,23 @@
 package com.dms.core.database.tables;
 
-import java.util.Objects;
+import java.util.Optional;
 
 public class EntityId {
 
 	private final long id;
 	private final boolean isGroup;
-	private final Long uid;
 
-	private EntityId(long id, boolean isGroup) {
-		this.id = id;
+	private EntityId(Long id, boolean isGroup) {
+		super();
+		this.id = Optional.ofNullable(id).orElse(Long.MAX_VALUE);
 		this.isGroup = isGroup;
-		this.uid = id;
 	}
 
-	static EntityId of(long id, boolean isGroup) {
-		return new EntityId(id, isGroup);
+	static EntityId of(DmsEntity entity) {
+		if (entity == null) {
+			return null;
+		}
+		return new EntityId(entity.getId(), entity.isGroup());
 	}
 
 	public long getId() {
@@ -32,12 +34,12 @@ public class EntityId {
 			return false;
 		}
 		EntityId entityId = (EntityId) obj;
-		return Objects.equals(this.uid, entityId.uid);
+		return this.getId() == entityId.getId();
 	}
 
 	@Override
 	public int hashCode() {
-		return uid.hashCode();
+		return Long.hashCode(getId());
 	}
 
 }

@@ -1,31 +1,42 @@
 package com.dms.core.intf.tools.impl;
 
+import java.util.Objects;
+
+import com.dms.core.database.tables.Dgroup;
+import com.dms.core.intf.tools.ContactId;
 import com.dms.core.intf.tools.GroupId;
 
 public class GroupIdImpl implements GroupId {
 
-	private final Long value;
+	private final ContactId ownerId;
+	private final Long refId;
 
-	private GroupIdImpl(Long value) {
+	private GroupIdImpl(ContactId ownerId, Long refId) {
 		super();
-		this.value = value;
+		this.ownerId = ownerId;
+		this.refId = refId;
 	}
 
-	public static GroupId of(Long value) {
-		if (value == null) {
+	public static GroupId of(Dgroup group) {
+		if (group == null) {
 			return null;
 		}
-		return new GroupIdImpl(value);
+		return new GroupIdImpl(ContactIdImpl.of(group.getOwner()), group.getGroupRefId());
 	}
 
 	@Override
-	public Long getValue() {
-		return value;
+	public ContactId getOwnerId() {
+		return ownerId;
+	}
+
+	@Override
+	public Long getRefId() {
+		return refId;
 	}
 
 	@Override
 	public String toString() {
-		return value.toString();
+		return String.format("%s:%d", ownerId.toString(), refId);
 	}
 
 	@Override
@@ -34,12 +45,12 @@ public class GroupIdImpl implements GroupId {
 			return false;
 		}
 		GroupIdImpl groupId = (GroupIdImpl) obj;
-		return this.value.equals(groupId.value);
+		return Objects.equals(this.ownerId, groupId.ownerId) && Objects.equals(this.refId, groupId.refId);
 	}
 
 	@Override
 	public int hashCode() {
-		return value.hashCode();
+		return Objects.hash(ownerId, refId);
 	}
 
 }

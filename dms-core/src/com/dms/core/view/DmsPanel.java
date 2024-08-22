@@ -13,7 +13,7 @@ import javax.swing.UIManager;
 
 import com.dms.core.database.tables.Contact;
 import com.dms.core.database.tables.Dgroup;
-import com.dms.core.database.tables.EntityBase;
+import com.dms.core.database.tables.DmsEntity;
 import com.dms.core.database.tables.EntityId;
 import com.dms.core.database.tables.Message;
 import com.dms.core.structures.Availability;
@@ -250,7 +250,7 @@ public class DmsPanel extends StackPane
 
 	}
 
-	private void updateEntity(EntityBase entity) {
+	private void updateEntity(DmsEntity entity) {
 
 		getMessagePane(entity.getEntityId()).updateEntity(entity);
 		entitiesPane.updateEntity(entity);

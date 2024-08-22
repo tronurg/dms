@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "dgroup")
-public class Dgroup extends EntityBase {
+public class Dgroup extends DmsEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "entity_gen")
@@ -169,6 +169,11 @@ public class Dgroup extends EntityBase {
 	}
 
 	@Override
+	public boolean isGroup() {
+		return true;
+	}
+
+	@Override
 	public Double getLatitude() {
 		return null;
 	}
@@ -176,11 +181,6 @@ public class Dgroup extends EntityBase {
 	@Override
 	public Double getLongitude() {
 		return null;
-	}
-
-	@Override
-	public EntityId getEntityId() {
-		return EntityId.of(id, true);
 	}
 
 }

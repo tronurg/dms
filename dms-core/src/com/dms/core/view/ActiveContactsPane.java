@@ -15,6 +15,8 @@ import javax.swing.UIManager;
 import com.dms.core.database.tables.Contact;
 import com.dms.core.intf.handles.ContactHandle;
 import com.dms.core.intf.handles.impl.ContactHandleImpl;
+import com.dms.core.intf.tools.ContactId;
+import com.dms.core.intf.tools.impl.ContactIdImpl;
 import com.dms.core.structures.Availability;
 import com.dms.core.structures.ViewStatus;
 import com.dms.core.view.component.DmsScrollPane;
@@ -38,7 +40,8 @@ public class ActiveContactsPane extends BorderPane {
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 
-	private final Map<Long, ContactCard> idContactCards = Collections.synchronizedMap(new HashMap<Long, ContactCard>());
+	private final Map<ContactId, ContactCard> idContactCards = Collections
+			.synchronizedMap(new HashMap<ContactId, ContactCard>());
 
 	private final Comparator<Node> entitiesSorter = new Comparator<Node>() {
 
@@ -62,7 +65,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	private final ObjectProperty<Predicate<ContactHandle>> contactFilterProperty = new SimpleObjectProperty<Predicate<ContactHandle>>();
 
-	private final ObservableSet<Long> selectedIds = FXCollections.observableSet();
+	private final ObservableSet<ContactId> selectedIds = FXCollections.observableSet();
 
 	ActiveContactsPane() {
 		super();
@@ -85,7 +88,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	void updateContact(Contact contact) {
 
-		Long id = contact.getId();
+		ContactId id = ContactIdImpl.of(contact);
 
 		if (contact.getViewStatus() == ViewStatus.DELETED) {
 			removeContact(id);
@@ -98,7 +101,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	}
 
-	private void removeContact(Long id) {
+	private void removeContact(ContactId id) {
 
 		ContactCard contactCard = idContactCards.remove(id);
 		if (contactCard == null) {
@@ -109,9 +112,9 @@ public class ActiveContactsPane extends BorderPane {
 
 	}
 
-	public List<Long> getSelectedEntityIds() {
+	public List<ContactId> getSelectedIds() {
 
-		return new ArrayList<Long>(selectedIds);
+		return new ArrayList<ContactId>(selectedIds);
 
 	}
 
@@ -141,7 +144,7 @@ public class ActiveContactsPane extends BorderPane {
 
 	}
 
-	private ContactCard getContactCard(final Long id) {
+	private ContactCard getContactCard(final ContactId id) {
 
 		ContactCard contactCard = idContactCards.get(id);
 
@@ -178,18 +181,14 @@ public class ActiveContactsPane extends BorderPane {
 
 	private final class ContactCard extends SelectableEntityPane {
 
-		private final Long id;
+		private final ContactId id;
 
 		private final ObjectProperty<Contact> contactProperty = new SimpleObjectProperty<Contact>();
 
-		private ContactCard(Long id) {
-
+		private ContactCard(ContactId id) {
 			super();
-
 			this.id = id;
-
 			init();
-
 		}
 
 		private void init() {

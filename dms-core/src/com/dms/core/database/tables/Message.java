@@ -371,7 +371,7 @@ public class Message {
 		this.apiFlag = apiFlag;
 	}
 
-	public EntityBase getEntity() {
+	public DmsEntity getEntity() {
 		return dgroup == null ? contact : dgroup;
 	}
 

@@ -229,7 +229,7 @@ public class Model {
 
 		idContacts.forEach((id, contact) -> {
 			if (contact.getLocalRemoteServerIps().containsValue(ip)) {
-				contactIds.add(ContactIdImpl.of(id));
+				contactIds.add(ContactIdImpl.of(contact));
 			}
 		});
 
@@ -253,7 +253,7 @@ public class Model {
 
 		idContacts.forEach((id, contact) -> {
 			if (contact.getLocalRemoteServerIps().containsValue(ip) && Objects.equals(contact.getName(), name)) {
-				contactIds.add(ContactIdImpl.of(id));
+				contactIds.add(ContactIdImpl.of(contact));
 			}
 		});
 
@@ -278,7 +278,7 @@ public class Model {
 		idContacts.forEach((id, contact) -> {
 			if (contact.getLocalRemoteServerIps().containsValue(ip)
 					&& Objects.equals(contact.getSecretId(), secretId)) {
-				contactIds.add(ContactIdImpl.of(id));
+				contactIds.add(ContactIdImpl.of(contact));
 			}
 		});
 
@@ -295,10 +295,6 @@ public class Model {
 
 		idGroups.put(group.getId(), group);
 
-		if (group.isLocal()) {
-			return;
-		}
-
 		String ownerUuid = group.getOwner().getUuid();
 
 		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
@@ -313,10 +309,6 @@ public class Model {
 	private void removeGroup(Dgroup group) {
 
 		idGroups.remove(group.getId());
-
-		if (group.isLocal()) {
-			return;
-		}
 
 		String ownerUuid = group.getOwner().getUuid();
 
@@ -337,7 +329,7 @@ public class Model {
 
 	}
 
-	public Dgroup getRemoteGroup(String ownerUuid, Long groupRefId) {
+	public Dgroup getGroup(String ownerUuid, Long groupRefId) {
 
 		Map<Long, Dgroup> contactsGroups = uuidRemoteGroups.get(ownerUuid);
 

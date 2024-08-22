@@ -15,6 +15,8 @@ import com.dms.core.database.tables.Contact;
 import com.dms.core.database.tables.Dgroup;
 import com.dms.core.intf.handles.GroupHandle;
 import com.dms.core.intf.handles.impl.GroupHandleImpl;
+import com.dms.core.intf.tools.GroupId;
+import com.dms.core.intf.tools.impl.GroupIdImpl;
 import com.dms.core.structures.Availability;
 import com.dms.core.structures.ViewStatus;
 import com.dms.core.view.component.DmsScrollPane;
@@ -45,7 +47,7 @@ public class ActiveGroupsPane extends BorderPane {
 	private final VBox entities = new VBox();
 	private final ScrollPane scrollPane = new DmsScrollPane(entities);
 
-	private final Map<Long, GroupCard> idGroupCards = Collections.synchronizedMap(new HashMap<Long, GroupCard>());
+	private final Map<GroupId, GroupCard> idGroupCards = Collections.synchronizedMap(new HashMap<GroupId, GroupCard>());
 	private final Map<Long, ObjectProperty<Color>> memberIdStatus = Collections
 			.synchronizedMap(new HashMap<Long, ObjectProperty<Color>>());
 
@@ -91,7 +93,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private final ObjectProperty<Predicate<GroupHandle>> groupFilterProperty = new SimpleObjectProperty<Predicate<GroupHandle>>();
 
-	private final ObjectProperty<Long> selectedIdProperty = new SimpleObjectProperty<Long>();
+	private final ObjectProperty<GroupId> selectedIdProperty = new SimpleObjectProperty<GroupId>();
 
 	ActiveGroupsPane() {
 		super();
@@ -114,7 +116,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	void updateGroup(Dgroup group) {
 
-		Long id = group.getId();
+		GroupId id = GroupIdImpl.of(group);
 
 		if (group.getViewStatus() == ViewStatus.DELETED) {
 			removeGroup(id);
@@ -127,7 +129,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	}
 
-	private void removeGroup(Long id) {
+	private void removeGroup(GroupId id) {
 
 		GroupCard groupCard = idGroupCards.remove(id);
 		if (groupCard == null) {
@@ -151,7 +153,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	}
 
-	public Long getSelectedId() {
+	public GroupId getSelectedId() {
 
 		return selectedIdProperty.get();
 
@@ -183,7 +185,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 	}
 
-	private GroupCard getGroupCard(final Long id) {
+	private GroupCard getGroupCard(final GroupId id) {
 
 		GroupCard groupCard = idGroupCards.get(id);
 
@@ -202,7 +204,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 			fGroupCard.setOnMouseClicked(e -> {
 
-				Long selectedId = selectedIdProperty.get();
+				GroupId selectedId = selectedIdProperty.get();
 				if (Objects.equals(selectedId, id)) {
 					selectedIdProperty.set(null);
 				} else {
@@ -223,20 +225,16 @@ public class ActiveGroupsPane extends BorderPane {
 
 	private final class GroupCard extends SelectableEntityPane {
 
-		private final Long id;
+		private final GroupId id;
 
 		private final VBox memberCards = new VBox();
 
 		private final ObjectProperty<Dgroup> groupProperty = new SimpleObjectProperty<Dgroup>();
 
-		private GroupCard(Long id) {
-
+		private GroupCard(GroupId id) {
 			super();
-
 			this.id = id;
-
 			init();
-
 		}
 
 		private void init() {
@@ -298,7 +296,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 				Long memberId = member.getId();
 
-				if (memberId == 1L) {
+				if (Objects.equals(memberId, 1L)) {
 					return;
 				}
 
@@ -315,7 +313,7 @@ public class ActiveGroupsPane extends BorderPane {
 
 			Long ownerId = owner.getId();
 
-			if (ownerId == 1L) {
+			if (Objects.equals(ownerId, 1L)) {
 				return;
 			}
 

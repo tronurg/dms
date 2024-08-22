@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.dms.core.database.tables.EntityBase;
+import com.dms.core.database.tables.DmsEntity;
 import com.dms.core.database.tables.EntityId;
 import com.dms.core.database.tables.Message;
 import com.dms.core.structures.Availability;
@@ -148,7 +148,7 @@ class EntitiesPaneBase extends BorderPane {
 
 	}
 
-	void updateEntity(EntityBase entity, boolean active) {
+	void updateEntity(DmsEntity entity, boolean active) {
 
 		EntityId entityId = entity.getEntityId();
 
@@ -306,7 +306,7 @@ class EntitiesPaneBase extends BorderPane {
 		}
 
 		@Override
-		void updateEntity(EntityBase entity) {
+		void updateEntity(DmsEntity entity) {
 
 			super.updateEntity(entity);
 

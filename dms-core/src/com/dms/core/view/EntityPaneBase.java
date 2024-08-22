@@ -2,7 +2,7 @@ package com.dms.core.view;
 
 import java.util.Locale;
 
-import com.dms.core.database.tables.EntityBase;
+import com.dms.core.database.tables.DmsEntity;
 import com.dms.core.structures.Availability;
 import com.dms.core.util.Commons;
 import com.dms.core.view.factory.ViewFactory;
@@ -164,7 +164,7 @@ class EntityPaneBase extends GridPane {
 
 	}
 
-	void updateEntity(EntityBase entity) {
+	void updateEntity(DmsEntity entity) {
 
 		getChildren().remove(commentLbl);
 		getChildren().remove(coordinatesLbl);
@@ -181,7 +181,7 @@ class EntityPaneBase extends GridPane {
 		commentLbl.setText(entity.getComment());
 		coordinatesLbl.setText(entity.getLatitude() == null || entity.getLongitude() == null ? ""
 				: Commons.convertDoubleToCoordinates(entity.getLatitude(), entity.getLongitude()));
-		groupSign.setVisible(entity.getEntityId().isGroup());
+		groupSign.setVisible(entity.isGroup());
 
 		if (commentLbl.textProperty().getValueSafe().isEmpty()) {
 			add(coordinatesLbl, 2, 1, 1, 1);

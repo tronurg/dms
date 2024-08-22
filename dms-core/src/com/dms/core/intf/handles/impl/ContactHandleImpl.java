@@ -13,7 +13,6 @@ import com.dms.core.structures.Availability;
 public class ContactHandleImpl implements ContactHandle {
 
 	private final ContactId id;
-	private final String uuid;
 	private final String name;
 	private final String comment;
 	private final Double latitude;
@@ -23,9 +22,7 @@ public class ContactHandleImpl implements ContactHandle {
 	private final Map<InetAddress, InetAddress> localRemoteServerIps = new HashMap<InetAddress, InetAddress>();
 
 	public ContactHandleImpl(Contact contact) {
-
-		this.id = ContactIdImpl.of(contact.getId());
-		this.uuid = contact.getUuid();
+		this.id = ContactIdImpl.of(contact);
 		this.name = contact.getName();
 		this.comment = contact.getComment();
 		this.latitude = contact.getLatitude();
@@ -33,70 +30,46 @@ public class ContactHandleImpl implements ContactHandle {
 		this.availability = contact.getStatus();
 		this.secretId = contact.getSecretId();
 		this.localRemoteServerIps.putAll(contact.getLocalRemoteServerIps());
-
 	}
 
 	@Override
 	public ContactId getId() {
-
 		return id;
-
-	}
-
-	@Override
-	public String getUuid() {
-
-		return uuid;
-
 	}
 
 	@Override
 	public String getName() {
-
 		return name;
-
 	}
 
 	@Override
 	public String getComment() {
-
 		return comment;
-
 	}
 
 	@Override
 	public Double getLatitude() {
-
 		return latitude;
-
 	}
 
 	@Override
 	public Double getLongitude() {
-
 		return longitude;
-
 	}
 
 	@Override
 	public Availability getAvailability() {
-
 		return availability;
-
 	}
 
 	@Override
 	public String getSecretId() {
-
 		return secretId;
-
 	}
 
 	@Override
 	public Map<InetAddress, InetAddress> getLocalRemoteServerIps() {
-
 		return localRemoteServerIps;
-
 	}
 
 }

@@ -10,10 +10,6 @@ public interface GroupHandle {
 
 	GroupId getGroupId();
 
-	GroupId getGroupRefId();
-
-	ContactId getOwnerId();
-
 	String getName();
 
 	String getComment();

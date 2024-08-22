@@ -2,7 +2,6 @@ package com.dms.core.intf.handles.impl;
 
 import java.util.List;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
 import javax.swing.event.AncestorEvent;
@@ -11,7 +10,6 @@ import javax.swing.event.AncestorListener;
 import com.dms.core.intf.handles.ContactHandle;
 import com.dms.core.intf.handles.ContactSelectionHandle;
 import com.dms.core.intf.tools.ContactId;
-import com.dms.core.intf.tools.impl.ContactIdImpl;
 import com.dms.core.view.ActiveContactsPane;
 
 import javafx.application.Platform;
@@ -94,8 +92,7 @@ public class ActiveContactsHandleImpl implements ContactSelectionHandle {
 	@Override
 	public List<ContactId> getSelectedContactIds() {
 
-		return activeContactsPane.getSelectedEntityIds().stream().map(id -> ContactIdImpl.of(id))
-				.collect(Collectors.toList());
+		return activeContactsPane.getSelectedIds();
 
 	}
 

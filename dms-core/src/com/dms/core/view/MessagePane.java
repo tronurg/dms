@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.dms.core.database.tables.EntityBase;
+import com.dms.core.database.tables.DmsEntity;
 import com.dms.core.database.tables.EntityId;
 import com.dms.core.database.tables.Message;
 import com.dms.core.structures.AttachmentType;
@@ -31,10 +31,10 @@ import com.dms.core.view.component.DmsMediaPlayer;
 import com.dms.core.view.component.DmsScrollPane;
 import com.dms.core.view.component.DmsScrollPaneSkin;
 import com.dms.core.view.component.ImPane;
-import com.dms.core.view.component.ImSearchField;
-import com.dms.core.view.component.RecordButton;
 import com.dms.core.view.component.ImPane.ImListener;
+import com.dms.core.view.component.ImSearchField;
 import com.dms.core.view.component.ImSearchField.ImSearchListener;
+import com.dms.core.view.component.RecordButton;
 import com.dms.core.view.component.RecordButton.RecordListener;
 import com.dms.core.view.factory.ViewFactory;
 
@@ -710,12 +710,12 @@ class MessagePane extends BorderPane {
 
 	}
 
-	void updateEntity(EntityBase entity) {
+	void updateEntity(DmsEntity entity) {
 
 		statusCircle.setFill(entity.getStatus().getStatusColor());
 		nameLabel.setText(entity.getName());
 
-		if (!entity.getEntityId().isGroup()) {
+		if (!entity.isGroup()) {
 			return;
 		}
 
