@@ -1623,6 +1623,11 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 
 					}));
 
+					if (newMessage.getMessageStatus() == MessageStatus.READ) {
+						dmsGuiListeners.forEach(listener -> listenerTaskQueue
+								.execute(() -> listener.guiMessagesRead(new Long[] { newMessage.getId() })));
+					}
+
 				}
 
 				dmsClient.feedMessageStatus(

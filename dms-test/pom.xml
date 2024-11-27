@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.dms</groupId>
   <artifactId>dms-test</artifactId>
-  <version>0.4.4</version>
+  <version>1.0.0</version>
   <build>
     <sourceDirectory>src</sourceDirectory>
     <plugins>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>com.dms</groupId>
       <artifactId>dms-core</artifactId>
-      <version>0.4.4</version>
+      <version>1.0.0</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
