@@ -3392,7 +3392,6 @@ public class DmsControl implements DmsClientListener, AppListener, ReportsListen
 					} else {
 						privateMessagesRead(entityId, unreadMessagesOfEntity);
 					}
-
 				}
 
 				updateViewStatusRequested(entityId, ViewStatus.ARCHIVED);

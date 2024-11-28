@@ -27,7 +27,7 @@ public class SoundPlayer {
 			}
 
 			if (duoToneClip != null) {
-				duoToneClip.setMicrosecondPosition(0);
+				duoToneClip.setFramePosition(0);
 				duoToneClip.start();
 			}
 
@@ -47,7 +47,7 @@ public class SoundPlayer {
 			}
 
 			if (triToneClip != null) {
-				triToneClip.setMicrosecondPosition(0);
+				triToneClip.setFramePosition(0);
 				triToneClip.start();
 			}
 
