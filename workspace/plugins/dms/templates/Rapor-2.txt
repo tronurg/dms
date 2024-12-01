@@ -1,3 +1,0 @@
-#2
-Bu ikinci deneme raporudur.
-<Sayı> adet rapordan <Sıra> no'lu rapordur.

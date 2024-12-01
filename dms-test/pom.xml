@@ -19,6 +19,16 @@
   <dependencies>
     <dependency>
       <groupId>com.dms</groupId>
+      <artifactId>dms-passgen</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dms</groupId>
+      <artifactId>dms-server</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dms</groupId>
       <artifactId>dms-core</artifactId>
       <version>1.0.0</version>
     </dependency>

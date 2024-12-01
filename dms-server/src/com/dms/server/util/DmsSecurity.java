@@ -82,7 +82,8 @@ public class DmsSecurity {
 
 		if (keyStore == null) {
 
-			try (InputStream inputStream = Files.newInputStream(Paths.get("./sec/dms.p12"))) {
+			try (InputStream inputStream = Files
+					.newInputStream(Paths.get(Commons.CERTIFICATE_FOLDER).resolve("dms.p12"))) {
 
 				keyStore = KeyStore.getInstance("PKCS12");
 				keyStore.load(inputStream, PASSWORD);

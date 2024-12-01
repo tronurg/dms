@@ -1,6 +1,2 @@
 /.metadata/
-.settings
-bin
-workspace/*
-!workspace/plugins
-ip.dat
+/workspace/

@@ -16,9 +16,15 @@ public class DmsPassGen {
 
 	private static final char[] PASSWORD = "dms".toCharArray();
 
-	public static void main(String[] args) {
+	public static void generate(String folder) {
 
-		try (OutputStream outputStream = Files.newOutputStream(Paths.get("./dms.p12"))) {
+		try {
+			Files.createDirectories(Paths.get(folder));
+		} catch (Exception e) {
+
+		}
+
+		try (OutputStream outputStream = Files.newOutputStream(Paths.get(folder).resolve("dms.p12"))) {
 
 			KeyStore keyStore = KeyStore.getInstance("PKCS12");
 			keyStore.load(null, null);
@@ -45,7 +51,7 @@ public class DmsPassGen {
 			outputStream.flush();
 
 		} catch (Exception e) {
-
+			e.printStackTrace();
 		}
 
 	}

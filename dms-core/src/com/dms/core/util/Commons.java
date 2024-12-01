@@ -2,7 +2,6 @@ package com.dms.core.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,20 +12,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathFactory;
-
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 import com.dms.core.view.ReportsPane.ReportTemplate;
 
@@ -38,19 +28,18 @@ public class Commons {
 	public static final int MAX_PAGES = 5;
 	public static final int CHUNK_SIZE = 8192;
 
-	public static final String SERVER_IP = getServerIp();
-	public static final int SERVER_PORT = getServerPort();
-	public static final String DB_PATH = getDbPath();
-	public static final String FILE_EXPLORER_PATH = getFileExplorerPath();
-	public static final long MAX_FILE_LENGTH = getMaxFileLength();
-	public static final long SMALL_FILE_LIMIT = getSmallFileLimit();
-	public static final String SEND_FOLDER = getSendFolder();
-	public static final String RECEIVE_FOLDER = getReceiveFolder();
-	public static final boolean AUTO_OPEN_FILE = getAutoOpenFile();
+	public static String SERVER_IP;
+	public static Integer SERVER_PORT;
+	public static String DB_PATH;
+	public static String FILE_EXPLORER_PATH;
+	public static Long MAX_FILE_LENGTH;
+	public static Long SMALL_FILE_LIMIT;
+	public static String SEND_FOLDER;
+	public static String RECEIVE_FOLDER;
+	public static Boolean AUTO_OPEN_FILE;
 
-	public static final List<ReportTemplate> REPORT_TEMPLATES = getReportTemplates();
+	public static final List<ReportTemplate> REPORT_TEMPLATES = new ArrayList<ReportTemplate>();
 
-	private static Document confDoc;
 	private static ResourceBundle langFile;
 
 	public static void writeReport(Path path, String header, List<String> paragraphs) {
@@ -145,22 +134,6 @@ public class Commons {
 
 	}
 
-	private static Document getConfDoc() throws SAXException, IOException, ParserConfigurationException {
-
-		if (confDoc == null) {
-
-			try (InputStream is = Files.newInputStream(Paths.get("./plugins/dms/conf/dms.xml"))) {
-
-				confDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new InputSource(is));
-
-			}
-
-		}
-
-		return confDoc;
-
-	}
-
 	private static ResourceBundle getLangFile() throws IOException {
 
 		if (langFile == null) {
@@ -173,240 +146,41 @@ public class Commons {
 
 	}
 
-	private static String getServerIp() {
+	public static void addReportTemplate(String reportTemplatePath) {
 
-		String serverIp = "localhost";
+		Path path = Paths.get(reportTemplatePath);
 
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/SERVER_IP").evaluate(getConfDoc(),
-					XPathConstants.NODE);
-
-			serverIp = node.getTextContent();
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("SERVER_IP set to default: %s", serverIp));
-		} catch (Exception e) {
-
+		if (Files.isDirectory(path) || !path.toString().toLowerCase(Locale.getDefault()).endsWith(".txt")) {
+			return;
 		}
 
-		return serverIp;
+		try (BufferedReader reader = Files.newBufferedReader(path)) {
 
-	}
+			String firstLine = reader.readLine().replace("\uFEFF", "");
 
-	private static int getServerPort() {
+			if (!firstLine.startsWith("#")) {
+				return;
+			}
 
-		int serverPort = -1;
+			Integer reportId = Integer.parseInt(firstLine.substring(1));
 
-		try {
+			StringBuilder stringBuilder = new StringBuilder();
 
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/SERVER_PORT").evaluate(getConfDoc(),
-					XPathConstants.NODE);
+			int c;
 
-			serverPort = Integer.parseInt(node.getTextContent());
+			while ((c = reader.read()) != -1)
+				stringBuilder.append((char) c);
+
+			String fileName = path.getFileName().toString();
+
+			REPORT_TEMPLATES.add(new ReportTemplate(reportId, fileName.substring(0, fileName.length() - 4),
+					stringBuilder.toString()));
 
 		} catch (Exception e) {
+
 			e.printStackTrace();
-		}
-
-		return serverPort;
-
-	}
-
-	private static String getDbPath() {
-
-		String dbPath = "./dms_db";
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/DB_PATH").evaluate(getConfDoc(),
-					XPathConstants.NODE);
-
-			dbPath = node.getTextContent();
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("DB_PATH set to default: %s", dbPath));
-		} catch (Exception e) {
 
 		}
-
-		return dbPath;
-
-	}
-
-	private static String getFileExplorerPath() {
-
-		String fileExplorerPath = "./";
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/FILE_EXPLORER_PATH")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			fileExplorerPath = node.getTextContent();
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("FILE_EXPLORER_PATH set to default: %s", fileExplorerPath));
-		} catch (Exception e) {
-
-		}
-
-		return fileExplorerPath;
-
-	}
-
-	private static long getMaxFileLength() {
-
-		long maxFileLength = 1000000;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/MAX_FILE_LENGTH")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			maxFileLength = Long.parseLong(node.getTextContent());
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("MAX_FILE_LENGTH set to default: %d", maxFileLength));
-		} catch (Exception e) {
-
-		}
-
-		return maxFileLength;
-
-	}
-
-	private static long getSmallFileLimit() {
-
-		long smallFileLimit = Long.MAX_VALUE;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/SMALL_FILE_LIMIT")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			smallFileLimit = Long.parseLong(node.getTextContent());
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("SMALL_FILE_LIMIT set to default: %d", smallFileLimit));
-		} catch (Exception e) {
-
-		}
-
-		return smallFileLimit;
-
-	}
-
-	private static String getSendFolder() {
-
-		String sendFolder = "./sent";
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/SEND_FOLDER").evaluate(getConfDoc(),
-					XPathConstants.NODE);
-
-			sendFolder = node.getTextContent();
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("SEND_FOLDER set to default: %s", sendFolder));
-		} catch (Exception e) {
-
-		}
-
-		return sendFolder;
-
-	}
-
-	private static String getReceiveFolder() {
-
-		String receiveFolder = "./received";
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/RECEIVE_FOLDER")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			receiveFolder = node.getTextContent();
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("RECEIVE_FOLDER set to default: %s", receiveFolder));
-		} catch (Exception e) {
-
-		}
-
-		return receiveFolder;
-
-	}
-
-	private static boolean getAutoOpenFile() {
-
-		boolean autoOpenFile = true;
-
-		try {
-
-			Node node = (Node) XPathFactory.newInstance().newXPath().compile("/DMS/AUTO_OPEN_FILE")
-					.evaluate(getConfDoc(), XPathConstants.NODE);
-
-			autoOpenFile = Boolean.valueOf(node.getTextContent());
-
-		} catch (NullPointerException e) {
-			System.out.println(String.format("AUTO_OPEN_FILE set to default: %s", autoOpenFile));
-		} catch (Exception e) {
-
-		}
-
-		return autoOpenFile;
-
-	}
-
-	private static List<ReportTemplate> getReportTemplates() {
-
-		final List<ReportTemplate> templates = new ArrayList<ReportTemplate>();
-
-		try {
-
-			Files.list(Paths.get("./plugins/dms/templates")).forEach(path -> {
-
-				if (Files.isDirectory(path) || !path.toString().toLowerCase(Locale.getDefault()).endsWith(".txt")) {
-					return;
-				}
-
-				try (BufferedReader reader = Files.newBufferedReader(path)) {
-
-					String firstLine = reader.readLine().replace("\uFEFF", "");
-
-					if (!firstLine.startsWith("#")) {
-						return;
-					}
-
-					Integer reportId = Integer.parseInt(firstLine.substring(1));
-
-					StringBuilder stringBuilder = new StringBuilder();
-
-					int c;
-
-					while ((c = reader.read()) != -1)
-						stringBuilder.append((char) c);
-
-					String fileName = path.getFileName().toString();
-
-					templates.add(new ReportTemplate(reportId, fileName.substring(0, fileName.length() - 4),
-							stringBuilder.toString()));
-
-				} catch (Exception e) {
-
-					e.printStackTrace();
-
-				}
-
-			});
-
-		} catch (IOException e) {
-
-		}
-
-		return templates;
 
 	}
 

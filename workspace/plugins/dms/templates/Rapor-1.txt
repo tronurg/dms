@@ -1,3 +1,0 @@
-#1
-Bu bir deneme raporudur.
-<Sayı> adet rapordan <Sıra> no'lu rapordur.

@@ -38,6 +38,8 @@ public class Model {
 
 	private final ModelListener listener;
 
+	private final Path ipDatPath = Paths.get(Commons.IP_DAT_FOLDER).resolve("ip.dat");
+
 	private final Map<String, LocalUser> localUsers = Collections.synchronizedMap(new HashMap<String, LocalUser>());
 	private final Map<String, LocalUser> localMappedUsers = Collections
 			.synchronizedMap(new HashMap<String, LocalUser>());
@@ -54,8 +56,6 @@ public class Model {
 	}
 
 	private void init() {
-
-		Path ipDatPath = Paths.get("./ip.dat");
 
 		if (Files.notExists(ipDatPath)) {
 			return;
@@ -329,7 +329,13 @@ public class Model {
 
 	private void persistRemoteIps() {
 
-		try (ObjectOutputStream ois = new ObjectOutputStream(Files.newOutputStream(Paths.get("./ip.dat")))) {
+		try {
+			Files.createDirectories(ipDatPath.getParent());
+		} catch (Exception e) {
+
+		}
+
+		try (ObjectOutputStream ois = new ObjectOutputStream(Files.newOutputStream(ipDatPath))) {
 
 			ois.writeObject(remoteIps.toArray(new InetAddress[0]));
 

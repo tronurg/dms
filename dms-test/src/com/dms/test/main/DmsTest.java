@@ -4,7 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -21,10 +24,44 @@ import com.dms.core.intf.DmsHandle;
 import com.dms.core.intf.handles.ContactSelectionHandle;
 import com.dms.core.intf.handles.GroupSelectionHandle;
 import com.dms.core.main.DmsCore;
+import com.dms.server.main.DmsServer;
 
 public class DmsTest {
 
 	public static void main(String[] args) {
+
+//		DmsPassGen.generate("./sec");
+
+		try {
+			DmsServer.setIntercomPort(5446);
+			DmsServer.setMulticastGroup("234.1.1.3");
+			DmsServer.setBeaconPort(5123);
+			DmsServer.setServerPort(9011);
+			DmsServer.setClientPortFrom(9012);
+			DmsServer.setClientPortTo(9111);
+			DmsServer.setBeaconIntervalMs(5000);
+			DmsServer.setCertificateFolder("./sec");
+			DmsServer.setIpDatFolder("./ipdat");
+			DmsServer.start();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		DmsCore.setServerIp("localhost");
+		DmsCore.setServerPort(5446);
+		DmsCore.setDbPath("./dms_db");
+		DmsCore.setFileExplorerPath("D:/");
+		DmsCore.setMaxFileLength(1000000000L);
+		DmsCore.setSmallFileLimit(1000000L);
+		DmsCore.setSendFolder("./sent");
+		DmsCore.setReceiveFolder("./received");
+		DmsCore.setAutoOpenFile(true);
+
+		try {
+			Files.list(Paths.get("./templates")).forEach(e -> DmsCore.addReportTemplate(e.toString()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
 		testOne();
 

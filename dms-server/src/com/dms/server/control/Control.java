@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
@@ -30,6 +31,8 @@ public class Control implements TcpManagerListener, ModelListener {
 
 	private static Control instance;
 
+	private final AtomicBoolean started = new AtomicBoolean();
+
 	private final int routerPort = Commons.INTERCOM_PORT;
 	private final String multicastGroup = Commons.MULTICAST_GROUP;
 	private final int beaconPort = Commons.BEACON_PORT;
@@ -52,18 +55,17 @@ public class Control implements TcpManagerListener, ModelListener {
 	}
 
 	public synchronized static Control getInstance() {
-
 		if (instance == null) {
-
 			instance = new Control();
-
 		}
-
 		return instance;
-
 	}
 
 	public void start() {
+
+		if (started.getAndSet(true)) {
+			return;
+		}
 
 		new Thread(this::publishDmsUuid).start();
 		new Thread(this::router).start();
