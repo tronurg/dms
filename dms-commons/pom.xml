@@ -1,12 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.github.tronurg</groupId>
+  <groupId>io.github.dmspack</groupId>
   <artifactId>dms-commons</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
   <name>dms-commons</name>
   <description>DMS Commons</description>
-  <url>https://github.com/tronurg/dms-commons</url>
+  <url>https://github.com/dmspack/dms/tree/main/dms-commons</url>
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
@@ -17,14 +17,14 @@
     <developer>
       <name>Onur Gültekin</name>
       <email>onurgultekin@live.com</email>
-      <organization>tronurg</organization>
-      <organizationUrl>https://github.com/tronurg</organizationUrl>
+      <organization>dmspack</organization>
+      <organizationUrl>https://github.com/dmspack</organizationUrl>
     </developer>
   </developers>
   <scm>
-    <connection>scm:git:git://github.com/tronurg/dms-commons.git</connection>
-    <developerConnection>scm:git:https://github.com/tronurg/dms-commons.git</developerConnection>
-    <url>https://github.com/tronurg/dms-commons/tree/main</url>
+    <connection>scm:git:git://github.com/dmspack/dms.git</connection>
+    <developerConnection>scm:git:https://github.com/dmspack/dms.git</developerConnection>
+    <url>https://github.com/dmspack/dms/tree/main/dms-commons</url>
   </scm>
   <build>
     <sourceDirectory>src</sourceDirectory>

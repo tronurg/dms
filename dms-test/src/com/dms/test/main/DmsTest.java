@@ -24,13 +24,14 @@ import com.dms.core.intf.DmsHandle;
 import com.dms.core.intf.handles.ContactSelectionHandle;
 import com.dms.core.intf.handles.GroupSelectionHandle;
 import com.dms.core.main.DmsCore;
+import com.dms.passgen.DmsPassGen;
 import com.dms.server.main.DmsServer;
 
 public class DmsTest {
 
 	public static void main(String[] args) {
 
-//		DmsPassGen.generate("./sec");
+		DmsPassGen.generate("./sec");
 
 		try {
 			DmsServer.setIntercomPort(5446);
